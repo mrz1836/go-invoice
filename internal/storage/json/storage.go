@@ -15,6 +15,12 @@ import (
 	"github.com/mrz/go-invoice/internal/storage"
 )
 
+// Invoice storage errors
+var (
+	ErrInvoiceCannotBeNil     = fmt.Errorf("invoice cannot be nil")
+	ErrInvoiceIDCannotBeEmpty = fmt.Errorf("invoice ID cannot be empty")
+)
+
 // JSONStorage provides file-based JSON storage with concurrent safety
 type JSONStorage struct {
 	basePath    string
@@ -200,7 +206,7 @@ func (s *JSONStorage) CreateInvoice(ctx context.Context, invoice *models.Invoice
 	}
 
 	if invoice == nil {
-		return fmt.Errorf("invoice cannot be nil")
+		return ErrInvoiceCannotBeNil
 	}
 
 	// Validate invoice
@@ -241,7 +247,7 @@ func (s *JSONStorage) GetInvoice(ctx context.Context, id models.InvoiceID) (*mod
 	}
 
 	if strings.TrimSpace(string(id)) == "" {
-		return nil, fmt.Errorf("invoice ID cannot be empty")
+		return nil, ErrInvoiceIDCannotBeEmpty
 	}
 
 	s.mu.RLock()
@@ -269,7 +275,7 @@ func (s *JSONStorage) UpdateInvoice(ctx context.Context, invoice *models.Invoice
 	}
 
 	if invoice == nil {
-		return fmt.Errorf("invoice cannot be nil")
+		return ErrInvoiceCannotBeNil
 	}
 
 	// Validate invoice
@@ -323,7 +329,7 @@ func (s *JSONStorage) DeleteInvoice(ctx context.Context, id models.InvoiceID) er
 	}
 
 	if strings.TrimSpace(string(id)) == "" {
-		return fmt.Errorf("invoice ID cannot be empty")
+		return ErrInvoiceIDCannotBeEmpty
 	}
 
 	s.mu.Lock()

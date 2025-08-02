@@ -12,9 +12,15 @@ import (
 
 // Calculator service errors
 var (
-	ErrInvoiceCannotBeNil    = fmt.Errorf("invoice cannot be nil")
-	ErrHoursCannotBeNegative = fmt.Errorf("hours cannot be negative")
-	ErrRateCannotBeNegative  = fmt.Errorf("rate cannot be negative")
+	ErrInvoiceCannotBeNil      = fmt.Errorf("invoice cannot be nil")
+	ErrHoursCannotBeNegative   = fmt.Errorf("hours cannot be negative")
+	ErrRateCannotBeNegative    = fmt.Errorf("rate cannot be negative")
+	ErrCalculationOptionsNil   = fmt.Errorf("calculation options cannot be nil")
+	ErrTaxRateOutOfRange       = fmt.Errorf("tax rate must be between 0 and 1")
+	ErrDecimalPlacesOutOfRange = fmt.Errorf("decimal places must be between 0 and 10")
+	ErrInvalidRoundingMode     = fmt.Errorf("invalid rounding mode, must be one of: round, floor, ceil")
+	ErrWorkItemNegativeHours   = fmt.Errorf("work item has negative hours")
+	ErrWorkItemNegativeRate    = fmt.Errorf("work item has negative rate")
 )
 
 // InvoiceCalculator provides calculation services for invoices
@@ -220,17 +226,17 @@ func (c *InvoiceCalculator) ValidateCalculation(ctx context.Context, invoice *mo
 	}
 
 	if options == nil {
-		return fmt.Errorf("calculation options cannot be nil")
+		return ErrCalculationOptionsNil
 	}
 
 	// Validate tax rate
 	if options.TaxRate < 0 || options.TaxRate > 1 {
-		return fmt.Errorf("tax rate must be between 0 and 1, got: %f", options.TaxRate)
+		return fmt.Errorf("%w, got: %f", ErrTaxRateOutOfRange, options.TaxRate)
 	}
 
 	// Validate decimal places
 	if options.DecimalPlaces < 0 || options.DecimalPlaces > 10 {
-		return fmt.Errorf("decimal places must be between 0 and 10, got: %d", options.DecimalPlaces)
+		return fmt.Errorf("%w, got: %d", ErrDecimalPlacesOutOfRange, options.DecimalPlaces)
 	}
 
 	// Validate rounding mode
@@ -243,16 +249,16 @@ func (c *InvoiceCalculator) ValidateCalculation(ctx context.Context, invoice *mo
 		}
 	}
 	if !validMode {
-		return fmt.Errorf("invalid rounding mode '%s', must be one of: round, floor, ceil", options.RoundingMode)
+		return fmt.Errorf("%w '%s'", ErrInvalidRoundingMode, options.RoundingMode)
 	}
 
 	// Validate work items
 	for i, item := range invoice.WorkItems {
 		if item.Hours < 0 {
-			return fmt.Errorf("work item %d has negative hours: %f", i, item.Hours)
+			return fmt.Errorf("%w %d: %f", ErrWorkItemNegativeHours, i, item.Hours)
 		}
 		if item.Rate < 0 {
-			return fmt.Errorf("work item %d has negative rate: %f", i, item.Rate)
+			return fmt.Errorf("%w %d: %f", ErrWorkItemNegativeRate, i, item.Rate)
 		}
 	}
 
@@ -269,7 +275,7 @@ func (c *InvoiceCalculator) RecalculateInvoice(ctx context.Context, invoice *mod
 	}
 
 	if invoice == nil {
-		return fmt.Errorf("invoice cannot be nil")
+		return ErrInvoiceCannotBeNil
 	}
 
 	c.logger.Debug("recalculating invoice", "invoice_id", invoice.ID, "tax_rate", taxRate)

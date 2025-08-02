@@ -328,7 +328,7 @@ func (e *HTMLTemplateEngine) UnloadTemplate(ctx context.Context, name string) er
 	defer e.mu.Unlock()
 
 	if _, exists := e.templates[name]; !exists {
-		return fmt.Errorf("template %s not found", name)
+		return fmt.Errorf("%w: %s", models.ErrTemplateNotFound, name)
 	}
 
 	delete(e.templates, name)
@@ -349,7 +349,7 @@ func (e *HTMLTemplateEngine) ReloadTemplate(ctx context.Context, name string) er
 	e.mu.RUnlock()
 
 	if !exists {
-		return fmt.Errorf("template %s not found", name)
+		return fmt.Errorf("%w: %s", models.ErrTemplateNotFound, name)
 	}
 
 	// If template has a path, reload from file
@@ -357,7 +357,7 @@ func (e *HTMLTemplateEngine) ReloadTemplate(ctx context.Context, name string) er
 		return e.LoadTemplate(ctx, name, tmpl.info.Path)
 	}
 
-	return fmt.Errorf("template %s cannot be reloaded (no source path)", name)
+	return fmt.Errorf("%w: %s", models.ErrTemplateCannotReload, name)
 }
 
 // GetTemplate returns a loaded template by name
@@ -373,7 +373,7 @@ func (e *HTMLTemplateEngine) GetTemplate(ctx context.Context, name string) (Temp
 
 	tmpl, exists := e.templates[name]
 	if !exists {
-		return nil, fmt.Errorf("template %s not found", name)
+		return nil, fmt.Errorf("%w: %s", models.ErrTemplateNotFound, name)
 	}
 
 	return tmpl, nil

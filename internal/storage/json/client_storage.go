@@ -13,6 +13,13 @@ import (
 	"github.com/mrz/go-invoice/internal/storage"
 )
 
+// Client storage errors
+var (
+	ErrClientCannotBeNil     = fmt.Errorf("client cannot be nil")
+	ErrClientIDCannotBeEmpty = fmt.Errorf("client ID cannot be empty")
+	ErrEmailCannotBeEmpty    = fmt.Errorf("email cannot be empty")
+)
+
 // Client storage implementation methods for JSONStorage
 
 // CreateClient stores a new client
@@ -24,7 +31,7 @@ func (s *JSONStorage) CreateClient(ctx context.Context, client *models.Client) e
 	}
 
 	if client == nil {
-		return fmt.Errorf("client cannot be nil")
+		return ErrClientCannotBeNil
 	}
 
 	// Validate client
@@ -59,7 +66,7 @@ func (s *JSONStorage) GetClient(ctx context.Context, id models.ClientID) (*model
 	}
 
 	if strings.TrimSpace(string(id)) == "" {
-		return nil, fmt.Errorf("client ID cannot be empty")
+		return nil, ErrClientIDCannotBeEmpty
 	}
 
 	s.mu.RLock()
@@ -87,7 +94,7 @@ func (s *JSONStorage) UpdateClient(ctx context.Context, client *models.Client) e
 	}
 
 	if client == nil {
-		return fmt.Errorf("client cannot be nil")
+		return ErrClientCannotBeNil
 	}
 
 	// Validate client
@@ -125,7 +132,7 @@ func (s *JSONStorage) DeleteClient(ctx context.Context, id models.ClientID) erro
 	}
 
 	if strings.TrimSpace(string(id)) == "" {
-		return fmt.Errorf("client ID cannot be empty")
+		return ErrClientIDCannotBeEmpty
 	}
 
 	s.mu.Lock()
@@ -228,7 +235,7 @@ func (s *JSONStorage) FindClientByEmail(ctx context.Context, email string) (*mod
 	}
 
 	if strings.TrimSpace(email) == "" {
-		return nil, fmt.Errorf("email cannot be empty")
+		return nil, ErrEmailCannotBeEmpty
 	}
 
 	s.mu.RLock()
@@ -303,7 +310,7 @@ func (s *JSONStorage) HardDeleteClient(ctx context.Context, id models.ClientID) 
 	}
 
 	if strings.TrimSpace(string(id)) == "" {
-		return fmt.Errorf("client ID cannot be empty")
+		return ErrClientIDCannotBeEmpty
 	}
 
 	s.mu.Lock()

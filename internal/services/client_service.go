@@ -115,7 +115,7 @@ func (s *ClientService) GetClient(ctx context.Context, id models.ClientID) (*mod
 	}
 
 	if strings.TrimSpace(string(id)) == "" {
-		return nil, fmt.Errorf("client ID cannot be empty")
+		return nil, models.ErrClientIDEmpty
 	}
 
 	client, err := s.clientStorage.GetClient(ctx, id)
@@ -135,7 +135,7 @@ func (s *ClientService) UpdateClient(ctx context.Context, client *models.Client)
 	}
 
 	if client == nil {
-		return nil, fmt.Errorf("client cannot be nil")
+		return nil, models.ErrClientCannotBeNil
 	}
 
 	s.logger.Info("updating client", "id", client.ID, "name", client.Name)
@@ -183,7 +183,7 @@ func (s *ClientService) DeleteClient(ctx context.Context, id models.ClientID) er
 	}
 
 	if hasActiveInvoices {
-		return fmt.Errorf("cannot delete client with active invoices - please mark all invoices as paid or voided first")
+		return models.ErrClientHasActiveInvoices
 	}
 
 	// Soft delete client
@@ -221,7 +221,7 @@ func (s *ClientService) FindClientByEmail(ctx context.Context, email string) (*m
 	}
 
 	if strings.TrimSpace(email) == "" {
-		return nil, fmt.Errorf("email cannot be empty")
+		return nil, models.ErrEmailEmpty
 	}
 
 	client, err := s.clientStorage.FindClientByEmail(ctx, email)
@@ -335,7 +335,7 @@ func (s *ClientService) DeactivateClient(ctx context.Context, id models.ClientID
 	}
 
 	if hasActiveInvoices {
-		return nil, fmt.Errorf("cannot deactivate client with active invoices")
+		return nil, models.ErrCannotDeactivateClientWithActiveInvoices
 	}
 
 	// Get client
@@ -398,7 +398,7 @@ func (s *ClientService) validateUniqueClientEmail(ctx context.Context, email str
 
 	_, err := s.clientStorage.FindClientByEmail(ctx, email)
 	if err == nil {
-		return fmt.Errorf("client with email '%s' already exists", email)
+		return fmt.Errorf("%w: %s", models.ErrClientEmailExists, email)
 	}
 
 	if !storage.IsNotFound(err) {

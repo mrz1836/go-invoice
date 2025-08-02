@@ -116,7 +116,7 @@ func (suite *InvoiceServiceTestSuite) TestCreateInvoice() {
 
 		require.Error(t, err)
 		assert.Nil(t, invoice)
-		assert.Contains(t, err.Error(), "client with ID 'CLIENT-001' not found")
+		assert.Contains(t, err.Error(), "client not found: CLIENT-001")
 	})
 }
 

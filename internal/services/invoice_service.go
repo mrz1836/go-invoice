@@ -67,13 +67,13 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, req models.CreateInv
 	client, err := s.clientStorage.GetClient(ctx, req.ClientID)
 	if err != nil {
 		if storage.IsNotFound(err) {
-			return nil, fmt.Errorf("client with ID '%s' not found", req.ClientID)
+			return nil, fmt.Errorf("%w: %s", models.ErrClientNotFound, req.ClientID)
 		}
 		return nil, fmt.Errorf("failed to retrieve client: %w", err)
 	}
 
 	if !client.Active {
-		return nil, fmt.Errorf("client '%s' is inactive", client.Name)
+		return nil, fmt.Errorf("%w: %s", models.ErrClientInactive, client.Name)
 	}
 
 	// Generate invoice ID
@@ -134,7 +134,7 @@ func (s *InvoiceService) GetInvoice(ctx context.Context, id models.InvoiceID) (*
 	}
 
 	if strings.TrimSpace(string(id)) == "" {
-		return nil, fmt.Errorf("invoice ID cannot be empty")
+		return nil, models.ErrInvoiceIDEmpty
 	}
 
 	invoice, err := s.invoiceStorage.GetInvoice(ctx, id)
@@ -222,7 +222,7 @@ func (s *InvoiceService) DeleteInvoice(ctx context.Context, id models.InvoiceID)
 
 	// Business rule: don't delete paid invoices
 	if invoice.Status == models.StatusPaid {
-		return fmt.Errorf("cannot delete paid invoice '%s'", invoice.Number)
+		return fmt.Errorf("%w: %s", models.ErrCannotDeletePaidInvoice, invoice.Number)
 	}
 
 	// Delete invoice
@@ -269,7 +269,7 @@ func (s *InvoiceService) AddWorkItemToInvoice(ctx context.Context, invoiceID mod
 
 	// Business rule: can only add work items to draft invoices
 	if invoice.Status != models.StatusDraft {
-		return nil, fmt.Errorf("can only add work items to draft invoices, current status: %s", invoice.Status)
+		return nil, fmt.Errorf("%w, current status: %s", models.ErrCannotAddWorkItemToNonDraft, invoice.Status)
 	}
 
 	// Generate work item ID if not provided
@@ -316,7 +316,7 @@ func (s *InvoiceService) RemoveWorkItemFromInvoice(ctx context.Context, invoiceI
 
 	// Business rule: can only remove work items from draft invoices
 	if invoice.Status != models.StatusDraft {
-		return nil, fmt.Errorf("can only remove work items from draft invoices, current status: %s", invoice.Status)
+		return nil, fmt.Errorf("%w, current status: %s", models.ErrCannotRemoveWorkItemFromNonDraft, invoice.Status)
 	}
 
 	// Remove work item from invoice
@@ -351,12 +351,12 @@ func (s *InvoiceService) SendInvoice(ctx context.Context, id models.InvoiceID) (
 
 	// Business rule: can only send draft invoices
 	if invoice.Status != models.StatusDraft {
-		return nil, fmt.Errorf("can only send draft invoices, current status: %s", invoice.Status)
+		return nil, fmt.Errorf("%w, current status: %s", models.ErrCannotSendNonDraftInvoice, invoice.Status)
 	}
 
 	// Business rule: invoice must have work items
 	if len(invoice.WorkItems) == 0 {
-		return nil, fmt.Errorf("cannot send invoice with no work items")
+		return nil, models.ErrCannotSendEmptyInvoice
 	}
 
 	// Update status to sent
@@ -391,7 +391,7 @@ func (s *InvoiceService) MarkInvoicePaid(ctx context.Context, id models.InvoiceI
 
 	// Business rule: can only mark sent or overdue invoices as paid
 	if invoice.Status != models.StatusSent && invoice.Status != models.StatusOverdue {
-		return nil, fmt.Errorf("can only mark sent or overdue invoices as paid, current status: %s", invoice.Status)
+		return nil, fmt.Errorf("%w, current status: %s", models.ErrCannotMarkNonSentAsPaid, invoice.Status)
 	}
 
 	// Update status to paid
@@ -511,7 +511,7 @@ func (s *InvoiceService) validateUniqueInvoiceNumber(ctx context.Context, number
 
 	for _, invoice := range result.Invoices {
 		if invoice.Number == number {
-			return fmt.Errorf("invoice number '%s' already exists", number)
+			return fmt.Errorf("%w: %s", models.ErrInvoiceNumberExists, number)
 		}
 	}
 

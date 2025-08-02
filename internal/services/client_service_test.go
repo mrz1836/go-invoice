@@ -97,7 +97,7 @@ func (suite *ClientServiceTestSuite) TestCreateClient() {
 
 		require.Error(t, err)
 		assert.Nil(t, client)
-		assert.Contains(t, err.Error(), "client with email 'test@example.com' already exists")
+		assert.Contains(t, err.Error(), "client with email already exists: test@example.com")
 	})
 
 	// Invalid request
