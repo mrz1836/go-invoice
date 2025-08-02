@@ -29,9 +29,9 @@ func (suite *WorkItemValidatorTestSuite) SetupTest() {
 // TestNewWorkItemValidator tests the constructor
 func (suite *WorkItemValidatorTestSuite) TestNewWorkItemValidator() {
 	validator := NewWorkItemValidator(suite.logger)
-	assert.NotNil(suite.T(), validator)
+	suite.NotNil(validator)
 	assert.Equal(suite.T(), suite.logger, validator.logger)
-	assert.True(suite.T(), len(validator.rules) > 0, "should have validation rules")
+	assert.Positive(suite.T(), len(validator.rules), "should have validation rules")
 }
 
 // TestValidateWorkItemSuccess tests successful work item validation
@@ -41,7 +41,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemSuccess() {
 	require.NoError(suite.T(), err)
 
 	err = suite.validator.ValidateWorkItem(ctx, workItem)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }
 
 // TestValidateWorkItemContextCancellation tests context cancellation
@@ -134,7 +134,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemDateValidation() {
 					assert.Contains(suite.T(), err.Error(), tt.errMsg)
 				}
 			} else {
-				assert.NoError(suite.T(), err)
+				suite.NoError(err)
 			}
 		})
 	}
@@ -205,7 +205,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemHoursValidation() {
 					assert.Contains(suite.T(), err.Error(), tt.errMsg)
 				}
 			} else {
-				assert.NoError(suite.T(), err)
+				suite.NoError(err)
 			}
 		})
 	}
@@ -276,7 +276,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemRateValidation() {
 					assert.Contains(suite.T(), err.Error(), tt.errMsg)
 				}
 			} else {
-				assert.NoError(suite.T(), err)
+				suite.NoError(err)
 			}
 		})
 	}
@@ -354,7 +354,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemDescriptionValidati
 					assert.Contains(suite.T(), err.Error(), tt.errMsg)
 				}
 			} else {
-				assert.NoError(suite.T(), err)
+				suite.NoError(err)
 			}
 		})
 	}
@@ -423,7 +423,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemTotalValidation() {
 					assert.Contains(suite.T(), err.Error(), tt.errMsg)
 				}
 			} else {
-				assert.NoError(suite.T(), err)
+				suite.NoError(err)
 			}
 		})
 	}
@@ -505,7 +505,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateRowErrors() {
 					assert.Contains(suite.T(), err.Error(), tt.errMsg)
 				}
 			} else {
-				assert.NoError(suite.T(), err)
+				suite.NoError(err)
 			}
 		})
 	}
@@ -620,7 +620,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchErrors() {
 					assert.Contains(suite.T(), err.Error(), tt.errMsg)
 				}
 			} else {
-				assert.NoError(suite.T(), err)
+				suite.NoError(err)
 			}
 		})
 	}
@@ -693,7 +693,7 @@ func (suite *WorkItemValidatorTestSuite) TestCustomRules() {
 
 	// Remove the custom rule
 	removed := suite.validator.RemoveRule("CustomTest")
-	assert.True(suite.T(), removed)
+	suite.True(removed)
 
 	// Test that the rule is no longer applied
 	err = suite.validator.ValidateWorkItem(ctx, workItem)
@@ -701,13 +701,13 @@ func (suite *WorkItemValidatorTestSuite) TestCustomRules() {
 
 	// Try to remove non-existent rule
 	removed = suite.validator.RemoveRule("NonExistent")
-	assert.False(suite.T(), removed)
+	suite.False(removed)
 }
 
 // TestGetRules tests getting all validation rules
 func (suite *WorkItemValidatorTestSuite) TestGetRules() {
 	rules := suite.validator.GetRules()
-	assert.True(suite.T(), len(rules) > 0)
+	assert.Positive(suite.T(), len(rules))
 
 	// Verify we get standard rules
 	ruleNames := make(map[string]bool)

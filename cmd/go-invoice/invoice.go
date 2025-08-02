@@ -214,7 +214,7 @@ func (a *App) buildInvoiceListCommand() *cobra.Command {
 	}
 
 	// Add flags
-	cmd.Flags().String("status", "", "Filter by status (draft, sent, paid, overdue, cancelled)")
+	cmd.Flags().String("status", "", "Filter by status (draft, sent, paid, overdue, canceled)")
 	cmd.Flags().String("client", "", "Filter by client name or ID")
 	cmd.Flags().String("from", "", "Filter from date (YYYY-MM-DD)")
 	cmd.Flags().String("to", "", "Filter to date (YYYY-MM-DD)")
@@ -333,7 +333,7 @@ func (a *App) runInvoiceShow(cmd *cobra.Command, args []string) error {
 	}
 
 	// Get client
-	client, err := clientService.GetClient(ctx, models.ClientID(invoice.Client.ID))
+	client, err := clientService.GetClient(ctx, invoice.Client.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get client: %w", err)
 	}
@@ -801,7 +801,7 @@ func (a *App) buildClientFilter(cmd *cobra.Command, clientService *services.Clie
 		return fmt.Errorf("%w: %s", ErrMultipleClientsFound, clientName)
 	}
 
-	filter.ClientID = models.ClientID(clients[0].ID)
+	filter.ClientID = clients[0].ID
 	return nil
 }
 
@@ -896,7 +896,7 @@ func (a *App) outputInvoicesTable(invoices []*models.Invoice, _ *services.Client
 		clientName := inv.Client.Name
 
 		// Format status with color (in a real terminal)
-		status := string(inv.Status)
+		status := inv.Status
 
 		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%.2f\n",
 			inv.Number,

@@ -103,7 +103,7 @@ func (suite *CSVParserTestSuite) SetupTest() {
 // TestNewCSVParser tests the constructor
 func (suite *CSVParserTestSuite) TestNewCSVParser() {
 	parser := NewCSVParser(suite.validator, suite.logger, suite.idGenerator)
-	assert.NotNil(suite.T(), parser)
+	suite.NotNil(parser)
 	assert.Equal(suite.T(), suite.validator, parser.validator)
 	assert.Equal(suite.T(), suite.logger, parser.logger)
 	assert.Equal(suite.T(), suite.idGenerator, parser.idGenerator)
@@ -156,7 +156,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetContextCancellation() {
 
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Equal(suite.T(), context.Canceled, err)
 	suite.Nil(result)
 }
@@ -169,7 +169,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetEmptyCSV() {
 	ctx := context.Background()
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Contains(suite.T(), err.Error(), "CSV file is empty")
 	suite.Nil(result)
 }
@@ -188,7 +188,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetInvalidCSV() {
 	ctx := context.Background()
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Contains(suite.T(), err.Error(), "parsing failed at line 2")
 	suite.Nil(result)
 }
@@ -242,7 +242,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetValidationError() {
 	ctx := context.Background()
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Contains(suite.T(), err.Error(), "validation failed at line 2")
 	suite.Nil(result)
 }
@@ -331,11 +331,11 @@ func (suite *CSVParserTestSuite) TestParseTimesheetHeaderVariations() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 				suite.Nil(result)
 			} else {
 				require.NoError(suite.T(), err)
-				assert.NotNil(suite.T(), result)
+				suite.NotNil(result)
 			}
 		})
 	}
@@ -391,9 +391,9 @@ func (suite *CSVParserTestSuite) TestDetectFormatContextCancellation() {
 
 	format, err := suite.parser.DetectFormat(ctx, reader)
 
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Equal(suite.T(), context.Canceled, err)
-	assert.Nil(suite.T(), format)
+	suite.Nil(format)
 }
 
 // TestDetectFormatEmptyFile tests format detection with empty file
@@ -403,9 +403,9 @@ func (suite *CSVParserTestSuite) TestDetectFormatEmptyFile() {
 
 	format, err := suite.parser.DetectFormat(ctx, reader)
 
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Contains(suite.T(), err.Error(), "cannot detect format of empty file")
-	assert.Nil(suite.T(), format)
+	suite.Nil(format)
 }
 
 // TestValidateFormat tests format validation
@@ -415,7 +415,7 @@ func (suite *CSVParserTestSuite) TestValidateFormat() {
 	ctx := context.Background()
 
 	err := suite.parser.ValidateFormat(ctx, reader)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }
 
 // TestValidateFormatContextCancellation tests format validation with context cancellation
@@ -426,7 +426,7 @@ func (suite *CSVParserTestSuite) TestValidateFormatContextCancellation() {
 
 	err := suite.parser.ValidateFormat(ctx, reader)
 
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Equal(suite.T(), context.Canceled, err)
 }
 
@@ -452,11 +452,11 @@ func (suite *CSVParserTestSuite) TestParseDateFormats() {
 			date, err := suite.parser.parseDate(tt.dateStr)
 
 			if tt.expectError {
-				assert.Error(suite.T(), err)
-				assert.True(suite.T(), date.IsZero())
+				suite.Error(err)
+				suite.True(date.IsZero())
 			} else {
-				assert.NoError(suite.T(), err)
-				assert.False(suite.T(), date.IsZero())
+				suite.NoError(err)
+				suite.False(date.IsZero())
 			}
 		})
 	}
@@ -548,7 +548,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetLogging() {
 	require.NoError(suite.T(), err)
 
 	// Check that logging occurred
-	assert.True(suite.T(), len(suite.logger.messages) > 0)
+	assert.Positive(suite.T(), len(suite.logger.messages))
 
 	// Find start message
 	var foundStart bool

@@ -31,7 +31,7 @@ go-invoice is a powerful command-line application that helps you:
 ### Prerequisites
 
 Before we begin, make sure you have:
-- **Go 1.21 or later** installed on your system
+- **Go 1.24 or later** installed on your system
 - Basic familiarity with command-line interfaces
 - Time tracking data (CSV format) or manual entry capability
 

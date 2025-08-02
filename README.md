@@ -83,7 +83,7 @@ open invoice.html
 ## 📦 Installation
 
 ### Prerequisites
-- **Go 1.21 or later** – [Download Go](https://golang.org/dl/)
+- **Go 1.24 or later** – [Download Go](https://golang.org/dl/)
 - **Git** – For version control
 
 ### Install from Source

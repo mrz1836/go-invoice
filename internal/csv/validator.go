@@ -138,9 +138,7 @@ func (v *WorkItemValidator) ValidateBatch(ctx context.Context, items []models.Wo
 		return fmt.Errorf("date range validation failed: %w", err)
 	}
 
-	if err := v.validateRateConsistency(items); err != nil {
-		return fmt.Errorf("rate consistency validation failed: %w", err)
-	}
+	v.validateRateConsistency(items)
 
 	if err := v.validateTotalHours(items); err != nil {
 		return fmt.Errorf("total hours validation failed: %w", err)
@@ -353,9 +351,9 @@ func (v *WorkItemValidator) validateDateRange(items []models.WorkItem) error {
 	return nil
 }
 
-func (v *WorkItemValidator) validateRateConsistency(items []models.WorkItem) error {
+func (v *WorkItemValidator) validateRateConsistency(items []models.WorkItem) {
 	if len(items) <= 1 {
-		return nil
+		return
 	}
 
 	// Group rates and check for consistency
@@ -368,8 +366,6 @@ func (v *WorkItemValidator) validateRateConsistency(items []models.WorkItem) err
 	if len(rateCount) > 3 {
 		v.logger.Debug("multiple different rates detected", "unique_rates", len(rateCount))
 	}
-
-	return nil
 }
 
 func (v *WorkItemValidator) validateTotalHours(items []models.WorkItem) error {

@@ -925,7 +925,7 @@ Total estimated time: 15.5-21.5 hours across 7 focused sessions
 - **Concurrent Access**: Supports multiple simultaneous read operations
 
 ### Compatibility
-- **Go Version**: Compatible with Go 1.21+
+- **Go Version**: Compatible with Go 1.24+
 - **Platform Support**: Runs on Linux, macOS, and Windows
 - **CSV Formats**: Accepts Excel, Google Sheets, and standard RFC 4180 CSV
 - **Output Format**: Generates HTML5 compliant output with CSS3 styling

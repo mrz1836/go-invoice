@@ -96,7 +96,7 @@ invalid-date,8.0,100.0,Bad date
 			if tt.hasError {
 				// Should not error if continue on error is true
 				require.NoError(suite.T(), err)
-				suite.True(len(result.Errors) > 0, "should have parsing errors")
+				suite.Positive(len(result.Errors), "should have parsing errors")
 			} else {
 				require.NoError(suite.T(), err)
 				suite.Empty(result.Errors, "should have no errors")
@@ -186,7 +186,7 @@ func (suite *CSVIntegrationTestSuite) TestErrorHandlingIntegration() {
 		assert.Equal(suite.T(), 4, result.TotalRows)
 		assert.Equal(suite.T(), 1, result.SuccessRows)
 		assert.Equal(suite.T(), 3, result.ErrorRows)
-		assert.Equal(suite.T(), 3, len(result.Errors))
+		suite.Len(result.Errors, 3)
 
 		// Check error details
 		errors := result.Errors
@@ -231,7 +231,7 @@ func (suite *CSVIntegrationTestSuite) TestComplexDataScenarios() {
 		require.NoError(suite.T(), err)
 
 		// All should parse successfully with auto-detection (fixed EU format to use /)
-		assert.Equal(suite.T(), 3, len(result.WorkItems))
+		suite.Len(result.WorkItems, 3)
 		suite.Empty(result.Errors)
 	})
 
@@ -247,9 +247,9 @@ func (suite *CSVIntegrationTestSuite) TestComplexDataScenarios() {
 		result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 		require.NoError(suite.T(), err)
 
-		assert.Equal(suite.T(), 2, len(result.WorkItems))
-		assert.Equal(suite.T(), "Work with, comma", result.WorkItems[0].Description)
-		assert.Equal(suite.T(), `Testing "quotes" handling`, result.WorkItems[1].Description)
+		suite.Len(result.WorkItems, 2)
+		suite.Equal("Work with, comma", result.WorkItems[0].Description)
+		suite.Equal(`Testing "quotes" handling`, result.WorkItems[1].Description)
 	})
 
 	suite.Run("EmptyRowsAndWhitespace", func() {
@@ -264,7 +264,7 @@ func (suite *CSVIntegrationTestSuite) TestComplexDataScenarios() {
 		result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 		require.NoError(suite.T(), err)
 
-		assert.Equal(suite.T(), 2, len(result.WorkItems))
+		suite.Len(result.WorkItems, 2)
 		assert.Equal(suite.T(), 2, result.SuccessRows)
 	})
 }
@@ -288,11 +288,11 @@ func (suite *CSVIntegrationTestSuite) TestContextCancellation() {
 
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	// Should be cancelled
+	// Should be canceled
 	assert.Error(suite.T(), err)
 	assert.Equal(suite.T(), context.Canceled, err)
 
-	// Result may be nil when cancelled early
+	// Result may be nil when canceled early
 	if result != nil {
 		suite.Less(len(result.WorkItems), 10000)
 	}
@@ -314,7 +314,7 @@ func (suite *CSVIntegrationTestSuite) TestLargeFileHandling() {
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 	require.NoError(suite.T(), err)
 
-	assert.Equal(suite.T(), 1000, len(result.WorkItems))
+	suite.Len(result.WorkItems, 1000)
 	assert.Equal(suite.T(), 1000, result.SuccessRows)
 	assert.Equal(suite.T(), 1000, result.TotalRows)
 	suite.Empty(result.Errors)

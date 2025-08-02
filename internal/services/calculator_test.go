@@ -240,7 +240,7 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotalsWithBreakdown() {
 
 	suite.Require().NoError(err)
 	suite.NotNil(result.Breakdown)
-	suite.Equal(3, len(result.Breakdown.WorkItemTotals))
+	suite.Len(result.Breakdown.WorkItemTotals, 3)
 	suite.Equal("VAT", result.Breakdown.TaxCalculation.TaxType)
 	suite.Equal("USD", result.Breakdown.CurrencyDetails.Currency)
 	suite.Equal("$", result.Breakdown.CurrencyDetails.Symbol)
@@ -396,7 +396,7 @@ func (suite *CalculatorTestSuite) TestGetCalculationSummary() {
 
 // TestContextCancellation tests context cancellation handling
 func (suite *CalculatorTestSuite) TestContextCancellation() {
-	// Create a cancelled context
+	// Create a canceled context
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
@@ -408,7 +408,7 @@ func (suite *CalculatorTestSuite) TestContextCancellation() {
 		RoundingMode:  "round",
 	}
 
-	// Test that cancelled context is handled properly
+	// Test that canceled context is handled properly
 	_, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
 	suite.Error(err)
 	suite.Equal(context.Canceled, err)
