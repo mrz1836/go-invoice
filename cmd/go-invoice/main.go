@@ -79,6 +79,7 @@ Key features:
 	// Add subcommands
 	rootCmd.AddCommand(a.buildConfigCommand())
 	rootCmd.AddCommand(a.buildInitCommand())
+	rootCmd.AddCommand(a.buildImportCommand())
 
 	return rootCmd
 }
