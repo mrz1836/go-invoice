@@ -26,7 +26,7 @@ const (
 // Validation patterns
 var (
 	invoiceIDPattern = regexp.MustCompile(`^[A-Z0-9-]+$`)
-	emailPattern     = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	emailPattern     = regexp.MustCompile(`^[a-zA-Z0-9]+([._%-+][a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$`)
 )
 
 // ValidationError represents a validation error with context

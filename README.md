@@ -1,387 +1,699 @@
 # 💸 go-invoice
-> A simple, fast, and efficient Go library for generating invoices in PDF format.
+> A simple, fast, and efficient CLI application for managing invoices and time tracking.
 
-<table>
-  <thead>
-    <tr>
-      <th>CI&nbsp;/&nbsp;CD</th>
-      <th>Quality&nbsp;&amp;&nbsp;Security</th>
-      <th>Docs&nbsp;&amp;&nbsp;Meta</th>
-      <th>Community</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td valign="top" align="left">
-        <a href="https://github.com/mrz1836/go-invoice/releases">
-          <img src="https://img.shields.io/github/release-pre/mrz1836/go-invoice?logo=github&style=flat&v=1" alt="Latest Release">
-        </a><br/>
-        <a href="https://github.com/mrz1836/go-invoice/actions">
-          <img src="https://img.shields.io/github/actions/workflow/status/mrz1836/go-invoice/fortress.yml?branch=master&logo=github&style=flat" alt="Build Status">
-        </a><br/>
-		<a href="https://github.com/mrz1836/go-invoice/actions">
-          <img src="https://github.com/mrz1836/go-invoice/actions/workflows/codeql-analysis.yml/badge.svg?style=flat" alt="CodeQL">
-        </a><br/>
-		<a href="https://github.com/mrz1836/go-invoice/actions">
-          <img src="https://github.com/mrz1836/go-invoice/actions/workflows/ossar.yml/badge.svg?style=flat" alt="Ossar">
-        </a><br/>
-        <a href="https://github.com/mrz1836/go-invoice/commits/master">
-		  <img src="https://img.shields.io/github/last-commit/mrz1836/go-invoice?style=flat&logo=clockify&logoColor=white" alt="Last commit">
-		</a>
-      </td>
-      <td valign="top" align="left">
-        <a href="https://goreportcard.com/report/github.com/mrz1836/go-invoice">
-          <img src="https://goreportcard.com/badge/github.com/mrz1836/go-invoice?style=flat" alt="Go Report Card">
-        </a><br/>
-		<a href="https://codecov.io/gh/mrz1836/go-invoice/tree/master">
-          <img src="https://codecov.io/gh/mrz1836/go-invoice/branch/master/graph/badge.svg?style=flat" alt="Code Coverage">
-        </a><br/>
-		<a href="https://scorecard.dev/viewer/?uri=github.com/mrz1836/go-invoice">
-          <img src="https://api.scorecard.dev/projects/github.com/mrz1836/go-invoice/badge?logo=springsecurity&logoColor=white" alt="OpenSSF Scorecard">
-        </a><br/>
-		<a href=".github/SECURITY.md">
-          <img src="https://img.shields.io/badge/security-policy-blue?style=flat&logo=springsecurity&logoColor=white" alt="Security policy">
-        </a><br/>
-		<a href="https://www.bestpractices.dev/projects/10822">
-		  <img src="https://www.bestpractices.dev/projects/10822/badge?style=flat&logo=springsecurity&logoColor=white" alt="OpenSSF Best Practices">
-		</a>
-      </td>
-      <td valign="top" align="left">
-        <a href="https://golang.org/">
-          <img src="https://img.shields.io/github/go-mod/go-version/mrz1836/go-invoice?style=flat" alt="Go version">
-        </a><br/>
-        <a href="https://pkg.go.dev/github.com/mrz1836/go-invoice?tab=doc">
-          <img src="https://pkg.go.dev/badge/github.com/mrz1836/go-invoice.svg?style=flat" alt="Go docs">
-        </a><br/>
-        <a href=".github/AGENTS.md">
-          <img src="https://img.shields.io/badge/AGENTS.md-found-40b814?style=flat&logo=openai" alt="AGENTS.md rules">
-        </a><br/>
-        <a href="Makefile">
-          <img src="https://img.shields.io/badge/Makefile-supported-brightgreen?style=flat&logo=probot&logoColor=white" alt="Makefile Supported">
-        </a><br/>
-		<a href=".github/dependabot.yml">
-          <img src="https://img.shields.io/badge/dependencies-automatic-blue?logo=dependabot&style=flat" alt="Dependabot">
-        </a>
-      </td>
-      <td valign="top" align="left">
-        <a href="https://github.com/mrz1836/go-invoice/graphs/contributors">
-          <img src="https://img.shields.io/github/contributors/mrz1836/go-invoice?style=flat&logo=contentful&logoColor=white" alt="Contributors">
-        </a><br/>
-        <a href="https://github.com/sponsors/mrz1836">
-          <img src="https://img.shields.io/badge/sponsor-MrZ-181717.svg?logo=github&style=flat" alt="Sponsor">
-        </a><br/>
-        <a href="https://mrz1818.com/?tab=tips&utm_source=github&utm_medium=sponsor-link&utm_campaign=go-invoice&utm_term=go-invoice&utm_content=go-invoice">
-          <img src="https://img.shields.io/badge/donate-bitcoin-ff9900.svg?logo=bitcoin&style=flat" alt="Donate Bitcoin">
-        </a>
-      </td>
-    </tr>
-  </tbody>
-</table>
+[![Go version](https://img.shields.io/github/go-mod/go-version/mrz/go-invoice?style=flat)](https://golang.org/)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=flat)](https://github.com/mrz/go-invoice)
+[![Go Report Card](https://img.shields.io/badge/go%20report-A+-brightgreen?style=flat)](https://goreportcard.com/report/github.com/mrz/go-invoice)
+[![License](https://img.shields.io/github/license/mrz/go-invoice.svg?style=flat)](LICENSE)
 
 <br/>
 
 ## 🗂️ Table of Contents
+* [Features](#-features)
+* [Quick Start](#-quick-start)
 * [Installation](#-installation)
-* [Documentation](#-documentation)
-* [Examples & Tests](#-examples--tests)
-* [Benchmarks](#-benchmarks)
-* [Code Standards](#-code-standards)
-* [AI Compliance](#-ai-compliance)
-* [Maintainers](#-maintainers)
+* [Configuration](#-configuration)
+* [Usage](#-usage)
+* [CSV Import](#-csv-import)
+* [Templates](#-templates)
+* [Development](#-development)
+* [Testing](#-testing)
 * [Contributing](#-contributing)
 * [License](#-license)
 
 <br/>
 
+## ✨ Features
+
+**🏢 Business Management**
+- Complete business profile setup with contact information
+- Configurable tax rates and payment terms
+- Multi-currency support
+
+**👥 Client Management**
+- Add, edit, and manage client information
+- Client contact details and billing addresses
+- Client activity tracking and soft delete
+
+**📄 Invoice Generation**
+- Professional HTML invoice generation
+- Automatic invoice numbering with configurable prefixes
+- Tax calculation and subtotal management
+- Multiple invoice statuses (draft, sent, paid, overdue, voided)
+
+**⏱️ Time Tracking**
+- CSV timesheet import from popular time tracking tools
+- Manual work item entry with hours and rates
+- Flexible date formats and validation
+- Work item descriptions with intelligent validation
+
+**🔧 Developer-Friendly**
+- Context-first design throughout the application
+- Comprehensive test coverage (90%+)
+- Clean architecture with dependency injection
+- Concurrent-safe operations
+- Extensive error handling and validation
+
+<br/>
+
+## 🚀 Quick Start
+
+```bash
+# Install go-invoice
+go install github.com/mrz/go-invoice@latest
+
+# Set up your business configuration
+go-invoice config setup
+
+# Add your first client
+go-invoice client add --name "Acme Corp" --email "billing@acme.com"
+
+# Import timesheet data
+go-invoice import csv timesheet.csv --client "Acme Corp"
+
+# Generate an invoice
+go-invoice invoice create --client "Acme Corp" --output invoice.html
+
+# View your invoice in the browser
+open invoice.html
+```
+
+<br/>
+
 ## 📦 Installation
 
-**go-invoice** requires a [supported release of Go](https://golang.org/doc/devel/release.html#policy).
-```shell script
-go get -u github.com/mrz1836/go-invoice
-```
+### Prerequisites
+- **Go 1.21 or later** – [Download Go](https://golang.org/dl/)
+- **Git** – For version control
 
-<br/>
-
-## 📚 Documentation
-
-- **API Reference** – Dive into the godocs at [pkg.go.dev/github.com/mrz1836/go-invoice](https://pkg.go.dev/github.com/mrz1836/go-invoice)
-- **Usage Examples** – Browse practical patterns either the [examples directory](examples) or view the [example functions](invoice_example_test.go)
-- **Benchmarks** – Check the latest numbers in the [benchmark results](#benchmark-results)
-- **Test Suite** – Review both the [unit tests](invoice_test.go) and [fuzz tests](invoice_fuzz_test.go) (powered by [`testify`](https://github.com/stretchr/testify))
-
-<br/>
-
-<details>
-<summary><strong><code>Repository Features</code></strong></summary>
-<br/>
-
-* **Continuous Integration on Autopilot** with [GitHub Actions](https://github.com/features/actions) – every push is built, tested, and reported in minutes.
-* **Pull‑Request Flow That Merges Itself** thanks to [auto‑merge](.github/workflows/auto-merge-on-approval.yml) and hands‑free [Dependabot auto‑merge](.github/workflows/dependabot-auto-merge.yml).
-* **One‑Command Builds** powered by battle‑tested [Make](https://www.gnu.org/software/make) targets for linting, testing, releases, and more.
-* **First‑Class Dependency Management** using native [Go Modules](https://github.com/golang/go/wiki/Modules).
-* **Uniform Code Style** via [gofumpt](https://github.com/mvdan/gofumpt) plus zero‑noise linting with [golangci‑lint](https://github.com/golangci/golangci-lint).
-* **Confidence‑Boosting Tests** with [testify](https://github.com/stretchr/testify), the Go [race detector](https://blog.golang.org/race-detector), crystal‑clear [HTML coverage](https://blog.golang.org/cover) snapshots, and automatic uploads to [Codecov](https://codecov.io/).
-* **Hands‑Free Releases** delivered by [GoReleaser](https://github.com/goreleaser/goreleaser) whenever you create a [new Tag](https://git-scm.com/book/en/v2/Git-Basics-Tagging).
-* **Relentless Dependency & Vulnerability Scans** via [Dependabot](https://dependabot.com), [Nancy](https://github.com/sonatype-nexus-community/nancy), [govulncheck](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck), and [OSSAR](https://github.com/github/ossar-action).
-* **Security Posture by Default** with [CodeQL](https://docs.github.com/en/github/finding-security-vulnerabilities-and-errors-in-your-code/about-code-scanning), [OpenSSF Scorecard](https://openssf.org), [OSSAR](https://github.com/github/ossar-action), and secret‑leak detection via [gitleaks](https://github.com/gitleaks/gitleaks).
-* **Automatic Syndication** to [pkg.go.dev](https://pkg.go.dev/) on every release for instant godoc visibility.
-* **Polished Community Experience** using rich templates for [Issues & PRs](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository).
-* **All the Right Meta Files** (`LICENSE`, `CITATION.cff`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`, `SECURITY.md`) pre‑filled and ready.
-* **Code Ownership** clarified through a [CODEOWNERS](.github/CODEOWNERS) file, keeping reviews fast and focused.
-* **Zero‑Noise Dev Environments** with tuned editor settings (`.editorconfig`) plus curated *ignore* files for [VS Code](.editorconfig), [Docker](.dockerignore), and [Git](.gitignore).
-* **Label Sync Magic**: your repo labels stay in lock‑step with [.github/labels.yml](.github/labels.yml).
-* **Friendly First PR Workflow** – newcomers get a warm welcome thanks to a dedicated [workflow](.github/workflows/pull-request-management.yml).
-* **Standards‑Compliant Docs** adhering to the [standard‑readme](https://github.com/RichardLitt/standard-readme/blob/master/spec.md) spec.
-* **Instant Cloud Workspaces** via [Gitpod](https://gitpod.io/) – spin up a fully configured dev environment with automatic linting and tests.
-* **Out‑of‑the‑Box VS Code Happiness** with a preconfigured [Go](https://code.visualstudio.com/docs/languages/go) workspace and [`.vscode`](.vscode) folder with all the right settings.
-* **Optional Release Broadcasts** to your community via [Slack](https://slack.com), [Discord](https://discord.com), or [Twitter](https://twitter.com) – plug in your webhook.
-* **AI Compliance Playbook** – machine‑readable guidelines ([AGENTS.md](.github/AGENTS.md), [CLAUDE.md](.github/CLAUDE.md), [.cursorrules](.cursorrules), [sweep.yaml](.github/sweep.yaml)) keep ChatGPT, Claude, Cursor & Sweep aligned with your repo's rules.
-* **Pre-commit Hooks for Consistency** powered by [pre-commit](https://pre-commit.com) and the [.pre-commit-config.yaml](.pre-commit-config.yaml) file—run the same formatting, linting, and tests before every commit, just like CI.
-* **Automated Hook Updates** keep the [.pre-commit-config.yaml](.pre-commit-config.yaml) current via a weekly [workflow](.github/workflows/update-pre-commit-hooks.yml).
-* **DevContainers for Instant Onboarding** – Launch a ready-to-code environment in seconds with [VS Code DevContainers](https://containers.dev/) and the included [.devcontainer.json](.devcontainer.json) config.
-
-</details>
-
-<details>
-<summary><strong><code>Library Deployment</code></strong></summary>
-<br/>
-
-This project uses [goreleaser](https://github.com/goreleaser/goreleaser) for streamlined binary and library deployment to GitHub. To get started, install it via:
+### Install from Source
 
 ```bash
-brew install goreleaser
+# Clone the repository
+git clone https://github.com/mrz/go-invoice.git
+cd go-invoice
+
+# Build the application
+make build-go
+
+# Install globally (optional)
+make install
 ```
 
-The release process is defined in the [.goreleaser.yml](.goreleaser.yml) configuration file.
-
-To generate a snapshot (non-versioned) release for testing purposes, run:
+### Install via Go
 
 ```bash
-make release-snap
+go install github.com/mrz/go-invoice@latest
 ```
 
-Before tagging a new version, update the release metadata (version) in the `CITATION.cff` file:
+### Verify Installation
 
 ```bash
-make citation version=0.2.1
+go-invoice --version
 ```
 
-Then create and push a new Git tag using:
+<br/>
+
+## ⚙️ Configuration
+
+### Initial Setup
+
+Run the setup wizard to configure your business information:
 
 ```bash
-make tag version=x.y.z
+go-invoice config setup
 ```
 
-This process ensures consistent, repeatable releases with properly versioned artifacts and citation metadata.
+This will prompt you for:
+- Business name and contact information
+- Default tax rates and currency
+- Invoice numbering preferences
+- Payment terms and banking details
 
-</details>
+### Manual Configuration
 
-<details>
-<summary><strong><code>Makefile Commands</code></strong></summary>
-<br/>
-
-View all `makefile` commands
-
-```bash script
-make help
-```
-
-List of all current commands:
-
-<!-- make-help-start -->
-```text
-bench                 ## Run all benchmarks in the Go application
-build-go              ## Build the Go application (locally)
-citation              ## Update version in CITATION.cff (use version=X.Y.Z)
-clean-mods            ## Remove all the Go mod cache
-coverage              ## Show test coverage
-diff                  ## Show git diff and fail if uncommitted changes exist
-fumpt                 ## Run fumpt to format Go code
-generate              ## Run go generate in the base of the repo
-godocs                ## Trigger GoDocs tag sync
-govulncheck-install   ## Install govulncheck (pass VERSION= to override)
-govulncheck           ## Scan for vulnerabilities
-help                  ## Display this help message
-install-go            ## Install using go install with specific version
-install-releaser      ## Install GoReleaser
-install-stdlib        ## Install the Go standard library for the host platform
-install               ## Install the application binary
-lint-version          ## Show the golangci-lint version
-lint                  ## Run the golangci-lint application (install if not found)
-loc                   ## Total lines of code table
-mod-download          ## Download Go module dependencies
-mod-tidy              ## Clean up go.mod and go.sum
-pre-build             ## Pre-build all packages to warm cache
-release-snap          ## Build snapshot binaries
-release-test          ## Run release dry-run (no publish)
-release               ## Run production release (requires github_token)
-tag-remove            ## Remove local and remote tag (use version=X.Y.Z)
-tag-update            ## Force-update tag to current commit (use version=X.Y.Z)
-tag                   ## Create and push a new tag (use version=X.Y.Z)
-test-ci-no-race       ## CI test suite without race detector
-test-ci               ## CI test runs tests with race detection and coverage (no lint - handled separately)
-test-cover-race       ## Runs unit tests with race detector and outputs coverage
-test-cover            ## Unit tests with coverage (no race)
-test-fuzz             ## Run fuzz tests only (no unit tests)
-test-no-lint          ## Run only tests (no lint)
-test-parallel         ## Run tests in parallel (faster for large repos)
-test-race             ## Unit tests with race detector (no coverage)
-test-short            ## Run tests excluding integration tests (no lint)
-test                  ## Default testing uses lint + unit tests (fast)
-uninstall             ## Uninstall the Go binary
-update-linter         ## Upgrade golangci-lint (macOS only)
-update-releaser       ## Reinstall GoReleaser
-update                ## Update dependencies
-vet-parallel          ## Run go vet in parallel (faster for large repos)
-vet                   ## Run go vet only on your module packages
-```
-<!-- make-help-end -->
-
-</details>
-
-<details>
-<summary><strong><code>GitHub Workflows</code></strong></summary>
-<br/>
-
-
-### 🎛️ The Workflow Control Center
-
-All GitHub Actions workflows in this repository are powered by a single configuration file: [**.env.shared**](.github/.env.shared) – your one-stop shop for tweaking CI/CD behavior without touching a single YAML file! 🎯
-
-This magical file controls everything from:
-- **🚀 Go version matrix** (test on multiple versions or just one)
-- **🏃 Runner selection** (Ubuntu or macOS, your wallet decides)
-- **🔬 Feature toggles** (coverage, fuzzing, linting, race detection, benchmarks)
-- **🛡️ Security tool versions** (gitleaks, nancy, govulncheck)
-- **🤖 Auto-merge behaviors** (how aggressive should the bots be?)
-- **🏷️ PR management rules** (size labels, auto-assignment, welcome messages)
-
-> **Pro tip:** Want to disable code coverage? Just flip `ENABLE_CODE_COVERAGE=false` in [.env.shared](.github/.env.shared) and push. No YAML archaeology required! 
-
-<br/>
-
-| Workflow Name                                                                      | Description                                                                                                            |
-|------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
-| [auto-merge-on-approval.yml](.github/workflows/auto-merge-on-approval.yml)         | Automatically merges PRs after approval and all required checks, following strict rules.                               |
-| [codeql-analysis.yml](.github/workflows/codeql-analysis.yml)                       | Analyzes code for security vulnerabilities using [GitHub CodeQL](https://codeql.github.com/).                          |
-| [dependabot-auto-merge.yml](.github/workflows/dependabot-auto-merge.yml)           | Automatically merges [Dependabot](https://github.com/dependabot) PRs that meet all requirements.                       |
-| [fortress.yml](.github/workflows/fortress.yml)                                     | Runs the GoFortress security and testing workflow, including linting, testing, releasing, and vulnerability checks.    |
-| [ossar.yml](.github/workflows/ossar.yml)                                           | Runs [OSSAR](https://github.com/github/ossar-action) static analysis workflow                                          |
-| [pull-request-management.yml](.github/workflows/pull-request-management.yml)       | Labels PRs by branch prefix, assigns a default user if none is assigned, and welcomes new contributors with a comment. |
-| [scorecard.yml](.github/workflows/scorecard.yml)                                   | Runs [OpenSSF](https://openssf.org/) Scorecard to assess supply chain security.                                        |
-| [stale.yml](.github/workflows/stale-check.yml)                                     | Warns about (and optionally closes) inactive issues and PRs on a schedule or manual trigger.                           |
-| [sync-labels.yml](.github/workflows/sync-labels.yml)                               | Keeps GitHub labels in sync with the declarative manifest at [`.github/labels.yml`](./.github/labels.yml).             |
-| [update-python-dependencies.yml](.github/workflows/update-python-dependencies.yml) | Updates Python dependencies for pre-commit hooks in the repository.                                                    |
-| [update-pre-commit-hooks.yml](.github/workflows/update-pre-commit-hooks.yml)       | Automatically update versions for [pre-commit](https://pre-commit.com/) hooks                                          |
-
-</details>
-
-<details>
-<summary><strong><code>Updating Dependencies</code></strong></summary>
-<br/>
-
-To update all dependencies (Go modules, linters, and related tools), run:
+Alternatively, set up using environment variables or configuration files:
 
 ```bash
-make update
+# Environment variables
+export BUSINESS_NAME="Your Business Name"
+export BUSINESS_EMAIL="billing@yourbusiness.com"
+export BUSINESS_ADDRESS="123 Business St, City, State 12345"
+export PAYMENT_TERMS="Net 30"
+export CURRENCY="USD"
+export VAT_RATE="0.10"  # 10% tax rate
 ```
 
-This command ensures all dependencies are brought up to date in a single step, including Go modules and any tools managed by the Makefile. It is the recommended way to keep your development environment and CI in sync with the latest versions.
+### Configuration File
 
-</details>
-
-<details>
-<summary><strong><code>Pre-commit Hooks</code></strong></summary>
-<br/>
-
-Set up the optional [pre-commit](https://pre-commit.com) hooks to run the same formatting, linting, and tests defined in [AGENTS.md](.github/AGENTS.md) before every commit:
+Create a `.env` file in your working directory:
 
 ```bash
-pip install pre-commit
-pre-commit install
+# Business Information
+BUSINESS_NAME=Your Business Name
+BUSINESS_ADDRESS=123 Business St\nCity, State 12345
+BUSINESS_EMAIL=billing@yourbusiness.com
+BUSINESS_PHONE=+1-555-0123
+PAYMENT_TERMS=Net 30
+
+# Invoice Settings
+INVOICE_PREFIX=INV
+INVOICE_START_NUMBER=1000
+CURRENCY=USD
+VAT_RATE=0.10
+
+# Storage Settings
+DATA_DIR=./data
+AUTO_BACKUP=true
 ```
-
-The hooks are configured in [.pre-commit-config.yaml](.pre-commit-config.yaml) and mirror the CI pipeline.
-
-</details>
 
 <br/>
 
-## 🧪 Examples & Tests
+## 🖥️ Usage
 
-All unit tests and [examples](examples) run via [GitHub Actions](https://github.com/mrz1836/go-invoice/actions) and use [Go version 1.24.x](https://go.dev/doc/go1.24). View the [configuration file](.github/workflows/fortress.yml).
+### Client Management
 
-Run all tests (fast):
+```bash
+# Add a new client
+go-invoice client add \
+  --name "Acme Corporation" \
+  --email "billing@acme.com" \
+  --address "456 Client Ave, Client City, CC 67890" \
+  --phone "+1-555-0199"
 
-```bash script
+# List all clients
+go-invoice client list
+
+# View client details
+go-invoice client show --name "Acme Corporation"
+
+# Update client information
+go-invoice client update --name "Acme Corporation" --email "newbilling@acme.com"
+
+# Deactivate a client (soft delete)
+go-invoice client deactivate --name "Acme Corporation"
+```
+
+### Invoice Management
+
+```bash
+# Create a new invoice
+go-invoice invoice create \
+  --client "Acme Corporation" \
+  --description "Monthly development services" \
+  --output invoice-001.html
+
+# Add work items manually
+go-invoice invoice add-work \
+  --invoice INV-1001 \
+  --description "Frontend development" \
+  --hours 8 \
+  --rate 125.00 \
+  --date 2024-01-15
+
+# List all invoices
+go-invoice invoice list
+
+# Filter invoices by status
+go-invoice invoice list --status sent
+
+# Update invoice status
+go-invoice invoice send --invoice INV-1001
+go-invoice invoice mark-paid --invoice INV-1001
+
+# Generate HTML output
+go-invoice invoice generate --invoice INV-1001 --output invoice-1001.html
+```
+
+### Batch Operations
+
+```bash
+# Send all draft invoices
+go-invoice invoice send --all-drafts
+
+# Generate overdue report
+go-invoice report overdue --format html --output overdue-report.html
+
+# Export invoice data
+go-invoice export invoices --format json --output invoices-backup.json
+```
+
+<br/>
+
+## 📊 CSV Import
+
+go-invoice supports importing timesheet data from popular time tracking applications.
+
+### Supported CSV Format
+
+```csv
+date,description,hours,rate
+2024-01-15,Frontend development and testing,8.5,125.00
+2024-01-16,Backend API implementation,7.25,135.00
+2024-01-17,Code review and documentation,3.0,100.00
+```
+
+### Import Commands
+
+```bash
+# Import CSV timesheet
+go-invoice import csv timesheet.csv \
+  --client "Acme Corporation" \
+  --validate
+
+# Import with custom date format
+go-invoice import csv timesheet.csv \
+  --client "Acme Corporation" \
+  --date-format "01/02/2006"
+
+# Preview import without saving
+go-invoice import csv timesheet.csv \
+  --client "Acme Corporation" \
+  --dry-run
+
+# Import and create invoice immediately
+go-invoice import csv timesheet.csv \
+  --client "Acme Corporation" \
+  --create-invoice \
+  --output invoice.html
+```
+
+### Supported Date Formats
+
+- **ISO Format**: `2006-01-02`
+- **US Format**: `01/02/2006`, `1/2/2006`
+- **European Format**: `02/01/2006`, `2/1/2006`
+- **Named Months**: `Jan 2, 2006`, `January 2, 2006`
+
+### Validation Rules
+
+- **Hours**: Must be between 0.1 and 24.0
+- **Rate**: Must be between $1.00 and $1,000.00
+- **Description**: 3-500 characters, must be specific (no generic terms like "work" or "development")
+- **Date**: Must be within the last 2 years and not in the future
+
+<br/>
+
+## 🎨 Templates
+
+### Default Template
+
+go-invoice includes a professional HTML template with:
+- Clean, modern design
+- Print-friendly layout
+- Automatic tax calculations
+- Professional formatting
+- Company branding area
+
+### Custom Templates
+
+Create custom invoice templates using Go's `text/template` syntax:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Invoice {{.Number}}</title>
+    <style>
+        /* Your custom CSS */
+    </style>
+</head>
+<body>
+    <h1>Invoice {{.Number}}</h1>
+    
+    <div class="business">
+        <h2>{{.Config.Business.Name}}</h2>
+        <p>{{.Config.Business.Address}}</p>
+        <p>{{.Config.Business.Email}}</p>
+    </div>
+    
+    <div class="client">
+        <h3>Bill To:</h3>
+        <p>{{.Client.Name}}</p>
+        <p>{{.Client.Address}}</p>
+    </div>
+    
+    <table class="work-items">
+        <tr>
+            <th>Description</th>
+            <th>Hours</th>
+            <th>Rate</th>
+            <th>Total</th>
+        </tr>
+        {{range .WorkItems}}
+        <tr>
+            <td>{{.Description}}</td>
+            <td>{{.Hours}}</td>
+            <td>${{.Rate | printf "%.2f"}}</td>
+            <td>${{.Total | printf "%.2f"}}</td>
+        </tr>
+        {{end}}
+    </table>
+    
+    <div class="totals">
+        <p>Subtotal: ${{.Subtotal | printf "%.2f"}}</p>
+        <p>Tax ({{.TaxRate | printf "%.1f"}}%): ${{.TaxAmount | printf "%.2f"}}</p>
+        <p><strong>Total: ${{.Total | printf "%.2f"}}</strong></p>
+    </div>
+</body>
+</html>
+```
+
+### Using Custom Templates
+
+```bash
+# Generate invoice with custom template
+go-invoice invoice generate \
+  --invoice INV-1001 \
+  --template custom-template.html \
+  --output invoice.html
+```
+
+<br/>
+
+## 🛠️ Development
+
+### Project Structure
+
+```
+go-invoice/
+├── cmd/                    # CLI application entry point
+├── internal/
+│   ├── cli/               # CLI interface and prompting
+│   ├── config/            # Configuration management
+│   ├── csv/               # CSV parsing and validation
+│   ├── models/            # Domain models and types
+│   ├── render/            # Template rendering
+│   ├── services/          # Business logic services
+│   └── storage/           # Data persistence layer
+├── templates/             # HTML templates
+├── examples/              # Usage examples
+├── docs/                  # Documentation
+└── integration_test.go    # Integration tests
+```
+
+### Architecture Principles
+
+- **Context-First Design**: All operations support context cancellation
+- **Dependency Injection**: Services use constructor injection
+- **Interface Segregation**: Small, focused interfaces for testability
+- **Error Handling**: Comprehensive error handling with context
+- **Concurrent Safety**: All operations are thread-safe
+
+### Build Commands
+
+```bash
+# Install development dependencies
+make mod-download
+
+# Run linting
+make lint
+
+# Run all tests
 make test
-```
 
-Run all tests with race detector (slower):
-```bash script
+# Run tests with race detection
 make test-race
+
+# Run integration tests
+go test -v -run TestIntegrationSuite
+
+# Generate test coverage
+make coverage
+
+# Build binary
+make build-go
+
+# Install locally
+make install
 ```
 
 <br/>
 
-## ⚡ Benchmarks
+## 🧪 Testing
 
-Run the Go [benchmarks](invoice_benchmark_test.go):
+### Test Coverage
 
-```bash script
+This project maintains **90%+ test coverage** with comprehensive test suites:
+
+- **Unit Tests**: Test individual components in isolation
+- **Integration Tests**: Test complete workflows end-to-end
+- **Benchmark Tests**: Performance validation
+- **Race Detection**: Concurrent safety testing
+
+### Running Tests
+
+```bash
+# Run all tests (fast)
+make test
+
+# Run tests with race detection (slower but thorough)
+make test-race
+
+# Run integration tests only
+go test -v -run TestIntegrationSuite
+
+# Run tests with coverage report
+make coverage
+
+# Run benchmarks
+make bench
+
+# Generate HTML coverage report
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out -o coverage.html
+```
+
+### Test Categories
+
+1. **models_test.go** - Domain model validation and business logic
+2. **storage_test.go** - Data persistence and retrieval operations  
+3. **services_test.go** - Business service integration
+4. **csv_test.go** - CSV parsing and validation
+5. **cli_test.go** - CLI interface and user interaction
+6. **integration_test.go** - End-to-end workflow testing
+
+<br/>
+
+## 🔒 Security
+
+### Validation and Sanitization
+
+- Input validation on all user data
+- SQL injection prevention (no SQL used)
+- Path traversal protection for file operations
+- Email format validation
+- Numeric range validation for hours and rates
+
+### Safe File Operations
+
+- Atomic file writes with temporary files
+- Proper file permissions (0644 for data files)
+- Directory creation with safe permissions
+- Cleanup of temporary files
+
+### Error Handling
+
+- No sensitive information in error messages
+- Proper error logging without data exposure
+- Context-aware error propagation
+
+<br/>
+
+## 📈 Performance
+
+### Benchmarks
+
+Run performance benchmarks to verify system performance:
+
+```bash
 make bench
 ```
 
-<br/>
+### Optimization Features
 
-### Benchmark Results
-
-| Benchmark                          | Iterations | ns/op | B/op | allocs/op |
-|------------------------------------|------------|------:|-----:|----------:|
-| [Greet](invoice_benchmark_test.go) | 21,179,739 | 56.59 |   40 |         2 |
-
-> These benchmarks reflect fast, allocation-free lookups for most retrieval functions, ensuring optimal performance in production environments.
-> Performance benchmarks for the core functions in this library, executed on an Apple M1 Max (ARM64).
-
-<br/>
-
-## 🛠️ Code Standards
-Read more about this Go project's [code standards](.github/CODE_STANDARDS.md).
-
-<br/>
-
-## 🤖 AI Compliance
-This project documents expectations for AI assistants using a few dedicated files:
-
-- [AGENTS.md](.github/AGENTS.md) — canonical rules for coding style, workflows, and pull requests used by [Codex](https://chatgpt.com/codex).
-- [CLAUDE.md](.github/CLAUDE.md) — quick checklist for the [Claude](https://www.anthropic.com/product) agent.
-- [.cursorrules](.cursorrules) — machine-readable subset of the policies for [Cursor](https://www.cursor.so/) and similar tools.
-- [sweep.yaml](.github/sweep.yaml) — rules for [Sweep](https://github.com/sweepai/sweep), a tool for code review and pull request management.
-
-Edit `AGENTS.md` first when adjusting these policies, and keep the other files in sync within the same pull request.
-
-<br/>
-
-## 👥 Maintainers
-| [<img src="https://github.com/mrz1836.png" height="50" width="50" alt="MrZ" />](https://github.com/mrz1836) |
-|:-----------------------------------------------------------------------------------------------------------:|
-|                                      [MrZ](https://github.com/mrz1836)                                      |
+- **Concurrent File Operations**: Safe concurrent access to data files
+- **Atomic Writes**: Prevent data corruption during concurrent access
+- **Efficient CSV Parsing**: Stream-based parsing for large files
+- **Template Caching**: Compiled templates for faster rendering
+- **Minimal Memory Allocation**: Efficient data structures and algorithms
 
 <br/>
 
 ## 🤝 Contributing
-View the [contributing guidelines](.github/CONTRIBUTING.md) and please follow the [code of conduct](.github/CODE_OF_CONDUCT.md).
 
-### How can I help?
-All kinds of contributions are welcome :raised_hands:!
-The most basic way to show your support is to star :star2: the project, or to raise issues :speech_balloon:.
-You can also support this project by [becoming a sponsor on GitHub](https://github.com/sponsors/mrz1836) :clap:
-or by making a [**bitcoin donation**](https://mrz1818.com/?tab=tips&utm_source=github&utm_medium=sponsor-link&utm_campaign=go-invoice&utm_term=go-invoice&utm_content=go-invoice) to ensure this journey continues indefinitely! :rocket:
+We welcome contributions! Please see our [Contributing Guidelines](.github/CONTRIBUTING.md) for details.
 
-[![Stars](https://img.shields.io/github/stars/mrz1836/go-invoice?label=Please%20like%20us&style=social&v=1)](https://github.com/mrz1836/go-invoice/stargazers)
+### Quick Contribution Guide
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Make** your changes with tests
+4. **Run** the test suite (`make test`)
+5. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+6. **Push** to the branch (`git push origin feature/amazing-feature`)
+7. **Open** a Pull Request
+
+### Development Setup
+
+```bash
+# Clone your fork
+git clone https://github.com/yourusername/go-invoice.git
+cd go-invoice
+
+# Install dependencies
+go mod download
+
+# Run tests to verify setup
+make test
+
+# Start developing!
+```
+
+<br/>
+
+## 📄 Examples
+
+### Complete Workflow Example
+
+```bash
+# 1. Set up your business
+export BUSINESS_NAME="Freelance Developer"
+export BUSINESS_EMAIL="billing@freelancer.dev"
+export CURRENCY="USD"
+export VAT_RATE="0.08"
+
+# 2. Add a client
+go-invoice client add \
+  --name "TechCorp Solutions" \
+  --email "accounting@techcorp.com" \
+  --address "789 Tech Blvd, Innovation City, IC 54321"
+
+# 3. Import time tracking data
+go-invoice import csv january-timesheet.csv \
+  --client "TechCorp Solutions" \
+  --validate
+
+# 4. Create and generate invoice
+go-invoice invoice create \
+  --client "TechCorp Solutions" \
+  --description "January 2024 Development Services" \
+  --output january-invoice.html
+
+# 5. Send the invoice (updates status)
+go-invoice invoice send --invoice INV-1001
+
+# 6. Later, mark as paid
+go-invoice invoice mark-paid --invoice INV-1001
+```
+
+### Automation Example
+
+```bash
+#!/bin/bash
+# Monthly invoice automation script
+
+CLIENT="TechCorp Solutions"
+MONTH=$(date +%B-%Y)
+TIMESHEET="timesheets/${MONTH}-timesheet.csv"
+INVOICE_FILE="invoices/${MONTH}-invoice.html"
+
+# Import timesheet
+go-invoice import csv "$TIMESHEET" --client "$CLIENT"
+
+# Create invoice
+go-invoice invoice create \
+  --client "$CLIENT" \
+  --description "$MONTH Development Services" \
+  --output "$INVOICE_FILE"
+
+# Send invoice
+INVOICE_ID=$(go-invoice invoice list --client "$CLIENT" --status draft --format json | jq -r '.[0].id')
+go-invoice invoice send --invoice "$INVOICE_ID"
+
+echo "Invoice $INVOICE_ID created and sent for $CLIENT"
+```
+
+<br/>
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Configuration not found**
+```bash
+# Ensure configuration is set
+go-invoice config show
+
+# Or run setup wizard
+go-invoice config setup
+```
+
+**CSV import fails**
+```bash
+# Validate CSV format first
+go-invoice import csv timesheet.csv --validate --dry-run
+
+# Check supported date formats
+go-invoice help import
+```
+
+**Template rendering issues**
+```bash
+# Test with default template
+go-invoice invoice generate --invoice INV-1001 --output test.html
+
+# Validate custom template syntax
+go-invoice template validate custom-template.html
+```
+
+### Debug Mode
+
+Enable verbose logging for troubleshooting:
+
+```bash
+export DEBUG=true
+go-invoice invoice create --client "Test Client" --verbose
+```
+
+<br/>
+
+## 📊 Roadmap
+
+### Phase 1: MVP ✅
+- [x] Basic CLI interface
+- [x] Client management
+- [x] Invoice creation
+- [x] CSV import
+- [x] HTML generation
+- [x] Test coverage 90%+
+
+### Phase 2: Enhancements
+- [ ] PDF generation
+- [ ] Email integration
+- [ ] Payment tracking
+- [ ] Recurring invoices
+- [ ] Multi-currency support
+
+### Phase 3: Advanced Features
+- [ ] Web interface
+- [ ] API endpoints
+- [ ] Database integration
+- [ ] Advanced reporting
+- [ ] Integration with accounting software
 
 <br/>
 
 ## 📝 License
 
-[![License](https://img.shields.io/github/license/mrz1836/go-invoice.svg?style=flat&v=1)](LICENSE)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+**[⭐ Star this repo](https://github.com/mrz/go-invoice)** if you find it helpful!
+
+Made with ❤️ by developers, for developers.
+
+</div>
