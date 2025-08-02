@@ -62,7 +62,6 @@
       "gochecknoglobals",
 			"gochecknoinits",
 			"gochecksumtype",
-			"gocognit",
 			"goconst",
 			"gocyclo",
 			"godox",
@@ -104,6 +103,7 @@
 		],
 		"disable": [
 			"gocritic",
+      "gocognit",
 			"godot",
       "funcorder",
       "wsl_v5",
