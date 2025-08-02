@@ -80,6 +80,7 @@ Key features:
 	rootCmd.AddCommand(a.buildConfigCommand())
 	rootCmd.AddCommand(a.buildInitCommand())
 	rootCmd.AddCommand(a.buildImportCommand())
+	rootCmd.AddCommand(a.buildGenerateCommand())
 
 	return rootCmd
 }
