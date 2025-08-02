@@ -356,94 +356,94 @@ func (a *App) createParseOptions(format string) csv.ParseOptions {
 
 func (a *App) displayImportResult(result *csv.ImportResult, isDryRun bool) {
 	if isDryRun {
-		fmt.Println("🔍 Dry Run Results")
-		fmt.Println("==================")
+		a.logger.Println("🔍 Dry Run Results")
+		a.logger.Println("==================")
 	} else {
-		fmt.Println("✅ Import Results")
-		fmt.Println("=================")
+		a.logger.Println("✅ Import Results")
+		a.logger.Println("=================")
 	}
 
-	fmt.Printf("Work Items: %d\n", result.WorkItemsAdded)
-	fmt.Printf("Total Amount: $%.2f\n", result.TotalAmount)
+	a.logger.Printf("Work Items: %d\n", result.WorkItemsAdded)
+	a.logger.Printf("Total Amount: $%.2f\n", result.TotalAmount)
 
 	if result.InvoiceID != "" {
-		fmt.Printf("Invoice ID: %s\n", result.InvoiceID)
+		a.logger.Printf("Invoice ID: %s\n", result.InvoiceID)
 	}
 
 	// Display parsing statistics
 	if result.ParseResult != nil {
-		fmt.Printf("\nParsing Details:\n")
-		fmt.Printf("  Total Rows: %d\n", result.ParseResult.TotalRows)
-		fmt.Printf("  Success Rows: %d\n", result.ParseResult.SuccessRows)
+		a.logger.Printf("\nParsing Details:\n")
+		a.logger.Printf("  Total Rows: %d\n", result.ParseResult.TotalRows)
+		a.logger.Printf("  Success Rows: %d\n", result.ParseResult.SuccessRows)
 		if result.ParseResult.ErrorRows > 0 {
-			fmt.Printf("  Error Rows: %d\n", result.ParseResult.ErrorRows)
+			a.logger.Printf("  Error Rows: %d\n", result.ParseResult.ErrorRows)
 		}
 	}
 
 	// Display warnings
 	if len(result.Warnings) > 0 {
-		fmt.Printf("\n⚠️  Warnings:\n")
+		a.logger.Printf("\n⚠️  Warnings:\n")
 		for _, warning := range result.Warnings {
-			fmt.Printf("  - %s\n", warning.Message)
+			a.logger.Printf("  - %s\n", warning.Message)
 		}
 	}
 
 	// Display errors
 	if result.ParseResult != nil && len(result.ParseResult.Errors) > 0 {
-		fmt.Printf("\n❌ Errors:\n")
+		a.logger.Printf("\n❌ Errors:\n")
 		for _, parseError := range result.ParseResult.Errors {
-			fmt.Printf("  Line %d: %s\n", parseError.Line, parseError.Message)
+			a.logger.Printf("  Line %d: %s\n", parseError.Line, parseError.Message)
 		}
 	}
 
-	fmt.Println()
+	a.logger.Println("")
 }
 
 func (a *App) displayValidationResult(result *csv.ValidationResult) {
 	if result.Valid {
-		fmt.Println("✅ Validation Passed")
+		a.logger.Println("✅ Validation Passed")
 	} else {
-		fmt.Println("❌ Validation Failed")
+		a.logger.Println("❌ Validation Failed")
 	}
-	fmt.Println("====================")
+	a.logger.Println("====================")
 
 	if result.ParseResult != nil {
-		fmt.Printf("Work Items: %d\n", len(result.ParseResult.WorkItems))
-		fmt.Printf("Total Rows: %d\n", result.ParseResult.TotalRows)
-		fmt.Printf("Success Rows: %d\n", result.ParseResult.SuccessRows)
+		a.logger.Printf("Work Items: %d\n", len(result.ParseResult.WorkItems))
+		a.logger.Printf("Total Rows: %d\n", result.ParseResult.TotalRows)
+		a.logger.Printf("Success Rows: %d\n", result.ParseResult.SuccessRows)
 		if result.ParseResult.ErrorRows > 0 {
-			fmt.Printf("Error Rows: %d\n", result.ParseResult.ErrorRows)
+			a.logger.Printf("Error Rows: %d\n", result.ParseResult.ErrorRows)
 		}
 	}
 
-	fmt.Printf("Estimated Total: $%.2f\n", result.EstimatedTotal)
+	a.logger.Printf("Estimated Total: $%.2f\n", result.EstimatedTotal)
 
 	// Display warnings
 	if len(result.Warnings) > 0 {
-		fmt.Printf("\n⚠️  Warnings:\n")
+		a.logger.Printf("\n⚠️  Warnings:\n")
 
 		for _, warning := range result.Warnings {
-			fmt.Printf("  - %s\n", warning.Message)
+			a.logger.Printf("  - %s\n", warning.Message)
 		}
 	}
 
 	// Display suggestions
 	if len(result.Suggestions) > 0 {
-		fmt.Printf("\n💡 Suggestions:\n")
+		a.logger.Printf("\n💡 Suggestions:\n")
 		for _, suggestion := range result.Suggestions {
-			fmt.Printf("  - %s\n", suggestion)
+			a.logger.Printf("  - %s\n", suggestion)
 		}
 	}
 
 	// Display errors
 	if result.ParseResult != nil && len(result.ParseResult.Errors) > 0 {
-		fmt.Printf("\n❌ Errors:\n")
+		a.logger.Printf("\n❌ Errors:\n")
 		for _, parseError := range result.ParseResult.Errors {
-			fmt.Printf("  Line %d: %s\n", parseError.Line, parseError.Message)
+			a.logger.Printf("  Line %d: %s\n", parseError.Line, parseError.Message)
 		}
 	}
 
-	fmt.Println()
+	a.logger.Println("")
 }
 
 // Option types for import commands

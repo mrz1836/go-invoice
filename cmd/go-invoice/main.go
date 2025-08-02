@@ -122,7 +122,7 @@ func (a *App) buildConfigValidateCommand() *cobra.Command {
 
 			a.logger.Info("configuration is valid", "business", config.Business.Name,
 				"currency", config.Invoice.Currency, "prefix", config.Invoice.Prefix)
-			fmt.Println("✅ Configuration is valid")
+			a.logger.Println("✅ Configuration is valid")
 			return nil
 		},
 	}
@@ -167,7 +167,7 @@ This command must be run before using other invoice management commands.`,
 			configPath, _ := cmd.Flags().GetString("config")
 
 			a.logger.Info("initializing storage system")
-			fmt.Println("🔧 Initializing go-invoice storage...")
+			a.logger.Println("🔧 Initializing go-invoice storage...")
 
 			// Load configuration to get storage settings
 			config, err := a.configService.LoadConfig(ctx, configPath)
@@ -177,18 +177,18 @@ This command must be run before using other invoice management commands.`,
 
 			// Initialize storage system
 			if err := a.initializeStorage(ctx, config); err != nil {
-				fmt.Printf("❌ Storage initialization failed: %v\n", err)
+				a.logger.Printf("❌ Storage initialization failed: %v\n", err)
 				return err
 			}
 
-			fmt.Println("✅ Storage system initialized successfully!")
-			fmt.Printf("   Data directory: %s\n", config.Storage.DataDir)
-			fmt.Printf("   Backup directory: %s\n", config.Storage.BackupDir)
-			fmt.Println()
-			fmt.Println("💡 Next steps:")
-			fmt.Println("   • Create clients with: go-invoice client create")
-			fmt.Println("   • Create invoices with: go-invoice invoice create")
-			fmt.Println("   • View help with: go-invoice --help")
+			a.logger.Println("✅ Storage system initialized successfully!")
+			a.logger.Printf("   Data directory: %s\n", config.Storage.DataDir)
+			a.logger.Printf("   Backup directory: %s\n", config.Storage.BackupDir)
+			a.logger.Println("")
+			a.logger.Println("💡 Next steps:")
+			a.logger.Println("   • Create clients with: go-invoice client create")
+			a.logger.Println("   • Create invoices with: go-invoice invoice create")
+			a.logger.Println("   • View help with: go-invoice --help")
 
 			return nil
 		},
@@ -205,7 +205,7 @@ func (a *App) initializeStorage(ctx context.Context, config *config.Config) erro
 		return fmt.Errorf("failed to check initialization status: %w", err)
 	} else if initialized {
 		a.logger.Info("storage already initialized")
-		fmt.Println("⚠️  Storage is already initialized")
+		a.logger.Println("⚠️  Storage is already initialized")
 		return nil
 	}
 
@@ -230,41 +230,41 @@ func (a *App) createJSONStorage(dataDir string) storage.StorageInitializer {
 
 // displayConfig prints the configuration in a user-friendly format
 func (a *App) displayConfig(config *config.Config) {
-	fmt.Println("📋 Current Configuration")
-	fmt.Println("========================")
-	fmt.Println()
+	a.logger.Println("📋 Current Configuration")
+	a.logger.Println("========================")
+	a.logger.Println("")
 
-	fmt.Println("🏢 Business Information:")
-	fmt.Printf("  Name: %s\n", config.Business.Name)
-	fmt.Printf("  Email: %s\n", config.Business.Email)
-	fmt.Printf("  Address: %s\n", config.Business.Address)
+	a.logger.Println("🏢 Business Information:")
+	a.logger.Printf("  Name: %s\n", config.Business.Name)
+	a.logger.Printf("  Email: %s\n", config.Business.Email)
+	a.logger.Printf("  Address: %s\n", config.Business.Address)
 	if config.Business.Phone != "" {
-		fmt.Printf("  Phone: %s\n", config.Business.Phone)
+		a.logger.Printf("  Phone: %s\n", config.Business.Phone)
 	}
 	if config.Business.Website != "" {
-		fmt.Printf("  Website: %s\n", config.Business.Website)
+		a.logger.Printf("  Website: %s\n", config.Business.Website)
 	}
-	fmt.Printf("  Payment Terms: %s\n", config.Business.PaymentTerms)
-	fmt.Println()
+	a.logger.Printf("  Payment Terms: %s\n", config.Business.PaymentTerms)
+	a.logger.Println("")
 
-	fmt.Println("🧾 Invoice Settings:")
-	fmt.Printf("  Prefix: %s\n", config.Invoice.Prefix)
-	fmt.Printf("  Start Number: %d\n", config.Invoice.StartNumber)
-	fmt.Printf("  Currency: %s\n", config.Invoice.Currency)
-	fmt.Printf("  Default Due Days: %d\n", config.Invoice.DefaultDueDays)
+	a.logger.Println("🧾 Invoice Settings:")
+	a.logger.Printf("  Prefix: %s\n", config.Invoice.Prefix)
+	a.logger.Printf("  Start Number: %d\n", config.Invoice.StartNumber)
+	a.logger.Printf("  Currency: %s\n", config.Invoice.Currency)
+	a.logger.Printf("  Default Due Days: %d\n", config.Invoice.DefaultDueDays)
 	if config.Invoice.VATRate > 0 {
-		fmt.Printf("  VAT Rate: %.1f%%\n", config.Invoice.VATRate*100)
+		a.logger.Printf("  VAT Rate: %.1f%%\n", config.Invoice.VATRate*100)
 	}
-	fmt.Println()
+	a.logger.Println("")
 
-	fmt.Println("💾 Storage Settings:")
-	fmt.Printf("  Data Directory: %s\n", config.Storage.DataDir)
-	fmt.Printf("  Backup Directory: %s\n", config.Storage.BackupDir)
-	fmt.Printf("  Auto Backup: %v\n", config.Storage.AutoBackup)
+	a.logger.Println("💾 Storage Settings:")
+	a.logger.Printf("  Data Directory: %s\n", config.Storage.DataDir)
+	a.logger.Printf("  Backup Directory: %s\n", config.Storage.BackupDir)
+	a.logger.Printf("  Auto Backup: %v\n", config.Storage.AutoBackup)
 	if config.Storage.AutoBackup {
-		fmt.Printf("  Backup Interval: %v\n", config.Storage.BackupInterval)
+		a.logger.Printf("  Backup Interval: %v\n", config.Storage.BackupInterval)
 	}
-	fmt.Println()
+	a.logger.Println("")
 }
 
 // Execute runs the application with context cancellation support

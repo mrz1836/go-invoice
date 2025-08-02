@@ -40,6 +40,21 @@ func (l *SimpleLogger) Fatal(msg string, fields ...any) {
 	os.Exit(1)
 }
 
+// Print prints a message to stdout without any formatting
+func (l *SimpleLogger) Print(msg string) {
+	fmt.Print(msg) //nolint:forbidigo // Console output for CLI
+}
+
+// Printf prints a formatted message to stdout
+func (l *SimpleLogger) Printf(format string, args ...any) {
+	fmt.Printf(format, args...) //nolint:forbidigo // Console output for CLI
+}
+
+// Println prints a message to stdout with a newline
+func (l *SimpleLogger) Println(msg string) {
+	fmt.Println(msg) //nolint:forbidigo // Console output for CLI
+}
+
 // formatFields formats key-value pairs for logging
 func (l *SimpleLogger) formatFields(fields ...any) string {
 	if len(fields) == 0 {

@@ -39,9 +39,9 @@ func (p *Prompter) PromptString(ctx context.Context, prompt string, defaultValue
 	}
 
 	if defaultValue != "" {
-		fmt.Printf("%s [%s]: ", prompt, defaultValue)
+		p.logger.Printf("%s [%s]: ", prompt, defaultValue)
 	} else {
-		fmt.Printf("%s: ", prompt)
+		p.logger.Printf("%s: ", prompt)
 	}
 
 	// Read input with context cancellation support
@@ -86,7 +86,7 @@ func (p *Prompter) PromptStringRequired(ctx context.Context, prompt string) (str
 			return value, nil
 		}
 
-		fmt.Println("❌ This field is required. Please provide a value.")
+		p.logger.Println("❌ This field is required. Please provide a value.")
 	}
 }
 
@@ -112,7 +112,7 @@ func (p *Prompter) PromptInt(ctx context.Context, prompt string, defaultValue in
 			return value, nil
 		}
 
-		fmt.Printf("❌ Invalid number. Please enter a valid integer.\n")
+		p.logger.Printf("❌ Invalid number. Please enter a valid integer.\n")
 	}
 }
 
@@ -138,7 +138,7 @@ func (p *Prompter) PromptFloat(ctx context.Context, prompt string, defaultValue 
 			return value, nil
 		}
 
-		fmt.Printf("❌ Invalid number. Please enter a valid decimal number.\n")
+		p.logger.Printf("❌ Invalid number. Please enter a valid decimal number.\n")
 	}
 }
 
@@ -162,7 +162,7 @@ func (p *Prompter) PromptBool(ctx context.Context, prompt string, defaultValue b
 		case "no", "n", "false", "0":
 			return false, nil
 		default:
-			fmt.Printf("❌ Please answer 'yes' or 'no'.\n")
+			p.logger.Printf("❌ Please answer 'yes' or 'no'.\n")
 		}
 	}
 }
@@ -173,12 +173,12 @@ func (p *Prompter) PromptSelect(ctx context.Context, prompt string, options []st
 		return -1, "", ErrNoOptionsProvided
 	}
 
-	fmt.Println(prompt)
+	p.logger.Println(prompt)
 	for i, option := range options {
 		if i == defaultIndex {
-			fmt.Printf("  %d. %s (default)\n", i+1, option)
+			p.logger.Printf("  %d. %s (default)\n", i+1, option)
 		} else {
-			fmt.Printf("  %d. %s\n", i+1, option)
+			p.logger.Printf("  %d. %s\n", i+1, option)
 		}
 	}
 
@@ -198,7 +198,7 @@ func (p *Prompter) PromptSelect(ctx context.Context, prompt string, options []st
 			return index - 1, options[index-1], nil
 		}
 
-		fmt.Printf("❌ Please select a valid option (1-%d).\n", len(options))
+		p.logger.Printf("❌ Please select a valid option (1-%d).\n", len(options))
 	}
 }
 
@@ -208,10 +208,10 @@ func (p *Prompter) PromptMultiSelect(ctx context.Context, prompt string, options
 		return nil, nil, ErrNoOptionsProvided
 	}
 
-	fmt.Println(prompt)
-	fmt.Println("(Enter numbers separated by commas, or 'all' for all options)")
+	p.logger.Println(prompt)
+	p.logger.Println("(Enter numbers separated by commas, or 'all' for all options)")
 	for i, option := range options {
-		fmt.Printf("  %d. %s\n", i+1, option)
+		p.logger.Printf("  %d. %s\n", i+1, option)
 	}
 
 	input, err := p.PromptString(ctx, "Select options", "")
@@ -285,13 +285,13 @@ func (p *Prompter) PromptDate(ctx context.Context, prompt string, defaultValue t
 			}
 		}
 
-		fmt.Printf("❌ Invalid date format. Please use YYYY-MM-DD format (e.g., 2024-01-15).\n")
+		p.logger.Printf("❌ Invalid date format. Please use YYYY-MM-DD format (e.g., 2024-01-15).\n")
 	}
 }
 
 // PromptConfirm prompts for confirmation with a custom message
 func (p *Prompter) PromptConfirm(ctx context.Context, message string) (bool, error) {
-	fmt.Println(message)
+	p.logger.Println(message)
 	return p.PromptBool(ctx, "Continue?", false)
 }
 
@@ -303,11 +303,11 @@ func (p *Prompter) PromptPassword(ctx context.Context, prompt string) (string, e
 	default:
 	}
 
-	fmt.Printf("%s: ", prompt)
+	p.logger.Printf("%s: ", prompt)
 
 	// In a real implementation, we would use a library like golang.org/x/term
 	// to hide the password input. For now, we'll use regular input with a warning.
-	fmt.Println("(WARNING: Password will be visible)")
+	p.logger.Println("(WARNING: Password will be visible)")
 
 	return p.PromptString(ctx, "", "")
 }
@@ -317,4 +317,6 @@ type Logger interface {
 	Info(msg string, fields ...any)
 	Error(msg string, fields ...any)
 	Debug(msg string, fields ...any)
+	Printf(format string, args ...any)
+	Println(msg string)
 }

@@ -191,7 +191,7 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 		return err
 	}
 
-	fmt.Printf("📄 Generating invoice: %s (%s)\n", invoice.Number, invoice.Client.Name)
+	a.logger.Printf("📄 Generating invoice: %s (%s)\n", invoice.Number, invoice.Client.Name)
 
 	// Validate calculations if requested
 	if validateErr := a.validateCalculationsIfRequested(ctx, options, invoice, config); validateErr != nil {
@@ -251,9 +251,9 @@ func (a *App) validateCalculationsIfRequested(ctx context.Context, options Gener
 	calcOptions := a.buildCalculationOptions(options, invoice, config)
 
 	if validationErr := calcService.ValidateCalculation(ctx, invoice, calcOptions); validationErr != nil {
-		fmt.Printf("⚠️  Calculation validation warning: %v\n", validationErr)
+		a.logger.Printf("⚠️  Calculation validation warning: %v\n", validationErr)
 	} else {
-		fmt.Println("✅ Calculations validated")
+		a.logger.Println("✅ Calculations validated")
 	}
 
 	return nil
@@ -318,18 +318,18 @@ func (a *App) ensureOutputDirectory(outputPath string) error {
 
 // displayGenerationResults displays the generation results and optionally opens browser
 func (a *App) displayGenerationResults(outputPath, html string, options GenerateInvoiceOptions, duration time.Duration) {
-	fmt.Printf("✅ Invoice generated successfully!\n")
-	fmt.Printf("   Output: %s\n", outputPath)
-	fmt.Printf("   Size: %d bytes\n", len(html))
-	fmt.Printf("   Template: %s\n", options.TemplateName)
-	fmt.Printf("   Generation time: %v\n", duration)
+	a.logger.Printf("✅ Invoice generated successfully!\n")
+	a.logger.Printf("   Output: %s\n", outputPath)
+	a.logger.Printf("   Size: %d bytes\n", len(html))
+	a.logger.Printf("   Template: %s\n", options.TemplateName)
+	a.logger.Printf("   Generation time: %v\n", duration)
 
 	// Open in browser if requested
 	if options.OpenBrowser {
 		if err := a.openInBrowser(outputPath); err != nil {
-			fmt.Printf("⚠️  Could not open browser: %v\n", err)
+			a.logger.Printf("⚠️  Could not open browser: %v\n", err)
 		} else {
-			fmt.Println("🌐 Opened in default browser")
+			a.logger.Println("🌐 Opened in default browser")
 		}
 	}
 }
@@ -354,7 +354,7 @@ func (a *App) executeGeneratePreview(ctx context.Context, invoiceID, configPath 
 	if options.SampleData {
 		// Create sample invoice for preview
 		invoice = a.createSampleInvoice(config)
-		fmt.Println("📄 Generating preview with sample data")
+		a.logger.Println("📄 Generating preview with sample data")
 	} else {
 		// Create invoice service and get real invoice
 		invoiceService := a.createInvoiceService(config.Storage.DataDir)
@@ -364,7 +364,7 @@ func (a *App) executeGeneratePreview(ctx context.Context, invoiceID, configPath 
 			return fmt.Errorf("failed to retrieve invoice: %w", err)
 		}
 
-		fmt.Printf("📄 Generating preview for: %s (%s)\n", invoice.Number, invoice.Client.Name)
+		a.logger.Printf("📄 Generating preview for: %s (%s)\n", invoice.Number, invoice.Client.Name)
 	}
 
 	// Generate HTML
@@ -374,11 +374,11 @@ func (a *App) executeGeneratePreview(ctx context.Context, invoiceID, configPath 
 	}
 
 	// Display preview information
-	fmt.Printf("✅ Preview generated successfully!\n")
-	fmt.Printf("   Template: %s\n", options.TemplateName)
-	fmt.Printf("   Size: %d bytes\n", len(html))
-	fmt.Printf("   Work Items: %d\n", len(invoice.WorkItems))
-	fmt.Printf("   Total: %.2f %s\n", invoice.Total, config.Invoice.Currency)
+	a.logger.Printf("✅ Preview generated successfully!\n")
+	a.logger.Printf("   Template: %s\n", options.TemplateName)
+	a.logger.Printf("   Size: %d bytes\n", len(html))
+	a.logger.Printf("   Work Items: %d\n", len(invoice.WorkItems))
+	a.logger.Printf("   Total: %.2f %s\n", invoice.Total, config.Invoice.Currency)
 
 	// Show first few lines of HTML
 	lines := strings.Split(html, "\n")
@@ -387,13 +387,13 @@ func (a *App) executeGeneratePreview(ctx context.Context, invoiceID, configPath 
 		previewLines = len(lines)
 	}
 
-	fmt.Println("\n📋 HTML Preview (first 10 lines):")
-	fmt.Println("=====================================")
+	a.logger.Println("\n📋 HTML Preview (first 10 lines):")
+	a.logger.Println("=====================================")
 	for i := 0; i < previewLines; i++ {
-		fmt.Printf("%3d: %s\n", i+1, lines[i])
+		a.logger.Printf("%3d: %s\n", i+1, lines[i])
 	}
 	if len(lines) > previewLines {
-		fmt.Printf("... (%d more lines)\n", len(lines)-previewLines)
+		a.logger.Printf("... (%d more lines)\n", len(lines)-previewLines)
 	}
 
 	return nil
@@ -420,48 +420,48 @@ func (a *App) executeGenerateTemplateList(ctx context.Context, configPath string
 		return fmt.Errorf("failed to list templates: %w", err)
 	}
 
-	fmt.Println("📝 Available Invoice Templates")
-	fmt.Println("==============================")
+	a.logger.Println("📝 Available Invoice Templates")
+	a.logger.Println("==============================")
 
 	if len(templates) == 0 {
-		fmt.Println("No templates found.")
+		a.logger.Println("No templates found.")
 		return nil
 	}
 
 	for _, templateName := range templates {
-		fmt.Printf("\n🎨 %s\n", templateName)
+		a.logger.Printf("\n🎨 %s\n", templateName)
 
 		// Get template info
 		info, err := renderService.GetTemplateInfo(ctx, templateName)
 		if err != nil {
-			fmt.Printf("   Error getting template info: %v\n", err)
+			a.logger.Printf("   Error getting template info: %v\n", err)
 			continue
 		}
 
 		if info.Description != "" {
-			fmt.Printf("   Description: %s\n", info.Description)
+			a.logger.Printf("   Description: %s\n", info.Description)
 		}
 		if info.Author != "" {
-			fmt.Printf("   Author: %s\n", info.Author)
+			a.logger.Printf("   Author: %s\n", info.Author)
 		}
 		if info.Version != "" {
-			fmt.Printf("   Version: %s\n", info.Version)
+			a.logger.Printf("   Version: %s\n", info.Version)
 		}
 
-		fmt.Printf("   Size: %d bytes\n", info.SizeBytes)
-		fmt.Printf("   Built-in: %v\n", info.IsBuiltIn)
-		fmt.Printf("   Valid: %v\n", info.IsValid)
+		a.logger.Printf("   Size: %d bytes\n", info.SizeBytes)
+		a.logger.Printf("   Built-in: %v\n", info.IsBuiltIn)
+		a.logger.Printf("   Valid: %v\n", info.IsValid)
 
 		if !info.IsValid && info.LastError != "" {
-			fmt.Printf("   Error: %s\n", info.LastError)
+			a.logger.Printf("   Error: %s\n", info.LastError)
 		}
 
 		if len(info.Tags) > 0 {
-			fmt.Printf("   Tags: %s\n", strings.Join(info.Tags, ", "))
+			a.logger.Printf("   Tags: %s\n", strings.Join(info.Tags, ", "))
 		}
 	}
 
-	fmt.Printf("\nTotal: %d template(s)\n", len(templates))
+	a.logger.Printf("\nTotal: %d template(s)\n", len(templates))
 	return nil
 }
 
@@ -617,7 +617,7 @@ func (a *App) openInBrowser(path string) error {
 	}
 
 	// This is a simplified implementation - in a real CLI you'd use exec.Command
-	fmt.Printf("To open in browser, run: %s\n", cmd)
+	a.logger.Printf("To open in browser, run: %s\n", cmd)
 	return nil
 }
 

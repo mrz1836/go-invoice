@@ -173,16 +173,16 @@ func (a *App) runInvoiceCreate(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Display success message
-	fmt.Printf("✅ Invoice created successfully!\n")
-	fmt.Printf("   Invoice Number: %s\n", invoice.Number)
-	fmt.Printf("   Client: %s\n", client.Name)
-	fmt.Printf("   Date: %s\n", invoice.Date.Format("2006-01-02"))
-	fmt.Printf("   Due Date: %s\n", invoice.DueDate.Format("2006-01-02"))
-	fmt.Printf("   Status: %s\n", invoice.Status)
-	fmt.Printf("\n")
-	fmt.Printf("💡 Next steps:\n")
-	fmt.Printf("   • Import work items: go-invoice import --file hours.csv --invoice %s\n", invoice.ID)
-	fmt.Printf("   • Generate invoice: go-invoice generate %s\n", invoice.ID)
+	a.logger.Printf("✅ Invoice created successfully!\n")
+	a.logger.Printf("   Invoice Number: %s\n", invoice.Number)
+	a.logger.Printf("   Client: %s\n", client.Name)
+	a.logger.Printf("   Date: %s\n", invoice.Date.Format("2006-01-02"))
+	a.logger.Printf("   Due Date: %s\n", invoice.DueDate.Format("2006-01-02"))
+	a.logger.Printf("   Status: %s\n", invoice.Status)
+	a.logger.Printf("\n")
+	a.logger.Printf("💡 Next steps:\n")
+	a.logger.Printf("   • Import work items: go-invoice import --file hours.csv --invoice %s\n", invoice.ID)
+	a.logger.Printf("   • Generate invoice: go-invoice generate %s\n", invoice.ID)
 
 	return nil
 }
@@ -350,7 +350,7 @@ func (a *App) runInvoiceShow(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to marshal invoice: %w", err)
 		}
-		fmt.Println(string(data))
+		a.logger.Println(string(data))
 	case "yaml":
 		// For now, we'll use JSON format for YAML output
 		// In a real implementation, we would use a YAML library
@@ -358,7 +358,7 @@ func (a *App) runInvoiceShow(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to marshal invoice: %w", err)
 		}
-		fmt.Println(string(data))
+		a.logger.Println(string(data))
 	default:
 		a.displayInvoiceDetails(invoice, client, config.Invoice.Currency, showItems, showHistory)
 	}
@@ -537,21 +537,21 @@ func (a *App) executeUpdateAndDisplay(ctx context.Context, invoiceService *servi
 
 // displayUpdateResults displays the update results to the user
 func (a *App) displayUpdateResults(original, updated *models.Invoice, req models.UpdateInvoiceRequest) {
-	fmt.Printf("✅ Invoice updated successfully!\n")
-	fmt.Printf("   Invoice Number: %s\n", updated.Number)
+	a.logger.Printf("✅ Invoice updated successfully!\n")
+	a.logger.Printf("   Invoice Number: %s\n", updated.Number)
 
 	if req.Status != nil {
-		fmt.Printf("   Status: %s → %s\n", original.Status, updated.Status)
+		a.logger.Printf("   Status: %s → %s\n", original.Status, updated.Status)
 	}
 
 	if req.DueDate != nil {
-		fmt.Printf("   Due Date: %s → %s\n",
+		a.logger.Printf("   Due Date: %s → %s\n",
 			original.DueDate.Format("2006-01-02"),
 			updated.DueDate.Format("2006-01-02"))
 	}
 
 	if req.Description != nil {
-		fmt.Printf("   Description updated\n")
+		a.logger.Printf("   Description updated\n")
 	}
 }
 
@@ -629,25 +629,25 @@ func (a *App) runInvoiceDelete(cmd *cobra.Command, args []string) error {
 			deleteType = "PERMANENTLY DELETE"
 		}
 
-		fmt.Printf("⚠️  About to %s invoice %s\n", deleteType, invoice.Number)
-		fmt.Printf("   Client: %s\n", invoice.Client.Name)
-		fmt.Printf("   Date: %s\n", invoice.Date.Format("2006-01-02"))
-		fmt.Printf("   Total: %.2f\n", invoice.Total)
-		fmt.Printf("\n")
+		a.logger.Printf("⚠️  About to %s invoice %s\n", deleteType, invoice.Number)
+		a.logger.Printf("   Client: %s\n", invoice.Client.Name)
+		a.logger.Printf("   Date: %s\n", invoice.Date.Format("2006-01-02"))
+		a.logger.Printf("   Total: %.2f\n", invoice.Total)
+		a.logger.Printf("\n")
 
 		if hardDelete {
-			fmt.Printf("❗ This action CANNOT be undone!\n")
+			a.logger.Printf("❗ This action CANNOT be undone!\n")
 		}
 
-		fmt.Printf("Are you sure you want to continue? (yes/no): ")
+		a.logger.Printf("Are you sure you want to continue? (yes/no): ")
 
 		var response string
 		if _, scanErr := fmt.Scanln(&response); scanErr != nil {
-			fmt.Printf("Error reading input: %v\n", scanErr)
+			a.logger.Printf("Error reading input: %v\n", scanErr)
 			return fmt.Errorf("failed to read user input: %w", scanErr)
 		}
 		if strings.ToLower(response) != "yes" {
-			fmt.Println("❌ Delete canceled")
+			a.logger.Println("❌ Delete canceled")
 			return nil
 		}
 	}
@@ -659,13 +659,13 @@ func (a *App) runInvoiceDelete(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to delete invoice: %w", err)
 		}
-		fmt.Printf("✅ Invoice %s permanently deleted\n", invoice.Number)
+		a.logger.Printf("✅ Invoice %s permanently deleted\n", invoice.Number)
 	} else {
 		err = invoiceService.DeleteInvoice(ctx, models.InvoiceID(invoiceID))
 		if err != nil {
 			return fmt.Errorf("failed to delete invoice: %w", err)
 		}
-		fmt.Printf("✅ Invoice %s deleted\n", invoice.Number)
+		a.logger.Printf("✅ Invoice %s deleted\n", invoice.Number)
 	}
 
 	return nil
@@ -701,9 +701,9 @@ func (a *App) findOrCreateClient(ctx context.Context, clientService *services.Cl
 
 	if len(clients) > 1 {
 		// Multiple partial matches found
-		fmt.Printf("Multiple clients found matching '%s':\n", clientName)
+		a.logger.Printf("Multiple clients found matching '%s':\n", clientName)
 		for i, client := range clients {
-			fmt.Printf("  %d. %s (%s)\n", i+1, client.Name, client.Email)
+			a.logger.Printf("  %d. %s (%s)\n", i+1, client.Name, client.Email)
 		}
 		return nil, ErrSpecifyMoreSpecific
 	}
@@ -734,7 +734,7 @@ func (a *App) findOrCreateClient(ctx context.Context, clientService *services.Cl
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
-	fmt.Printf("✅ Created new client: %s\n", client.Name)
+	a.logger.Printf("✅ Created new client: %s\n", client.Name)
 	return client, nil
 }
 
@@ -844,17 +844,17 @@ func (a *App) outputInvoicesJSON(invoices []*models.Invoice) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal invoices: %w", err)
 	}
-	fmt.Println(string(data))
+	a.logger.Println(string(data))
 	return nil
 }
 
 func (a *App) outputInvoicesCSV(invoices []*models.Invoice) {
 	// CSV header
-	fmt.Println("Number,Date,DueDate,ClientName,Status,SubTotal,Tax,Total")
+	a.logger.Println("Number,Date,DueDate,ClientName,Status,SubTotal,Tax,Total")
 
 	// CSV rows
 	for _, inv := range invoices {
-		fmt.Printf("%s,%s,%s,%s,%s,%.2f,%.2f,%.2f\n",
+		a.logger.Printf("%s,%s,%s,%s,%s,%.2f,%.2f,%.2f\n",
 			inv.Number,
 			inv.Date.Format("2006-01-02"),
 			inv.DueDate.Format("2006-01-02"),
@@ -869,7 +869,7 @@ func (a *App) outputInvoicesCSV(invoices []*models.Invoice) {
 
 func (a *App) outputInvoicesTable(_ context.Context, invoices []*models.Invoice, _ *services.ClientService) error {
 	if len(invoices) == 0 {
-		fmt.Println("No invoices found")
+		a.logger.Println("No invoices found")
 		return nil
 	}
 
@@ -936,82 +936,82 @@ func (a *App) displayInvoiceSummary(invoices []*models.Invoice, currency string)
 		}
 	}
 
-	fmt.Printf("\n📊 Summary\n")
-	fmt.Printf("─────────\n")
-	fmt.Printf("Total Invoices: %d\n", len(invoices))
-	fmt.Printf("  Draft: %d\n", draftCount)
-	fmt.Printf("  Sent: %d\n", sentCount)
-	fmt.Printf("  Paid: %d\n", paidCount)
-	fmt.Printf("  Overdue: %d\n", overdueCount)
-	fmt.Printf("\n")
-	fmt.Printf("Total Amount: %.2f %s\n", totalAmount, currency)
-	fmt.Printf("  Paid: %.2f %s\n", paidAmount, currency)
-	fmt.Printf("  Unpaid: %.2f %s\n", unpaidAmount, currency)
+	a.logger.Printf("\n📊 Summary\n")
+	a.logger.Printf("─────────\n")
+	a.logger.Printf("Total Invoices: %d\n", len(invoices))
+	a.logger.Printf("  Draft: %d\n", draftCount)
+	a.logger.Printf("  Sent: %d\n", sentCount)
+	a.logger.Printf("  Paid: %d\n", paidCount)
+	a.logger.Printf("  Overdue: %d\n", overdueCount)
+	a.logger.Printf("\n")
+	a.logger.Printf("Total Amount: %.2f %s\n", totalAmount, currency)
+	a.logger.Printf("  Paid: %.2f %s\n", paidAmount, currency)
+	a.logger.Printf("  Unpaid: %.2f %s\n", unpaidAmount, currency)
 }
 
 func (a *App) displayInvoiceDetails(invoice *models.Invoice, client *models.Client, currency string, showItems, _ bool) {
-	fmt.Printf("📄 Invoice %s\n", invoice.Number)
-	fmt.Printf("════════════════════\n")
-	fmt.Printf("\n")
+	a.logger.Printf("📄 Invoice %s\n", invoice.Number)
+	a.logger.Printf("════════════════════\n")
+	a.logger.Printf("\n")
 
-	fmt.Printf("Client: %s\n", client.Name)
-	fmt.Printf("Email: %s\n", client.Email)
+	a.logger.Printf("Client: %s\n", client.Name)
+	a.logger.Printf("Email: %s\n", client.Email)
 	if client.Address != "" {
-		fmt.Printf("Address: %s\n", client.Address)
+		a.logger.Printf("Address: %s\n", client.Address)
 	}
-	fmt.Printf("\n")
+	a.logger.Printf("\n")
 
-	fmt.Printf("Date: %s\n", invoice.Date.Format("2006-01-02"))
-	fmt.Printf("Due Date: %s\n", invoice.DueDate.Format("2006-01-02"))
-	fmt.Printf("Status: %s\n", invoice.Status)
+	a.logger.Printf("Date: %s\n", invoice.Date.Format("2006-01-02"))
+	a.logger.Printf("Due Date: %s\n", invoice.DueDate.Format("2006-01-02"))
+	a.logger.Printf("Status: %s\n", invoice.Status)
 
 	if invoice.Description != "" {
-		fmt.Printf("Description: %s\n", invoice.Description)
+		a.logger.Printf("Description: %s\n", invoice.Description)
 	}
 
-	fmt.Printf("\n")
-	fmt.Printf("💰 Financial Summary\n")
-	fmt.Printf("──────────────────\n")
-	fmt.Printf("Subtotal: %.2f %s\n", invoice.Subtotal, currency)
+	a.logger.Printf("\n")
+	a.logger.Printf("💰 Financial Summary\n")
+	a.logger.Printf("──────────────────\n")
+	a.logger.Printf("Subtotal: %.2f %s\n", invoice.Subtotal, currency)
 	if invoice.TaxAmount > 0 {
-		fmt.Printf("Tax: %.2f %s\n", invoice.TaxAmount, currency)
+		a.logger.Printf("Tax: %.2f %s\n", invoice.TaxAmount, currency)
 	}
-	fmt.Printf("Total: %.2f %s\n", invoice.Total, currency)
+	a.logger.Printf("Total: %.2f %s\n", invoice.Total, currency)
 
 	if showItems && len(invoice.WorkItems) > 0 {
-		fmt.Printf("\n")
-		fmt.Printf("📋 Work Items\n")
-		fmt.Printf("───────────\n")
+		a.logger.Printf("\n")
+		a.logger.Printf("📋 Work Items\n")
+		a.logger.Printf("───────────\n")
 
 		for i, item := range invoice.WorkItems {
-			fmt.Printf("\n%d. %s\n", i+1, item.Description)
-			fmt.Printf("   Date: %s\n", item.Date.Format("2006-01-02"))
-			fmt.Printf("   Hours: %.2f @ %.2f/hour = %.2f %s\n",
+			a.logger.Printf("\n%d. %s\n", i+1, item.Description)
+			a.logger.Printf("   Date: %s\n", item.Date.Format("2006-01-02"))
+			a.logger.Printf("   Hours: %.2f @ %.2f/hour = %.2f %s\n",
 				item.Hours, item.Rate, item.Total, currency)
 		}
 	}
 
 	// Notes field not yet available in Invoice model
 
-	fmt.Printf("\n")
-	fmt.Printf("🕒 Timestamps\n")
-	fmt.Printf("───────────\n")
-	fmt.Printf("Created: %s\n", invoice.CreatedAt.Format("2006-01-02 15:04:05"))
-	fmt.Printf("Updated: %s\n", invoice.UpdatedAt.Format("2006-01-02 15:04:05"))
+	a.logger.Printf("\n")
+	a.logger.Printf("🕒 Timestamps\n")
+	a.logger.Printf("───────────\n")
+	a.logger.Printf("Created: %s\n", invoice.CreatedAt.Format("2006-01-02 15:04:05"))
+	a.logger.Printf("Updated: %s\n", invoice.UpdatedAt.Format("2006-01-02 15:04:05"))
 }
 
 // Interactive mode helpers
 
 func (a *App) runInvoiceCreateInteractive(ctx context.Context, invoiceService *services.InvoiceService, clientService *services.ClientService, config *config.Config) error {
-	fmt.Println("🔨 Create New Invoice - Interactive Mode")
-	fmt.Println("=====================================")
-	fmt.Println()
+	a.logger.Println("🔨 Create New Invoice - Interactive Mode")
+	a.logger.Println("=====================================")
+	a.logger.Println("")
 
 	prompter := cli.NewPrompter(a.logger)
 
 	// Prompt for client
-	fmt.Println("Step 1: Select or create client")
-	fmt.Println("-------------------------------")
+	a.logger.Println("Step 1: Select or create client")
+	a.logger.Println("-------------------------------")
 
 	// List existing clients
 	clientResult, err := clientService.ListClients(ctx, true, 0, 0)
@@ -1043,18 +1043,18 @@ func (a *App) runInvoiceCreateInteractive(ctx context.Context, invoiceService *s
 		}
 	} else {
 		// No clients exist, create new one
-		fmt.Println("No clients found. Let's create one.")
+		a.logger.Println("No clients found. Let's create one.")
 		client, err = a.createClientInteractive(ctx, clientService, prompter)
 		if err != nil {
 			return err
 		}
 	}
 
-	fmt.Printf("\n✅ Client selected: %s\n\n", client.Name)
+	a.logger.Printf("\n✅ Client selected: %s\n\n", client.Name)
 
 	// Prompt for invoice details
-	fmt.Println("Step 2: Invoice details")
-	fmt.Println("----------------------")
+	a.logger.Println("Step 2: Invoice details")
+	a.logger.Println("----------------------")
 
 	// Invoice date
 	invoiceDate, err := prompter.PromptDate(ctx, "Invoice date", time.Now())
@@ -1081,15 +1081,15 @@ func (a *App) runInvoiceCreateInteractive(ctx context.Context, invoiceService *s
 		return fmt.Errorf("failed to generate invoice number: %w", err)
 	}
 
-	fmt.Printf("\n📋 Invoice Summary:\n")
-	fmt.Printf("   Number: %s\n", nextNumber)
-	fmt.Printf("   Client: %s\n", client.Name)
-	fmt.Printf("   Date: %s\n", invoiceDate.Format("2006-01-02"))
-	fmt.Printf("   Due Date: %s\n", dueDate.Format("2006-01-02"))
+	a.logger.Printf("\n📋 Invoice Summary:\n")
+	a.logger.Printf("   Number: %s\n", nextNumber)
+	a.logger.Printf("   Client: %s\n", client.Name)
+	a.logger.Printf("   Date: %s\n", invoiceDate.Format("2006-01-02"))
+	a.logger.Printf("   Due Date: %s\n", dueDate.Format("2006-01-02"))
 	if description != "" {
-		fmt.Printf("   Description: %s\n", description)
+		a.logger.Printf("   Description: %s\n", description)
 	}
-	fmt.Printf("\n")
+	a.logger.Printf("\n")
 
 	// Confirm creation
 	confirmed, err := prompter.PromptConfirm(ctx, "Create this invoice?")
@@ -1098,7 +1098,7 @@ func (a *App) runInvoiceCreateInteractive(ctx context.Context, invoiceService *s
 	}
 
 	if !confirmed {
-		fmt.Println("❌ Invoice creation canceled")
+		a.logger.Println("❌ Invoice creation canceled")
 		return nil
 	}
 
@@ -1117,31 +1117,31 @@ func (a *App) runInvoiceCreateInteractive(ctx context.Context, invoiceService *s
 	}
 
 	// Display success message
-	fmt.Printf("\n✅ Invoice created successfully!\n")
-	fmt.Printf("   Invoice Number: %s\n", invoice.Number)
-	fmt.Printf("   Invoice ID: %s\n", invoice.ID)
-	fmt.Printf("\n")
-	fmt.Printf("💡 Next steps:\n")
-	fmt.Printf("   • Import work items: go-invoice import --file hours.csv --invoice %s\n", invoice.ID)
-	fmt.Printf("   • Generate invoice: go-invoice generate %s\n", invoice.ID)
+	a.logger.Printf("\n✅ Invoice created successfully!\n")
+	a.logger.Printf("   Invoice Number: %s\n", invoice.Number)
+	a.logger.Printf("   Invoice ID: %s\n", invoice.ID)
+	a.logger.Printf("\n")
+	a.logger.Printf("💡 Next steps:\n")
+	a.logger.Printf("   • Import work items: go-invoice import --file hours.csv --invoice %s\n", invoice.ID)
+	a.logger.Printf("   • Generate invoice: go-invoice generate %s\n", invoice.ID)
 
 	return nil
 }
 
 func (a *App) runInvoiceUpdateInteractive(ctx context.Context, invoiceService *services.InvoiceService, invoice *models.Invoice) error {
-	fmt.Printf("🔧 Update Invoice %s - Interactive Mode\n", invoice.Number)
-	fmt.Println("=====================================")
-	fmt.Println()
+	a.logger.Printf("🔧 Update Invoice %s - Interactive Mode\n", invoice.Number)
+	a.logger.Println("=====================================")
+	a.logger.Println("")
 
 	prompter := cli.NewPrompter(a.logger)
 
 	// Show current invoice details
-	fmt.Println("Current Invoice Details:")
-	fmt.Printf("   Status: %s\n", invoice.Status)
-	fmt.Printf("   Date: %s\n", invoice.Date.Format("2006-01-02"))
-	fmt.Printf("   Due Date: %s\n", invoice.DueDate.Format("2006-01-02"))
-	fmt.Printf("   Description: %s\n", invoice.Description)
-	fmt.Println()
+	a.logger.Println("Current Invoice Details:")
+	a.logger.Printf("   Status: %s\n", invoice.Status)
+	a.logger.Printf("   Date: %s\n", invoice.Date.Format("2006-01-02"))
+	a.logger.Printf("   Due Date: %s\n", invoice.DueDate.Format("2006-01-02"))
+	a.logger.Printf("   Description: %s\n", invoice.Description)
+	a.logger.Println("")
 
 	// Select what to update
 	options := []string{
@@ -1157,7 +1157,7 @@ func (a *App) runInvoiceUpdateInteractive(ctx context.Context, invoiceService *s
 	}
 
 	if index == 3 {
-		fmt.Println("❌ Update canceled")
+		a.logger.Println("❌ Update canceled")
 		return nil
 	}
 
@@ -1191,17 +1191,17 @@ func (a *App) runInvoiceUpdateInteractive(ctx context.Context, invoiceService *s
 	}
 
 	// Confirm update
-	fmt.Println("\n📋 Update Summary:")
+	a.logger.Println("\n📋 Update Summary:")
 	if req.Status != nil {
-		fmt.Printf("   Status: %s → %s\n", invoice.Status, *req.Status)
+		a.logger.Printf("   Status: %s → %s\n", invoice.Status, *req.Status)
 	}
 	if req.DueDate != nil {
-		fmt.Printf("   Due Date: %s → %s\n", invoice.DueDate.Format("2006-01-02"), req.DueDate.Format("2006-01-02"))
+		a.logger.Printf("   Due Date: %s → %s\n", invoice.DueDate.Format("2006-01-02"), req.DueDate.Format("2006-01-02"))
 	}
 	if req.Description != nil {
-		fmt.Printf("   Description: %s → %s\n", invoice.Description, *req.Description)
+		a.logger.Printf("   Description: %s → %s\n", invoice.Description, *req.Description)
 	}
-	fmt.Println()
+	a.logger.Println("")
 
 	confirmed, err := prompter.PromptConfirm(ctx, "Apply these changes?")
 	if err != nil {
@@ -1209,7 +1209,7 @@ func (a *App) runInvoiceUpdateInteractive(ctx context.Context, invoiceService *s
 	}
 
 	if !confirmed {
-		fmt.Println("❌ Update canceled")
+		a.logger.Println("❌ Update canceled")
 		return nil
 	}
 
@@ -1219,14 +1219,14 @@ func (a *App) runInvoiceUpdateInteractive(ctx context.Context, invoiceService *s
 		return fmt.Errorf("failed to update invoice: %w", err)
 	}
 
-	fmt.Printf("\n✅ Invoice %s updated successfully!\n", updatedInvoice.Number)
+	a.logger.Printf("\n✅ Invoice %s updated successfully!\n", updatedInvoice.Number)
 	return nil
 }
 
 // createClientInteractive creates a new client through interactive prompts
 func (a *App) createClientInteractive(ctx context.Context, clientService *services.ClientService, prompter *cli.Prompter) (*models.Client, error) {
-	fmt.Println("\n📝 Create New Client")
-	fmt.Println("-------------------")
+	a.logger.Println("\n📝 Create New Client")
+	a.logger.Println("-------------------")
 
 	// Prompt for client details
 	name, err := prompter.PromptStringRequired(ctx, "Client name")
@@ -1262,7 +1262,7 @@ func (a *App) createClientInteractive(ctx context.Context, clientService *servic
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}
 
-	fmt.Printf("✅ Client '%s' created successfully!\n", client.Name)
+	a.logger.Printf("✅ Client '%s' created successfully!\n", client.Name)
 	return client, nil
 }
 
