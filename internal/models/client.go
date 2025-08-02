@@ -41,114 +41,19 @@ func (c *Client) Validate(ctx context.Context) error {
 	default:
 	}
 
-	var errors []ValidationError
-
-	// Validate ID
-	if strings.TrimSpace(string(c.ID)) == "" {
-		errors = append(errors, ValidationError{
-			Field:   "id",
-			Message: "is required",
-			Value:   c.ID,
-		})
-	}
-
-	// Validate name
-	if strings.TrimSpace(c.Name) == "" {
-		errors = append(errors, ValidationError{
-			Field:   "name",
-			Message: "is required",
-			Value:   c.Name,
-		})
-	}
-
-	// Validate name length
-	if len(strings.TrimSpace(c.Name)) > 200 {
-		errors = append(errors, ValidationError{
-			Field:   "name",
-			Message: "cannot exceed 200 characters",
-			Value:   len(c.Name),
-		})
-	}
-
-	// Validate email
-	if strings.TrimSpace(c.Email) == "" {
-		errors = append(errors, ValidationError{
-			Field:   "email",
-			Message: "is required",
-			Value:   c.Email,
-		})
-	} else if !emailPattern.MatchString(c.Email) {
-		errors = append(errors, ValidationError{
-			Field:   "email",
-			Message: "must be a valid email address",
-			Value:   c.Email,
-		})
-	}
-
-	// Validate phone if provided
-	if c.Phone != "" {
-		phone := strings.TrimSpace(c.Phone)
-		if len(phone) < 10 || len(phone) > 20 {
-			errors = append(errors, ValidationError{
-				Field:   "phone",
-				Message: "must be between 10 and 20 characters",
-				Value:   c.Phone,
-			})
-		}
-	}
-
-	// Validate address length if provided
-	if c.Address != "" && len(strings.TrimSpace(c.Address)) > 500 {
-		errors = append(errors, ValidationError{
-			Field:   "address",
-			Message: "cannot exceed 500 characters",
-			Value:   len(c.Address),
-		})
-	}
-
-	// Validate tax ID length if provided
-	if c.TaxID != "" && len(strings.TrimSpace(c.TaxID)) > 50 {
-		errors = append(errors, ValidationError{
-			Field:   "tax_id",
-			Message: "cannot exceed 50 characters",
-			Value:   len(c.TaxID),
-		})
-	}
-
-	// Validate timestamps
-	if c.CreatedAt.IsZero() {
-		errors = append(errors, ValidationError{
-			Field:   "created_at",
-			Message: "is required",
-			Value:   c.CreatedAt,
-		})
-	}
-
-	if c.UpdatedAt.IsZero() {
-		errors = append(errors, ValidationError{
-			Field:   "updated_at",
-			Message: "is required",
-			Value:   c.UpdatedAt,
-		})
-	}
-
-	if !c.CreatedAt.IsZero() && !c.UpdatedAt.IsZero() && c.UpdatedAt.Before(c.CreatedAt) {
-		errors = append(errors, ValidationError{
-			Field:   "updated_at",
-			Message: "must be on or after created_at",
-			Value:   fmt.Sprintf("updated: %v, created: %v", c.UpdatedAt, c.CreatedAt),
-		})
-	}
-
-	if len(errors) > 0 {
-		var messages []string
-		for _, err := range errors {
-			messages = append(messages, err.Error())
-		}
-		return fmt.Errorf("%w: %s", ErrClientValidationFailed, strings.Join(messages, "; "))
-	}
-
-	return nil
+	return NewValidationBuilder().
+		AddRequired("id", string(c.ID)).
+		AddRequired("name", c.Name).
+		AddMaxLength("name", c.Name, 200).
+		AddRequired("email", c.Email).
+		AddEmail("email", c.Email).
+		AddLengthRange("phone", c.Phone, 10, 20).
+		AddMaxLength("address", c.Address, 500).
+		AddMaxLength("tax_id", c.TaxID, 50).
+		AddTimeRequired("created_at", c.CreatedAt).
+		AddTimeRequired("updated_at", c.UpdatedAt).
+		AddTimeOrder("updated_at", c.CreatedAt, c.UpdatedAt, "created_at", "updated_at").
+		Build(ErrClientValidationFailed)
 }
 
 // UpdateName updates the client name with validation
@@ -322,75 +227,13 @@ func (r *CreateClientRequest) Validate(ctx context.Context) error {
 	default:
 	}
 
-	var errors []ValidationError
-
-	// Validate name
-	if strings.TrimSpace(r.Name) == "" {
-		errors = append(errors, ValidationError{
-			Field:   "name",
-			Message: "is required",
-			Value:   r.Name,
-		})
-	} else if len(strings.TrimSpace(r.Name)) > 200 {
-		errors = append(errors, ValidationError{
-			Field:   "name",
-			Message: "cannot exceed 200 characters",
-			Value:   len(r.Name),
-		})
-	}
-
-	// Validate email
-	if strings.TrimSpace(r.Email) == "" {
-		errors = append(errors, ValidationError{
-			Field:   "email",
-			Message: "is required",
-			Value:   r.Email,
-		})
-	} else if !emailPattern.MatchString(r.Email) {
-		errors = append(errors, ValidationError{
-			Field:   "email",
-			Message: "must be a valid email address",
-			Value:   r.Email,
-		})
-	}
-
-	// Validate phone if provided
-	if r.Phone != "" {
-		phone := strings.TrimSpace(r.Phone)
-		if len(phone) < 10 || len(phone) > 20 {
-			errors = append(errors, ValidationError{
-				Field:   "phone",
-				Message: "must be between 10 and 20 characters",
-				Value:   r.Phone,
-			})
-		}
-	}
-
-	// Validate address length if provided
-	if r.Address != "" && len(strings.TrimSpace(r.Address)) > 500 {
-		errors = append(errors, ValidationError{
-			Field:   "address",
-			Message: "cannot exceed 500 characters",
-			Value:   len(r.Address),
-		})
-	}
-
-	// Validate tax ID length if provided
-	if r.TaxID != "" && len(strings.TrimSpace(r.TaxID)) > 50 {
-		errors = append(errors, ValidationError{
-			Field:   "tax_id",
-			Message: "cannot exceed 50 characters",
-			Value:   len(r.TaxID),
-		})
-	}
-
-	if len(errors) > 0 {
-		var messages []string
-		for _, err := range errors {
-			messages = append(messages, err.Error())
-		}
-		return fmt.Errorf("%w: %s", ErrCreateClientRequestInvalid, strings.Join(messages, "; "))
-	}
-
-	return nil
+	return NewValidationBuilder().
+		AddRequired("name", r.Name).
+		AddMaxLength("name", r.Name, 200).
+		AddRequired("email", r.Email).
+		AddEmail("email", r.Email).
+		AddLengthRange("phone", r.Phone, 10, 20).
+		AddMaxLength("address", r.Address, 500).
+		AddMaxLength("tax_id", r.TaxID, 50).
+		Build(ErrCreateClientRequestInvalid)
 }

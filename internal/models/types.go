@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 	"time"
@@ -23,6 +24,9 @@ const (
 	StatusOverdue = "overdue"
 	StatusVoided  = "voided"
 )
+
+// ValidInvoiceStatuses contains all valid invoice status values
+var ValidInvoiceStatuses = []string{StatusDraft, StatusSent, StatusPaid, StatusOverdue, StatusVoided}
 
 // Validation patterns
 var (
@@ -46,6 +50,387 @@ type ValidationError struct {
 
 func (e ValidationError) Error() string {
 	return fmt.Sprintf("validation failed for field '%s': %s (value: %v)", e.Field, e.Message, e.Value)
+}
+
+// ValidationBuilder provides a systematic way to build validation error lists
+// while reducing cyclomatic complexity in validation functions
+type ValidationBuilder struct {
+	errors []ValidationError
+	ctx    context.Context
+}
+
+// NewValidationBuilder creates a new validation builder
+func NewValidationBuilder() *ValidationBuilder {
+	return &ValidationBuilder{
+		errors: make([]ValidationError, 0),
+	}
+}
+
+// WithContext sets the context for the validation builder
+func (vb *ValidationBuilder) WithContext(ctx context.Context) *ValidationBuilder {
+	vb.ctx = ctx
+	return vb
+}
+
+// AddRequired adds a required field validation error if the value is empty
+func (vb *ValidationBuilder) AddRequired(field string, value string) *ValidationBuilder {
+	if strings.TrimSpace(value) == "" {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: "is required",
+			Value:   value,
+		})
+	}
+	return vb
+}
+
+// AddMaxLength adds a max length validation error if the value exceeds the limit
+func (vb *ValidationBuilder) AddMaxLength(field string, value string, maxLen int) *ValidationBuilder {
+	if len(strings.TrimSpace(value)) > maxLen {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: fmt.Sprintf("cannot exceed %d characters", maxLen),
+			Value:   len(value),
+		})
+	}
+	return vb
+}
+
+// AddMinLength adds a min length validation error if the value is below the limit
+func (vb *ValidationBuilder) AddMinLength(field string, value string, minLen int) *ValidationBuilder {
+	trimmed := strings.TrimSpace(value)
+	if value != "" && len(trimmed) < minLen {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: fmt.Sprintf("must be at least %d characters", minLen),
+			Value:   len(value),
+		})
+	}
+	return vb
+}
+
+// AddLengthRange adds a length range validation error if the value is outside the range
+func (vb *ValidationBuilder) AddLengthRange(field string, value string, minLen, maxLen int) *ValidationBuilder {
+	trimmed := strings.TrimSpace(value)
+	if value != "" && (len(trimmed) < minLen || len(trimmed) > maxLen) {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: fmt.Sprintf("must be between %d and %d characters", minLen, maxLen),
+			Value:   value,
+		})
+	}
+	return vb
+}
+
+// AddEmail adds an email validation error if the value is not a valid email
+func (vb *ValidationBuilder) AddEmail(field string, value string) *ValidationBuilder {
+	if value != "" && !emailPattern.MatchString(value) {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: "must be a valid email address",
+			Value:   value,
+		})
+	}
+	return vb
+}
+
+// AddTimeRequired adds a required time validation error if the time is zero
+func (vb *ValidationBuilder) AddTimeRequired(field string, value time.Time) *ValidationBuilder {
+	if value.IsZero() {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: "is required",
+			Value:   value,
+		})
+	}
+	return vb
+}
+
+// AddTimeOrder adds a time order validation error if before is not before after
+func (vb *ValidationBuilder) AddTimeOrder(field string, before, after time.Time, beforeName, afterName string) *ValidationBuilder {
+	if !before.IsZero() && !after.IsZero() && after.Before(before) {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: fmt.Sprintf("must be on or after %s", beforeName),
+			Value:   fmt.Sprintf("%s: %v, %s: %v", afterName, after, beforeName, before),
+		})
+	}
+	return vb
+}
+
+// AddCustom adds a custom validation error
+func (vb *ValidationBuilder) AddCustom(field, message string, value interface{}) *ValidationBuilder {
+	vb.errors = append(vb.errors, ValidationError{
+		Field:   field,
+		Message: message,
+		Value:   value,
+	})
+	return vb
+}
+
+// AddIf adds a validation error only if the condition is true
+func (vb *ValidationBuilder) AddIf(condition bool, field, message string, value interface{}) *ValidationBuilder {
+	if condition {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: message,
+			Value:   value,
+		})
+	}
+	return vb
+}
+
+// HasErrors returns true if there are any validation errors
+func (vb *ValidationBuilder) HasErrors() bool {
+	return len(vb.errors) > 0
+}
+
+// AddNonNegative adds a non-negative validation error if the value is negative
+func (vb *ValidationBuilder) AddNonNegative(field string, value float64) *ValidationBuilder {
+	if value < 0 {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: "must be non-negative",
+			Value:   value,
+		})
+	}
+	return vb
+}
+
+// AddNonNegativeInt adds a non-negative validation error if the value is negative
+func (vb *ValidationBuilder) AddNonNegativeInt(field string, value int) *ValidationBuilder {
+	if value < 0 {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: "must be non-negative",
+			Value:   value,
+		})
+	}
+	return vb
+}
+
+// AddDateRange adds a date range validation error if from is after to
+func (vb *ValidationBuilder) AddDateRange(field string, from, to time.Time, fromName, toName string) *ValidationBuilder {
+	if !from.IsZero() && !to.IsZero() && from.After(to) {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: fmt.Sprintf("%s must be before %s", fromName, toName),
+			Value:   fmt.Sprintf("%v - %v", from, to),
+		})
+	}
+	return vb
+}
+
+// AddAmountRange adds an amount range validation error if minVal is greater than maxVal
+func (vb *ValidationBuilder) AddAmountRange(field string, minVal, maxVal float64) *ValidationBuilder {
+	if minVal > 0 && maxVal > 0 && minVal > maxVal {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: "amount_min must be less than or equal to amount_max",
+			Value:   fmt.Sprintf("%.2f - %.2f", minVal, maxVal),
+		})
+	}
+	return vb
+}
+
+// AddValidOption adds a validation error if value is not in the list of valid options
+func (vb *ValidationBuilder) AddValidOption(field string, value string, validOptions []string) *ValidationBuilder {
+	if value != "" {
+		valid := false
+		for _, option := range validOptions {
+			if value == option {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			vb.errors = append(vb.errors, ValidationError{
+				Field:   field,
+				Message: fmt.Sprintf("must be one of: %s", strings.Join(validOptions, ", ")),
+				Value:   value,
+			})
+		}
+	}
+	return vb
+}
+
+// Build builds the final validation error or returns nil if no errors
+func (vb *ValidationBuilder) Build(baseError error) error {
+	if len(vb.errors) == 0 {
+		return nil
+	}
+
+	var messages []string
+	for _, err := range vb.errors {
+		messages = append(messages, err.Error())
+	}
+	return fmt.Errorf("%w: %s", baseError, strings.Join(messages, "; "))
+}
+
+// AddValidFloat adds a validation error if the value is NaN or Inf
+func (vb *ValidationBuilder) AddValidFloat(field string, value float64) *ValidationBuilder {
+	if math.IsNaN(value) || math.IsInf(value, 0) {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: "must be a valid number",
+			Value:   value,
+		})
+	}
+	return vb
+}
+
+// AddPositive adds a validation error if the value is not positive
+func (vb *ValidationBuilder) AddPositive(field string, value float64) *ValidationBuilder {
+	if value <= 0 {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: "must be greater than 0",
+			Value:   value,
+		})
+	}
+	return vb
+}
+
+// AddMaxValue adds a validation error if the value exceeds the maximum
+func (vb *ValidationBuilder) AddMaxValue(field string, value float64, maxVal float64, unit string) *ValidationBuilder {
+	if value > maxVal {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: fmt.Sprintf("cannot exceed %s", unit),
+			Value:   value,
+		})
+	}
+	return vb
+}
+
+// AddDateNotFuture adds a validation error if the date is more than specified hours in the future
+func (vb *ValidationBuilder) AddDateNotFuture(field string, value time.Time, allowedFutureHours int) *ValidationBuilder {
+	if value.After(time.Now().Add(time.Duration(allowedFutureHours) * time.Hour)) {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: fmt.Sprintf("cannot be more than %d day in the future", allowedFutureHours/24),
+			Value:   value,
+		})
+	}
+	return vb
+}
+
+// AddCalculationValidation adds a validation error if the calculation is incorrect
+func (vb *ValidationBuilder) AddCalculationValidation(field string, actual, expected float64) *ValidationBuilder {
+	if math.Abs(actual-expected) > 0.01 {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: fmt.Sprintf("incorrect calculation, expected %.2f", expected),
+			Value:   actual,
+		})
+	}
+	return vb
+}
+
+// AddFloatValidation adds comprehensive float validation (valid, positive, max)
+func (vb *ValidationBuilder) AddFloatValidation(field string, value, maxVal float64, unit string) *ValidationBuilder {
+	return vb.
+		AddValidFloat(field, value).
+		AddPositive(field, value).
+		AddMaxValue(field, value, maxVal, unit)
+}
+
+// AddPattern adds a pattern validation error if the value doesn't match the regex
+func (vb *ValidationBuilder) AddPattern(field string, value string, pattern *regexp.Regexp, message string) *ValidationBuilder {
+	if value != "" && !pattern.MatchString(value) {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: message,
+			Value:   value,
+		})
+	}
+	return vb
+}
+
+// AddWorkItems validates a slice of work items
+func (vb *ValidationBuilder) AddWorkItems(field string, items []WorkItem) *ValidationBuilder {
+	if vb.ctx != nil {
+		for i, item := range items {
+			if err := item.Validate(vb.ctx); err != nil {
+				vb.errors = append(vb.errors, ValidationError{
+					Field:   fmt.Sprintf("%s[%d]", field, i),
+					Message: err.Error(),
+					Value:   item,
+				})
+			}
+		}
+	}
+	return vb
+}
+
+// AddRequiredPointer adds a required pointer field validation if pointer is nil or empty
+func (vb *ValidationBuilder) AddRequiredPointer(field string, value *string, message string) *ValidationBuilder {
+	if value != nil && strings.TrimSpace(*value) == "" {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: message,
+			Value:   *value,
+		})
+	}
+	return vb
+}
+
+// AddPatternPointer adds a pattern validation for pointer string if not nil
+func (vb *ValidationBuilder) AddPatternPointer(field string, value *string, pattern *regexp.Regexp, message string) *ValidationBuilder {
+	if value != nil && *value != "" && !pattern.MatchString(*value) {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: message,
+			Value:   *value,
+		})
+	}
+	return vb
+}
+
+// AddValidOptionPointer adds validation for pointer to string option
+func (vb *ValidationBuilder) AddValidOptionPointer(field string, value *string, validOptions []string) *ValidationBuilder {
+	if value != nil {
+		valid := false
+		for _, option := range validOptions {
+			if *value == option {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			vb.errors = append(vb.errors, ValidationError{
+				Field:   field,
+				Message: fmt.Sprintf("must be one of: %s", strings.Join(validOptions, ", ")),
+				Value:   *value,
+			})
+		}
+	}
+	return vb
+}
+
+// AddTimeOrderPointer adds validation for pointer time ordering
+func (vb *ValidationBuilder) AddTimeOrderPointer(field string, before, after *time.Time, beforeName, afterName string) *ValidationBuilder {
+	if before != nil && after != nil && after.Before(*before) {
+		vb.errors = append(vb.errors, ValidationError{
+			Field:   field,
+			Message: fmt.Sprintf("must be on or after %s", beforeName),
+			Value:   fmt.Sprintf("%s: %v, %s: %v", afterName, *after, beforeName, *before),
+		})
+	}
+	return vb
+}
+
+// BuildWithMessage builds the final validation error with custom message or returns nil if no errors
+func (vb *ValidationBuilder) BuildWithMessage(message string) error {
+	if len(vb.errors) == 0 {
+		return nil
+	}
+
+	var messages []string
+	for _, err := range vb.errors {
+		messages = append(messages, err.Error())
+	}
+	return fmt.Errorf("%s: %s", message, strings.Join(messages, "; "))
 }
 
 // Validator interface for validation operations
@@ -77,95 +462,16 @@ func (f *InvoiceFilter) Validate(ctx context.Context) error {
 	default:
 	}
 
-	var errors []ValidationError
-
-	// Validate status if provided
-	if f.Status != "" {
-		validStatuses := []string{StatusDraft, StatusSent, StatusPaid, StatusOverdue, StatusVoided}
-		valid := false
-		for _, status := range validStatuses {
-			if f.Status == status {
-				valid = true
-				break
-			}
-		}
-		if !valid {
-			errors = append(errors, ValidationError{
-				Field:   "status",
-				Message: fmt.Sprintf("must be one of: %s", strings.Join(validStatuses, ", ")),
-				Value:   f.Status,
-			})
-		}
-	}
-
-	// Validate date ranges
-	if !f.DateFrom.IsZero() && !f.DateTo.IsZero() && f.DateFrom.After(f.DateTo) {
-		errors = append(errors, ValidationError{
-			Field:   "date_range",
-			Message: "date_from must be before date_to",
-			Value:   fmt.Sprintf("%v - %v", f.DateFrom, f.DateTo),
-		})
-	}
-
-	if !f.DueDateFrom.IsZero() && !f.DueDateTo.IsZero() && f.DueDateFrom.After(f.DueDateTo) {
-		errors = append(errors, ValidationError{
-			Field:   "due_date_range",
-			Message: "due_date_from must be before due_date_to",
-			Value:   fmt.Sprintf("%v - %v", f.DueDateFrom, f.DueDateTo),
-		})
-	}
-
-	// Validate amount ranges
-	if f.AmountMin < 0 {
-		errors = append(errors, ValidationError{
-			Field:   "amount_min",
-			Message: "must be non-negative",
-			Value:   f.AmountMin,
-		})
-	}
-
-	if f.AmountMax < 0 {
-		errors = append(errors, ValidationError{
-			Field:   "amount_max",
-			Message: "must be non-negative",
-			Value:   f.AmountMax,
-		})
-	}
-
-	if f.AmountMin > 0 && f.AmountMax > 0 && f.AmountMin > f.AmountMax {
-		errors = append(errors, ValidationError{
-			Field:   "amount_range",
-			Message: "amount_min must be less than or equal to amount_max",
-			Value:   fmt.Sprintf("%.2f - %.2f", f.AmountMin, f.AmountMax),
-		})
-	}
-
-	// Validate pagination
-	if f.Limit < 0 {
-		errors = append(errors, ValidationError{
-			Field:   "limit",
-			Message: "must be non-negative",
-			Value:   f.Limit,
-		})
-	}
-
-	if f.Offset < 0 {
-		errors = append(errors, ValidationError{
-			Field:   "offset",
-			Message: "must be non-negative",
-			Value:   f.Offset,
-		})
-	}
-
-	if len(errors) > 0 {
-		var messages []string
-		for _, err := range errors {
-			messages = append(messages, err.Error())
-		}
-		return fmt.Errorf("filter validation failed: %s", strings.Join(messages, "; "))
-	}
-
-	return nil
+	return NewValidationBuilder().
+		AddValidOption("status", f.Status, ValidInvoiceStatuses).
+		AddDateRange("date_range", f.DateFrom, f.DateTo, "date_from", "date_to").
+		AddDateRange("due_date_range", f.DueDateFrom, f.DueDateTo, "due_date_from", "due_date_to").
+		AddNonNegative("amount_min", f.AmountMin).
+		AddNonNegative("amount_max", f.AmountMax).
+		AddAmountRange("amount_range", f.AmountMin, f.AmountMax).
+		AddNonNegativeInt("limit", f.Limit).
+		AddNonNegativeInt("offset", f.Offset).
+		BuildWithMessage("filter validation failed")
 }
 
 // CreateInvoiceRequest represents a request to create a new invoice
@@ -186,77 +492,16 @@ func (r *CreateInvoiceRequest) Validate(ctx context.Context) error {
 	default:
 	}
 
-	var errors []ValidationError
-
-	// Validate invoice number
-	if strings.TrimSpace(r.Number) == "" {
-		errors = append(errors, ValidationError{
-			Field:   "number",
-			Message: "is required",
-			Value:   r.Number,
-		})
-	} else if !invoiceIDPattern.MatchString(r.Number) {
-		errors = append(errors, ValidationError{
-			Field:   "number",
-			Message: "must contain only uppercase letters, numbers, and hyphens",
-			Value:   r.Number,
-		})
-	}
-
-	// Validate client ID
-	if strings.TrimSpace(string(r.ClientID)) == "" {
-		errors = append(errors, ValidationError{
-			Field:   "client_id",
-			Message: "is required",
-			Value:   r.ClientID,
-		})
-	}
-
-	// Validate dates
-	if r.Date.IsZero() {
-		errors = append(errors, ValidationError{
-			Field:   "date",
-			Message: "is required",
-			Value:   r.Date,
-		})
-	}
-
-	if r.DueDate.IsZero() {
-		errors = append(errors, ValidationError{
-			Field:   "due_date",
-			Message: "is required",
-			Value:   r.DueDate,
-		})
-	}
-
-	if !r.Date.IsZero() && !r.DueDate.IsZero() && r.DueDate.Before(r.Date) {
-		errors = append(errors, ValidationError{
-			Field:   "due_date",
-			Message: "must be on or after invoice date",
-			Value:   fmt.Sprintf("due: %v, invoice: %v", r.DueDate, r.Date),
-		})
-	}
-
-	// Validate work items if provided
-	for i, item := range r.WorkItems {
-		if err := item.Validate(ctx); err != nil {
-			errors = append(errors, ValidationError{
-				Field:   fmt.Sprintf("work_items[%d]", i),
-				Message: err.Error(),
-				Value:   item,
-			})
-		}
-	}
-
-	if len(errors) > 0 {
-		var messages []string
-		for _, err := range errors {
-			messages = append(messages, err.Error())
-		}
-		return fmt.Errorf("create invoice request validation failed: %s", strings.Join(messages, "; "))
-	}
-
-	return nil
+	return NewValidationBuilder().
+		WithContext(ctx).
+		AddRequired("number", r.Number).
+		AddPattern("number", r.Number, invoiceIDPattern, "must contain only uppercase letters, numbers, and hyphens").
+		AddRequired("client_id", string(r.ClientID)).
+		AddTimeRequired("date", r.Date).
+		AddTimeRequired("due_date", r.DueDate).
+		AddTimeOrder("due_date", r.Date, r.DueDate, "invoice date", "due date").
+		AddWorkItems("work_items", r.WorkItems).
+		BuildWithMessage("create invoice request validation failed")
 }
 
 // UpdateInvoiceRequest represents a request to update an invoice
@@ -277,69 +522,11 @@ func (r *UpdateInvoiceRequest) Validate(ctx context.Context) error {
 	default:
 	}
 
-	var errors []ValidationError
-
-	// Validate ID
-	if strings.TrimSpace(string(r.ID)) == "" {
-		errors = append(errors, ValidationError{
-			Field:   "id",
-			Message: "is required",
-			Value:   r.ID,
-		})
-	}
-
-	// Validate number if provided
-	if r.Number != nil {
-		if strings.TrimSpace(*r.Number) == "" {
-			errors = append(errors, ValidationError{
-				Field:   "number",
-				Message: "cannot be empty",
-				Value:   *r.Number,
-			})
-		} else if !invoiceIDPattern.MatchString(*r.Number) {
-			errors = append(errors, ValidationError{
-				Field:   "number",
-				Message: "must contain only uppercase letters, numbers, and hyphens",
-				Value:   *r.Number,
-			})
-		}
-	}
-
-	// Validate status if provided
-	if r.Status != nil {
-		validStatuses := []string{StatusDraft, StatusSent, StatusPaid, StatusOverdue, StatusVoided}
-		valid := false
-		for _, status := range validStatuses {
-			if *r.Status == status {
-				valid = true
-				break
-			}
-		}
-		if !valid {
-			errors = append(errors, ValidationError{
-				Field:   "status",
-				Message: fmt.Sprintf("must be one of: %s", strings.Join(validStatuses, ", ")),
-				Value:   *r.Status,
-			})
-		}
-	}
-
-	// Validate date consistency if both dates are provided
-	if r.Date != nil && r.DueDate != nil && r.DueDate.Before(*r.Date) {
-		errors = append(errors, ValidationError{
-			Field:   "due_date",
-			Message: "must be on or after invoice date",
-			Value:   fmt.Sprintf("due: %v, invoice: %v", *r.DueDate, *r.Date),
-		})
-	}
-
-	if len(errors) > 0 {
-		var messages []string
-		for _, err := range errors {
-			messages = append(messages, err.Error())
-		}
-		return fmt.Errorf("update invoice request validation failed: %s", strings.Join(messages, "; "))
-	}
-
-	return nil
+	return NewValidationBuilder().
+		AddRequired("id", string(r.ID)).
+		AddRequiredPointer("number", r.Number, "cannot be empty").
+		AddPatternPointer("number", r.Number, invoiceIDPattern, "must contain only uppercase letters, numbers, and hyphens").
+		AddValidOptionPointer("status", r.Status, ValidInvoiceStatuses).
+		AddTimeOrderPointer("due_date", r.Date, r.DueDate, "invoice date", "due date").
+		BuildWithMessage("update invoice request validation failed")
 }

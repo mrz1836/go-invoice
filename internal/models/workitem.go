@@ -45,132 +45,20 @@ func (w *WorkItem) Validate(ctx context.Context) error {
 	default:
 	}
 
-	var errors []ValidationError
-
-	// Validate ID
-	if strings.TrimSpace(w.ID) == "" {
-		errors = append(errors, ValidationError{
-			Field:   "id",
-			Message: "is required",
-			Value:   w.ID,
-		})
-	}
-
-	// Validate date
-	if w.Date.IsZero() {
-		errors = append(errors, ValidationError{
-			Field:   "date",
-			Message: "is required",
-			Value:   w.Date,
-		})
-	}
-
-	// Validate date is not in the future (more than 1 day ahead to account for timezone differences)
-	if w.Date.After(time.Now().Add(24 * time.Hour)) {
-		errors = append(errors, ValidationError{
-			Field:   "date",
-			Message: "cannot be more than 1 day in the future",
-			Value:   w.Date,
-		})
-	}
-
-	// Validate hours
-	if math.IsNaN(w.Hours) || math.IsInf(w.Hours, 0) {
-		errors = append(errors, ValidationError{
-			Field:   "hours",
-			Message: "must be a valid number",
-			Value:   w.Hours,
-		})
-	} else if w.Hours <= 0 {
-		errors = append(errors, ValidationError{
-			Field:   "hours",
-			Message: "must be greater than 0",
-			Value:   w.Hours,
-		})
-	} else if w.Hours > 24 {
-		errors = append(errors, ValidationError{
-			Field:   "hours",
-			Message: "cannot exceed 24 hours per entry",
-			Value:   w.Hours,
-		})
-	}
-
-	// Validate rate
-	if math.IsNaN(w.Rate) || math.IsInf(w.Rate, 0) {
-		errors = append(errors, ValidationError{
-			Field:   "rate",
-			Message: "must be a valid number",
-			Value:   w.Rate,
-		})
-	} else if w.Rate <= 0 {
-		errors = append(errors, ValidationError{
-			Field:   "rate",
-			Message: "must be greater than 0",
-			Value:   w.Rate,
-		})
-	} else if w.Rate > 10000 {
-		errors = append(errors, ValidationError{
-			Field:   "rate",
-			Message: "cannot exceed $10,000 per hour",
-			Value:   w.Rate,
-		})
-	}
-
-	// Validate description
-	if strings.TrimSpace(w.Description) == "" {
-		errors = append(errors, ValidationError{
-			Field:   "description",
-			Message: "is required",
-			Value:   w.Description,
-		})
-	}
-
-	// Validate description length
-	if len(strings.TrimSpace(w.Description)) > 1000 {
-		errors = append(errors, ValidationError{
-			Field:   "description",
-			Message: "cannot exceed 1000 characters",
-			Value:   len(w.Description),
-		})
-	}
-
-	// Validate total calculation
 	expectedTotal := math.Round(w.Hours*w.Rate*100) / 100
-	if math.Abs(w.Total-expectedTotal) > 0.01 {
-		errors = append(errors, ValidationError{
-			Field:   "total",
-			Message: fmt.Sprintf("incorrect calculation, expected %.2f", expectedTotal),
-			Value:   w.Total,
-		})
-	}
 
-	// Validate total is reasonable
-	if w.Total < 0 {
-		errors = append(errors, ValidationError{
-			Field:   "total",
-			Message: "must be non-negative",
-			Value:   w.Total,
-		})
-	}
-
-	// Validate created timestamp
-	if w.CreatedAt.IsZero() {
-		errors = append(errors, ValidationError{
-			Field:   "created_at",
-			Message: "is required",
-			Value:   w.CreatedAt,
-		})
-	}
-
-	if len(errors) > 0 {
-		var messages []string
-		for _, err := range errors {
-			messages = append(messages, err.Error())
-		}
-		return fmt.Errorf("%w: %s", ErrWorkItemValidationFailed, strings.Join(messages, "; "))
-	}
-
-	return nil
+	return NewValidationBuilder().
+		AddRequired("id", w.ID).
+		AddTimeRequired("date", w.Date).
+		AddDateNotFuture("date", w.Date, 24).
+		AddFloatValidation("hours", w.Hours, 24, "24 hours per entry").
+		AddFloatValidation("rate", w.Rate, 10000, "$10,000 per hour").
+		AddRequired("description", w.Description).
+		AddMaxLength("description", w.Description, 1000).
+		AddCalculationValidation("total", w.Total, expectedTotal).
+		AddNonNegative("total", w.Total).
+		AddTimeRequired("created_at", w.CreatedAt).
+		Build(ErrWorkItemValidationFailed)
 }
 
 // UpdateHours updates the hours worked and recalculates the total

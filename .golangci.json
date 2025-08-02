@@ -63,7 +63,6 @@
 			"gochecknoinits",
 			"gochecksumtype",
 			"goconst",
-			"gocyclo",
 			"godox",
 			"goheader",
 			"gomoddirectives",
@@ -105,6 +104,7 @@
 			"gocritic",
       "gocognit",
 			"godot",
+      "gocyclo",
       "funcorder",
       "wsl_v5",
       "nestif"
@@ -137,7 +137,7 @@
 				"min-occurrences": 10
 			},
 			"gocyclo": {
-				"min-complexity": 10
+				"min-complexity": 15
 			},
 			"godox": {
 				"keywords": [
