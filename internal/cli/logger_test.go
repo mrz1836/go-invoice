@@ -1,0 +1,258 @@
+package cli
+
+import (
+	"bytes"
+	"log"
+	"os"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+)
+
+// LoggerTestSuite defines the test suite for logger functionality
+type LoggerTestSuite struct {
+	suite.Suite
+	logger         *SimpleLogger
+	logOutput      *bytes.Buffer
+	originalOutput *os.File
+}
+
+// SetupTest runs before each test
+func (suite *LoggerTestSuite) SetupTest() {
+	// Capture log output
+	suite.logOutput = &bytes.Buffer{}
+	suite.originalOutput = os.Stderr
+
+	// Redirect log output to our buffer
+	log.SetOutput(suite.logOutput)
+	log.SetFlags(0) // Remove timestamp for predictable testing
+
+	suite.logger = NewLogger(false) // Debug disabled by default
+}
+
+// TearDownTest runs after each test
+func (suite *LoggerTestSuite) TearDownTest() {
+	// Restore original log output
+	log.SetOutput(suite.originalOutput)
+	log.SetFlags(log.LstdFlags)
+}
+
+// TestNewLogger tests the logger constructor
+func (suite *LoggerTestSuite) TestNewLogger() {
+	logger := NewLogger(true)
+	assert.NotNil(suite.T(), logger)
+	assert.True(suite.T(), logger.debug)
+
+	logger = NewLogger(false)
+	assert.NotNil(suite.T(), logger)
+	assert.False(suite.T(), logger.debug)
+}
+
+// TestInfoLogging tests info message logging
+func (suite *LoggerTestSuite) TestInfoLogging() {
+	suite.logger.Info("test info message")
+
+	output := suite.logOutput.String()
+	assert.Contains(suite.T(), output, "[INFO]")
+	assert.Contains(suite.T(), output, "test info message")
+}
+
+// TestInfoLoggingWithFields tests info message logging with fields
+func (suite *LoggerTestSuite) TestInfoLoggingWithFields() {
+	suite.logger.Info("test message", "key1", "value1", "key2", 42)
+
+	output := suite.logOutput.String()
+	assert.Contains(suite.T(), output, "[INFO]")
+	assert.Contains(suite.T(), output, "test message")
+	assert.Contains(suite.T(), output, "key1=value1")
+	assert.Contains(suite.T(), output, "key2=42")
+}
+
+// TestErrorLogging tests error message logging
+func (suite *LoggerTestSuite) TestErrorLogging() {
+	suite.logger.Error("test error message")
+
+	output := suite.logOutput.String()
+	assert.Contains(suite.T(), output, "[ERROR]")
+	assert.Contains(suite.T(), output, "test error message")
+}
+
+// TestErrorLoggingWithFields tests error message logging with fields
+func (suite *LoggerTestSuite) TestErrorLoggingWithFields() {
+	suite.logger.Error("error occurred", "error", "connection failed", "retry", 3)
+
+	output := suite.logOutput.String()
+	assert.Contains(suite.T(), output, "[ERROR]")
+	assert.Contains(suite.T(), output, "error occurred")
+	assert.Contains(suite.T(), output, "error=connection failed")
+	assert.Contains(suite.T(), output, "retry=3")
+}
+
+// TestDebugLoggingDisabled tests that debug messages are not logged when debug is disabled
+func (suite *LoggerTestSuite) TestDebugLoggingDisabled() {
+	suite.logger.Debug("debug message should not appear")
+
+	output := suite.logOutput.String()
+	assert.Empty(suite.T(), output)
+}
+
+// TestDebugLoggingEnabled tests that debug messages are logged when debug is enabled
+func (suite *LoggerTestSuite) TestDebugLoggingEnabled() {
+	debugLogger := NewLogger(true)
+	debugLogger.Debug("debug message should appear")
+
+	output := suite.logOutput.String()
+	assert.Contains(suite.T(), output, "[DEBUG]")
+	assert.Contains(suite.T(), output, "debug message should appear")
+}
+
+// TestDebugLoggingWithFields tests debug message logging with fields
+func (suite *LoggerTestSuite) TestDebugLoggingWithFields() {
+	debugLogger := NewLogger(true)
+	debugLogger.Debug("debug info", "component", "config", "action", "validation")
+
+	output := suite.logOutput.String()
+	assert.Contains(suite.T(), output, "[DEBUG]")
+	assert.Contains(suite.T(), output, "debug info")
+	assert.Contains(suite.T(), output, "component=config")
+	assert.Contains(suite.T(), output, "action=validation")
+}
+
+// TestFormatFields tests the field formatting functionality
+func (suite *LoggerTestSuite) TestFormatFields() {
+	tests := []struct {
+		name     string
+		fields   []any
+		expected string
+	}{
+		{
+			name:     "NoFields",
+			fields:   []any{},
+			expected: "",
+		},
+		{
+			name:     "SinglePair",
+			fields:   []any{"key", "value"},
+			expected: " key=value",
+		},
+		{
+			name:     "MultiplePairs",
+			fields:   []any{"key1", "value1", "key2", "value2"},
+			expected: " key1=value1 key2=value2",
+		},
+		{
+			name:     "OddNumberOfFields",
+			fields:   []any{"key1", "value1", "key2"},
+			expected: " key1=value1",
+		},
+		{
+			name:     "MixedTypes",
+			fields:   []any{"string", "text", "number", 42, "boolean", true},
+			expected: " string=text number=42 boolean=true",
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			result := suite.logger.formatFields(tt.fields...)
+			assert.Equal(suite.T(), tt.expected, result)
+		})
+	}
+}
+
+// TestLoggerIntegration tests logger integration with different scenarios
+func (suite *LoggerTestSuite) TestLoggerIntegration() {
+	// Test a realistic logging scenario
+	suite.logger.Info("application started", "version", "1.0.0", "port", 8080)
+	suite.logger.Error("database connection failed", "host", "localhost", "error", "timeout")
+
+	output := suite.logOutput.String()
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+
+	assert.Len(suite.T(), lines, 2)
+	assert.Contains(suite.T(), lines[0], "[INFO]")
+	assert.Contains(suite.T(), lines[0], "application started")
+	assert.Contains(suite.T(), lines[1], "[ERROR]")
+	assert.Contains(suite.T(), lines[1], "database connection failed")
+}
+
+// TestLoggerConcurrency tests that the logger is safe for concurrent use
+func (suite *LoggerTestSuite) TestLoggerConcurrency() {
+	const numGoroutines = 10
+	const messagesPerGoroutine = 5
+
+	done := make(chan bool, numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(id int) {
+			for j := 0; j < messagesPerGoroutine; j++ {
+				suite.logger.Info("concurrent message", "goroutine", id, "message", j)
+			}
+			done <- true
+		}(i)
+	}
+
+	// Wait for all goroutines to complete
+	for i := 0; i < numGoroutines; i++ {
+		<-done
+	}
+
+	output := suite.logOutput.String()
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+
+	// Should have exactly numGoroutines * messagesPerGoroutine lines
+	assert.Len(suite.T(), lines, numGoroutines*messagesPerGoroutine)
+
+	// All lines should contain [INFO] and "concurrent message"
+	for _, line := range lines {
+		assert.Contains(suite.T(), line, "[INFO]")
+		assert.Contains(suite.T(), line, "concurrent message")
+	}
+}
+
+// TestLoggerTestSuite runs the logger test suite
+func TestLoggerTestSuite(t *testing.T) {
+	suite.Run(t, new(LoggerTestSuite))
+}
+
+// TestLoggerFieldFormatting tests edge cases in field formatting
+func TestLoggerFieldFormatting(t *testing.T) {
+	logger := NewLogger(false)
+
+	tests := []struct {
+		name   string
+		fields []any
+		check  func(string) bool
+	}{
+		{
+			name:   "NilValues",
+			fields: []any{"key", nil},
+			check: func(s string) bool {
+				return strings.Contains(s, "key=<nil>")
+			},
+		},
+		{
+			name:   "EmptyStringValues",
+			fields: []any{"key", ""},
+			check: func(s string) bool {
+				return strings.Contains(s, "key=")
+			},
+		},
+		{
+			name:   "SpecialCharacters",
+			fields: []any{"key", "value with spaces & symbols!"},
+			check: func(s string) bool {
+				return strings.Contains(s, "key=value with spaces & symbols!")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := logger.formatFields(tt.fields...)
+			assert.True(t, tt.check(result), "formatting check failed for: %s", result)
+		})
+	}
+}

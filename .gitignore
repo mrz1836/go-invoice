@@ -42,3 +42,4 @@ testdata
 
 # Node modules
 node_modules/
+/go-invoice
