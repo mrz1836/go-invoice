@@ -1,3 +1,6 @@
+// Package config provides configuration management for the go-invoice application.
+// It handles loading, validation, and management of application settings from
+// various sources including environment variables and configuration files.
 package config
 
 import (
@@ -10,6 +13,11 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+)
+
+// Static error variables for err113 compliance
+var (
+	ErrConfigNil = fmt.Errorf("config cannot be nil")
 )
 
 // Logger interface defined at point of use (consumer-driven design)
@@ -82,7 +90,7 @@ func (s *ConfigService) ValidateConfig(ctx context.Context, config *Config) erro
 	}
 
 	if config == nil {
-		return fmt.Errorf("config cannot be nil")
+		return ErrConfigNil
 	}
 
 	if s.validator != nil {

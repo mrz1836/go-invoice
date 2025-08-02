@@ -13,6 +13,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Import command errors
+var (
+	ErrClientIDRequired  = fmt.Errorf("client ID is required (use --client flag)")
+	ErrInvoiceIDRequired = fmt.Errorf("invoice ID is required (use --invoice flag)")
+)
+
 // buildImportCommand creates the import command with subcommands
 func (a *App) buildImportCommand() *cobra.Command {
 	importCmd := &cobra.Command{
@@ -71,7 +77,7 @@ Example:
 			configPath, _ := cmd.Flags().GetString("config")
 
 			if clientID == "" {
-				return fmt.Errorf("client ID is required (use --client flag)")
+				return ErrClientIDRequired
 			}
 
 			return a.executeImportCreate(ctx, csvFile, configPath, ImportCreateOptions{
@@ -122,7 +128,7 @@ Example:
 			configPath, _ := cmd.Flags().GetString("config")
 
 			if invoiceID == "" {
-				return fmt.Errorf("invoice ID is required (use --invoice flag)")
+				return ErrInvoiceIDRequired
 			}
 
 			return a.executeImportAppend(ctx, csvFile, configPath, ImportAppendOptions{
@@ -412,6 +418,7 @@ func (a *App) displayValidationResult(result *csv.ValidationResult) {
 	// Display warnings
 	if len(result.Warnings) > 0 {
 		fmt.Printf("\n⚠️  Warnings:\n")
+
 		for _, warning := range result.Warnings {
 			fmt.Printf("  - %s\n", warning.Message)
 		}

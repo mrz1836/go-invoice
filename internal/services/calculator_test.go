@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/mrz/go-invoice/internal/models"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -119,10 +117,10 @@ func (suite *CalculatorTestSuite) TestCalculateWorkItemTotal() {
 			total, err := suite.calculator.CalculateWorkItemTotal(ctx, tc.hours, tc.rate)
 
 			if tc.expectError {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				require.NoError(suite.T(), err)
-				assert.InDelta(suite.T(), tc.expected, total, 0.01, "Expected %.2f, got %.2f", tc.expected, total)
+				suite.Require().NoError(err)
+				suite.InDelta(tc.expected, total, 0.01, "Expected %.2f, got %.2f", tc.expected, total)
 			}
 		})
 	}
@@ -210,15 +208,15 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotals() {
 			result, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, tc.options)
 
 			if tc.expectError {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				require.NoError(suite.T(), err)
-				assert.NotNil(suite.T(), result)
-				assert.InDelta(suite.T(), tc.expectedSubtotal, result.Subtotal, 0.01)
-				assert.InDelta(suite.T(), tc.expectedTax, result.TaxAmount, 0.01)
-				assert.InDelta(suite.T(), tc.expectedTotal, result.Total, 0.01)
-				assert.Equal(suite.T(), 3, result.WorkItemCount)
-				assert.InDelta(suite.T(), 18.5, result.TotalHours, 0.01)
+				suite.Require().NoError(err)
+				suite.NotNil(result)
+				suite.InDelta(tc.expectedSubtotal, result.Subtotal, 0.01)
+				suite.InDelta(tc.expectedTax, result.TaxAmount, 0.01)
+				suite.InDelta(tc.expectedTotal, result.Total, 0.01)
+				suite.Equal(3, result.WorkItemCount)
+				suite.InDelta(18.5, result.TotalHours, 0.01)
 			}
 		})
 	}
@@ -240,12 +238,12 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotalsWithBreakdown() {
 
 	result, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
 
-	require.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), result.Breakdown)
-	assert.Equal(suite.T(), 3, len(result.Breakdown.WorkItemTotals))
-	assert.Equal(suite.T(), "VAT", result.Breakdown.TaxCalculation.TaxType)
-	assert.Equal(suite.T(), "USD", result.Breakdown.CurrencyDetails.Currency)
-	assert.Equal(suite.T(), "$", result.Breakdown.CurrencyDetails.Symbol)
+	suite.Require().NoError(err)
+	suite.NotNil(result.Breakdown)
+	suite.Equal(3, len(result.Breakdown.WorkItemTotals))
+	suite.Equal("VAT", result.Breakdown.TaxCalculation.TaxType)
+	suite.Equal("USD", result.Breakdown.CurrencyDetails.Currency)
+	suite.Equal("$", result.Breakdown.CurrencyDetails.Symbol)
 }
 
 // TestValidateCalculation tests input validation
@@ -320,9 +318,9 @@ func (suite *CalculatorTestSuite) TestValidateCalculation() {
 			err := suite.calculator.ValidateCalculation(ctx, tc.invoice, tc.options)
 
 			if tc.expectError {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				assert.NoError(suite.T(), err)
+				suite.NoError(err)
 			}
 		})
 	}
@@ -339,10 +337,10 @@ func (suite *CalculatorTestSuite) TestRecalculateInvoice() {
 
 	err := suite.calculator.RecalculateInvoice(ctx, invoice, 0.15)
 
-	require.NoError(suite.T(), err)
-	assert.NotEqual(suite.T(), originalTotal, invoice.Total)
-	assert.Equal(suite.T(), originalVersion+1, invoice.Version)
-	assert.InDelta(suite.T(), 2659.38, invoice.Total, 0.01) // 2312.50 + (2312.50 * 0.15)
+	suite.Require().NoError(err)
+	suite.NotEqual(originalTotal, invoice.Total)
+	suite.Equal(originalVersion+1, invoice.Version)
+	suite.InDelta(2659.38, invoice.Total, 0.01) // 2312.50 + (2312.50 * 0.15)
 }
 
 // TestGetCalculationSummary tests summary calculation for multiple invoices
@@ -385,12 +383,12 @@ func (suite *CalculatorTestSuite) TestGetCalculationSummary() {
 			summary, err := suite.calculator.GetCalculationSummary(ctx, tc.invoices)
 
 			if tc.expectError {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				require.NoError(suite.T(), err)
-				assert.Equal(suite.T(), tc.expectedCount, summary.InvoiceCount)
-				assert.InDelta(suite.T(), tc.expectedTotal, summary.TotalSubtotal, 0.01)
-				assert.InDelta(suite.T(), tc.expectedHours, summary.TotalHours, 0.01)
+				suite.Require().NoError(err)
+				suite.Equal(tc.expectedCount, summary.InvoiceCount)
+				suite.InDelta(tc.expectedTotal, summary.TotalSubtotal, 0.01)
+				suite.InDelta(tc.expectedHours, summary.TotalHours, 0.01)
 			}
 		})
 	}
@@ -412,8 +410,8 @@ func (suite *CalculatorTestSuite) TestContextCancellation() {
 
 	// Test that cancelled context is handled properly
 	_, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Error(err)
+	suite.Equal(context.Canceled, err)
 }
 
 // Helper methods

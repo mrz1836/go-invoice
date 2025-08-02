@@ -19,6 +19,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Invoice command errors
+var (
+	ErrClientNameRequired        = fmt.Errorf("client name is required (use --client or --interactive)")
+	ErrCannotDeletePaidInvoice   = fmt.Errorf("cannot delete paid invoice")
+	ErrNoUpdatesSpecified        = fmt.Errorf("no updates specified")
+	ErrEmailRequiredForNewClient = fmt.Errorf("email is required when creating a new client")
+	ErrCannotUpdateInvoiceStatus = fmt.Errorf("cannot update invoice with status")
+	ErrInvalidStatus             = fmt.Errorf("invalid status")
+	ErrSpecifyMoreSpecific       = fmt.Errorf("please specify a more specific client name")
+	ErrClientNotFound            = fmt.Errorf("client not found")
+	ErrNoClientsFound            = fmt.Errorf("no clients found matching")
+	ErrMultipleClientsFound      = fmt.Errorf("multiple clients found matching")
+)
+
 // buildInvoiceCommand creates the invoice command with all subcommands
 func (a *App) buildInvoiceCommand() *cobra.Command {
 	// Ensure cli package is marked as used (a.logger is *cli.SimpleLogger)
@@ -109,7 +123,7 @@ func (a *App) runInvoiceCreate(cmd *cobra.Command, args []string) error {
 
 	// Validate required fields
 	if clientName == "" {
-		return fmt.Errorf("client name is required (use --client or --interactive)")
+		return ErrClientNameRequired
 	}
 
 	// Parse dates
@@ -123,6 +137,7 @@ func (a *App) runInvoiceCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	dueDate := invoiceDate.AddDate(0, 0, config.Invoice.DefaultDueDays)
+
 	if dueDateStr != "" {
 		parsedDate, err := time.Parse("2006-01-02", dueDateStr)
 		if err != nil {
@@ -411,7 +426,7 @@ func (a *App) runInvoiceUpdate(cmd *cobra.Command, args []string) error {
 
 	// Check if invoice can be updated
 	if invoice.Status == models.StatusPaid || invoice.Status == models.StatusVoided {
-		return fmt.Errorf("cannot update invoice with status: %s", invoice.Status)
+		return fmt.Errorf("%w: %s", ErrCannotUpdateInvoiceStatus, invoice.Status)
 	}
 
 	// Get flags
@@ -445,7 +460,7 @@ func (a *App) runInvoiceUpdate(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if !validStatus {
-			return fmt.Errorf("invalid status: %s (must be one of: %s)", status, strings.Join(validStatuses, ", "))
+			return fmt.Errorf("%w: %s (must be one of: %s)", ErrInvalidStatus, status, strings.Join(validStatuses, ", "))
 		}
 		req.Status = &status
 		hasUpdates = true
@@ -475,7 +490,7 @@ func (a *App) runInvoiceUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	if !hasUpdates {
-		return fmt.Errorf("no updates specified")
+		return ErrNoUpdatesSpecified
 	}
 
 	// Perform update
@@ -558,7 +573,7 @@ func (a *App) runInvoiceDelete(cmd *cobra.Command, args []string) error {
 
 	// Check if invoice can be deleted
 	if invoice.Status == models.StatusPaid {
-		return fmt.Errorf("cannot delete paid invoice")
+		return ErrCannotDeletePaidInvoice
 	}
 
 	// Get storage for hard delete
@@ -648,18 +663,18 @@ func (a *App) findOrCreateClient(ctx context.Context, clientService *services.Cl
 		for i, client := range clients {
 			fmt.Printf("  %d. %s (%s)\n", i+1, client.Name, client.Email)
 		}
-		return nil, fmt.Errorf("please specify a more specific client name")
+		return nil, ErrSpecifyMoreSpecific
 	}
 
 	// No client found
 	if !createIfMissing {
-		return nil, fmt.Errorf("client '%s' not found (use --create-client to create)", clientName)
+		return nil, fmt.Errorf("%w '%s' (use --create-client to create)", ErrClientNotFound, clientName)
 	}
 
 	// Create new client
 	email, _ := cmd.Flags().GetString("email")
 	if email == "" {
-		return nil, fmt.Errorf("email is required when creating a new client")
+		return nil, ErrEmailRequiredForNewClient
 	}
 
 	address, _ := cmd.Flags().GetString("address")
@@ -697,7 +712,7 @@ func (a *App) buildInvoiceFilter(cmd *cobra.Command, clientService *services.Cli
 			}
 		}
 		if !valid {
-			return filter, fmt.Errorf("invalid status: %s", status)
+			return filter, fmt.Errorf("%w: %s", ErrInvalidStatus, status)
 		}
 		filter.Status = status
 	}
@@ -709,10 +724,10 @@ func (a *App) buildInvoiceFilter(cmd *cobra.Command, clientService *services.Cli
 			return filter, fmt.Errorf("failed to search for client: %w", err)
 		}
 		if len(clients) == 0 {
-			return filter, fmt.Errorf("no clients found matching: %s", clientName)
+			return filter, fmt.Errorf("%w: %s", ErrNoClientsFound, clientName)
 		}
 		if len(clients) > 1 {
-			return filter, fmt.Errorf("multiple clients found matching: %s", clientName)
+			return filter, fmt.Errorf("%w: %s", ErrMultipleClientsFound, clientName)
 		}
 		filter.ClientID = models.ClientID(clients[0].ID)
 	}
@@ -776,7 +791,7 @@ func (a *App) outputInvoicesCSV(invoices []*models.Invoice) error {
 	return nil
 }
 
-func (a *App) outputInvoicesTable(invoices []*models.Invoice, clientService *services.ClientService, ctx context.Context) error {
+func (a *App) outputInvoicesTable(invoices []*models.Invoice, _ *services.ClientService, ctx context.Context) error {
 	if len(invoices) == 0 {
 		fmt.Println("No invoices found")
 		return nil
@@ -847,7 +862,7 @@ func (a *App) displayInvoiceSummary(invoices []*models.Invoice, currency string)
 	fmt.Printf("  Unpaid: %.2f %s\n", unpaidAmount, currency)
 }
 
-func (a *App) displayInvoiceDetails(invoice *models.Invoice, client *models.Client, currency string, showItems, showHistory bool) {
+func (a *App) displayInvoiceDetails(invoice *models.Invoice, client *models.Client, currency string, showItems, _ bool) {
 	fmt.Printf("📄 Invoice %s\n", invoice.Number)
 	fmt.Printf("════════════════════\n")
 	fmt.Printf("\n")

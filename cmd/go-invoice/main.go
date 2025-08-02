@@ -59,7 +59,7 @@ Key features:
 - Customizable business configuration
 - Printer-optimized output`,
 		Version: fmt.Sprintf("%s (%s, built %s)", Version, Commit, Date),
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			// Get debug flag from command
 			debug, _ := cmd.Flags().GetBool("debug")
 			if debug {
@@ -107,7 +107,7 @@ func (a *App) buildConfigValidateCommand() *cobra.Command {
 		Use:   "validate",
 		Short: "Validate configuration file",
 		Long:  "Validate the configuration file for syntax and required fields",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx, cancel := context.WithCancel(cmd.Context())
 			defer cancel()
 
@@ -134,7 +134,7 @@ func (a *App) buildConfigShowCommand() *cobra.Command {
 		Use:   "show",
 		Short: "Display current configuration",
 		Long:  "Display the current configuration with sensitive data masked",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx, cancel := context.WithCancel(cmd.Context())
 			defer cancel()
 

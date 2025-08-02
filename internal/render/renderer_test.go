@@ -153,7 +153,12 @@ func (v *MockTemplateValidator) ValidateTemplate(ctx context.Context, template T
 	}
 
 	if v.validationDelay > 0 {
-		time.Sleep(v.validationDelay)
+		select {
+		case <-time.After(v.validationDelay):
+			// Delay completed
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
 
 	v.validatedTemplates = append(v.validatedTemplates, template.Name())

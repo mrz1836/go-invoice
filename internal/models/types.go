@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -27,6 +28,13 @@ const (
 var (
 	invoiceIDPattern = regexp.MustCompile(`^[A-Z0-9-]+$`)
 	emailPattern     = regexp.MustCompile(`^[a-zA-Z0-9]+([._%-+][a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$`)
+)
+
+// Predefined errors for common validation failures
+var (
+	ErrNameRequired        = errors.New("name cannot be empty")
+	ErrEmailRequired       = errors.New("email cannot be empty")
+	ErrDescriptionRequired = errors.New("description cannot be empty")
 )
 
 // ValidationError represents a validation error with context

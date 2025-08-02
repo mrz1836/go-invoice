@@ -11,6 +11,8 @@ import (
 	"github.com/mrz/go-invoice/internal/render"
 )
 
+var ErrTemplateNotFoundInCache = fmt.Errorf("template not found in cache")
+
 // SimpleFileReader implements the FileReader interface
 type SimpleFileReader struct{}
 
@@ -82,7 +84,7 @@ func (c *SimpleTemplateCache) Get(ctx context.Context, name string) (render.Temp
 	template, exists := c.templates[name]
 	if !exists {
 		c.stats.MissCount++
-		return nil, fmt.Errorf("template %s not found in cache", name)
+		return nil, fmt.Errorf("%w: %s", ErrTemplateNotFoundInCache, name)
 	}
 
 	c.stats.HitCount++

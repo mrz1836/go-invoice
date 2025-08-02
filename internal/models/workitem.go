@@ -75,16 +75,19 @@ func (w *WorkItem) Validate(ctx context.Context) error {
 	}
 
 	// Validate hours
-	if w.Hours <= 0 {
+	if math.IsNaN(w.Hours) || math.IsInf(w.Hours, 0) {
+		errors = append(errors, ValidationError{
+			Field:   "hours",
+			Message: "must be a valid number",
+			Value:   w.Hours,
+		})
+	} else if w.Hours <= 0 {
 		errors = append(errors, ValidationError{
 			Field:   "hours",
 			Message: "must be greater than 0",
 			Value:   w.Hours,
 		})
-	}
-
-	// Reasonable upper limit for hours per day
-	if w.Hours > 24 {
+	} else if w.Hours > 24 {
 		errors = append(errors, ValidationError{
 			Field:   "hours",
 			Message: "cannot exceed 24 hours per entry",
@@ -93,16 +96,19 @@ func (w *WorkItem) Validate(ctx context.Context) error {
 	}
 
 	// Validate rate
-	if w.Rate <= 0 {
+	if math.IsNaN(w.Rate) || math.IsInf(w.Rate, 0) {
+		errors = append(errors, ValidationError{
+			Field:   "rate",
+			Message: "must be a valid number",
+			Value:   w.Rate,
+		})
+	} else if w.Rate <= 0 {
 		errors = append(errors, ValidationError{
 			Field:   "rate",
 			Message: "must be greater than 0",
 			Value:   w.Rate,
 		})
-	}
-
-	// Reasonable upper limit for hourly rate
-	if w.Rate > 10000 {
+	} else if w.Rate > 10000 {
 		errors = append(errors, ValidationError{
 			Field:   "rate",
 			Message: "cannot exceed $10,000 per hour",
@@ -221,7 +227,7 @@ func (w *WorkItem) UpdateDescription(ctx context.Context, description string) er
 
 	description = strings.TrimSpace(description)
 	if description == "" {
-		return fmt.Errorf("description cannot be empty")
+		return ErrDescriptionRequired
 	}
 
 	if len(description) > 1000 {

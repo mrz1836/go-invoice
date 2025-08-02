@@ -9,6 +9,14 @@ import (
 	"github.com/mrz/go-invoice/internal/storage"
 )
 
+var (
+	ErrInvalidCreateClientRequest = fmt.Errorf("invalid create client request")
+	ErrFailedToGenerateClientID   = fmt.Errorf("failed to generate client ID")
+	ErrFailedToCreateClientModel  = fmt.Errorf("failed to create client model")
+	ErrFailedToStoreClient        = fmt.Errorf("failed to store client")
+	ErrFailedToRetrieveClient     = fmt.Errorf("failed to retrieve client")
+)
+
 // ClientService provides high-level client management operations
 // Follows dependency injection pattern with consumer-driven interfaces
 type ClientService struct {
@@ -45,7 +53,7 @@ func (s *ClientService) CreateClient(ctx context.Context, req models.CreateClien
 
 	// Validate request
 	if err := req.Validate(ctx); err != nil {
-		return nil, fmt.Errorf("invalid create client request: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidCreateClientRequest, err)
 	}
 
 	// Check if client with this email already exists
@@ -56,13 +64,13 @@ func (s *ClientService) CreateClient(ctx context.Context, req models.CreateClien
 	// Generate client ID
 	clientID, err := s.idGenerator.GenerateClientID(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate client ID: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrFailedToGenerateClientID, err)
 	}
 
 	// Create client
 	client, err := models.NewClient(ctx, clientID, req.Name, req.Email)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create client model: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrFailedToCreateClientModel, err)
 	}
 
 	// Set optional fields
@@ -86,7 +94,7 @@ func (s *ClientService) CreateClient(ctx context.Context, req models.CreateClien
 
 	// Store client
 	if err := s.clientStorage.CreateClient(ctx, client); err != nil {
-		return nil, fmt.Errorf("failed to store client: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrFailedToStoreClient, err)
 	}
 
 	s.logger.Info("client created successfully", "id", client.ID, "name", client.Name)
@@ -107,7 +115,7 @@ func (s *ClientService) GetClient(ctx context.Context, id models.ClientID) (*mod
 
 	client, err := s.clientStorage.GetClient(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve client: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrFailedToRetrieveClient, err)
 	}
 
 	return client, nil
@@ -230,7 +238,7 @@ func (s *ClientService) GetClientWithInvoices(ctx context.Context, id models.Cli
 	// Get client
 	client, err := s.clientStorage.GetClient(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve client: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrFailedToRetrieveClient, err)
 	}
 
 	// Get client's invoices
@@ -284,7 +292,7 @@ func (s *ClientService) ActivateClient(ctx context.Context, id models.ClientID) 
 	// Get client
 	client, err := s.clientStorage.GetClient(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve client: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrFailedToRetrieveClient, err)
 	}
 
 	if client.Active {
@@ -328,7 +336,7 @@ func (s *ClientService) DeactivateClient(ctx context.Context, id models.ClientID
 	// Get client
 	client, err := s.clientStorage.GetClient(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve client: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrFailedToRetrieveClient, err)
 	}
 
 	if !client.Active {
@@ -358,13 +366,13 @@ func (s *ClientService) GetClientStatistics(ctx context.Context) (*ClientStatist
 	}
 
 	// Get all clients
-	result, err := s.clientStorage.ListClients(ctx, false, 0, 0) // Get all clients
+	result, err := s.clientStorage.ListClients(ctx, false, -1, 0) // Get all clients
 	if err != nil {
 		return nil, fmt.Errorf("failed to get clients for statistics: %w", err)
 	}
 
 	stats := &ClientStatistics{
-		TotalClients: len(result.Clients),
+		TotalClients: int64(len(result.Clients)),
 	}
 
 	for _, client := range result.Clients {
@@ -432,7 +440,7 @@ type ClientWithInvoices struct {
 
 // ClientStatistics represents summary statistics for clients
 type ClientStatistics struct {
-	TotalClients    int `json:"total_clients"`
-	ActiveClients   int `json:"active_clients"`
-	InactiveClients int `json:"inactive_clients"`
+	TotalClients    int64 `json:"total_clients"`
+	ActiveClients   int64 `json:"active_clients"`
+	InactiveClients int64 `json:"inactive_clients"`
 }

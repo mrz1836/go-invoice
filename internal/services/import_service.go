@@ -10,6 +10,14 @@ import (
 	"github.com/mrz/go-invoice/internal/models"
 )
 
+var (
+	ErrCSVParsingFailed         = fmt.Errorf("CSV parsing failed")
+	ErrBatchValidationFailed    = fmt.Errorf("batch validation failed")
+	ErrClientVerificationFailed = fmt.Errorf("client verification failed")
+	ErrDuplicateDetectionFailed = fmt.Errorf("duplicate detection failed")
+	ErrBatchImportFailed        = fmt.Errorf("batch import failed")
+)
+
 // ImportService provides high-level import orchestration operations
 // Follows dependency injection pattern with consumer-driven interfaces
 type ImportService struct {
@@ -53,7 +61,7 @@ func (s *ImportService) ImportToNewInvoice(ctx context.Context, reader io.Reader
 	// Parse CSV data
 	parseResult, err := s.parser.ParseTimesheet(ctx, reader, req.ParseOptions)
 	if err != nil {
-		return nil, fmt.Errorf("CSV parsing failed: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCSVParsingFailed, err)
 	}
 
 	if len(parseResult.WorkItems) == 0 {
@@ -66,7 +74,7 @@ func (s *ImportService) ImportToNewInvoice(ctx context.Context, reader io.Reader
 
 	// Validate batch of work items
 	if err := s.validator.ValidateBatch(ctx, parseResult.WorkItems); err != nil {
-		return nil, fmt.Errorf("batch validation failed: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrBatchValidationFailed, err)
 	}
 
 	if req.DryRun {
@@ -77,7 +85,7 @@ func (s *ImportService) ImportToNewInvoice(ctx context.Context, reader io.Reader
 	// Verify client exists
 	_, err = s.clientService.GetClient(ctx, req.ClientID)
 	if err != nil {
-		return nil, fmt.Errorf("client verification failed: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrClientVerificationFailed, err)
 	}
 
 	// Generate invoice number if not provided
@@ -136,7 +144,7 @@ func (s *ImportService) AppendToInvoice(ctx context.Context, reader io.Reader, r
 	// Parse CSV data
 	parseResult, err := s.parser.ParseTimesheet(ctx, reader, req.ParseOptions)
 	if err != nil {
-		return nil, fmt.Errorf("CSV parsing failed: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrCSVParsingFailed, err)
 	}
 
 	if len(parseResult.WorkItems) == 0 {
@@ -150,13 +158,13 @@ func (s *ImportService) AppendToInvoice(ctx context.Context, reader io.Reader, r
 
 	// Validate batch
 	if err := s.validator.ValidateBatch(ctx, parseResult.WorkItems); err != nil {
-		return nil, fmt.Errorf("batch validation failed: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrBatchValidationFailed, err)
 	}
 
 	// Check for duplicates with existing invoice work items
 	warnings, err := s.detectDuplicates(ctx, models.InvoiceID(req.InvoiceID), parseResult.WorkItems)
 	if err != nil {
-		return nil, fmt.Errorf("duplicate detection failed: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrDuplicateDetectionFailed, err)
 	}
 
 	if req.DryRun {
@@ -182,8 +190,10 @@ func (s *ImportService) AppendToInvoice(ctx context.Context, reader io.Reader, r
 				"invoice_id", req.InvoiceID,
 				"work_item_date", workItem.Date,
 				"error", err)
+
 			continue
 		}
+
 		successCount++
 	}
 

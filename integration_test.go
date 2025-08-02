@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/mrz/go-invoice/internal/cli"
@@ -52,6 +50,7 @@ func (g *SimpleIDGenerator) GenerateID() string {
 // IntegrationTestSuite defines the integration test suite
 type IntegrationTestSuite struct {
 	suite.Suite
+
 	tempDir        string
 	logger         *cli.SimpleLogger
 	configService  *config.ConfigService
@@ -67,7 +66,7 @@ type IntegrationTestSuite struct {
 func (suite *IntegrationTestSuite) SetupSuite() {
 	// Create temporary directory for test files
 	tempDir, err := os.MkdirTemp("", "go-invoice-integration-*")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.tempDir = tempDir
 
 	// Initialize logger
@@ -155,9 +154,9 @@ func (suite *IntegrationTestSuite) TestBasicInvoiceCreation() {
 	}
 
 	client, err := suite.clientService.CreateClient(ctx, clientReq)
-	require.NoError(suite.T(), err)
-	assert.NotEmpty(suite.T(), client.ID)
-	assert.Equal(suite.T(), "Test Client", client.Name)
+	suite.Require().NoError(err)
+	suite.NotEmpty(client.ID)
+	suite.Equal("Test Client", client.Name)
 
 	// Create invoice request with proper structure
 	now := time.Now()
@@ -181,15 +180,15 @@ func (suite *IntegrationTestSuite) TestBasicInvoiceCreation() {
 
 	// Create invoice
 	invoice, err := suite.invoiceService.CreateInvoice(ctx, invoiceReq)
-	require.NoError(suite.T(), err)
-	assert.NotEmpty(suite.T(), invoice.ID)
-	assert.Equal(suite.T(), client.ID, invoice.Client.ID)
-	assert.Len(suite.T(), invoice.WorkItems, 1)
-	assert.Equal(suite.T(), models.StatusDraft, invoice.Status)
+	suite.Require().NoError(err)
+	suite.NotEmpty(invoice.ID)
+	suite.Equal(client.ID, invoice.Client.ID)
+	suite.Len(invoice.WorkItems, 1)
+	suite.Equal(models.StatusDraft, invoice.Status)
 
 	// Verify basic calculations (subtotal should be correct even if tax isn't applied)
-	assert.Equal(suite.T(), 800.0, invoice.Subtotal)
-	assert.Equal(suite.T(), "INT-001", invoice.Number)
+	suite.InDelta(800.0, invoice.Subtotal, 0.01)
+	suite.Equal("INT-001", invoice.Number)
 }
 
 // TestCSVParsingWorkflow tests CSV parsing functionality
@@ -203,29 +202,29 @@ func (suite *IntegrationTestSuite) TestCSVParsingWorkflow() {
 
 	csvFile := filepath.Join(suite.tempDir, "test_timesheet.csv")
 	err := os.WriteFile(csvFile, []byte(csvContent), 0o644)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Open and parse CSV file
 	file, err := os.Open(csvFile)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	defer file.Close()
 
 	// Parse CSV data
 	result, err := suite.csvParser.ParseTimesheet(ctx, file, csv.ParseOptions{})
-	require.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), result)
-	assert.Len(suite.T(), result.WorkItems, 2)
+	suite.Require().NoError(err)
+	suite.NotNil(result)
+	suite.Len(result.WorkItems, 2)
 
 	// Verify parsed data
 	workItem1 := result.WorkItems[0]
-	assert.Equal(suite.T(), "Website Design", workItem1.Description)
-	assert.Equal(suite.T(), 8.5, workItem1.Hours)
-	assert.Equal(suite.T(), 95.0, workItem1.Rate)
+	suite.Equal("Website Design", workItem1.Description)
+	suite.InDelta(8.5, workItem1.Hours, 0.01)
+	suite.InDelta(95.0, workItem1.Rate, 0.01)
 
 	workItem2 := result.WorkItems[1]
-	assert.Equal(suite.T(), "Frontend Development", workItem2.Description)
-	assert.Equal(suite.T(), 7.25, workItem2.Hours)
-	assert.Equal(suite.T(), 110.0, workItem2.Rate)
+	suite.Equal("Frontend Development", workItem2.Description)
+	suite.InDelta(7.25, workItem2.Hours, 0.01)
+	suite.InDelta(110.0, workItem2.Rate, 0.01)
 }
 
 // TestInvoiceListingAndFiltering tests invoice listing functionality
@@ -238,7 +237,7 @@ func (suite *IntegrationTestSuite) TestInvoiceListingAndFiltering() {
 		Email: "listing@test.com",
 	}
 	client, err := suite.clientService.CreateClient(ctx, clientReq)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Create multiple invoices
 	now := time.Now()
@@ -280,29 +279,29 @@ func (suite *IntegrationTestSuite) TestInvoiceListingAndFiltering() {
 
 	// Create both invoices
 	invoice1, err := suite.invoiceService.CreateInvoice(ctx, invoice1Req)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	invoice2, err := suite.invoiceService.CreateInvoice(ctx, invoice2Req)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// List all invoices
 	result, err := suite.storage.ListInvoices(ctx, models.InvoiceFilter{})
-	require.NoError(suite.T(), err)
-	assert.Len(suite.T(), result.Invoices, 2)
+	suite.Require().NoError(err)
+	suite.Len(result.Invoices, 2)
 
 	// Verify both invoices are present
 	invoiceNumbers := []string{result.Invoices[0].Number, result.Invoices[1].Number}
-	assert.Contains(suite.T(), invoiceNumbers, "INT-003")
-	assert.Contains(suite.T(), invoiceNumbers, "INT-004")
+	suite.Contains(invoiceNumbers, "INT-003")
+	suite.Contains(invoiceNumbers, "INT-004")
 
 	// Test getting individual invoices
 	retrievedInvoice1, err := suite.invoiceService.GetInvoice(ctx, invoice1.ID)
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "INT-003", retrievedInvoice1.Number)
+	suite.Require().NoError(err)
+	suite.Equal("INT-003", retrievedInvoice1.Number)
 
 	retrievedInvoice2, err := suite.invoiceService.GetInvoice(ctx, invoice2.ID)
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "INT-004", retrievedInvoice2.Number)
+	suite.Require().NoError(err)
+	suite.Equal("INT-004", retrievedInvoice2.Number)
 }
 
 // TestErrorHandling tests various error scenarios
@@ -315,27 +314,27 @@ invalid-date,Test Item,8,100`
 
 	csvFile := filepath.Join(suite.tempDir, "invalid_test.csv")
 	err := os.WriteFile(csvFile, []byte(invalidCSV), 0o644)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	file, err := os.Open(csvFile)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	defer file.Close()
 
 	// This should return an error due to invalid date
 	_, err = suite.csvParser.ParseTimesheet(ctx, file, csv.ParseOptions{})
-	assert.Error(suite.T(), err)
+	suite.Require().Error(err)
 
 	// Test getting non-existent invoice
 	_, err = suite.invoiceService.GetInvoice(ctx, models.InvoiceID("non-existent"))
-	assert.Error(suite.T(), err)
+	suite.Require().Error(err)
 
 	// Test context cancellation
 	cancelCtx, cancel := context.WithCancel(ctx)
 	cancel() // Cancel immediately
 
 	_, err = suite.invoiceService.GetInvoice(cancelCtx, models.InvoiceID("any-id"))
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Require().Error(err)
+	suite.Equal(context.Canceled, err)
 }
 
 // TestCompleteWorkflow tests a complete workflow from client creation to invoice management
@@ -350,7 +349,7 @@ func (suite *IntegrationTestSuite) TestCompleteWorkflow() {
 	}
 
 	client, err := suite.clientService.CreateClient(ctx, clientReq)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Step 2: Create CSV data and parse it
 	csvContent := `date,description,hours,rate
@@ -360,15 +359,15 @@ func (suite *IntegrationTestSuite) TestCompleteWorkflow() {
 
 	csvFile := filepath.Join(suite.tempDir, "workflow_timesheet.csv")
 	err = os.WriteFile(csvFile, []byte(csvContent), 0o644)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	file, err := os.Open(csvFile)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	defer file.Close()
 
 	parseResult, err := suite.csvParser.ParseTimesheet(ctx, file, csv.ParseOptions{})
-	require.NoError(suite.T(), err)
-	assert.Len(suite.T(), parseResult.WorkItems, 3)
+	suite.Require().NoError(err)
+	suite.Len(parseResult.WorkItems, 3)
 
 	// Step 3: Create invoice with parsed work items
 	now := time.Now()
@@ -381,28 +380,28 @@ func (suite *IntegrationTestSuite) TestCompleteWorkflow() {
 	}
 
 	invoice, err := suite.invoiceService.CreateInvoice(ctx, invoiceReq)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Step 4: Verify the complete invoice
-	assert.Equal(suite.T(), "WF-001", invoice.Number)
-	assert.Equal(suite.T(), client.ID, invoice.Client.ID)
-	assert.Len(suite.T(), invoice.WorkItems, 3)
-	assert.Equal(suite.T(), models.StatusDraft, invoice.Status)
+	suite.Equal("WF-001", invoice.Number)
+	suite.Equal(client.ID, invoice.Client.ID)
+	suite.Len(invoice.WorkItems, 3)
+	suite.Equal(models.StatusDraft, invoice.Status)
 
 	// Calculate expected total: 4*120 + 6.5*120 + 2*100 = 480 + 780 + 200 = 1460
 	expectedSubtotal := 4.0*120.0 + 6.5*120.0 + 2.0*100.0
-	assert.Equal(suite.T(), expectedSubtotal, invoice.Subtotal)
+	suite.InEpsilon(expectedSubtotal, invoice.Subtotal, 0.001)
 
 	// Step 5: Verify we can list and retrieve the invoice
 	listResult, err := suite.storage.ListInvoices(ctx, models.InvoiceFilter{})
-	require.NoError(suite.T(), err)
-	assert.Len(suite.T(), listResult.Invoices, 1)
-	assert.Equal(suite.T(), "WF-001", listResult.Invoices[0].Number)
+	suite.Require().NoError(err)
+	suite.Len(listResult.Invoices, 1)
+	suite.Equal("WF-001", listResult.Invoices[0].Number)
 
 	retrievedInvoice, err := suite.invoiceService.GetInvoice(ctx, invoice.ID)
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), invoice.ID, retrievedInvoice.ID)
-	assert.Equal(suite.T(), "WF-001", retrievedInvoice.Number)
+	suite.Require().NoError(err)
+	suite.Equal(invoice.ID, retrievedInvoice.ID)
+	suite.Equal("WF-001", retrievedInvoice.Number)
 }
 
 // TestIntegrationSuite runs the integration test suite

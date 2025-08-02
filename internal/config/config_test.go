@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 // ConfigTestSuite defines the test suite for configuration functionality
 type ConfigTestSuite struct {
 	suite.Suite
+
 	logger    *TestLogger
 	validator *SimpleValidator
 	service   *ConfigService
@@ -34,7 +34,7 @@ func (l *TestLogger) Debug(msg string, fields ...any) { l.messages = append(l.me
 func (suite *ConfigTestSuite) SetupSuite() {
 	// Create temporary directory for test files
 	tempDir, err := os.MkdirTemp("", "go-invoice-test-*")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.tempDir = tempDir
 }
 
@@ -53,7 +53,7 @@ func (suite *ConfigTestSuite) SetupTest() {
 // TestNewConfigService tests the constructor
 func (suite *ConfigTestSuite) TestNewConfigService() {
 	service := NewConfigService(suite.logger, suite.validator)
-	assert.NotNil(suite.T(), service)
+	suite.NotNil(service)
 }
 
 // TestLoadConfigFromEnv tests loading configuration from environment variables
@@ -130,13 +130,13 @@ func (suite *ConfigTestSuite) TestLoadConfigFromEnv() {
 			config, err := suite.service.LoadConfig(ctx, "nonexistent.env")
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
-				assert.Nil(suite.T(), config)
+				suite.Error(err)
+				suite.Nil(config)
 			} else {
-				require.NoError(suite.T(), err)
-				require.NotNil(suite.T(), config)
+				suite.Require().NoError(err)
+				suite.Require().NotNil(config)
 				if tt.expected != nil {
-					assert.True(suite.T(), tt.expected(config), "config validation failed")
+					suite.True(tt.expected(config), "config validation failed")
 				}
 			}
 
@@ -159,16 +159,16 @@ CURRENCY=GBP
 
 	envFile := filepath.Join(suite.tempDir, "test.env")
 	err := os.WriteFile(envFile, []byte(envContent), 0o644)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	ctx := context.Background()
 	config, err := suite.service.LoadConfig(ctx, envFile)
 
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "File Business", config.Business.Name)
-	assert.Equal(suite.T(), "file@example.com", config.Business.Email)
-	assert.Equal(suite.T(), "FB", config.Invoice.Prefix)
-	assert.Equal(suite.T(), "GBP", config.Invoice.Currency)
+	suite.Require().NoError(err)
+	suite.Equal("File Business", config.Business.Name)
+	suite.Equal("file@example.com", config.Business.Email)
+	suite.Equal("FB", config.Invoice.Prefix)
+	suite.Equal("GBP", config.Invoice.Currency)
 }
 
 // TestLoadConfigContextCancellation tests context cancellation
@@ -178,9 +178,9 @@ func (suite *ConfigTestSuite) TestLoadConfigContextCancellation() {
 
 	config, err := suite.service.LoadConfig(ctx, "test.env")
 
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
-	assert.Nil(suite.T(), config)
+	suite.Error(err)
+	suite.Equal(context.Canceled, err)
+	suite.Nil(config)
 }
 
 // TestValidateConfig tests configuration validation
@@ -304,7 +304,7 @@ func (suite *ConfigTestSuite) TestEnvHelperFunctions() {
 		assert.True(suite.T(), result)
 
 		result = getEnvBool("NONEXISTENT_BOOL", false)
-		assert.False(suite.T(), result)
+		suite.False(result)
 	})
 
 	suite.Run("getEnvDuration", func() {

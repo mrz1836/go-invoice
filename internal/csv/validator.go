@@ -135,6 +135,7 @@ func (v *WorkItemValidator) ValidateBatch(ctx context.Context, items []models.Wo
 	}
 
 	v.logger.Debug("batch validation completed successfully", "items", len(items))
+
 	return nil
 }
 
@@ -314,10 +315,12 @@ func (v *WorkItemValidator) validateDateRange(items []models.WorkItem) error {
 	}
 
 	var minDate, maxDate time.Time
+
 	for i, item := range items {
 		if i == 0 {
 			minDate = item.Date
 			maxDate = item.Date
+
 			continue
 		}
 
@@ -387,9 +390,11 @@ func (v *WorkItemValidator) RemoveRule(ruleName string) bool {
 		if rule.Name == ruleName {
 			v.rules = append(v.rules[:i], v.rules[i+1:]...)
 			v.logger.Debug("validation rule removed", "rule", ruleName)
+
 			return true
 		}
 	}
+
 	return false
 }
 

@@ -12,6 +12,20 @@ import (
 	"github.com/mrz/go-invoice/internal/models"
 )
 
+// CSV parsing errors
+var (
+	ErrCSVFileEmpty          = fmt.Errorf("CSV file is empty")
+	ErrCannotDetectFormat    = fmt.Errorf("cannot detect format of empty file")
+	ErrUnsupportedCSVFormat  = fmt.Errorf("unsupported CSV format")
+	ErrEmptyRow              = fmt.Errorf("empty row")
+	ErrNoRowsToProcess       = fmt.Errorf("no rows to process")
+	ErrRequiredFieldMissing  = fmt.Errorf("required field not found in header")
+	ErrFieldNotInHeader      = fmt.Errorf("field not found in header")
+	ErrFieldMissingInRow     = fmt.Errorf("field missing in row")
+	ErrFieldEmpty            = fmt.Errorf("field is empty")
+	ErrUnsupportedDateFormat = fmt.Errorf("unsupported date format")
+)
+
 // TimesheetParser defines the interface for CSV parsing operations
 // Consumer-driven interface defined at point of use
 type TimesheetParser interface {
@@ -71,7 +85,7 @@ func (p *CSVParser) ParseTimesheet(ctx context.Context, reader io.Reader, option
 	}
 
 	if len(rows) == 0 {
-		return nil, fmt.Errorf("CSV file is empty")
+		return nil, ErrCSVFileEmpty
 	}
 
 	// Detect or validate header
@@ -121,6 +135,7 @@ func (p *CSVParser) ParseTimesheet(ctx context.Context, reader io.Reader, option
 			if !options.ContinueOnError {
 				return nil, fmt.Errorf("validation failed at line %d: %w", lineNum, err)
 			}
+
 			continue
 		}
 
@@ -160,11 +175,14 @@ func (p *CSVParser) DetectFormat(ctx context.Context, reader io.Reader) (*Format
 	}
 
 	if len(content) == 0 {
-		return nil, fmt.Errorf("cannot detect format of empty file")
+		return nil, ErrCannotDetectFormat
 	}
 
 	// Analyze content to detect format
-	format := p.analyzeFormat(string(content))
+	format, err := p.analyzeFormat(string(content))
+	if err != nil {
+		return nil, fmt.Errorf("format detection failed: %w", err)
+	}
 
 	p.logger.Debug("format detection completed", "detected_format", format.Name, "delimiter", format.Delimiter)
 
@@ -185,7 +203,7 @@ func (p *CSVParser) ValidateFormat(ctx context.Context, reader io.Reader) error 
 	}
 
 	if !p.isSupportedFormat(format) {
-		return fmt.Errorf("unsupported CSV format: %s", format.Name)
+		return fmt.Errorf("%w: %s", ErrUnsupportedCSVFormat, format.Name)
 	}
 
 	return nil
@@ -200,7 +218,7 @@ func (p *CSVParser) parseRow(ctx context.Context, row []string, headerMap map[st
 	}
 
 	if len(row) == 0 {
-		return nil, fmt.Errorf("empty row")
+		return nil, ErrEmptyRow
 	}
 
 	// Extract required fields using header mapping
@@ -257,7 +275,7 @@ func (p *CSVParser) parseRow(ctx context.Context, row []string, headerMap map[st
 // processHeader processes the header row and returns field mapping
 func (p *CSVParser) processHeader(ctx context.Context, rows [][]string, options ParseOptions) (map[string]int, int, error) {
 	if len(rows) == 0 {
-		return nil, 0, fmt.Errorf("no rows to process")
+		return nil, 0, ErrNoRowsToProcess
 	}
 
 	headerRow := rows[0]
@@ -273,11 +291,12 @@ func (p *CSVParser) processHeader(ctx context.Context, rows [][]string, options 
 	requiredFields := []string{"date", "hours", "rate", "description"}
 	for _, field := range requiredFields {
 		if _, exists := headerMap[field]; !exists {
-			return nil, 0, fmt.Errorf("required field '%s' not found in header", field)
+			return nil, 0, fmt.Errorf("%w: %s", ErrRequiredFieldMissing, field)
 		}
 	}
 
 	p.logger.Debug("header processed", "fields", len(headerMap))
+
 	return headerMap, 1, nil // Data starts at row 1 (0-based)
 }
 
@@ -285,16 +304,16 @@ func (p *CSVParser) processHeader(ctx context.Context, rows [][]string, options 
 func (p *CSVParser) getFieldValue(row []string, headerMap map[string]int, fieldName string, lineNum int) (string, error) {
 	colIndex, exists := headerMap[fieldName]
 	if !exists {
-		return "", fmt.Errorf("field '%s' not found in header", fieldName)
+		return "", fmt.Errorf("%w: %s", ErrFieldNotInHeader, fieldName)
 	}
 
 	if colIndex >= len(row) {
-		return "", fmt.Errorf("field '%s' missing in row", fieldName)
+		return "", fmt.Errorf("%w: %s", ErrFieldMissingInRow, fieldName)
 	}
 
 	value := strings.TrimSpace(row[colIndex])
 	if value == "" {
-		return "", fmt.Errorf("field '%s' is empty", fieldName)
+		return "", fmt.Errorf("%w: %s", ErrFieldEmpty, fieldName)
 	}
 
 	return value, nil
@@ -339,7 +358,7 @@ func (p *CSVParser) parseDate(dateStr string) (time.Time, error) {
 		}
 	}
 
-	return time.Time{}, fmt.Errorf("unsupported date format")
+	return time.Time{}, ErrUnsupportedDateFormat
 }
 
 // configureReader configures CSV reader based on format
@@ -359,33 +378,80 @@ func (p *CSVParser) configureReader(reader *csv.Reader, format string) error {
 	}
 
 	reader.TrimLeadingSpace = true
+
 	return nil
 }
 
 // analyzeFormat analyzes content to detect CSV format
-func (p *CSVParser) analyzeFormat(content string) *FormatInfo {
+func (p *CSVParser) analyzeFormat(content string) (*FormatInfo, error) {
 	lines := strings.Split(content, "\n")
 	if len(lines) == 0 {
-		return &FormatInfo{Name: "standard", Delimiter: ','}
+		return nil, fmt.Errorf("no content to analyze")
 	}
 
-	firstLine := lines[0]
+	firstLine := strings.TrimSpace(lines[0])
+	if firstLine == "" {
+		return nil, fmt.Errorf("first line is empty")
+	}
 
 	// Count different delimiters
 	commaCount := strings.Count(firstLine, ",")
 	tabCount := strings.Count(firstLine, "\t")
 	semicolonCount := strings.Count(firstLine, ";")
 
+	// Check for mixed delimiters (ambiguous format)
+	totalDelimiters := commaCount + tabCount + semicolonCount
+	if totalDelimiters > 0 {
+		// Count how many different delimiter types are present
+		delimiterTypes := 0
+		if commaCount > 0 {
+			delimiterTypes++
+		}
+		if tabCount > 0 {
+			delimiterTypes++
+		}
+		if semicolonCount > 0 {
+			delimiterTypes++
+		}
+
+		// If multiple delimiter types, it's ambiguous
+		if delimiterTypes > 1 {
+			return nil, fmt.Errorf("ambiguous format: multiple delimiter types detected")
+		}
+	}
+
+	// Check if no clear delimiters found
+	if totalDelimiters == 0 {
+		return nil, fmt.Errorf("no clear delimiters found")
+	}
+
+	// Check for too few or too many columns
+	maxDelimiterCount := commaCount
+	if tabCount > maxDelimiterCount {
+		maxDelimiterCount = tabCount
+	}
+	if semicolonCount > maxDelimiterCount {
+		maxDelimiterCount = semicolonCount
+	}
+
+	columnCount := maxDelimiterCount + 1
+	if columnCount < 3 {
+		return nil, fmt.Errorf("too few columns detected (%d), need at least 3 for work items", columnCount)
+	}
+	if columnCount > 50 {
+		return nil, fmt.Errorf("too many columns detected (%d), maximum supported is 50", columnCount)
+	}
+
 	// Determine most likely delimiter
 	if tabCount > commaCount && tabCount > semicolonCount {
-		return &FormatInfo{Name: "tab", Delimiter: '\t'}
+		return &FormatInfo{Name: "tab", Delimiter: '\t'}, nil
 	}
 	if semicolonCount > commaCount && semicolonCount > tabCount {
-		return &FormatInfo{Name: "semicolon", Delimiter: ';'}
+		return &FormatInfo{Name: "semicolon", Delimiter: ';'}, nil
 	}
 
 	// Default to comma (standard CSV)
-	return &FormatInfo{Name: "standard", Delimiter: ','}
+	return &FormatInfo{Name: "standard", Delimiter: ','}, nil
 }
 
 // isSupportedFormat checks if the detected format is supported

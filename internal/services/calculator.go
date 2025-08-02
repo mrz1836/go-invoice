@@ -9,6 +9,13 @@ import (
 	"github.com/mrz/go-invoice/internal/models"
 )
 
+// Calculator service errors
+var (
+	ErrInvoiceCannotBeNil    = fmt.Errorf("invoice cannot be nil")
+	ErrHoursCannotBeNegative = fmt.Errorf("hours cannot be negative")
+	ErrRateCannotBeNegative  = fmt.Errorf("rate cannot be negative")
+)
+
 // InvoiceCalculator provides calculation services for invoices
 // Follows dependency injection pattern with consumer-driven interfaces
 type InvoiceCalculator struct {
@@ -89,7 +96,7 @@ func (c *InvoiceCalculator) CalculateInvoiceTotals(ctx context.Context, invoice 
 	}
 
 	if invoice == nil {
-		return nil, fmt.Errorf("invoice cannot be nil")
+		return nil, ErrInvoiceCannotBeNil
 	}
 
 	if options == nil {
@@ -104,6 +111,7 @@ func (c *InvoiceCalculator) CalculateInvoiceTotals(ctx context.Context, invoice 
 	}
 
 	start := time.Now()
+
 	c.logger.Debug("calculating invoice totals", "invoice_id", invoice.ID, "work_items", len(invoice.WorkItems))
 
 	// Calculate subtotal from work items
@@ -182,11 +190,11 @@ func (c *InvoiceCalculator) CalculateWorkItemTotal(ctx context.Context, hours, r
 	}
 
 	if hours < 0 {
-		return 0, fmt.Errorf("hours cannot be negative: %f", hours)
+		return 0, fmt.Errorf("%w: %f", ErrHoursCannotBeNegative, hours)
 	}
 
 	if rate < 0 {
-		return 0, fmt.Errorf("rate cannot be negative: %f", rate)
+		return 0, fmt.Errorf("%w: %f", ErrRateCannotBeNegative, rate)
 	}
 
 	total := hours * rate
@@ -207,7 +215,7 @@ func (c *InvoiceCalculator) ValidateCalculation(ctx context.Context, invoice *mo
 	}
 
 	if invoice == nil {
-		return fmt.Errorf("invoice cannot be nil")
+		return ErrInvoiceCannotBeNil
 	}
 
 	if options == nil {
@@ -342,6 +350,7 @@ func (c *InvoiceCalculator) GetCalculationSummary(ctx context.Context, invoices 
 // calculateWorkItemTotals calculates totals for all work items
 func (c *InvoiceCalculator) calculateWorkItemTotals(ctx context.Context, workItems []models.WorkItem, options *CalculationOptions) (float64, float64, []WorkItemCalculation, error) {
 	var subtotal, totalHours float64
+
 	var workItemCalcs []WorkItemCalculation
 
 	for _, item := range workItems {

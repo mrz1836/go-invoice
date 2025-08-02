@@ -161,7 +161,7 @@ func (c *Client) UpdateName(ctx context.Context, name string) error {
 
 	name = strings.TrimSpace(name)
 	if name == "" {
-		return fmt.Errorf("name cannot be empty")
+		return ErrNameRequired
 	}
 
 	if len(name) > 200 {
@@ -183,7 +183,7 @@ func (c *Client) UpdateEmail(ctx context.Context, email string) error {
 
 	email = strings.TrimSpace(email)
 	if email == "" {
-		return fmt.Errorf("email cannot be empty")
+		return ErrEmailRequired
 	}
 
 	if !emailPattern.MatchString(email) {

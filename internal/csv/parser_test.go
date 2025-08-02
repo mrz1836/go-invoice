@@ -531,7 +531,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetMissingFields() {
 	assert.Equal(suite.T(), 0, result.SuccessRows)
 	assert.Equal(suite.T(), 1, result.ErrorRows)
 	assert.Len(suite.T(), result.Errors, 1)
-	assert.Contains(suite.T(), result.Errors[0].Message, "field 'hours' is empty")
+	assert.Contains(suite.T(), result.Errors[0].Message, "field is empty: hours")
 }
 
 // TestParseTimesheetLogging tests that logging works correctly

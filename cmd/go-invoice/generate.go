@@ -418,7 +418,7 @@ func (a *App) executeGenerateTemplateList(ctx context.Context, configPath string
 
 // Helper methods
 
-func (a *App) createRenderService(config *config.Config) (*render.TemplateRenderer, error) {
+func (a *App) createRenderService(_ *config.Config) (*render.TemplateRenderer, error) {
 	// Create file reader
 	fileReader := &SimpleFileReader{}
 
@@ -510,7 +510,7 @@ func (a *App) enhanceInvoiceData(invoice *models.Invoice, config *config.Config)
 	}
 }
 
-func (a *App) createSampleInvoice(config *config.Config) *models.Invoice {
+func (a *App) createSampleInvoice(_ *config.Config) *models.Invoice {
 	// Create sample client
 	client := models.Client{
 		ID:      models.ClientID("sample_client"),
@@ -597,6 +597,7 @@ func (a *App) openInBrowser(path string) error {
 
 	// Use platform-specific command to open file
 	var cmd string
+
 	switch {
 	case strings.Contains(strings.ToLower(os.Getenv("OS")), "windows"):
 		cmd = fmt.Sprintf("start %s", absPath)

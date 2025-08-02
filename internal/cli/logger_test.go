@@ -42,12 +42,12 @@ func (suite *LoggerTestSuite) TearDownTest() {
 // TestNewLogger tests the logger constructor
 func (suite *LoggerTestSuite) TestNewLogger() {
 	logger := NewLogger(true)
-	assert.NotNil(suite.T(), logger)
-	assert.True(suite.T(), logger.debug)
+	suite.NotNil(logger)
+	suite.True(logger.debug)
 
 	logger = NewLogger(false)
-	assert.NotNil(suite.T(), logger)
-	assert.False(suite.T(), logger.debug)
+	suite.NotNil(logger)
+	suite.False(logger.debug)
 }
 
 // TestInfoLogging tests info message logging
@@ -55,8 +55,8 @@ func (suite *LoggerTestSuite) TestInfoLogging() {
 	suite.logger.Info("test info message")
 
 	output := suite.logOutput.String()
-	assert.Contains(suite.T(), output, "[INFO]")
-	assert.Contains(suite.T(), output, "test info message")
+	suite.Contains(output, "[INFO]")
+	suite.Contains(output, "test info message")
 }
 
 // TestInfoLoggingWithFields tests info message logging with fields
@@ -64,7 +64,7 @@ func (suite *LoggerTestSuite) TestInfoLoggingWithFields() {
 	suite.logger.Info("test message", "key1", "value1", "key2", 42)
 
 	output := suite.logOutput.String()
-	assert.Contains(suite.T(), output, "[INFO]")
+	suite.Contains(output, "[INFO]")
 	assert.Contains(suite.T(), output, "test message")
 	assert.Contains(suite.T(), output, "key1=value1")
 	assert.Contains(suite.T(), output, "key2=42")
@@ -95,7 +95,7 @@ func (suite *LoggerTestSuite) TestDebugLoggingDisabled() {
 	suite.logger.Debug("debug message should not appear")
 
 	output := suite.logOutput.String()
-	assert.Empty(suite.T(), output)
+	suite.Empty(output)
 }
 
 // TestDebugLoggingEnabled tests that debug messages are logged when debug is enabled
@@ -157,7 +157,7 @@ func (suite *LoggerTestSuite) TestFormatFields() {
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
 			result := suite.logger.formatFields(tt.fields...)
-			assert.Equal(suite.T(), tt.expected, result)
+			suite.Equal(tt.expected, result)
 		})
 	}
 }
@@ -171,7 +171,7 @@ func (suite *LoggerTestSuite) TestLoggerIntegration() {
 	output := suite.logOutput.String()
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 
-	assert.Len(suite.T(), lines, 2)
+	suite.Len(lines, 2)
 	assert.Contains(suite.T(), lines[0], "[INFO]")
 	assert.Contains(suite.T(), lines[0], "application started")
 	assert.Contains(suite.T(), lines[1], "[ERROR]")
@@ -203,7 +203,7 @@ func (suite *LoggerTestSuite) TestLoggerConcurrency() {
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 
 	// Should have exactly numGoroutines * messagesPerGoroutine lines
-	assert.Len(suite.T(), lines, numGoroutines*messagesPerGoroutine)
+	suite.Len(lines, numGoroutines*messagesPerGoroutine)
 
 	// All lines should contain [INFO] and "concurrent message"
 	for _, line := range lines {

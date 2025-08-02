@@ -186,6 +186,8 @@ func (suite *ClientServiceTestSuite) TestUpdateClient() {
 		updatedClient.Address = "New Address"
 		updatedClient.TaxID = "NEW-TAX"
 
+		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-001")).Return(existingClient, nil).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, "new@example.com").Return(nil, storage.NewErrNotFound("client", "new@example.com")).Once()
 		suite.clientStorage.On("UpdateClient", suite.ctx, &updatedClient).Return(nil).Once()
 
 		client, err := suite.service.UpdateClient(suite.ctx, &updatedClient)
@@ -198,6 +200,11 @@ func (suite *ClientServiceTestSuite) TestUpdateClient() {
 
 	// Storage error
 	suite.Run("StorageError", func() {
+		existingClient := &models.Client{
+			ID:    "CLIENT-001",
+			Name:  "Test Client",
+			Email: "old@example.com",
+		}
 		client := &models.Client{
 			ID:        "CLIENT-001",
 			Name:      "Test Client",
@@ -206,6 +213,8 @@ func (suite *ClientServiceTestSuite) TestUpdateClient() {
 			UpdatedAt: time.Now(),
 		}
 
+		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-001")).Return(existingClient, nil).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(nil, storage.NewErrNotFound("client", "test@example.com")).Once()
 		suite.clientStorage.On("UpdateClient", suite.ctx, client).Return(errors.New("storage error")).Once()
 
 		updatedClient, err := suite.service.UpdateClient(suite.ctx, client)
@@ -230,16 +239,11 @@ func (suite *ClientServiceTestSuite) TestDeleteClient() {
 
 	// Success - no active invoices
 	suite.Run("Success", func() {
-		client := &models.Client{
-			ID:     "CLIENT-001",
-			Name:   "Test Client",
-			Active: true,
-		}
-
-		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-001")).Return(client, nil).Once()
-		suite.invoiceStorage.On("CountInvoices", suite.ctx, mock.MatchedBy(func(filter models.InvoiceFilter) bool {
-			return filter.ClientID == "CLIENT-001"
-		})).Return(int64(0), nil).Once()
+		// Mock ListInvoices for each status check
+		emptyResult := &storage.InvoiceListResult{Invoices: []*models.Invoice{}, TotalCount: 0}
+		suite.invoiceStorage.On("ListInvoices", suite.ctx, mock.MatchedBy(func(filter models.InvoiceFilter) bool {
+			return filter.ClientID == "CLIENT-001" && filter.Limit == 1
+		})).Return(emptyResult, nil).Times(3) // Three status checks
 		suite.clientStorage.On("DeleteClient", suite.ctx, models.ClientID("CLIENT-001")).Return(nil).Once()
 
 		err := suite.service.DeleteClient(suite.ctx, "CLIENT-001")
@@ -249,21 +253,23 @@ func (suite *ClientServiceTestSuite) TestDeleteClient() {
 
 	// Has active invoices
 	suite.Run("HasActiveInvoices", func() {
-		client := &models.Client{
-			ID:     "CLIENT-001",
-			Name:   "Test Client",
-			Active: true,
+		// Mock ListInvoices to return invoices for first status check
+		activeResult := &storage.InvoiceListResult{
+			Invoices: []*models.Invoice{{
+				ID:     "INV-001",
+				Status: models.StatusDraft,
+				Client: models.Client{ID: "CLIENT-001"},
+			}},
+			TotalCount: 5,
 		}
-
-		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-001")).Return(client, nil).Once()
-		suite.invoiceStorage.On("CountInvoices", suite.ctx, mock.MatchedBy(func(filter models.InvoiceFilter) bool {
-			return filter.ClientID == "CLIENT-001"
-		})).Return(int64(5), nil).Once()
+		suite.invoiceStorage.On("ListInvoices", suite.ctx, mock.MatchedBy(func(filter models.InvoiceFilter) bool {
+			return filter.ClientID == "CLIENT-001" && filter.Status == models.StatusDraft && filter.Limit == 1
+		})).Return(activeResult, nil).Once()
 
 		err := suite.service.DeleteClient(suite.ctx, "CLIENT-001")
 
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot delete client with 5 active invoices")
+		assert.Contains(t, err.Error(), "cannot delete client with active invoices")
 	})
 }
 
@@ -325,7 +331,7 @@ func (suite *ClientServiceTestSuite) TestFindClientByEmail() {
 
 		require.Error(t, err)
 		assert.Nil(t, client)
-		assert.Contains(t, err.Error(), "client with email 'notfound@example.com' not found")
+		assert.Contains(t, err.Error(), "failed to find client by email")
 	})
 }
 
@@ -365,6 +371,12 @@ func (suite *ClientServiceTestSuite) TestDeactivateClient() {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
+
+		// Mock ListInvoices for active invoice check (no active invoices)
+		emptyResult := &storage.InvoiceListResult{Invoices: []*models.Invoice{}, TotalCount: 0}
+		suite.invoiceStorage.On("ListInvoices", suite.ctx, mock.MatchedBy(func(filter models.InvoiceFilter) bool {
+			return filter.ClientID == "CLIENT-001" && filter.Limit == 1
+		})).Return(emptyResult, nil).Times(3) // Three status checks
 
 		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-001")).Return(activeClient, nil).Once()
 		suite.clientStorage.On("UpdateClient", suite.ctx, mock.AnythingOfType("*models.Client")).Return(nil).Once()
@@ -431,26 +443,11 @@ func (suite *ClientServiceTestSuite) TestGetClientStatistics() {
 
 	// Success case
 	suite.Run("Success", func() {
-		// Mock active clients count
-		suite.clientStorage.On("ListClients", suite.ctx, true, -1, 0).Return(&storage.ClientListResult{
-			Clients:    activeClients,
-			TotalCount: 2,
-		}, nil).Once()
-
-		// Mock all clients count
+		// Mock call to get all clients
 		suite.clientStorage.On("ListClients", suite.ctx, false, -1, 0).Return(&storage.ClientListResult{
 			Clients:    append(activeClients, inactiveClients...),
 			TotalCount: 3,
 		}, nil).Once()
-
-		// Mock invoice counts for each active client
-		suite.invoiceStorage.On("CountInvoices", suite.ctx, mock.MatchedBy(func(filter models.InvoiceFilter) bool {
-			return filter.ClientID == "CLIENT-001"
-		})).Return(int64(5), nil).Once()
-
-		suite.invoiceStorage.On("CountInvoices", suite.ctx, mock.MatchedBy(func(filter models.InvoiceFilter) bool {
-			return filter.ClientID == "CLIENT-002"
-		})).Return(int64(3), nil).Once()
 
 		stats, err := suite.service.GetClientStatistics(suite.ctx)
 

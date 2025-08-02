@@ -103,7 +103,7 @@ func (suite *PrompterTestSuite) TestPromptString_ContextCancellation() {
 
 	assert.Error(suite.T(), err)
 	assert.Equal(suite.T(), context.Canceled, err)
-	assert.Empty(suite.T(), result)
+	suite.Empty(result)
 }
 
 func (suite *PrompterTestSuite) TestPromptStringRequired() {

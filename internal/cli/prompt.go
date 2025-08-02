@@ -10,6 +10,12 @@ import (
 	"time"
 )
 
+// Static error variables for err113 compliance
+var (
+	ErrNoOptionsProvided = fmt.Errorf("no options provided")
+	ErrNoValidOptions    = fmt.Errorf("no valid options selected")
+)
+
 // Prompter provides interactive prompting capabilities with context support
 type Prompter struct {
 	reader *bufio.Reader
@@ -164,7 +170,7 @@ func (p *Prompter) PromptBool(ctx context.Context, prompt string, defaultValue b
 // PromptSelect prompts the user to select from a list of options
 func (p *Prompter) PromptSelect(ctx context.Context, prompt string, options []string, defaultIndex int) (int, string, error) {
 	if len(options) == 0 {
-		return -1, "", fmt.Errorf("no options provided")
+		return -1, "", ErrNoOptionsProvided
 	}
 
 	fmt.Println(prompt)
@@ -199,7 +205,7 @@ func (p *Prompter) PromptSelect(ctx context.Context, prompt string, options []st
 // PromptMultiSelect prompts the user to select multiple options
 func (p *Prompter) PromptMultiSelect(ctx context.Context, prompt string, options []string) ([]int, []string, error) {
 	if len(options) == 0 {
-		return nil, nil, fmt.Errorf("no options provided")
+		return nil, nil, ErrNoOptionsProvided
 	}
 
 	fmt.Println(prompt)
@@ -235,7 +241,7 @@ func (p *Prompter) PromptMultiSelect(ctx context.Context, prompt string, options
 	}
 
 	if len(indices) == 0 {
-		return nil, nil, fmt.Errorf("no valid options selected")
+		return nil, nil, ErrNoValidOptions
 	}
 
 	return indices, selected, nil
