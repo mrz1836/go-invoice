@@ -58,9 +58,8 @@
 			"errorlint",
 			"exhaustive",
 			"forbidigo",
-			"funcorder",
 			"gocheckcompilerdirectives",
-			"gochecknoglobals",
+      "gochecknoglobals",
 			"gochecknoinits",
 			"gochecksumtype",
 			"gocognit",
@@ -102,13 +101,14 @@
 			"unparam",
 			"unused",
 			"wastedassign",
-			"wsl_v5",
 			"zerologlint"
 		],
 		"disable": [
 			"gocritic",
-			"godot"
-		],
+			"godot",
+      "funcorder",
+      "wsl_v5"
+    ],
 		"settings": {
 			"funcorder": {
 				"constructor-after-struct": true
