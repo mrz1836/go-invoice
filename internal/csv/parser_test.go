@@ -126,11 +126,11 @@ func (suite *CSVParserTestSuite) TestParseTimesheetValidCSV() {
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 	require.NoError(suite.T(), err)
-	require.NotNil(suite.T(), result)
+	suite.Require().NotNil(result)
 	assert.Equal(suite.T(), 3, result.TotalRows)
 	assert.Equal(suite.T(), 3, result.SuccessRows)
 	assert.Equal(suite.T(), 0, result.ErrorRows)
-	assert.Len(suite.T(), result.WorkItems, 3)
+	suite.Len(result.WorkItems, 3)
 	assert.Equal(suite.T(), "standard", result.Format)
 
 	// Verify first work item
@@ -158,7 +158,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetContextCancellation() {
 
 	assert.Error(suite.T(), err)
 	assert.Equal(suite.T(), context.Canceled, err)
-	assert.Nil(suite.T(), result)
+	suite.Nil(result)
 }
 
 // TestParseTimesheetEmptyCSV tests parsing empty CSV data
@@ -171,7 +171,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetEmptyCSV() {
 
 	assert.Error(suite.T(), err)
 	assert.Contains(suite.T(), err.Error(), "CSV file is empty")
-	assert.Nil(suite.T(), result)
+	suite.Nil(result)
 }
 
 // TestParseTimesheetInvalidCSV tests parsing malformed CSV data
@@ -190,7 +190,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetInvalidCSV() {
 
 	assert.Error(suite.T(), err)
 	assert.Contains(suite.T(), err.Error(), "parsing failed at line 2")
-	assert.Nil(suite.T(), result)
+	suite.Nil(result)
 }
 
 // TestParseTimesheetContinueOnError tests parsing with error continuation
@@ -210,7 +210,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetContinueOnError() {
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 	require.NoError(suite.T(), err)
-	require.NotNil(suite.T(), result)
+	suite.Require().NotNil(result)
 	assert.Equal(suite.T(), 3, result.TotalRows)
 	assert.Equal(suite.T(), 2, result.SuccessRows)
 	assert.Equal(suite.T(), 1, result.ErrorRows)
@@ -244,7 +244,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetValidationError() {
 
 	assert.Error(suite.T(), err)
 	assert.Contains(suite.T(), err.Error(), "validation failed at line 2")
-	assert.Nil(suite.T(), result)
+	suite.Nil(result)
 }
 
 // TestParseTimesheetDifferentFormats tests parsing different CSV formats
@@ -332,7 +332,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetHeaderVariations() {
 
 			if tt.wantErr {
 				assert.Error(suite.T(), err)
-				assert.Nil(suite.T(), result)
+				suite.Nil(result)
 			} else {
 				require.NoError(suite.T(), err)
 				assert.NotNil(suite.T(), result)

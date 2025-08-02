@@ -73,8 +73,8 @@ func (s *JSONStorage) Initialize(ctx context.Context) error {
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return storage.NewErrStorageUnavailable(
+		if err := os.MkdirAll(dir, 0o750); err != nil {
+			return storage.NewStorageUnavailableError(
 				fmt.Sprintf("failed to create directory %s", dir), err)
 		}
 	}
@@ -172,7 +172,7 @@ func (s *JSONStorage) Validate(ctx context.Context) error {
 	dirs := []string{s.basePath, s.invoicesDir, s.clientsDir, s.indexDir}
 	for _, dir := range dirs {
 		if _, err := os.Stat(dir); err != nil {
-			return storage.NewErrStorageUnavailable(
+			return storage.NewStorageUnavailableError(
 				fmt.Sprintf("directory %s is not accessible", dir), err)
 		}
 	}
@@ -214,7 +214,7 @@ func (s *JSONStorage) CreateInvoice(ctx context.Context, invoice *models.Invoice
 	// Check if invoice already exists
 	invoicePath := s.getInvoicePath(invoice.ID)
 	if _, err := os.Stat(invoicePath); err == nil {
-		return storage.NewErrConflict("invoice", string(invoice.ID), "")
+		return storage.NewConflictError("invoice", string(invoice.ID), "")
 	}
 
 	// Write invoice file atomically
@@ -252,7 +252,7 @@ func (s *JSONStorage) GetInvoice(ctx context.Context, id models.InvoiceID) (*mod
 
 	if err := s.readJSONFile(ctx, invoicePath, &invoice); err != nil {
 		if os.IsNotExist(err) {
-			return nil, storage.NewErrNotFound("invoice", string(id))
+			return nil, storage.NewNotFoundError("invoice", string(id))
 		}
 		return nil, fmt.Errorf("failed to read invoice file: %w", err)
 	}
@@ -284,14 +284,14 @@ func (s *JSONStorage) UpdateInvoice(ctx context.Context, invoice *models.Invoice
 	existing, err := s.getInvoiceUnsafe(ctx, invoice.ID)
 	if err != nil {
 		if storage.IsNotFound(err) {
-			return storage.NewErrNotFound("invoice", string(invoice.ID))
+			return storage.NewNotFoundError("invoice", string(invoice.ID))
 		}
 		return fmt.Errorf("failed to read existing invoice: %w", err)
 	}
 
 	// Check version for optimistic locking
 	if existing.Version != invoice.Version {
-		return storage.NewErrVersionMismatch("invoice", string(invoice.ID),
+		return storage.NewVersionMismatchError("invoice", string(invoice.ID),
 			invoice.Version, existing.Version)
 	}
 
@@ -333,7 +333,7 @@ func (s *JSONStorage) DeleteInvoice(ctx context.Context, id models.InvoiceID) er
 
 	// Check if invoice exists
 	if _, err := os.Stat(invoicePath); os.IsNotExist(err) {
-		return storage.NewErrNotFound("invoice", string(id))
+		return storage.NewNotFoundError("invoice", string(id))
 	}
 
 	// Remove invoice file
@@ -382,7 +382,7 @@ func (s *JSONStorage) ListInvoices(ctx context.Context, filter models.InvoiceFil
 
 	// Validate filter
 	if err := filter.Validate(ctx); err != nil {
-		return nil, storage.NewErrInvalidFilter("filter", filter, err.Error())
+		return nil, storage.NewInvalidFilterError("filter", filter, err.Error())
 	}
 
 	s.mu.RLock()
@@ -483,7 +483,7 @@ func (s *JSONStorage) getInvoiceUnsafe(ctx context.Context, id models.InvoiceID)
 
 	if err := s.readJSONFile(ctx, invoicePath, &invoice); err != nil {
 		if os.IsNotExist(err) {
-			return nil, storage.NewErrNotFound("invoice", string(id))
+			return nil, storage.NewNotFoundError("invoice", string(id))
 		}
 		return nil, fmt.Errorf("failed to read invoice file: %w", err)
 	}
@@ -624,11 +624,11 @@ func (s *JSONStorage) validateInvoiceFiles(ctx context.Context) error {
 	for _, filePath := range invoiceFiles {
 		var invoice models.Invoice
 		if err := s.readJSONFile(ctx, filePath, &invoice); err != nil {
-			return storage.NewErrCorrupted("invoice", filepath.Base(filePath), err.Error())
+			return storage.NewCorruptedError("invoice", filepath.Base(filePath), err.Error())
 		}
 
 		if err := invoice.Validate(ctx); err != nil {
-			return storage.NewErrCorrupted("invoice", string(invoice.ID), err.Error())
+			return storage.NewCorruptedError("invoice", string(invoice.ID), err.Error())
 		}
 	}
 
@@ -644,11 +644,11 @@ func (s *JSONStorage) validateClientFiles(ctx context.Context) error {
 	for _, filePath := range clientFiles {
 		var client models.Client
 		if err := s.readJSONFile(ctx, filePath, &client); err != nil {
-			return storage.NewErrCorrupted("client", filepath.Base(filePath), err.Error())
+			return storage.NewCorruptedError("client", filepath.Base(filePath), err.Error())
 		}
 
 		if err := client.Validate(ctx); err != nil {
-			return storage.NewErrCorrupted("client", string(client.ID), err.Error())
+			return storage.NewCorruptedError("client", string(client.ID), err.Error())
 		}
 	}
 

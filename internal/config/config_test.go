@@ -26,9 +26,9 @@ type TestLogger struct {
 	messages []string
 }
 
-func (l *TestLogger) Info(msg string, fields ...any)  { l.messages = append(l.messages, msg) }
-func (l *TestLogger) Error(msg string, fields ...any) { l.messages = append(l.messages, msg) }
-func (l *TestLogger) Debug(msg string, fields ...any) { l.messages = append(l.messages, msg) }
+func (l *TestLogger) Info(msg string, _ ...any)  { l.messages = append(l.messages, msg) }
+func (l *TestLogger) Error(msg string, _ ...any) { l.messages = append(l.messages, msg) }
+func (l *TestLogger) Debug(msg string, _ ...any) { l.messages = append(l.messages, msg) }
 
 // SetupSuite runs once before all tests in the suite
 func (suite *ConfigTestSuite) SetupSuite() {
@@ -40,7 +40,10 @@ func (suite *ConfigTestSuite) SetupSuite() {
 
 // TearDownSuite runs once after all tests in the suite
 func (suite *ConfigTestSuite) TearDownSuite() {
-	os.RemoveAll(suite.tempDir)
+	if err := os.RemoveAll(suite.tempDir); err != nil {
+		// Log the error but don't fail the test since this is cleanup
+		suite.T().Logf("Warning: failed to remove temp directory %s: %v", suite.tempDir, err)
+	}
 }
 
 // SetupTest runs before each test

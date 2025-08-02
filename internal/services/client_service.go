@@ -10,11 +10,16 @@ import (
 )
 
 var (
+	// ErrInvalidCreateClientRequest indicates that the client creation request is invalid.
 	ErrInvalidCreateClientRequest = fmt.Errorf("invalid create client request")
-	ErrFailedToGenerateClientID   = fmt.Errorf("failed to generate client ID")
-	ErrFailedToCreateClientModel  = fmt.Errorf("failed to create client model")
-	ErrFailedToStoreClient        = fmt.Errorf("failed to store client")
-	ErrFailedToRetrieveClient     = fmt.Errorf("failed to retrieve client")
+	// ErrFailedToGenerateClientID indicates that client ID generation failed.
+	ErrFailedToGenerateClientID = fmt.Errorf("failed to generate client ID")
+	// ErrFailedToCreateClientModel indicates that client model creation failed.
+	ErrFailedToCreateClientModel = fmt.Errorf("failed to create client model")
+	// ErrFailedToStoreClient indicates that client storage failed.
+	ErrFailedToStoreClient = fmt.Errorf("failed to store client")
+	// ErrFailedToRetrieveClient indicates that client retrieval failed.
+	ErrFailedToRetrieveClient = fmt.Errorf("failed to retrieve client")
 )
 
 // ClientService provides high-level client management operations

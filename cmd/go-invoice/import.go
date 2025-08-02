@@ -197,10 +197,7 @@ func (a *App) executeImportCreate(ctx context.Context, csvFile, configPath strin
 	}
 
 	// Create import service
-	importService, err := a.createImportService(config.Storage.DataDir)
-	if err != nil {
-		return fmt.Errorf("failed to create import service: %w", err)
-	}
+	importService := a.createImportService(config.Storage.DataDir)
 
 	// Open CSV file
 	file, err := os.Open(csvFile)
@@ -246,10 +243,7 @@ func (a *App) executeImportAppend(ctx context.Context, csvFile, configPath strin
 	}
 
 	// Create import service
-	importService, err := a.createImportService(config.Storage.DataDir)
-	if err != nil {
-		return fmt.Errorf("failed to create import service: %w", err)
-	}
+	importService := a.createImportService(config.Storage.DataDir)
 
 	// Open CSV file
 	file, err := os.Open(csvFile)
@@ -287,10 +281,7 @@ func (a *App) executeImportValidate(ctx context.Context, csvFile, configPath str
 	}
 
 	// Create import service
-	importService, err := a.createImportService(config.Storage.DataDir)
-	if err != nil {
-		return fmt.Errorf("failed to create import service: %w", err)
-	}
+	importService := a.createImportService(config.Storage.DataDir)
 
 	// Open CSV file
 	file, err := os.Open(csvFile)
@@ -318,7 +309,7 @@ func (a *App) executeImportValidate(ctx context.Context, csvFile, configPath str
 
 // Helper methods
 
-func (a *App) createImportService(dataDir string) (*services.ImportService, error) {
+func (a *App) createImportService(dataDir string) *services.ImportService {
 	// Create storage
 	storage := jsonStorage.NewJSONStorage(dataDir, a.logger)
 
@@ -333,7 +324,7 @@ func (a *App) createImportService(dataDir string) (*services.ImportService, erro
 	// Create import service
 	importService := services.NewImportService(parser, invoiceService, clientService, validator, a.logger, &SimpleIDGenerator{})
 
-	return importService, nil
+	return importService
 }
 
 func (a *App) createParseOptions(format string) csv.ParseOptions {

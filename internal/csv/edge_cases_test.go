@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -96,15 +95,15 @@ func (suite *CSVEdgeCasesTestSuite) TestMalformedCSVData() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.expectError {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				assert.NoError(suite.T(), err)
+				suite.NoError(err)
 			}
 
 			if result != nil {
-				assert.Equal(suite.T(), tt.expectRows, len(result.WorkItems))
+				suite.Len(result.WorkItems, tt.expectRows)
 			} else {
-				assert.Equal(suite.T(), 0, tt.expectRows)
+				suite.Equal(0, tt.expectRows)
 			}
 		})
 	}
@@ -167,16 +166,16 @@ func (suite *CSVEdgeCasesTestSuite) TestDateFormatEdgeCases() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.valid {
-				assert.NoError(suite.T(), err)
+				suite.NoError(err)
 				if result != nil {
-					assert.Equal(suite.T(), 1, len(result.WorkItems))
-					assert.Empty(suite.T(), result.Errors)
+					suite.Len(result.WorkItems, 1)
+					suite.Empty(result.Errors)
 				}
 			} else {
 				// May not error if continue on error is true
 				if err == nil && result != nil {
-					assert.True(suite.T(), len(result.Errors) > 0, "should have validation errors")
-					assert.Equal(suite.T(), 0, len(result.WorkItems))
+					suite.Positive(len(result.Errors), "should have validation errors")
+					suite.Empty(result.WorkItems)
 				}
 			}
 		})
@@ -243,15 +242,15 @@ func (suite *CSVEdgeCasesTestSuite) TestNumericFieldEdgeCases() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.expectValid {
-				assert.NoError(suite.T(), err)
+				suite.NoError(err)
 				if result != nil {
-					assert.Equal(suite.T(), 1, len(result.WorkItems))
-					assert.Empty(suite.T(), result.Errors)
+					suite.Len(result.WorkItems, 1)
+					suite.Empty(result.Errors)
 
 					if len(result.WorkItems) > 0 {
 						workItem := result.WorkItems[0]
-						assert.Equal(suite.T(), tt.expectHours, workItem.Hours)
-						assert.Equal(suite.T(), tt.expectRate, workItem.Rate)
+						suite.Equal(tt.expectHours, workItem.Hours)
+						suite.Equal(tt.expectRate, workItem.Rate)
 					}
 				}
 			} else {
@@ -261,7 +260,7 @@ func (suite *CSVEdgeCasesTestSuite) TestNumericFieldEdgeCases() {
 						// Either parsing errors or no work items
 						hasErrors := len(result.Errors) > 0
 						noWorkItems := len(result.WorkItems) == 0
-						assert.True(suite.T(), hasErrors || noWorkItems,
+						suite.True(hasErrors || noWorkItems,
 							"Expected either errors (%d) or no work items (%d)",
 							len(result.Errors), len(result.WorkItems))
 					}
@@ -300,12 +299,12 @@ func (suite *CSVEdgeCasesTestSuite) TestFloatingPointPrecision() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.valid {
-				suite.Assert().NoError(err)
-				suite.Assert().Equal(1, len(result.WorkItems))
-				suite.Assert().Empty(result.Errors)
+				suite.NoError(err)
+				suite.Len(result.WorkItems, 1)
+				suite.Empty(result.Errors)
 			} else {
 				if err == nil {
-					suite.Assert().True(len(result.Errors) > 0)
+					suite.Positive(len(result.Errors))
 				}
 			}
 		})
@@ -352,12 +351,12 @@ func (suite *CSVEdgeCasesTestSuite) TestDescriptionEdgeCases() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.valid {
-				assert.NoError(suite.T(), err)
-				assert.Equal(suite.T(), 1, len(result.WorkItems))
-				assert.Empty(suite.T(), result.Errors)
+				suite.NoError(err)
+				suite.Len(result.WorkItems, 1)
+				suite.Empty(result.Errors)
 			} else {
 				if err == nil {
-					assert.True(suite.T(), len(result.Errors) > 0)
+					suite.Positive(len(result.Errors))
 				}
 			}
 		})
@@ -412,10 +411,10 @@ func (suite *CSVEdgeCasesTestSuite) TestFormatDetectionEdgeCases() {
 			formatInfo, err := suite.parser.DetectFormat(ctx, reader)
 
 			if tt.expectError {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				assert.NoError(suite.T(), err)
-				assert.Equal(suite.T(), tt.expectFmt, formatInfo.Name)
+				suite.NoError(err)
+				suite.Equal(tt.expectFmt, formatInfo.Name)
 			}
 		})
 	}
@@ -447,22 +446,22 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 		require.NoError(suite.T(), err)
 
 		err = suite.validator.ValidateWorkItem(ctx, weekendWork)
-		assert.Error(suite.T(), err)
-		assert.Contains(suite.T(), err.Error(), "weekends")
+		suite.Error(err)
+		suite.Contains(err.Error(), "weekends")
 
 		// Test weekday work (should pass)
 		weekdayWork, err := models.NewWorkItem(ctx, "test", time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC), 8.0, 100.0, "Weekday work") // Monday
 		require.NoError(suite.T(), err)
 
 		err = suite.validator.ValidateWorkItem(ctx, weekdayWork)
-		assert.NoError(suite.T(), err)
+		suite.NoError(err)
 
 		// Remove the rule
 		suite.validator.RemoveRule("no_weekends")
 
 		// Weekend work should now pass
 		err = suite.validator.ValidateWorkItem(ctx, weekendWork)
-		assert.NoError(suite.T(), err)
+		suite.NoError(err)
 	})
 
 	suite.Run("BatchValidationConsistency", func() {
@@ -479,7 +478,7 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 
 		// ValidateBatch returns an error, not warnings - but logs warnings
 		err := suite.validator.ValidateBatch(ctx, workItems)
-		assert.NoError(suite.T(), err, "batch validation should not error, just log warnings")
+		suite.NoError(err, "batch validation should not error, just log warnings")
 
 		// Check that rate inconsistency was logged (similar to existing tests)
 		var foundWarning bool
@@ -489,7 +488,7 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 				break
 			}
 		}
-		assert.True(suite.T(), foundWarning, "should have logged rate inconsistency warning")
+		suite.True(foundWarning, "should have logged rate inconsistency warning")
 	})
 }
 
@@ -508,14 +507,14 @@ func (suite *CSVEdgeCasesTestSuite) TestMemoryAndPerformance() {
 		result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 		// Expect error due to description length validation
 		if err != nil {
-			assert.Contains(suite.T(), err.Error(), "validation failed")
+			suite.Contains(err.Error(), "validation failed")
 			return
 		}
 
 		// If no error, validate the result
-		assert.Equal(suite.T(), 1, len(result.WorkItems))
+		suite.Len(result.WorkItems, 1)
 		if len(result.WorkItems) > 0 {
-			assert.Equal(suite.T(), largeDesc, result.WorkItems[0].Description)
+			suite.Equal(largeDesc, result.WorkItems[0].Description)
 		}
 	})
 
@@ -533,9 +532,9 @@ func (suite *CSVEdgeCasesTestSuite) TestMemoryAndPerformance() {
 		options := ParseOptions{}
 
 		result, err := suite.parser.ParseTimesheet(ctx, reader, options)
-		assert.NoError(suite.T(), err)
-		assert.Equal(suite.T(), 100, len(result.WorkItems))
-		assert.Equal(suite.T(), 100, result.SuccessRows)
+		suite.NoError(err)
+		suite.Len(result.WorkItems, 100)
+		suite.Equal(100, result.SuccessRows)
 	})
 }
 
@@ -589,18 +588,18 @@ func (suite *CSVEdgeCasesTestSuite) TestErrorMessageQuality() {
 				errorMsg = result.Errors[0].Message
 			}
 
-			suite.Assert().NotEmpty(errorMsg, "should have an error message")
+			suite.NotEmpty(errorMsg, "should have an error message")
 
 			// Check that expected strings are in the error message
 			for _, expected := range tt.expectedInMsg {
-				suite.Assert().Contains(strings.ToLower(errorMsg), strings.ToLower(expected))
+				suite.Contains(strings.ToLower(errorMsg), strings.ToLower(expected))
 			}
 
 			// Check for suggestions if expected
 			if tt.expectedSuggestion {
 				suite.Require().NotNil(result, "result should not be nil for suggestion check")
-				suite.Require().True(len(result.Errors) > 0, "should have errors for suggestion check")
-				suite.Assert().NotEmpty(result.Errors[0].Suggestion, "should have a suggestion")
+				suite.Require().Positive(len(result.Errors), "should have errors for suggestion check")
+				suite.NotEmpty(result.Errors[0].Suggestion, "should have a suggestion")
 			}
 		})
 	}

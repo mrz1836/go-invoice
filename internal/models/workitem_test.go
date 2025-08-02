@@ -176,7 +176,7 @@ func (suite *WorkItemTestSuite) TestNewWorkItemWithContext() {
 	cancel() // Cancel immediately
 
 	item, err := NewWorkItem(ctx, "ITEM-001", time.Now(), 8.0, 100.0, "Development work")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
 	assert.Nil(t, item)
 }

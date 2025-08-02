@@ -38,7 +38,7 @@ func (s *JSONStorage) CreateClient(ctx context.Context, client *models.Client) e
 	// Check if client already exists
 	clientPath := s.getClientPath(client.ID)
 	if _, err := os.Stat(clientPath); err == nil {
-		return storage.NewErrConflict("client", string(client.ID), "")
+		return storage.NewConflictError("client", string(client.ID), "")
 	}
 
 	// Write client file atomically
@@ -70,7 +70,7 @@ func (s *JSONStorage) GetClient(ctx context.Context, id models.ClientID) (*model
 
 	if err := s.readJSONFile(ctx, clientPath, &client); err != nil {
 		if os.IsNotExist(err) {
-			return nil, storage.NewErrNotFound("client", string(id))
+			return nil, storage.NewNotFoundError("client", string(id))
 		}
 		return nil, fmt.Errorf("failed to read client file: %w", err)
 	}
@@ -101,7 +101,7 @@ func (s *JSONStorage) UpdateClient(ctx context.Context, client *models.Client) e
 	// Check if client exists
 	clientPath := s.getClientPath(client.ID)
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
-		return storage.NewErrNotFound("client", string(client.ID))
+		return storage.NewNotFoundError("client", string(client.ID))
 	}
 
 	// Update timestamp
@@ -135,7 +135,7 @@ func (s *JSONStorage) DeleteClient(ctx context.Context, id models.ClientID) erro
 	client, err := s.getClientUnsafe(ctx, id)
 	if err != nil {
 		if storage.IsNotFound(err) {
-			return storage.NewErrNotFound("client", string(id))
+			return storage.NewNotFoundError("client", string(id))
 		}
 		return fmt.Errorf("failed to read client: %w", err)
 	}
@@ -254,7 +254,7 @@ func (s *JSONStorage) FindClientByEmail(ctx context.Context, email string) (*mod
 		}
 	}
 
-	return nil, storage.NewErrNotFound("client", fmt.Sprintf("email:%s", email))
+	return nil, storage.NewNotFoundError("client", fmt.Sprintf("email:%s", email))
 }
 
 // ExistsClient checks if a client exists
@@ -286,7 +286,7 @@ func (s *JSONStorage) getClientUnsafe(ctx context.Context, id models.ClientID) (
 
 	if err := s.readJSONFile(ctx, clientPath, &client); err != nil {
 		if os.IsNotExist(err) {
-			return nil, storage.NewErrNotFound("client", string(id))
+			return nil, storage.NewNotFoundError("client", string(id))
 		}
 		return nil, fmt.Errorf("failed to read client file: %w", err)
 	}
@@ -313,7 +313,7 @@ func (s *JSONStorage) HardDeleteClient(ctx context.Context, id models.ClientID) 
 
 	// Check if client exists
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
-		return storage.NewErrNotFound("client", string(id))
+		return storage.NewNotFoundError("client", string(id))
 	}
 
 	// Remove client file completely

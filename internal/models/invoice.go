@@ -97,33 +97,50 @@ func (i *Invoice) Validate(ctx context.Context) error {
 
 	var errors []ValidationError
 
-	// Validate ID
+	// Validate all components
+	i.validateBasicFields(&errors)
+	i.validateDates(&errors)
+	i.validateStatus(&errors)
+	i.validateClientAndWorkItems(ctx, &errors)
+	i.validateFinancials(&errors)
+	i.validateTimestamps(&errors)
+	i.validateVersion(&errors)
+
+	return i.formatValidationErrors(errors)
+}
+
+// validateBasicFields validates ID and number fields
+func (i *Invoice) validateBasicFields(errors *[]ValidationError) {
 	if strings.TrimSpace(string(i.ID)) == "" {
-		errors = append(errors, ValidationError{
+		*errors = append(*errors, ValidationError{
 			Field:   "id",
 			Message: "is required",
 			Value:   i.ID,
 		})
 	}
 
-	// Validate number
 	if strings.TrimSpace(i.Number) == "" {
-		errors = append(errors, ValidationError{
+		*errors = append(*errors, ValidationError{
 			Field:   "number",
 			Message: "is required",
 			Value:   i.Number,
 		})
-	} else if !invoiceIDPattern.MatchString(i.Number) {
-		errors = append(errors, ValidationError{
+		return
+	}
+
+	if !invoiceIDPattern.MatchString(i.Number) {
+		*errors = append(*errors, ValidationError{
 			Field:   "number",
 			Message: "must contain only uppercase letters, numbers, and hyphens",
 			Value:   i.Number,
 		})
 	}
+}
 
-	// Validate dates
+// validateDates validates date and due_date fields
+func (i *Invoice) validateDates(errors *[]ValidationError) {
 	if i.Date.IsZero() {
-		errors = append(errors, ValidationError{
+		*errors = append(*errors, ValidationError{
 			Field:   "date",
 			Message: "is required",
 			Value:   i.Date,
@@ -131,70 +148,73 @@ func (i *Invoice) Validate(ctx context.Context) error {
 	}
 
 	if i.DueDate.IsZero() {
-		errors = append(errors, ValidationError{
+		*errors = append(*errors, ValidationError{
 			Field:   "due_date",
 			Message: "is required",
 			Value:   i.DueDate,
 		})
+		return
 	}
 
-	if !i.Date.IsZero() && !i.DueDate.IsZero() && i.DueDate.Before(i.Date) {
-		errors = append(errors, ValidationError{
+	if !i.Date.IsZero() && i.DueDate.Before(i.Date) {
+		*errors = append(*errors, ValidationError{
 			Field:   "due_date",
 			Message: "must be on or after invoice date",
 			Value:   fmt.Sprintf("due: %v, invoice: %v", i.DueDate, i.Date),
 		})
 	}
+}
 
-	// Validate status
+// validateStatus validates the invoice status
+func (i *Invoice) validateStatus(errors *[]ValidationError) {
 	validStatuses := []string{StatusDraft, StatusSent, StatusPaid, StatusOverdue, StatusVoided}
-	valid := false
+
 	for _, status := range validStatuses {
 		if i.Status == status {
-			valid = true
-			break
+			return
 		}
 	}
-	if !valid {
-		errors = append(errors, ValidationError{
-			Field:   "status",
-			Message: fmt.Sprintf("must be one of: %s", strings.Join(validStatuses, ", ")),
-			Value:   i.Status,
-		})
-	}
 
-	// Validate client
+	*errors = append(*errors, ValidationError{
+		Field:   "status",
+		Message: fmt.Sprintf("must be one of: %s", strings.Join(validStatuses, ", ")),
+		Value:   i.Status,
+	})
+}
+
+// validateClientAndWorkItems validates client and work items
+func (i *Invoice) validateClientAndWorkItems(ctx context.Context, errors *[]ValidationError) {
 	if err := i.Client.Validate(ctx); err != nil {
-		errors = append(errors, ValidationError{
+		*errors = append(*errors, ValidationError{
 			Field:   "client",
 			Message: err.Error(),
 			Value:   i.Client,
 		})
 	}
 
-	// Validate work items
 	for idx, item := range i.WorkItems {
 		if err := item.Validate(ctx); err != nil {
-			errors = append(errors, ValidationError{
+			*errors = append(*errors, ValidationError{
 				Field:   fmt.Sprintf("work_items[%d]", idx),
 				Message: err.Error(),
 				Value:   item,
 			})
 		}
 	}
+}
 
-	// Validate tax rate
+// validateFinancials validates financial amounts
+func (i *Invoice) validateFinancials(errors *[]ValidationError) {
 	if i.TaxRate < 0 || i.TaxRate > 1 {
-		errors = append(errors, ValidationError{
+		*errors = append(*errors, ValidationError{
 			Field:   "tax_rate",
 			Message: "must be between 0 and 1",
 			Value:   i.TaxRate,
 		})
 	}
 
-	// Validate financial amounts
 	if i.Subtotal < 0 {
-		errors = append(errors, ValidationError{
+		*errors = append(*errors, ValidationError{
 			Field:   "subtotal",
 			Message: "must be non-negative",
 			Value:   i.Subtotal,
@@ -202,7 +222,7 @@ func (i *Invoice) Validate(ctx context.Context) error {
 	}
 
 	if i.TaxAmount < 0 {
-		errors = append(errors, ValidationError{
+		*errors = append(*errors, ValidationError{
 			Field:   "tax_amount",
 			Message: "must be non-negative",
 			Value:   i.TaxAmount,
@@ -210,16 +230,18 @@ func (i *Invoice) Validate(ctx context.Context) error {
 	}
 
 	if i.Total < 0 {
-		errors = append(errors, ValidationError{
+		*errors = append(*errors, ValidationError{
 			Field:   "total",
 			Message: "must be non-negative",
 			Value:   i.Total,
 		})
 	}
+}
 
-	// Validate timestamps
+// validateTimestamps validates created_at and updated_at timestamps
+func (i *Invoice) validateTimestamps(errors *[]ValidationError) {
 	if i.CreatedAt.IsZero() {
-		errors = append(errors, ValidationError{
+		*errors = append(*errors, ValidationError{
 			Field:   "created_at",
 			Message: "is required",
 			Value:   i.CreatedAt,
@@ -227,39 +249,45 @@ func (i *Invoice) Validate(ctx context.Context) error {
 	}
 
 	if i.UpdatedAt.IsZero() {
-		errors = append(errors, ValidationError{
+		*errors = append(*errors, ValidationError{
 			Field:   "updated_at",
 			Message: "is required",
 			Value:   i.UpdatedAt,
 		})
+		return
 	}
 
-	if !i.CreatedAt.IsZero() && !i.UpdatedAt.IsZero() && i.UpdatedAt.Before(i.CreatedAt) {
-		errors = append(errors, ValidationError{
+	if !i.CreatedAt.IsZero() && i.UpdatedAt.Before(i.CreatedAt) {
+		*errors = append(*errors, ValidationError{
 			Field:   "updated_at",
 			Message: "must be on or after created_at",
 			Value:   fmt.Sprintf("updated: %v, created: %v", i.UpdatedAt, i.CreatedAt),
 		})
 	}
+}
 
-	// Validate version
+// validateVersion validates the version field
+func (i *Invoice) validateVersion(errors *[]ValidationError) {
 	if i.Version < 1 {
-		errors = append(errors, ValidationError{
+		*errors = append(*errors, ValidationError{
 			Field:   "version",
 			Message: "must be at least 1",
 			Value:   i.Version,
 		})
 	}
+}
 
-	if len(errors) > 0 {
-		var messages []string
-		for _, err := range errors {
-			messages = append(messages, err.Error())
-		}
-		return fmt.Errorf("invoice validation failed: %s", strings.Join(messages, "; "))
+// formatValidationErrors formats validation errors into a single error
+func (i *Invoice) formatValidationErrors(errors []ValidationError) error {
+	if len(errors) == 0 {
+		return nil
 	}
 
-	return nil
+	var messages []string
+	for _, err := range errors {
+		messages = append(messages, err.Error())
+	}
+	return fmt.Errorf("invoice validation failed: %s", strings.Join(messages, "; "))
 }
 
 // AddWorkItem adds a work item to the invoice and recalculates totals

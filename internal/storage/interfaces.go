@@ -10,24 +10,24 @@ import (
 // This interface is consumer-driven and focuses on core CRUD operations
 type InvoiceStorage interface {
 	// CreateInvoice stores a new invoice
-	// Returns ErrConflict if invoice with same ID already exists
+	// Returns ConflictError if invoice with same ID already exists
 	CreateInvoice(ctx context.Context, invoice *models.Invoice) error
 
 	// GetInvoice retrieves an invoice by ID
-	// Returns ErrNotFound if invoice doesn't exist
+	// Returns NotFoundError if invoice doesn't exist
 	GetInvoice(ctx context.Context, id models.InvoiceID) (*models.Invoice, error)
 
 	// UpdateInvoice updates an existing invoice with optimistic locking
-	// Returns ErrNotFound if invoice doesn't exist
-	// Returns ErrVersionMismatch if version doesn't match (optimistic locking)
+	// Returns NotFoundError if invoice doesn't exist
+	// Returns VersionMismatchError if version doesn't match (optimistic locking)
 	UpdateInvoice(ctx context.Context, invoice *models.Invoice) error
 
 	// DeleteInvoice removes an invoice by ID
-	// Returns ErrNotFound if invoice doesn't exist
+	// Returns NotFoundError if invoice doesn't exist
 	DeleteInvoice(ctx context.Context, id models.InvoiceID) error
 
 	// ListInvoices retrieves invoices based on filter criteria with pagination
-	// Returns ErrInvalidFilter if filter parameters are invalid
+	// Returns InvalidFilterError if filter parameters are invalid
 	ListInvoices(ctx context.Context, filter models.InvoiceFilter) (*InvoiceListResult, error)
 
 	// ExistsInvoice checks if an invoice exists without loading the full data
@@ -41,26 +41,26 @@ type InvoiceStorage interface {
 // Consumer-driven interface focusing on client management needs
 type ClientStorage interface {
 	// CreateClient stores a new client
-	// Returns ErrConflict if client with same ID already exists
+	// Returns ConflictError if client with same ID already exists
 	CreateClient(ctx context.Context, client *models.Client) error
 
 	// GetClient retrieves a client by ID
-	// Returns ErrNotFound if client doesn't exist
+	// Returns NotFoundError if client doesn't exist
 	GetClient(ctx context.Context, id models.ClientID) (*models.Client, error)
 
 	// UpdateClient updates an existing client
-	// Returns ErrNotFound if client doesn't exist
+	// Returns NotFoundError if client doesn't exist
 	UpdateClient(ctx context.Context, client *models.Client) error
 
 	// DeleteClient removes a client by ID (soft delete - marks as inactive)
-	// Returns ErrNotFound if client doesn't exist
+	// Returns NotFoundError if client doesn't exist
 	DeleteClient(ctx context.Context, id models.ClientID) error
 
 	// ListClients retrieves all active clients with pagination
 	ListClients(ctx context.Context, activeOnly bool, limit, offset int) (*ClientListResult, error)
 
 	// FindClientByEmail finds a client by email address
-	// Returns ErrNotFound if no client with that email exists
+	// Returns NotFoundError if no client with that email exists
 	FindClientByEmail(ctx context.Context, email string) (*models.Client, error)
 
 	// ExistsClient checks if a client exists without loading the full data
@@ -71,7 +71,7 @@ type ClientStorage interface {
 // Consumer-driven interface for setup and configuration operations
 type StorageInitializer interface {
 	// Initialize sets up the storage system (creates directories, indexes, etc.)
-	// Returns ErrStorageUnavailable if initialization fails
+	// Returns StorageUnavailableError if initialization fails
 	Initialize(ctx context.Context) error
 
 	// IsInitialized checks if the storage system is properly initialized

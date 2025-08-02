@@ -165,7 +165,7 @@ func (suite *InvoiceTestSuite) TestNewInvoice() {
 				assert.Equal(t, tt.id, invoice.ID)
 				assert.Equal(t, tt.number, invoice.Number)
 				assert.Equal(t, StatusDraft, invoice.Status)
-				assert.Equal(t, tt.taxRate, invoice.TaxRate)
+				assert.InEpsilon(t, tt.taxRate, invoice.TaxRate, 1e-9)
 				assert.Empty(t, invoice.WorkItems)
 				assert.Equal(t, 0.0, invoice.Subtotal)
 				assert.Equal(t, 0.0, invoice.TaxAmount)
@@ -193,7 +193,7 @@ func (suite *InvoiceTestSuite) TestNewInvoiceWithContext() {
 	}
 
 	invoice, err := NewInvoice(ctx, "INV-001", "INV-2024-001", time.Now(), time.Now().AddDate(0, 0, 30), client, 0.1)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
 	assert.Nil(t, invoice)
 }

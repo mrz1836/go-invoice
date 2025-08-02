@@ -27,17 +27,17 @@ func NewSimpleIDGenerator() *SimpleIDGenerator {
 	return &SimpleIDGenerator{counter: 0}
 }
 
-func (g *SimpleIDGenerator) GenerateInvoiceID(ctx context.Context) (models.InvoiceID, error) {
+func (g *SimpleIDGenerator) GenerateInvoiceID(_ context.Context) (models.InvoiceID, error) {
 	g.counter++
 	return models.InvoiceID(fmt.Sprintf("test-inv-%d", g.counter)), nil
 }
 
-func (g *SimpleIDGenerator) GenerateClientID(ctx context.Context) (models.ClientID, error) {
+func (g *SimpleIDGenerator) GenerateClientID(_ context.Context) (models.ClientID, error) {
 	g.counter++
 	return models.ClientID(fmt.Sprintf("test-client-%d", g.counter)), nil
 }
 
-func (g *SimpleIDGenerator) GenerateWorkItemID(ctx context.Context) (string, error) {
+func (g *SimpleIDGenerator) GenerateWorkItemID(_ context.Context) (string, error) {
 	g.counter++
 	return fmt.Sprintf("test-wi-%d", g.counter), nil
 }
@@ -101,8 +101,10 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 	suite.storage = json.NewJSONStorage(suite.tempDir, suite.logger)
 
 	// Create required directories
-	os.MkdirAll(filepath.Join(suite.tempDir, "invoices"), 0o755)
-	os.MkdirAll(filepath.Join(suite.tempDir, "clients"), 0o755)
+	err = os.MkdirAll(filepath.Join(suite.tempDir, "invoices"), 0o750)
+	suite.Require().NoError(err)
+	err = os.MkdirAll(filepath.Join(suite.tempDir, "clients"), 0o750)
+	suite.Require().NoError(err)
 
 	// Initialize services with correct parameters
 	suite.invoiceService = services.NewInvoiceService(
@@ -125,7 +127,10 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 
 // TearDownSuite runs once after all tests in the suite
 func (suite *IntegrationTestSuite) TearDownSuite() {
-	os.RemoveAll(suite.tempDir)
+	if err := os.RemoveAll(suite.tempDir); err != nil {
+		// Log the error but don't fail the test since this is cleanup
+		suite.T().Logf("Warning: failed to remove temp directory %s: %v", suite.tempDir, err)
+	}
 }
 
 // SetupTest runs before each test
@@ -137,7 +142,10 @@ func (suite *IntegrationTestSuite) SetupTest() {
 	result, _ := suite.storage.ListInvoices(ctx, models.InvoiceFilter{})
 	if result != nil {
 		for _, invoice := range result.Invoices {
-			suite.storage.DeleteInvoice(ctx, invoice.ID)
+			if err := suite.storage.DeleteInvoice(ctx, invoice.ID); err != nil {
+				// Log error but don't fail test setup
+				suite.T().Logf("Warning: failed to delete invoice %s during setup: %v", invoice.ID, err)
+			}
 		}
 	}
 }
@@ -201,13 +209,21 @@ func (suite *IntegrationTestSuite) TestCSVParsingWorkflow() {
 2024-01-16,Frontend Development,7.25,110.00`
 
 	csvFile := filepath.Join(suite.tempDir, "test_timesheet.csv")
-	err := os.WriteFile(csvFile, []byte(csvContent), 0o644)
+	err := os.WriteFile(csvFile, []byte(csvContent), 0o600)
 	suite.Require().NoError(err)
 
 	// Open and parse CSV file
-	file, err := os.Open(csvFile)
+	// Validate that csvFile is within tempDir to prevent path traversal
+	if !filepath.HasPrefix(csvFile, suite.tempDir) {
+		suite.T().Fatal("invalid file path")
+	}
+	file, err := os.Open(filepath.Clean(csvFile))
 	suite.Require().NoError(err)
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			suite.T().Logf("Warning: failed to close CSV file: %v", err)
+		}
+	}()
 
 	// Parse CSV data
 	result, err := suite.csvParser.ParseTimesheet(ctx, file, csv.ParseOptions{})
@@ -313,12 +329,20 @@ func (suite *IntegrationTestSuite) TestErrorHandling() {
 invalid-date,Test Item,8,100`
 
 	csvFile := filepath.Join(suite.tempDir, "invalid_test.csv")
-	err := os.WriteFile(csvFile, []byte(invalidCSV), 0o644)
+	err := os.WriteFile(csvFile, []byte(invalidCSV), 0o600)
 	suite.Require().NoError(err)
 
-	file, err := os.Open(csvFile)
+	// Validate that csvFile is within tempDir to prevent path traversal
+	if !filepath.HasPrefix(csvFile, suite.tempDir) {
+		suite.T().Fatal("invalid file path")
+	}
+	file, err := os.Open(filepath.Clean(csvFile))
 	suite.Require().NoError(err)
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			suite.T().Logf("Warning: failed to close CSV file: %v", err)
+		}
+	}()
 
 	// This should return an error due to invalid date
 	_, err = suite.csvParser.ParseTimesheet(ctx, file, csv.ParseOptions{})
@@ -358,12 +382,20 @@ func (suite *IntegrationTestSuite) TestCompleteWorkflow() {
 2024-01-17,Unit Testing and Bug Fixes,2.0,100.00`
 
 	csvFile := filepath.Join(suite.tempDir, "workflow_timesheet.csv")
-	err = os.WriteFile(csvFile, []byte(csvContent), 0o644)
+	err = os.WriteFile(csvFile, []byte(csvContent), 0o600)
 	suite.Require().NoError(err)
 
-	file, err := os.Open(csvFile)
+	// Validate that csvFile is within tempDir to prevent path traversal
+	if !filepath.HasPrefix(csvFile, suite.tempDir) {
+		suite.T().Fatal("invalid file path")
+	}
+	file, err := os.Open(filepath.Clean(csvFile))
 	suite.Require().NoError(err)
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			suite.T().Logf("Warning: failed to close CSV file: %v", err)
+		}
+	}()
 
 	parseResult, err := suite.csvParser.ParseTimesheet(ctx, file, csv.ParseOptions{})
 	suite.Require().NoError(err)

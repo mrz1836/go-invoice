@@ -1,3 +1,4 @@
+// Package cli provides common command-line interface utilities for the go-invoice application.
 package cli
 
 import (

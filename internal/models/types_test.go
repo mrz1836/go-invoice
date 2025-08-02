@@ -634,7 +634,7 @@ func (suite *TypesTestSuite) TestStatusConstants() {
 	for _, status := range statuses {
 		uniqueStatuses[status] = true
 	}
-	assert.Equal(t, len(statuses), len(uniqueStatuses))
+	assert.Len(t, uniqueStatuses, len(statuses))
 }
 
 func (suite *TypesTestSuite) TestValidationPatterns() {

@@ -9,11 +9,11 @@ import (
 	"time"
 )
 
-// Domain-specific types for type safety
-type (
-	InvoiceID string
-	ClientID  string
-)
+// InvoiceID provides type-safe invoice identification.
+type InvoiceID string
+
+// ClientID provides type-safe client identification.
+type ClientID string
 
 // Invoice statuses
 const (

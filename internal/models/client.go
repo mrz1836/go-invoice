@@ -27,7 +27,7 @@ func NewClient(ctx context.Context, id ClientID, name, email string) (*Client, e
 
 	// Validate the new client
 	if err := client.Validate(ctx); err != nil {
-		return nil, fmt.Errorf("client validation failed: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrClientValidationFailed, err)
 	}
 
 	return client, nil
@@ -145,7 +145,7 @@ func (c *Client) Validate(ctx context.Context) error {
 		for _, err := range errors {
 			messages = append(messages, err.Error())
 		}
-		return fmt.Errorf("client validation failed: %s", strings.Join(messages, "; "))
+		return fmt.Errorf("%w: %s", ErrClientValidationFailed, strings.Join(messages, "; "))
 	}
 
 	return nil
@@ -165,7 +165,7 @@ func (c *Client) UpdateName(ctx context.Context, name string) error {
 	}
 
 	if len(name) > 200 {
-		return fmt.Errorf("name cannot exceed 200 characters")
+		return ErrClientNameTooLong
 	}
 
 	c.Name = name
@@ -187,7 +187,7 @@ func (c *Client) UpdateEmail(ctx context.Context, email string) error {
 	}
 
 	if !emailPattern.MatchString(email) {
-		return fmt.Errorf("email must be a valid email address")
+		return ErrClientEmailInvalid
 	}
 
 	c.Email = email
@@ -206,7 +206,7 @@ func (c *Client) UpdatePhone(ctx context.Context, phone string) error {
 	phone = strings.TrimSpace(phone)
 	if phone != "" {
 		if len(phone) < 10 || len(phone) > 20 {
-			return fmt.Errorf("phone must be between 10 and 20 characters")
+			return ErrClientPhoneInvalid
 		}
 	}
 
@@ -225,7 +225,7 @@ func (c *Client) UpdateAddress(ctx context.Context, address string) error {
 
 	address = strings.TrimSpace(address)
 	if address != "" && len(address) > 500 {
-		return fmt.Errorf("address cannot exceed 500 characters")
+		return ErrClientAddressTooLong
 	}
 
 	c.Address = address
@@ -243,7 +243,7 @@ func (c *Client) UpdateTaxID(ctx context.Context, taxID string) error {
 
 	taxID = strings.TrimSpace(taxID)
 	if taxID != "" && len(taxID) > 50 {
-		return fmt.Errorf("tax ID cannot exceed 50 characters")
+		return ErrClientTaxIDTooLong
 	}
 
 	c.TaxID = taxID
@@ -389,7 +389,7 @@ func (r *CreateClientRequest) Validate(ctx context.Context) error {
 		for _, err := range errors {
 			messages = append(messages, err.Error())
 		}
-		return fmt.Errorf("create client request validation failed: %s", strings.Join(messages, "; "))
+		return fmt.Errorf("%w: %s", ErrCreateClientRequestInvalid, strings.Join(messages, "; "))
 	}
 
 	return nil

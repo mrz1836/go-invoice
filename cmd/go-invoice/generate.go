@@ -1,3 +1,4 @@
+// Package main provides the command-line interface for the go-invoice application.
 package main
 
 import (
@@ -164,7 +165,7 @@ Shows template information including:
 
 Example:
   go-invoice generate templates`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx, cancel := context.WithCancel(cmd.Context())
 			defer cancel()
 
@@ -184,91 +185,144 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 
 	start := time.Now()
 
-	// Load configuration
-	config, err := a.configService.LoadConfig(ctx, configPath)
+	// Setup services and retrieve invoice
+	config, renderService, invoice, err := a.setupGenerateServices(ctx, configPath, invoiceID)
 	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
-	}
-
-	// Create render service
-	renderService, err := a.createRenderService(config)
-	if err != nil {
-		return fmt.Errorf("failed to create render service: %w", err)
-	}
-
-	// Create invoice service
-	invoiceService, err := a.createInvoiceService(config.Storage.DataDir)
-	if err != nil {
-		return fmt.Errorf("failed to create invoice service: %w", err)
-	}
-
-	// Get invoice
-	invoice, err := invoiceService.GetInvoice(ctx, models.InvoiceID(invoiceID))
-	if err != nil {
-		return fmt.Errorf("failed to retrieve invoice: %w", err)
+		return err
 	}
 
 	fmt.Printf("📄 Generating invoice: %s (%s)\n", invoice.Number, invoice.Client.Name)
 
 	// Validate calculations if requested
-	if options.Validate {
-		calcService := services.NewInvoiceCalculator(a.logger)
-
-		calcOptions := &services.CalculationOptions{
-			TaxRate:       options.TaxRate,
-			Currency:      options.Currency,
-			DecimalPlaces: 2,
-			RoundingMode:  "round",
-		}
-
-		// Apply overrides or defaults
-		if options.TaxRate < 0 {
-			calcOptions.TaxRate = invoice.TaxRate
-		}
-		if options.Currency == "" {
-			calcOptions.Currency = config.Invoice.Currency
-		}
-
-		if err := calcService.ValidateCalculation(ctx, invoice, calcOptions); err != nil {
-			fmt.Printf("⚠️  Calculation validation warning: %v\n", err)
-		} else {
-			fmt.Println("✅ Calculations validated")
-		}
+	if err := a.validateCalculationsIfRequested(ctx, options, invoice, config); err != nil {
+		return err
 	}
 
-	// Generate HTML
+	// Generate HTML content
 	html, err := renderService.RenderInvoice(ctx, invoice, options.TemplateName)
 	if err != nil {
 		return fmt.Errorf("failed to render invoice: %w", err)
 	}
 
-	// Determine output path
-	outputPath := options.OutputPath
+	// Write output file
+	outputPath, err := a.writeGeneratedInvoice(html, options.OutputPath, invoice.Number)
+	if err != nil {
+		return err
+	}
+
+	// Display results and handle browser opening
+	a.displayGenerationResults(outputPath, html, options, time.Since(start))
+
+	return nil
+}
+
+// setupGenerateServices sets up configuration and services for invoice generation
+func (a *App) setupGenerateServices(ctx context.Context, configPath, invoiceID string) (*config.Config, render.InvoiceRenderer, *models.Invoice, error) {
+	// Load configuration
+	config, err := a.configService.LoadConfig(ctx, configPath)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Create render service
+	renderService, err := a.createRenderService(config)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to create render service: %w", err)
+	}
+
+	// Create invoice service and get invoice
+	invoiceService := a.createInvoiceService(config.Storage.DataDir)
+
+	invoice, err := invoiceService.GetInvoice(ctx, models.InvoiceID(invoiceID))
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to retrieve invoice: %w", err)
+	}
+
+	return config, renderService, invoice, nil
+}
+
+// validateCalculationsIfRequested validates invoice calculations if validation is enabled
+func (a *App) validateCalculationsIfRequested(ctx context.Context, options GenerateInvoiceOptions, invoice *models.Invoice, config *config.Config) error {
+	if !options.Validate {
+		return nil
+	}
+
+	calcService := services.NewInvoiceCalculator(a.logger)
+	calcOptions := a.buildCalculationOptions(options, invoice, config)
+
+	if validationErr := calcService.ValidateCalculation(ctx, invoice, calcOptions); validationErr != nil {
+		fmt.Printf("⚠️  Calculation validation warning: %v\n", validationErr)
+	} else {
+		fmt.Println("✅ Calculations validated")
+	}
+
+	return nil
+}
+
+// buildCalculationOptions creates calculation options from generation options
+func (a *App) buildCalculationOptions(options GenerateInvoiceOptions, invoice *models.Invoice, config *config.Config) *services.CalculationOptions {
+	calcOptions := &services.CalculationOptions{
+		TaxRate:       options.TaxRate,
+		Currency:      options.Currency,
+		DecimalPlaces: 2,
+		RoundingMode:  "round",
+	}
+
+	// Apply defaults if values not specified
+	if options.TaxRate < 0 {
+		calcOptions.TaxRate = invoice.TaxRate
+	}
+	if options.Currency == "" {
+		calcOptions.Currency = config.Invoice.Currency
+	}
+
+	return calcOptions
+}
+
+// writeGeneratedInvoice writes the generated HTML to a file
+func (a *App) writeGeneratedInvoice(html, outputPath, invoiceNumber string) (string, error) {
+	// Determine output path if not specified
 	if outputPath == "" {
-		// Create safe filename from invoice number
-		safeNumber := strings.ReplaceAll(invoice.Number, "/", "-")
-		safeNumber = strings.ReplaceAll(safeNumber, "\\", "-")
-		outputPath = fmt.Sprintf("%s.html", safeNumber)
+		outputPath = a.createSafeFilename(invoiceNumber)
 	}
 
 	// Ensure output directory exists
-	if dir := filepath.Dir(outputPath); dir != "." {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return fmt.Errorf("failed to create output directory: %w", err)
-		}
+	if err := a.ensureOutputDirectory(outputPath); err != nil {
+		return "", err
 	}
 
 	// Write to file
 	if err := os.WriteFile(outputPath, []byte(html), 0o644); err != nil {
-		return fmt.Errorf("failed to write output file: %w", err)
+		return "", fmt.Errorf("failed to write output file: %w", err)
 	}
 
-	genTime := time.Since(start)
+	return outputPath, nil
+}
+
+// createSafeFilename creates a safe filename from invoice number
+func (a *App) createSafeFilename(invoiceNumber string) string {
+	safeNumber := strings.ReplaceAll(invoiceNumber, "/", "-")
+	safeNumber = strings.ReplaceAll(safeNumber, "\\", "-")
+	return fmt.Sprintf("%s.html", safeNumber)
+}
+
+// ensureOutputDirectory ensures the output directory exists
+func (a *App) ensureOutputDirectory(outputPath string) error {
+	if dir := filepath.Dir(outputPath); dir != "." {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
+			return fmt.Errorf("failed to create output directory: %w", err)
+		}
+	}
+	return nil
+}
+
+// displayGenerationResults displays the generation results and optionally opens browser
+func (a *App) displayGenerationResults(outputPath, html string, options GenerateInvoiceOptions, duration time.Duration) {
 	fmt.Printf("✅ Invoice generated successfully!\n")
 	fmt.Printf("   Output: %s\n", outputPath)
 	fmt.Printf("   Size: %d bytes\n", len(html))
 	fmt.Printf("   Template: %s\n", options.TemplateName)
-	fmt.Printf("   Generation time: %v\n", genTime)
+	fmt.Printf("   Generation time: %v\n", duration)
 
 	// Open in browser if requested
 	if options.OpenBrowser {
@@ -278,8 +332,6 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 			fmt.Println("🌐 Opened in default browser")
 		}
 	}
-
-	return nil
 }
 
 func (a *App) executeGeneratePreview(ctx context.Context, invoiceID, configPath string, options GeneratePreviewOptions) error {
@@ -305,10 +357,7 @@ func (a *App) executeGeneratePreview(ctx context.Context, invoiceID, configPath 
 		fmt.Println("📄 Generating preview with sample data")
 	} else {
 		// Create invoice service and get real invoice
-		invoiceService, err := a.createInvoiceService(config.Storage.DataDir)
-		if err != nil {
-			return fmt.Errorf("failed to create invoice service: %w", err)
-		}
+		invoiceService := a.createInvoiceService(config.Storage.DataDir)
 
 		invoice, err = invoiceService.GetInvoice(ctx, models.InvoiceID(invoiceID))
 		if err != nil {
@@ -460,14 +509,14 @@ func (a *App) createRenderService(_ *config.Config) (*render.TemplateRenderer, e
 	return renderer, nil
 }
 
-func (a *App) createInvoiceService(dataDir string) (*services.InvoiceService, error) {
+func (a *App) createInvoiceService(dataDir string) *services.InvoiceService {
 	// Create storage
 	storage := jsonStorage.NewJSONStorage(dataDir, a.logger)
 
 	// Create invoice service
 	invoiceService := services.NewInvoiceService(storage, storage, a.logger, &SimpleIDGenerator{})
 
-	return invoiceService, nil
+	return invoiceService
 }
 
 func (a *App) loadBuiltInTemplates(engine render.TemplateEngine) error {
@@ -486,28 +535,6 @@ func (a *App) loadBuiltInTemplates(engine render.TemplateEngine) error {
 
 	// Add more built-in templates here as needed
 	return nil
-}
-
-func (a *App) enhanceInvoiceData(invoice *models.Invoice, config *config.Config) *EnhancedInvoiceData {
-	return &EnhancedInvoiceData{
-		Invoice: *invoice,
-		Business: EnhancedBusinessInfo{
-			Name:         config.Business.Name,
-			Address:      config.Business.Address,
-			Phone:        config.Business.Phone,
-			Email:        config.Business.Email,
-			Website:      config.Business.Website,
-			TaxID:        config.Business.TaxID,
-			PaymentTerms: config.Business.PaymentTerms,
-			BankDetails:  "", // TODO: Convert BankDetails struct to string
-		},
-		Config: EnhancedConfigInfo{
-			Currency:       config.Invoice.Currency,
-			CurrencySymbol: a.getCurrencySymbol(config.Invoice.Currency),
-			DateFormat:     "January 2, 2006",
-			DecimalPlaces:  2,
-		},
-	}
 }
 
 func (a *App) createSampleInvoice(_ *config.Config) *models.Invoice {
@@ -570,22 +597,6 @@ func (a *App) createSampleInvoice(_ *config.Config) *models.Invoice {
 	}
 
 	return invoice
-}
-
-func (a *App) getCurrencySymbol(currency string) string {
-	symbols := map[string]string{
-		"USD": "$",
-		"EUR": "€",
-		"GBP": "£",
-		"CAD": "C$",
-		"AUD": "A$",
-		"JPY": "¥",
-	}
-
-	if symbol, exists := symbols[currency]; exists {
-		return symbol
-	}
-	return currency
 }
 
 func (a *App) openInBrowser(path string) error {

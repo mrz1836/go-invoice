@@ -110,7 +110,7 @@ func (suite *InvoiceServiceTestSuite) TestCreateInvoice() {
 
 	// Client not found
 	suite.Run("ClientNotFound", func() {
-		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-001")).Return(nil, storage.NewErrNotFound("client", "CLIENT-001")).Once()
+		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-001")).Return(nil, storage.NewNotFoundError("client", "CLIENT-001")).Once()
 
 		invoice, err := suite.service.CreateInvoice(suite.ctx, request)
 
@@ -146,7 +146,7 @@ func (suite *InvoiceServiceTestSuite) TestGetInvoice() {
 
 	// Not found
 	suite.Run("NotFound", func() {
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-999")).Return(nil, storage.NewErrNotFound("invoice", "INV-999")).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-999")).Return(nil, storage.NewNotFoundError("invoice", "INV-999")).Once()
 
 		invoice, err := suite.service.GetInvoice(suite.ctx, "INV-999")
 
@@ -188,7 +188,7 @@ func (suite *InvoiceServiceTestSuite) TestUpdateInvoice() {
 
 	// Invoice not found
 	suite.Run("InvoiceNotFound", func() {
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(nil, storage.NewErrNotFound("invoice", "INV-001")).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(nil, storage.NewNotFoundError("invoice", "INV-001")).Once()
 
 		updatedInvoice, err := suite.service.UpdateInvoice(suite.ctx, updateRequest)
 

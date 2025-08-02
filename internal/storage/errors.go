@@ -1,3 +1,4 @@
+// Package storage provides data persistence interfaces and implementations for the go-invoice application.
 package storage
 
 import (
@@ -8,56 +9,56 @@ import (
 
 // Storage error types for comprehensive error handling
 
-// ErrNotFound indicates that a requested resource was not found
-type ErrNotFound struct {
+// NotFoundError indicates that a requested resource was not found
+type NotFoundError struct {
 	Resource string
 	ID       string
 }
 
-func (e ErrNotFound) Error() string {
+func (e NotFoundError) Error() string {
 	return fmt.Sprintf("%s with ID '%s' not found", e.Resource, e.ID)
 }
 
-// NewErrNotFound creates a new not found error
-func NewErrNotFound(resource, id string) ErrNotFound {
-	return ErrNotFound{Resource: resource, ID: id}
+// NewNotFoundError creates a new not found error
+func NewNotFoundError(resource, id string) NotFoundError {
+	return NotFoundError{Resource: resource, ID: id}
 }
 
-// ErrConflict indicates that a resource already exists or conflicts with another
-type ErrConflict struct {
+// ConflictError indicates that a resource already exists or conflicts with another
+type ConflictError struct {
 	Resource string
 	ID       string
 	Message  string
 }
 
-func (e ErrConflict) Error() string {
+func (e ConflictError) Error() string {
 	if e.Message != "" {
 		return fmt.Sprintf("%s with ID '%s' conflicts: %s", e.Resource, e.ID, e.Message)
 	}
 	return fmt.Sprintf("%s with ID '%s' already exists", e.Resource, e.ID)
 }
 
-// NewErrConflict creates a new conflict error
-func NewErrConflict(resource, id, message string) ErrConflict {
-	return ErrConflict{Resource: resource, ID: id, Message: message}
+// NewConflictError creates a new conflict error
+func NewConflictError(resource, id, message string) ConflictError {
+	return ConflictError{Resource: resource, ID: id, Message: message}
 }
 
-// ErrVersionMismatch indicates an optimistic locking failure
-type ErrVersionMismatch struct {
+// VersionMismatchError indicates an optimistic locking failure
+type VersionMismatchError struct {
 	Resource        string
 	ID              string
 	ExpectedVersion int
 	ActualVersion   int
 }
 
-func (e ErrVersionMismatch) Error() string {
+func (e VersionMismatchError) Error() string {
 	return fmt.Sprintf("%s with ID '%s' version mismatch: expected %d, got %d",
 		e.Resource, e.ID, e.ExpectedVersion, e.ActualVersion)
 }
 
-// NewErrVersionMismatch creates a new version mismatch error
-func NewErrVersionMismatch(resource, id string, expected, actual int) ErrVersionMismatch {
-	return ErrVersionMismatch{
+// NewVersionMismatchError creates a new version mismatch error
+func NewVersionMismatchError(resource, id string, expected, actual int) VersionMismatchError {
+	return VersionMismatchError{
 		Resource:        resource,
 		ID:              id,
 		ExpectedVersion: expected,
@@ -65,29 +66,29 @@ func NewErrVersionMismatch(resource, id string, expected, actual int) ErrVersion
 	}
 }
 
-// ErrCorrupted indicates that stored data is corrupted or invalid
-type ErrCorrupted struct {
+// CorruptedError indicates that stored data is corrupted or invalid
+type CorruptedError struct {
 	Resource string
 	ID       string
 	Message  string
 }
 
-func (e ErrCorrupted) Error() string {
+func (e CorruptedError) Error() string {
 	return fmt.Sprintf("%s with ID '%s' is corrupted: %s", e.Resource, e.ID, e.Message)
 }
 
-// NewErrCorrupted creates a new corrupted data error
-func NewErrCorrupted(resource, id, message string) ErrCorrupted {
-	return ErrCorrupted{Resource: resource, ID: id, Message: message}
+// NewCorruptedError creates a new corrupted data error
+func NewCorruptedError(resource, id, message string) CorruptedError {
+	return CorruptedError{Resource: resource, ID: id, Message: message}
 }
 
-// ErrStorageUnavailable indicates that the storage system is unavailable
-type ErrStorageUnavailable struct {
+// StorageUnavailableError indicates that the storage system is unavailable
+type StorageUnavailableError struct {
 	Message string
 	Cause   error
 }
 
-func (e ErrStorageUnavailable) Error() string {
+func (e StorageUnavailableError) Error() string {
 	if e.Cause != nil {
 		return fmt.Sprintf("storage unavailable: %s (caused by: %v)", e.Message, e.Cause)
 	}
@@ -95,86 +96,86 @@ func (e ErrStorageUnavailable) Error() string {
 }
 
 // Unwrap returns the underlying cause error
-func (e ErrStorageUnavailable) Unwrap() error {
+func (e StorageUnavailableError) Unwrap() error {
 	return e.Cause
 }
 
-// NewErrStorageUnavailable creates a new storage unavailable error
-func NewErrStorageUnavailable(message string, cause error) ErrStorageUnavailable {
-	return ErrStorageUnavailable{Message: message, Cause: cause}
+// NewStorageUnavailableError creates a new storage unavailable error
+func NewStorageUnavailableError(message string, cause error) StorageUnavailableError {
+	return StorageUnavailableError{Message: message, Cause: cause}
 }
 
-// ErrInvalidFilter indicates that a filter or query parameter is invalid
-type ErrInvalidFilter struct {
+// InvalidFilterError indicates that a filter or query parameter is invalid
+type InvalidFilterError struct {
 	Field   string
 	Value   interface{}
 	Message string
 }
 
-func (e ErrInvalidFilter) Error() string {
+func (e InvalidFilterError) Error() string {
 	return fmt.Sprintf("invalid filter for field '%s' with value '%v': %s", e.Field, e.Value, e.Message)
 }
 
-// NewErrInvalidFilter creates a new invalid filter error
-func NewErrInvalidFilter(field string, value interface{}, message string) ErrInvalidFilter {
-	return ErrInvalidFilter{Field: field, Value: value, Message: message}
+// NewInvalidFilterError creates a new invalid filter error
+func NewInvalidFilterError(field string, value interface{}, message string) InvalidFilterError {
+	return InvalidFilterError{Field: field, Value: value, Message: message}
 }
 
-// ErrPermission indicates insufficient permissions for the operation
-type ErrPermission struct {
+// PermissionError indicates insufficient permissions for the operation
+type PermissionError struct {
 	Operation string
 	Resource  string
 	Message   string
 }
 
-func (e ErrPermission) Error() string {
+func (e PermissionError) Error() string {
 	return fmt.Sprintf("permission denied for %s on %s: %s", e.Operation, e.Resource, e.Message)
 }
 
-// NewErrPermission creates a new permission error
-func NewErrPermission(operation, resource, message string) ErrPermission {
-	return ErrPermission{Operation: operation, Resource: resource, Message: message}
+// NewPermissionError creates a new permission error
+func NewPermissionError(operation, resource, message string) PermissionError {
+	return PermissionError{Operation: operation, Resource: resource, Message: message}
 }
 
 // IsNotFound checks if an error is a not found error
 func IsNotFound(err error) bool {
-	_, ok := err.(ErrNotFound)
+	_, ok := err.(NotFoundError)
 	return ok
 }
 
 // IsConflict checks if an error is a conflict error
 func IsConflict(err error) bool {
-	_, ok := err.(ErrConflict)
+	_, ok := err.(ConflictError)
 	return ok
 }
 
 // IsVersionMismatch checks if an error is a version mismatch error
 func IsVersionMismatch(err error) bool {
-	_, ok := err.(ErrVersionMismatch)
+	_, ok := err.(VersionMismatchError)
 	return ok
 }
 
 // IsCorrupted checks if an error is a corrupted data error
 func IsCorrupted(err error) bool {
-	_, ok := err.(ErrCorrupted)
+	_, ok := err.(CorruptedError)
 	return ok
 }
 
 // IsStorageUnavailable checks if an error is a storage unavailable error
 func IsStorageUnavailable(err error) bool {
-	_, ok := err.(ErrStorageUnavailable)
+	_, ok := err.(StorageUnavailableError)
 	return ok
 }
 
 // IsInvalidFilter checks if an error is an invalid filter error
 func IsInvalidFilter(err error) bool {
-	_, ok := err.(ErrInvalidFilter)
+	_, ok := err.(InvalidFilterError)
 	return ok
 }
 
 // IsPermission checks if an error is a permission error
 func IsPermission(err error) bool {
-	_, ok := err.(ErrPermission)
+	_, ok := err.(PermissionError)
 	return ok
 }
 

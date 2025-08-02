@@ -91,7 +91,7 @@ If the specified client doesn't exist and --create-client is used, it will be cr
 }
 
 // runInvoiceCreate handles the invoice create command
-func (a *App) runInvoiceCreate(cmd *cobra.Command, args []string) error {
+func (a *App) runInvoiceCreate(cmd *cobra.Command, _ []string) error {
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
@@ -129,9 +129,9 @@ func (a *App) runInvoiceCreate(cmd *cobra.Command, args []string) error {
 	// Parse dates
 	invoiceDate := time.Now()
 	if dateStr != "" {
-		parsedDate, err := time.Parse("2006-01-02", dateStr)
-		if err != nil {
-			return fmt.Errorf("invalid date format (use YYYY-MM-DD): %w", err)
+		parsedDate, parseErr := time.Parse("2006-01-02", dateStr)
+		if parseErr != nil {
+			return fmt.Errorf("invalid date format (use YYYY-MM-DD): %w", parseErr)
 		}
 		invoiceDate = parsedDate
 	}
@@ -139,11 +139,11 @@ func (a *App) runInvoiceCreate(cmd *cobra.Command, args []string) error {
 	dueDate := invoiceDate.AddDate(0, 0, config.Invoice.DefaultDueDays)
 
 	if dueDateStr != "" {
-		parsedDate, err := time.Parse("2006-01-02", dueDateStr)
-		if err != nil {
-			return fmt.Errorf("invalid due date format (use YYYY-MM-DD): %w", err)
+		parsedDueDate, parseErr := time.Parse("2006-01-02", dueDateStr)
+		if parseErr != nil {
+			return fmt.Errorf("invalid due date format (use YYYY-MM-DD): %w", parseErr)
 		}
-		dueDate = parsedDate
+		dueDate = parsedDueDate
 	}
 
 	// Find or create client
@@ -163,7 +163,7 @@ func (a *App) runInvoiceCreate(cmd *cobra.Command, args []string) error {
 		Number:      nextNumber,
 		Date:        invoiceDate,
 		DueDate:     dueDate,
-		ClientID:    models.ClientID(client.ID),
+		ClientID:    client.ID,
 		Description: description,
 	}
 
@@ -267,7 +267,8 @@ func (a *App) runInvoiceList(cmd *cobra.Command, args []string) error {
 	case "json":
 		return a.outputInvoicesJSON(invoices)
 	case "csv":
-		return a.outputInvoicesCSV(invoices)
+		a.outputInvoicesCSV(invoices)
+		return nil
 	default:
 		if err := a.outputInvoicesTable(invoices, clientService, ctx); err != nil {
 			return err
@@ -406,11 +407,38 @@ func (a *App) runInvoiceUpdate(cmd *cobra.Command, args []string) error {
 
 	invoiceID := args[0]
 
+	// Setup and validation
+	invoiceService, invoice, err := a.setupUpdateCommand(ctx, cmd, invoiceID)
+	if err != nil {
+		return err
+	}
+
+	// Check if interactive mode
+	if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+		return a.runInvoiceUpdateInteractive(ctx, invoiceService, invoice)
+	}
+
+	// Build update request
+	req, hasUpdates, err := a.buildUpdateRequest(cmd, invoiceID)
+	if err != nil {
+		return err
+	}
+
+	if !hasUpdates {
+		return ErrNoUpdatesSpecified
+	}
+
+	// Perform update and display results
+	return a.executeUpdateAndDisplay(ctx, invoiceService, invoice, req)
+}
+
+// setupUpdateCommand sets up the invoice service and validates the invoice
+func (a *App) setupUpdateCommand(ctx context.Context, cmd *cobra.Command, invoiceID string) (*services.InvoiceService, *models.Invoice, error) {
 	// Load configuration
 	configPath, _ := cmd.Flags().GetString("config")
 	config, err := a.configService.LoadConfig(ctx, configPath)
 	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
+		return nil, nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
 
 	// Create storage and services
@@ -421,27 +449,19 @@ func (a *App) runInvoiceUpdate(cmd *cobra.Command, args []string) error {
 	// Get current invoice
 	invoice, err := invoiceService.GetInvoice(ctx, models.InvoiceID(invoiceID))
 	if err != nil {
-		return fmt.Errorf("failed to get invoice: %w", err)
+		return nil, nil, fmt.Errorf("failed to get invoice: %w", err)
 	}
 
 	// Check if invoice can be updated
 	if invoice.Status == models.StatusPaid || invoice.Status == models.StatusVoided {
-		return fmt.Errorf("%w: %s", ErrCannotUpdateInvoiceStatus, invoice.Status)
+		return nil, nil, fmt.Errorf("%w: %s", ErrCannotUpdateInvoiceStatus, invoice.Status)
 	}
 
-	// Get flags
-	status, _ := cmd.Flags().GetString("status")
-	dueDateStr, _ := cmd.Flags().GetString("due-date")
-	description, _ := cmd.Flags().GetString("description")
-	notes, _ := cmd.Flags().GetString("notes")
-	interactive, _ := cmd.Flags().GetBool("interactive")
+	return invoiceService, invoice, nil
+}
 
-	// Interactive mode
-	if interactive {
-		return a.runInvoiceUpdateInteractive(ctx, invoiceService, invoice)
-	}
-
-	// Build update request
+// buildUpdateRequest builds the update request from command flags
+func (a *App) buildUpdateRequest(cmd *cobra.Command, invoiceID string) (models.UpdateInvoiceRequest, bool, error) {
 	req := models.UpdateInvoiceRequest{
 		ID: models.InvoiceID(invoiceID),
 	}
@@ -449,50 +469,61 @@ func (a *App) runInvoiceUpdate(cmd *cobra.Command, args []string) error {
 	hasUpdates := false
 
 	// Update status
-	if status != "" {
-		// Validate status is one of the allowed values
-		validStatuses := []string{"draft", "sent", "paid", "overdue", "voided"}
-		validStatus := false
-		for _, vs := range validStatuses {
-			if status == vs {
-				validStatus = true
-				break
-			}
+	if status, _ := cmd.Flags().GetString("status"); status != "" {
+		if err := a.validateAndSetStatus(&req, status); err != nil {
+			return req, false, err
 		}
-		if !validStatus {
-			return fmt.Errorf("%w: %s (must be one of: %s)", ErrInvalidStatus, status, strings.Join(validStatuses, ", "))
-		}
-		req.Status = &status
 		hasUpdates = true
 	}
 
 	// Update due date
-	if dueDateStr != "" {
-		dueDate, err := time.Parse("2006-01-02", dueDateStr)
-		if err != nil {
-			return fmt.Errorf("invalid due date format (use YYYY-MM-DD): %w", err)
+	if dueDateStr, _ := cmd.Flags().GetString("due-date"); dueDateStr != "" {
+		if err := a.validateAndSetDueDate(&req, dueDateStr); err != nil {
+			return req, false, err
 		}
-		req.DueDate = &dueDate
 		hasUpdates = true
 	}
 
 	// Update description
-	if description != "" {
+	if description, _ := cmd.Flags().GetString("description"); description != "" {
 		req.Description = &description
 		hasUpdates = true
 	}
 
-	// Notes field doesn't exist in UpdateInvoiceRequest
-	// TODO: Add notes support when field is added to model
-	if notes != "" {
-		// For now, we'll ignore notes updates
+	// Handle notes (not yet supported)
+	if notes, _ := cmd.Flags().GetString("notes"); notes != "" {
 		a.logger.Debug("notes update not yet supported", "notes", notes)
 	}
 
-	if !hasUpdates {
-		return ErrNoUpdatesSpecified
+	return req, hasUpdates, nil
+}
+
+// validateAndSetStatus validates and sets the status in the update request
+func (a *App) validateAndSetStatus(req *models.UpdateInvoiceRequest, status string) error {
+	validStatuses := []string{"draft", "sent", "paid", "overdue", "voided"}
+
+	for _, vs := range validStatuses {
+		if status == vs {
+			req.Status = &status
+			return nil
+		}
 	}
 
+	return fmt.Errorf("%w: %s (must be one of: %s)", ErrInvalidStatus, status, strings.Join(validStatuses, ", "))
+}
+
+// validateAndSetDueDate validates and sets the due date in the update request
+func (a *App) validateAndSetDueDate(req *models.UpdateInvoiceRequest, dueDateStr string) error {
+	dueDate, err := time.Parse("2006-01-02", dueDateStr)
+	if err != nil {
+		return fmt.Errorf("invalid due date format (use YYYY-MM-DD): %w", err)
+	}
+	req.DueDate = &dueDate
+	return nil
+}
+
+// executeUpdateAndDisplay performs the update and displays results
+func (a *App) executeUpdateAndDisplay(ctx context.Context, invoiceService *services.InvoiceService, originalInvoice *models.Invoice, req models.UpdateInvoiceRequest) error {
 	// Perform update
 	updatedInvoice, err := invoiceService.UpdateInvoice(ctx, req)
 	if err != nil {
@@ -500,20 +531,28 @@ func (a *App) runInvoiceUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Display success message
+	a.displayUpdateResults(originalInvoice, updatedInvoice, req)
+	return nil
+}
+
+// displayUpdateResults displays the update results to the user
+func (a *App) displayUpdateResults(original, updated *models.Invoice, req models.UpdateInvoiceRequest) {
 	fmt.Printf("✅ Invoice updated successfully!\n")
-	fmt.Printf("   Invoice Number: %s\n", updatedInvoice.Number)
+	fmt.Printf("   Invoice Number: %s\n", updated.Number)
+
 	if req.Status != nil {
-		fmt.Printf("   Status: %s → %s\n", invoice.Status, updatedInvoice.Status)
+		fmt.Printf("   Status: %s → %s\n", original.Status, updated.Status)
 	}
+
 	if req.DueDate != nil {
-		fmt.Printf("   Due Date: %s → %s\n", invoice.DueDate.Format("2006-01-02"), updatedInvoice.DueDate.Format("2006-01-02"))
+		fmt.Printf("   Due Date: %s → %s\n",
+			original.DueDate.Format("2006-01-02"),
+			updated.DueDate.Format("2006-01-02"))
 	}
+
 	if req.Description != nil {
 		fmt.Printf("   Description updated\n")
 	}
-	// Notes not yet supported in UpdateInvoiceRequest
-
-	return nil
 }
 
 // buildInvoiceDeleteCommand creates the invoice delete subcommand
@@ -603,7 +642,10 @@ func (a *App) runInvoiceDelete(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Are you sure you want to continue? (yes/no): ")
 
 		var response string
-		fmt.Scanln(&response)
+		if _, err := fmt.Scanln(&response); err != nil {
+			fmt.Printf("Error reading input: %v\n", err)
+			return fmt.Errorf("failed to read user input: %w", err)
+		}
 		if strings.ToLower(response) != "yes" {
 			fmt.Println("❌ Delete cancelled")
 			return nil
@@ -700,64 +742,99 @@ func (a *App) findOrCreateClient(ctx context.Context, clientService *services.Cl
 func (a *App) buildInvoiceFilter(cmd *cobra.Command, clientService *services.ClientService, ctx context.Context) (models.InvoiceFilter, error) {
 	filter := models.InvoiceFilter{}
 
-	// Status filter
-	if status, _ := cmd.Flags().GetString("status"); status != "" {
-		// Validate status
-		validStatuses := []string{"draft", "sent", "paid", "overdue", "voided"}
-		valid := false
-		for _, vs := range validStatuses {
-			if status == vs {
-				valid = true
-				break
-			}
-		}
-		if !valid {
-			return filter, fmt.Errorf("%w: %s", ErrInvalidStatus, status)
-		}
-		filter.Status = status
+	// Build status filter
+	if err := a.buildStatusFilter(cmd, &filter); err != nil {
+		return filter, err
 	}
 
-	// Client filter
-	if clientName, _ := cmd.Flags().GetString("client"); clientName != "" {
-		clients, err := a.searchClientsByName(ctx, clientService, clientName)
-		if err != nil {
-			return filter, fmt.Errorf("failed to search for client: %w", err)
-		}
-		if len(clients) == 0 {
-			return filter, fmt.Errorf("%w: %s", ErrNoClientsFound, clientName)
-		}
-		if len(clients) > 1 {
-			return filter, fmt.Errorf("%w: %s", ErrMultipleClientsFound, clientName)
-		}
-		filter.ClientID = models.ClientID(clients[0].ID)
+	// Build client filter
+	if err := a.buildClientFilter(cmd, clientService, ctx, &filter); err != nil {
+		return filter, err
 	}
 
-	// Date range filter
+	// Build date range filter
+	if err := a.buildDateRangeFilter(cmd, &filter); err != nil {
+		return filter, err
+	}
+
+	// Build limit filter
+	a.buildLimitFilter(cmd, &filter)
+
+	return filter, nil
+}
+
+// buildStatusFilter builds the status filter from command flags
+func (a *App) buildStatusFilter(cmd *cobra.Command, filter *models.InvoiceFilter) error {
+	status, _ := cmd.Flags().GetString("status")
+	if status == "" {
+		return nil
+	}
+
+	validStatuses := []string{"draft", "sent", "paid", "overdue", "voided"}
+	for _, vs := range validStatuses {
+		if status == vs {
+			filter.Status = status
+			return nil
+		}
+	}
+
+	return fmt.Errorf("%w: %s", ErrInvalidStatus, status)
+}
+
+// buildClientFilter builds the client filter from command flags
+func (a *App) buildClientFilter(cmd *cobra.Command, clientService *services.ClientService, ctx context.Context, filter *models.InvoiceFilter) error {
+	clientName, _ := cmd.Flags().GetString("client")
+	if clientName == "" {
+		return nil
+	}
+
+	clients, err := a.searchClientsByName(ctx, clientService, clientName)
+	if err != nil {
+		return fmt.Errorf("failed to search for client: %w", err)
+	}
+
+	if len(clients) == 0 {
+		return fmt.Errorf("%w: %s", ErrNoClientsFound, clientName)
+	}
+
+	if len(clients) > 1 {
+		return fmt.Errorf("%w: %s", ErrMultipleClientsFound, clientName)
+	}
+
+	filter.ClientID = models.ClientID(clients[0].ID)
+	return nil
+}
+
+// buildDateRangeFilter builds the date range filter from command flags
+func (a *App) buildDateRangeFilter(cmd *cobra.Command, filter *models.InvoiceFilter) error {
+	// From date
 	if fromStr, _ := cmd.Flags().GetString("from"); fromStr != "" {
 		fromDate, err := time.Parse("2006-01-02", fromStr)
 		if err != nil {
-			return filter, fmt.Errorf("invalid from date format (use YYYY-MM-DD): %w", err)
+			return fmt.Errorf("invalid from date format (use YYYY-MM-DD): %w", err)
 		}
 		filter.DateFrom = fromDate
 	}
 
+	// To date
 	if toStr, _ := cmd.Flags().GetString("to"); toStr != "" {
 		toDate, err := time.Parse("2006-01-02", toStr)
 		if err != nil {
-			return filter, fmt.Errorf("invalid to date format (use YYYY-MM-DD): %w", err)
+			return fmt.Errorf("invalid to date format (use YYYY-MM-DD): %w", err)
 		}
 		// Set to end of day
 		toDate = toDate.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
 		filter.DateTo = toDate
 	}
 
-	// Limit
-	limit, _ := cmd.Flags().GetInt("limit")
-	if limit > 0 {
+	return nil
+}
+
+// buildLimitFilter builds the limit filter from command flags
+func (a *App) buildLimitFilter(cmd *cobra.Command, filter *models.InvoiceFilter) {
+	if limit, _ := cmd.Flags().GetInt("limit"); limit > 0 {
 		filter.Limit = limit
 	}
-
-	return filter, nil
 }
 
 // Output formatting methods
@@ -771,7 +848,7 @@ func (a *App) outputInvoicesJSON(invoices []*models.Invoice) error {
 	return nil
 }
 
-func (a *App) outputInvoicesCSV(invoices []*models.Invoice) error {
+func (a *App) outputInvoicesCSV(invoices []*models.Invoice) {
 	// CSV header
 	fmt.Println("Number,Date,DueDate,ClientName,Status,SubTotal,Tax,Total")
 
@@ -788,7 +865,6 @@ func (a *App) outputInvoicesCSV(invoices []*models.Invoice) error {
 			inv.Total,
 		)
 	}
-	return nil
 }
 
 func (a *App) outputInvoicesTable(invoices []*models.Invoice, _ *services.ClientService, ctx context.Context) error {
@@ -799,11 +875,20 @@ func (a *App) outputInvoicesTable(invoices []*models.Invoice, _ *services.Client
 
 	// Create tabwriter for aligned output
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	defer w.Flush()
+	defer func() {
+		if err := w.Flush(); err != nil {
+			// Log error but don't fail the function since this is cleanup
+			fmt.Fprintf(os.Stderr, "Warning: failed to flush tabwriter: %v\n", err)
+		}
+	}()
 
 	// Header
-	fmt.Fprintln(w, "NUMBER\tCLIENT\tDATE\tDUE DATE\tSTATUS\tAMOUNT")
-	fmt.Fprintln(w, "------\t------\t----\t--------\t------\t------")
+	if _, err := fmt.Fprintln(w, "NUMBER\tCLIENT\tDATE\tDUE DATE\tSTATUS\tAMOUNT"); err != nil {
+		return fmt.Errorf("failed to write table header: %w", err)
+	}
+	if _, err := fmt.Fprintln(w, "------\t------\t----\t--------\t------\t------"); err != nil {
+		return fmt.Errorf("failed to write table separator: %w", err)
+	}
 
 	// Rows
 	for _, inv := range invoices {
@@ -813,14 +898,16 @@ func (a *App) outputInvoicesTable(invoices []*models.Invoice, _ *services.Client
 		// Format status with color (in a real terminal)
 		status := string(inv.Status)
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%.2f\n",
+		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%.2f\n",
 			inv.Number,
 			clientName,
 			inv.Date.Format("2006-01-02"),
 			inv.DueDate.Format("2006-01-02"),
 			status,
 			inv.Total,
-		)
+		); err != nil {
+			return fmt.Errorf("failed to write table row for invoice %s: %w", inv.Number, err)
+		}
 	}
 
 	return nil
@@ -940,9 +1027,9 @@ func (a *App) runInvoiceCreateInteractive(ctx context.Context, invoiceService *s
 			options = append(options, fmt.Sprintf("%s (%s)", c.Name, c.Email))
 		}
 
-		index, _, err := prompter.PromptSelect(ctx, "Select a client:", options, -1)
-		if err != nil {
-			return fmt.Errorf("client selection cancelled: %w", err)
+		index, _, selectErr := prompter.PromptSelect(ctx, "Select a client:", options, -1)
+		if selectErr != nil {
+			return fmt.Errorf("client selection cancelled: %w", selectErr)
 		}
 
 		if index == 0 {
@@ -1020,7 +1107,7 @@ func (a *App) runInvoiceCreateInteractive(ctx context.Context, invoiceService *s
 		Number:      nextNumber,
 		Date:        invoiceDate,
 		DueDate:     dueDate,
-		ClientID:    models.ClientID(client.ID),
+		ClientID:    client.ID,
 		Description: description,
 	}
 
@@ -1075,30 +1162,30 @@ func (a *App) runInvoiceUpdateInteractive(ctx context.Context, invoiceService *s
 	}
 
 	req := models.UpdateInvoiceRequest{
-		ID: models.InvoiceID(invoice.ID),
+		ID: invoice.ID,
 	}
 
 	switch index {
 	case 0: // Update status
 		statuses := []string{"draft", "sent", "paid", "overdue", "voided"}
-		statusIndex, newStatus, err := prompter.PromptSelect(ctx, "Select new status:", statuses, -1)
-		if err != nil {
-			return fmt.Errorf("status selection cancelled: %w", err)
+		statusIndex, newStatus, selectErr := prompter.PromptSelect(ctx, "Select new status:", statuses, -1)
+		if selectErr != nil {
+			return fmt.Errorf("status selection cancelled: %w", selectErr)
 		}
 		_ = statusIndex // unused
 		req.Status = &newStatus
 
 	case 1: // Update due date
-		newDueDate, err := prompter.PromptDate(ctx, "New due date", invoice.DueDate)
-		if err != nil {
-			return fmt.Errorf("due date selection cancelled: %w", err)
+		newDueDate, promptErr := prompter.PromptDate(ctx, "New due date", invoice.DueDate)
+		if promptErr != nil {
+			return fmt.Errorf("due date selection cancelled: %w", promptErr)
 		}
 		req.DueDate = &newDueDate
 
 	case 2: // Update description
-		newDescription, err := prompter.PromptString(ctx, "New description", invoice.Description)
-		if err != nil {
-			return fmt.Errorf("description input cancelled: %w", err)
+		newDescription, promptErr := prompter.PromptString(ctx, "New description", invoice.Description)
+		if promptErr != nil {
+			return fmt.Errorf("description input cancelled: %w", promptErr)
 		}
 		req.Description = &newDescription
 	}

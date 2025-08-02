@@ -31,7 +31,7 @@ func NewWorkItem(ctx context.Context, id string, date time.Time, hours, rate flo
 
 	// Validate the new work item
 	if err := item.Validate(ctx); err != nil {
-		return nil, fmt.Errorf("work item validation failed: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrWorkItemValidationFailed, err)
 	}
 
 	return item, nil
@@ -167,7 +167,7 @@ func (w *WorkItem) Validate(ctx context.Context) error {
 		for _, err := range errors {
 			messages = append(messages, err.Error())
 		}
-		return fmt.Errorf("work item validation failed: %s", strings.Join(messages, "; "))
+		return fmt.Errorf("%w: %s", ErrWorkItemValidationFailed, strings.Join(messages, "; "))
 	}
 
 	return nil
@@ -182,11 +182,11 @@ func (w *WorkItem) UpdateHours(ctx context.Context, hours float64) error {
 	}
 
 	if hours <= 0 {
-		return fmt.Errorf("hours must be greater than 0")
+		return ErrHoursMustBePositive
 	}
 
 	if hours > 24 {
-		return fmt.Errorf("hours cannot exceed 24 per entry")
+		return ErrHoursExceedLimit
 	}
 
 	w.Hours = hours
@@ -204,7 +204,7 @@ func (w *WorkItem) UpdateRate(ctx context.Context, rate float64) error {
 	}
 
 	if rate <= 0 {
-		return fmt.Errorf("rate must be greater than 0")
+		return ErrRateMustBePositive
 	}
 
 	if rate > 10000 {

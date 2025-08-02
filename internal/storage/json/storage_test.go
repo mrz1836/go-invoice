@@ -198,7 +198,7 @@ func (suite *JSONStorageTestSuite) TestInitializeWithDirectoryCreationError() {
 	err = storage.Initialize(suite.ctx)
 	require.Error(t, err)
 
-	var storageErr storageTypes.ErrStorageUnavailable
+	var storageErr storageTypes.StorageUnavailableError
 	assert.ErrorAs(t, err, &storageErr)
 	assert.Contains(t, err.Error(), "failed to create directory")
 }
@@ -360,7 +360,7 @@ func (suite *JSONStorageTestSuite) TestValidate() {
 
 	err = suite.storage.Validate(suite.ctx)
 	require.Error(t, err)
-	var storageErr storageTypes.ErrStorageUnavailable
+	var storageErr storageTypes.StorageUnavailableError
 	assert.ErrorAs(t, err, &storageErr)
 }
 
@@ -413,7 +413,7 @@ func (suite *JSONStorageTestSuite) TestCreateInvoice() {
 	// Test duplicate creation
 	err = suite.storage.CreateInvoice(suite.ctx, invoice)
 	require.Error(t, err)
-	var conflictErr storageTypes.ErrConflict
+	var conflictErr storageTypes.ConflictError
 	assert.ErrorAs(t, err, &conflictErr)
 	assert.Equal(t, "invoice", conflictErr.Resource)
 	assert.Equal(t, "INV-001", conflictErr.ID)
@@ -484,7 +484,7 @@ func (suite *JSONStorageTestSuite) TestGetInvoice() {
 	retrieved, err = suite.storage.GetInvoice(suite.ctx, "INV-999")
 	require.Error(t, err)
 	assert.Nil(t, retrieved)
-	var notFoundErr storageTypes.ErrNotFound
+	var notFoundErr storageTypes.NotFoundError
 	assert.ErrorAs(t, err, &notFoundErr)
 	assert.Equal(t, "invoice", notFoundErr.Resource)
 	assert.Equal(t, "INV-999", notFoundErr.ID)
@@ -570,7 +570,7 @@ func (suite *JSONStorageTestSuite) TestUpdateInvoice() {
 
 	err = suite.storage.UpdateInvoice(suite.ctx, outdatedInvoice)
 	require.Error(t, err)
-	var versionErr storageTypes.ErrVersionMismatch
+	var versionErr storageTypes.VersionMismatchError
 	assert.ErrorAs(t, err, &versionErr)
 	assert.Equal(t, "invoice", versionErr.Resource)
 	assert.Equal(t, "INV-001", versionErr.ID)
@@ -592,7 +592,7 @@ func (suite *JSONStorageTestSuite) TestUpdateInvoice() {
 
 	err = suite.storage.UpdateInvoice(suite.ctx, nonExistent)
 	require.Error(t, err)
-	var notFoundErr storageTypes.ErrNotFound
+	var notFoundErr storageTypes.NotFoundError
 	assert.ErrorAs(t, err, &notFoundErr)
 
 	// Test with nil invoice
@@ -659,7 +659,7 @@ func (suite *JSONStorageTestSuite) TestDeleteInvoice() {
 	// Try to delete again
 	err = suite.storage.DeleteInvoice(suite.ctx, "INV-001")
 	require.Error(t, err)
-	var notFoundErr storageTypes.ErrNotFound
+	var notFoundErr storageTypes.NotFoundError
 	assert.ErrorAs(t, err, &notFoundErr)
 
 	// Test with empty ID
@@ -886,7 +886,7 @@ func (suite *JSONStorageTestSuite) TestListInvoices() {
 	})
 	require.Error(t, err)
 	assert.Nil(t, result)
-	var filterErr storageTypes.ErrInvalidFilter
+	var filterErr storageTypes.InvalidFilterError
 	assert.ErrorAs(t, err, &filterErr)
 
 	// Test with corrupted invoice file
@@ -1147,9 +1147,9 @@ func (suite *JSONStorageTestSuite) TestWriteJSONFileError() {
 	require.NoError(t, err)
 
 	// Make invoices directory read-only
-	err = os.Chmod(suite.storage.invoicesDir, 0o444)
+	err = os.Chmod(suite.storage.invoicesDir, 0o400)
 	require.NoError(t, err)
-	defer os.Chmod(suite.storage.invoicesDir, 0o755) // Restore permissions
+	defer os.Chmod(suite.storage.invoicesDir, 0o750) // Restore permissions
 
 	// Try to create invoice
 	invoice := &models.Invoice{

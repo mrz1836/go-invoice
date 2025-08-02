@@ -135,7 +135,7 @@ func (suite *ClientTestSuite) TestNewClientWithContext() {
 	cancel() // Cancel immediately
 
 	client, err := NewClient(ctx, "CLIENT-001", "Test Client", "test@example.com")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
 	assert.Nil(t, client)
 }

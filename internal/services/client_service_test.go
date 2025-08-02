@@ -67,7 +67,7 @@ func (suite *ClientServiceTestSuite) TestCreateClient() {
 
 	// Success case
 	suite.Run("Success", func() {
-		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(nil, storage.NewErrNotFound("client", "email:test@example.com")).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(nil, storage.NewNotFoundError("client", "email:test@example.com")).Once()
 		suite.idGen.On("GenerateClientID", suite.ctx).Return(models.ClientID("CLIENT-001"), nil).Once()
 		suite.clientStorage.On("CreateClient", suite.ctx, mock.AnythingOfType("*models.Client")).Return(nil).Once()
 
@@ -151,7 +151,7 @@ func (suite *ClientServiceTestSuite) TestGetClient() {
 
 	// Not found
 	suite.Run("NotFound", func() {
-		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-999")).Return(nil, storage.NewErrNotFound("client", "CLIENT-999")).Once()
+		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-999")).Return(nil, storage.NewNotFoundError("client", "CLIENT-999")).Once()
 
 		client, err := suite.service.GetClient(suite.ctx, "CLIENT-999")
 
@@ -187,7 +187,7 @@ func (suite *ClientServiceTestSuite) TestUpdateClient() {
 		updatedClient.TaxID = "NEW-TAX"
 
 		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-001")).Return(existingClient, nil).Once()
-		suite.clientStorage.On("FindClientByEmail", suite.ctx, "new@example.com").Return(nil, storage.NewErrNotFound("client", "new@example.com")).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, "new@example.com").Return(nil, storage.NewNotFoundError("client", "new@example.com")).Once()
 		suite.clientStorage.On("UpdateClient", suite.ctx, &updatedClient).Return(nil).Once()
 
 		client, err := suite.service.UpdateClient(suite.ctx, &updatedClient)
@@ -214,7 +214,7 @@ func (suite *ClientServiceTestSuite) TestUpdateClient() {
 		}
 
 		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-001")).Return(existingClient, nil).Once()
-		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(nil, storage.NewErrNotFound("client", "test@example.com")).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(nil, storage.NewNotFoundError("client", "test@example.com")).Once()
 		suite.clientStorage.On("UpdateClient", suite.ctx, client).Return(errors.New("storage error")).Once()
 
 		updatedClient, err := suite.service.UpdateClient(suite.ctx, client)
@@ -325,7 +325,7 @@ func (suite *ClientServiceTestSuite) TestFindClientByEmail() {
 
 	// Not found
 	suite.Run("NotFound", func() {
-		suite.clientStorage.On("FindClientByEmail", suite.ctx, "notfound@example.com").Return(nil, storage.NewErrNotFound("client", "email:notfound@example.com")).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, "notfound@example.com").Return(nil, storage.NewNotFoundError("client", "email:notfound@example.com")).Once()
 
 		client, err := suite.service.FindClientByEmail(suite.ctx, "notfound@example.com")
 

@@ -96,13 +96,13 @@ invalid-date,8.0,100.0,Bad date
 			if tt.hasError {
 				// Should not error if continue on error is true
 				require.NoError(suite.T(), err)
-				assert.True(suite.T(), len(result.Errors) > 0, "should have parsing errors")
+				suite.True(len(result.Errors) > 0, "should have parsing errors")
 			} else {
 				require.NoError(suite.T(), err)
-				assert.Empty(suite.T(), result.Errors, "should have no errors")
+				suite.Empty(result.Errors, "should have no errors")
 			}
 
-			assert.Equal(suite.T(), tt.expected, len(result.WorkItems))
+			suite.Len(result.WorkItems, tt.expected)
 			assert.Equal(suite.T(), len(result.WorkItems), result.SuccessRows)
 		})
 	}
@@ -159,7 +159,7 @@ func (suite *CSVIntegrationTestSuite) TestFormatDetectionIntegration() {
 
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 			require.NoError(suite.T(), err)
-			assert.Equal(suite.T(), 1, len(result.WorkItems))
+			suite.Len(result.WorkItems, 1)
 			assert.Equal(suite.T(), formatInfo.Name, result.Format)
 		})
 	}
@@ -182,7 +182,7 @@ func (suite *CSVIntegrationTestSuite) TestErrorHandlingIntegration() {
 		require.NoError(suite.T(), err)
 
 		// Should have 1 valid work item
-		assert.Equal(suite.T(), 1, len(result.WorkItems))
+		suite.Len(result.WorkItems, 1)
 		assert.Equal(suite.T(), 4, result.TotalRows)
 		assert.Equal(suite.T(), 1, result.SuccessRows)
 		assert.Equal(suite.T(), 3, result.ErrorRows)
@@ -205,12 +205,12 @@ func (suite *CSVIntegrationTestSuite) TestErrorHandlingIntegration() {
 		options := ParseOptions{ContinueOnError: false}
 
 		result, err := suite.parser.ParseTimesheet(ctx, reader, options)
-		require.Error(suite.T(), err)
+		suite.Require().Error(err)
 		assert.Contains(suite.T(), err.Error(), "hours")
 
 		// Result may be nil when error occurs early
 		if result != nil {
-			assert.Equal(suite.T(), 1, len(result.WorkItems))
+			suite.Len(result.WorkItems, 1)
 		}
 	})
 }
@@ -232,7 +232,7 @@ func (suite *CSVIntegrationTestSuite) TestComplexDataScenarios() {
 
 		// All should parse successfully with auto-detection (fixed EU format to use /)
 		assert.Equal(suite.T(), 3, len(result.WorkItems))
-		assert.Empty(suite.T(), result.Errors)
+		suite.Empty(result.Errors)
 	})
 
 	suite.Run("QuotedFieldsWithDelimiters", func() {
@@ -294,7 +294,7 @@ func (suite *CSVIntegrationTestSuite) TestContextCancellation() {
 
 	// Result may be nil when cancelled early
 	if result != nil {
-		assert.True(suite.T(), len(result.WorkItems) < 10000)
+		suite.Less(len(result.WorkItems), 10000)
 	}
 }
 
@@ -317,7 +317,7 @@ func (suite *CSVIntegrationTestSuite) TestLargeFileHandling() {
 	assert.Equal(suite.T(), 1000, len(result.WorkItems))
 	assert.Equal(suite.T(), 1000, result.SuccessRows)
 	assert.Equal(suite.T(), 1000, result.TotalRows)
-	assert.Empty(suite.T(), result.Errors)
+	suite.Empty(result.Errors)
 }
 
 // TestHeaderVariations tests different header naming patterns
@@ -366,15 +366,15 @@ func (suite *CSVIntegrationTestSuite) TestHeaderVariations() {
 
 			if tt.valid {
 				require.NoError(suite.T(), err)
-				assert.Equal(suite.T(), 1, len(result.WorkItems))
+				suite.Len(result.WorkItems, 1)
 			} else {
-				require.Error(suite.T(), err)
+				suite.Require().Error(err)
 				// Error could be either header validation or CSV parsing
 				errorStr := err.Error()
 				headerFound := strings.Contains(errorStr, "header") ||
 					strings.Contains(errorStr, "required field") ||
 					strings.Contains(errorStr, "wrong number of fields")
-				assert.True(suite.T(), headerFound, "Expected header-related error, got: %s", errorStr)
+				suite.True(headerFound, "Expected header-related error, got: %s", errorStr)
 			}
 		})
 	}

@@ -10,6 +10,18 @@ import (
 	"github.com/mrz/go-invoice/internal/models"
 )
 
+// CSV validation errors
+var (
+	ErrWorkItemNil      = fmt.Errorf("work item cannot be nil")
+	ErrRowEmpty         = fmt.Errorf("row is empty")
+	ErrRowNoData        = fmt.Errorf("row contains no data")
+	ErrNoWorkItems      = fmt.Errorf("no work items to validate")
+	ErrWorkDateEmpty    = fmt.Errorf("work date cannot be empty")
+	ErrWorkDateFuture   = fmt.Errorf("work date is too far in the future")
+	ErrWorkDatePast     = fmt.Errorf("work date is too far in the past")
+	ErrHoursNotPositive = fmt.Errorf("hours must be positive")
+)
+
 // WorkItemValidator implements CSVValidator with comprehensive validation rules
 type WorkItemValidator struct {
 	logger Logger
@@ -37,7 +49,7 @@ func (v *WorkItemValidator) ValidateWorkItem(ctx context.Context, item *models.W
 	}
 
 	if item == nil {
-		return fmt.Errorf("work item cannot be nil")
+		return ErrWorkItemNil
 	}
 
 	// Apply all validation rules
@@ -66,7 +78,7 @@ func (v *WorkItemValidator) ValidateRow(ctx context.Context, row []string, lineN
 	}
 
 	if len(row) == 0 {
-		return fmt.Errorf("row is empty")
+		return ErrRowEmpty
 	}
 
 	// Check for completely empty row (all fields empty)
@@ -79,7 +91,7 @@ func (v *WorkItemValidator) ValidateRow(ctx context.Context, row []string, lineN
 	}
 
 	if isEmpty {
-		return fmt.Errorf("row contains no data")
+		return ErrRowNoData
 	}
 
 	// Apply row-level validation rules
@@ -103,7 +115,7 @@ func (v *WorkItemValidator) ValidateBatch(ctx context.Context, items []models.Wo
 	}
 
 	if len(items) == 0 {
-		return fmt.Errorf("no work items to validate")
+		return ErrNoWorkItems
 	}
 
 	v.logger.Debug("validating work items batch", "count", len(items))
@@ -182,20 +194,20 @@ func (v *WorkItemValidator) validateDate(ctx context.Context, item *models.WorkI
 
 	// Check if date is not zero
 	if item.Date.IsZero() {
-		return fmt.Errorf("work date cannot be empty")
+		return ErrWorkDateEmpty
 	}
 
 	// Check if date is not too far in the future (more than 1 week)
 	futureLimit := now.AddDate(0, 0, 7)
 	if item.Date.After(futureLimit) {
-		return fmt.Errorf("work date %s is too far in the future (more than 1 week from now)",
+		return fmt.Errorf("%w (more than 1 week from now): %s", ErrWorkDateFuture,
 			item.Date.Format("2006-01-02"))
 	}
 
 	// Check if date is not too far in the past (more than 2 years)
 	pastLimit := now.AddDate(-2, 0, 0)
 	if item.Date.Before(pastLimit) {
-		return fmt.Errorf("work date %s is too far in the past (more than 2 years ago)",
+		return fmt.Errorf("%w (more than 2 years ago): %s", ErrWorkDatePast,
 			item.Date.Format("2006-01-02"))
 	}
 
@@ -204,7 +216,7 @@ func (v *WorkItemValidator) validateDate(ctx context.Context, item *models.WorkI
 
 func (v *WorkItemValidator) validateHours(ctx context.Context, item *models.WorkItem) error {
 	if item.Hours <= 0 {
-		return fmt.Errorf("hours must be positive, got %v", item.Hours)
+		return fmt.Errorf("%w, got %v", ErrHoursNotPositive, item.Hours)
 	}
 
 	if item.Hours > 24 {

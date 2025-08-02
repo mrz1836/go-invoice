@@ -46,7 +46,6 @@ type TemplateRenderer struct {
 	validator TemplateValidator
 	logger    Logger
 	options   *RendererOptions
-	mu        sync.RWMutex
 }
 
 // RendererOptions represents configuration options for the template renderer
@@ -110,8 +109,8 @@ func (r *TemplateRenderer) RenderInvoice(ctx context.Context, invoice *models.In
 
 	// Validate data if security is enabled
 	if r.options.EnableSecurity {
-		if err := r.validator.ValidateData(renderCtx, tmpl, invoice); err != nil {
-			return "", fmt.Errorf("data validation failed for template %s: %w", templateName, err)
+		if validationErr := r.validator.ValidateData(renderCtx, tmpl, invoice); validationErr != nil {
+			return "", fmt.Errorf("data validation failed for template %s: %w", templateName, validationErr)
 		}
 	}
 

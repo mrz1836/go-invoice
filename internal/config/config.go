@@ -17,7 +17,8 @@ import (
 
 // Static error variables for err113 compliance
 var (
-	ErrConfigNil = fmt.Errorf("config cannot be nil")
+	ErrConfigNil             = fmt.Errorf("config cannot be nil")
+	ErrConfigValidationError = fmt.Errorf("configuration validation failed")
 )
 
 // Logger interface defined at point of use (consumer-driven design)
@@ -236,7 +237,7 @@ func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
 	return defaultValue
 }
 
-// Simple validator implementation
+// SimpleValidator provides basic configuration validation functionality.
 type SimpleValidator struct {
 	logger Logger
 }
@@ -290,7 +291,7 @@ func (v *SimpleValidator) ValidateConfig(ctx context.Context, config *Config) er
 	}
 
 	if len(errors) > 0 {
-		return fmt.Errorf("configuration validation failed: %s", strings.Join(errors, "; "))
+		return fmt.Errorf("%w: %s", ErrConfigValidationError, strings.Join(errors, "; "))
 	}
 
 	v.logger.Debug("configuration validation passed")

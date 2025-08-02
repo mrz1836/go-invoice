@@ -51,7 +51,7 @@ type StorageConfig struct {
 	BackupInterval time.Duration `json:"backup_interval,omitempty"`
 }
 
-// LoadConfig represents the configuration loading request
+// LoadConfigRequest represents the configuration loading request.
 type LoadConfigRequest struct {
 	Path   string `json:"path" validate:"required"`
 	Strict bool   `json:"strict"`

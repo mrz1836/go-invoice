@@ -160,7 +160,7 @@ func (a *App) buildInitCommand() *cobra.Command {
 and metadata files for invoice and client data.
 
 This command must be run before using other invoice management commands.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx, cancel := context.WithCancel(cmd.Context())
 			defer cancel()
 

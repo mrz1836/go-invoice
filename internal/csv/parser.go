@@ -24,6 +24,12 @@ var (
 	ErrFieldMissingInRow     = fmt.Errorf("field missing in row")
 	ErrFieldEmpty            = fmt.Errorf("field is empty")
 	ErrUnsupportedDateFormat = fmt.Errorf("unsupported date format")
+	ErrNoContentToAnalyze    = fmt.Errorf("no content to analyze")
+	ErrFirstLineEmpty        = fmt.Errorf("first line is empty")
+	ErrAmbiguousFormat       = fmt.Errorf("ambiguous format: multiple delimiter types detected")
+	ErrNoDelimitersFound     = fmt.Errorf("no clear delimiters found")
+	ErrTooFewColumns         = fmt.Errorf("too few columns detected")
+	ErrTooManyColumns        = fmt.Errorf("too many columns detected")
 )
 
 // TimesheetParser defines the interface for CSV parsing operations
@@ -74,9 +80,7 @@ func (p *CSVParser) ParseTimesheet(ctx context.Context, reader io.Reader, option
 
 	// Create CSV reader with format-specific configuration
 	csvReader := csv.NewReader(reader)
-	if err := p.configureReader(csvReader, options.Format); err != nil {
-		return nil, fmt.Errorf("failed to configure CSV reader: %w", err)
-	}
+	p.configureReader(csvReader, options.Format)
 
 	// Read all rows
 	rows, err := csvReader.ReadAll()
@@ -301,7 +305,7 @@ func (p *CSVParser) processHeader(ctx context.Context, rows [][]string, options 
 }
 
 // getFieldValue retrieves a field value from a row using header mapping
-func (p *CSVParser) getFieldValue(row []string, headerMap map[string]int, fieldName string, lineNum int) (string, error) {
+func (p *CSVParser) getFieldValue(row []string, headerMap map[string]int, fieldName string, _ int) (string, error) {
 	colIndex, exists := headerMap[fieldName]
 	if !exists {
 		return "", fmt.Errorf("%w: %s", ErrFieldNotInHeader, fieldName)
@@ -362,7 +366,7 @@ func (p *CSVParser) parseDate(dateStr string) (time.Time, error) {
 }
 
 // configureReader configures CSV reader based on format
-func (p *CSVParser) configureReader(reader *csv.Reader, format string) error {
+func (p *CSVParser) configureReader(reader *csv.Reader, format string) {
 	switch format {
 	case "standard", "rfc4180":
 		reader.Comma = ','
@@ -378,20 +382,18 @@ func (p *CSVParser) configureReader(reader *csv.Reader, format string) error {
 	}
 
 	reader.TrimLeadingSpace = true
-
-	return nil
 }
 
 // analyzeFormat analyzes content to detect CSV format
 func (p *CSVParser) analyzeFormat(content string) (*FormatInfo, error) {
 	lines := strings.Split(content, "\n")
 	if len(lines) == 0 {
-		return nil, fmt.Errorf("no content to analyze")
+		return nil, ErrNoContentToAnalyze
 	}
 
 	firstLine := strings.TrimSpace(lines[0])
 	if firstLine == "" {
-		return nil, fmt.Errorf("first line is empty")
+		return nil, ErrFirstLineEmpty
 	}
 
 	// Count different delimiters
@@ -416,13 +418,13 @@ func (p *CSVParser) analyzeFormat(content string) (*FormatInfo, error) {
 
 		// If multiple delimiter types, it's ambiguous
 		if delimiterTypes > 1 {
-			return nil, fmt.Errorf("ambiguous format: multiple delimiter types detected")
+			return nil, ErrAmbiguousFormat
 		}
 	}
 
 	// Check if no clear delimiters found
 	if totalDelimiters == 0 {
-		return nil, fmt.Errorf("no clear delimiters found")
+		return nil, ErrNoDelimitersFound
 	}
 
 	// Check for too few or too many columns
@@ -436,10 +438,10 @@ func (p *CSVParser) analyzeFormat(content string) (*FormatInfo, error) {
 
 	columnCount := maxDelimiterCount + 1
 	if columnCount < 3 {
-		return nil, fmt.Errorf("too few columns detected (%d), need at least 3 for work items", columnCount)
+		return nil, fmt.Errorf("%w (%d), need at least 3 for work items", ErrTooFewColumns, columnCount)
 	}
 	if columnCount > 50 {
-		return nil, fmt.Errorf("too many columns detected (%d), maximum supported is 50", columnCount)
+		return nil, fmt.Errorf("%w (%d), maximum supported is 50", ErrTooManyColumns, columnCount)
 	}
 
 	// Determine most likely delimiter

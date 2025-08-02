@@ -83,8 +83,8 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, req models.CreateInv
 	}
 
 	// Check if invoice number already exists
-	if err := s.validateUniqueInvoiceNumber(ctx, req.Number); err != nil {
-		return nil, err
+	if validateErr := s.validateUniqueInvoiceNumber(ctx, req.Number); validateErr != nil {
+		return nil, validateErr
 	}
 
 	// Create invoice with work items
