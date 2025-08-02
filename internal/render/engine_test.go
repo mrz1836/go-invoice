@@ -110,6 +110,7 @@ func (m *MockFileReader) GetFileInfo(_ context.Context, path string) (FileInfo, 
 // RenderTestSuite defines a test suite for the template rendering system
 type RenderTestSuite struct {
 	suite.Suite
+
 	engine       *HTMLTemplateEngine
 	fileReader   *MockFileReader
 	logger       *MockLogger

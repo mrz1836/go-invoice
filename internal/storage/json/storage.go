@@ -22,7 +22,7 @@ var (
 )
 
 // JSONStorage provides file-based JSON storage with concurrent safety
-type JSONStorage struct {
+type JSONStorage struct { //nolint:revive // Keeping existing exported type name for API compatibility
 	basePath    string
 	invoicesDir string
 	clientsDir  string
@@ -506,11 +506,15 @@ func (s *JSONStorage) writeJSONFile(ctx context.Context, path string, data inter
 
 	// Create temporary file for atomic write
 	tempPath := path + ".tmp"
-	file, err := os.Create(tempPath)
+	file, err := os.Create(tempPath) // #nosec G304 -- Path is derived from validated storage directory
 	if err != nil {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			s.logger.Error("failed to close temp file", "error", err, "path", tempPath)
+		}
+	}()
 
 	// Encode JSON with indentation for readability
 	encoder := json.NewEncoder(file)
@@ -530,7 +534,10 @@ func (s *JSONStorage) writeJSONFile(ctx context.Context, path string, data inter
 		return fmt.Errorf("failed to sync file: %w", err)
 	}
 
-	file.Close()
+	if err := file.Close(); err != nil {
+		s.logger.Error("failed to close temp file before rename", "error", err, "path", tempPath)
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
 
 	// Atomic rename
 	if err := os.Rename(tempPath, path); err != nil {
@@ -550,11 +557,15 @@ func (s *JSONStorage) readJSONFile(ctx context.Context, path string, data interf
 	default:
 	}
 
-	file, err := os.Open(path)
+	file, err := os.Open(path) // #nosec G304 -- Path is derived from validated storage directory
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			s.logger.Error("failed to close file", "error", err, "path", path)
+		}
+	}()
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(data); err != nil {
@@ -620,7 +631,7 @@ func (s *JSONStorage) initializeIndexes(ctx context.Context) error {
 	return nil
 }
 
-func (s *JSONStorage) updateInvoiceIndex(ctx context.Context, invoice *models.Invoice, operation string) error {
+func (s *JSONStorage) updateInvoiceIndex(_ context.Context, invoice *models.Invoice, operation string) error { //nolint:unparam // Placeholder for future index implementation
 	// For now, this is a placeholder - a full implementation would maintain
 	// search indexes for faster querying
 	s.logger.Debug("updating invoice index", "invoice_id", invoice.ID, "operation", operation)

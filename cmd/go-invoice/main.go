@@ -16,9 +16,9 @@ import (
 
 // Version information set by build process
 var (
-	Version = "dev"
-	Commit  = "unknown"
-	Date    = "unknown"
+	Version = "dev"     //nolint:gochecknoglobals // Build-time version information
+	Commit  = "unknown" //nolint:gochecknoglobals // Build-time commit information
+	Date    = "unknown" //nolint:gochecknoglobals // Build-time date information
 )
 
 // App represents the main application with dependency injection

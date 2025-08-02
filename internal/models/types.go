@@ -26,7 +26,7 @@ const (
 )
 
 // ValidInvoiceStatuses contains all valid invoice status values
-var ValidInvoiceStatuses = []string{StatusDraft, StatusSent, StatusPaid, StatusOverdue, StatusVoided}
+var ValidInvoiceStatuses = []string{StatusDraft, StatusSent, StatusPaid, StatusOverdue, StatusVoided} //nolint:gochecknoglobals // Constant-like status validation slice
 
 // Validation patterns
 var (
@@ -56,7 +56,6 @@ func (e ValidationError) Error() string {
 // while reducing cyclomatic complexity in validation functions
 type ValidationBuilder struct {
 	errors []ValidationError
-	ctx    context.Context
 }
 
 // NewValidationBuilder creates a new validation builder
@@ -67,8 +66,9 @@ func NewValidationBuilder() *ValidationBuilder {
 }
 
 // WithContext sets the context for the validation builder
-func (vb *ValidationBuilder) WithContext(ctx context.Context) *ValidationBuilder {
-	vb.ctx = ctx
+// Deprecated: Pass context directly to methods that need it
+func (vb *ValidationBuilder) WithContext(_ context.Context) *ValidationBuilder {
+	// Context is no longer stored - this method is kept for backward compatibility
 	return vb
 }
 
@@ -260,7 +260,7 @@ func (vb *ValidationBuilder) Build(baseError error) error {
 		return nil
 	}
 
-	var messages []string
+	messages := make([]string, 0, len(vb.errors))
 	for _, err := range vb.errors {
 		messages = append(messages, err.Error())
 	}
@@ -348,16 +348,14 @@ func (vb *ValidationBuilder) AddPattern(field string, value string, pattern *reg
 }
 
 // AddWorkItems validates a slice of work items
-func (vb *ValidationBuilder) AddWorkItems(field string, items []WorkItem) *ValidationBuilder {
-	if vb.ctx != nil {
-		for i, item := range items {
-			if err := item.Validate(vb.ctx); err != nil {
-				vb.errors = append(vb.errors, ValidationError{
-					Field:   fmt.Sprintf("%s[%d]", field, i),
-					Message: err.Error(),
-					Value:   item,
-				})
-			}
+func (vb *ValidationBuilder) AddWorkItems(ctx context.Context, field string, items []WorkItem) *ValidationBuilder {
+	for i, item := range items {
+		if err := item.Validate(ctx); err != nil {
+			vb.errors = append(vb.errors, ValidationError{
+				Field:   fmt.Sprintf("%s[%d]", field, i),
+				Message: err.Error(),
+				Value:   item,
+			})
 		}
 	}
 	return vb
@@ -426,11 +424,11 @@ func (vb *ValidationBuilder) BuildWithMessage(message string) error {
 		return nil
 	}
 
-	var messages []string
+	messages := make([]string, 0, len(vb.errors))
 	for _, err := range vb.errors {
 		messages = append(messages, err.Error())
 	}
-	return fmt.Errorf("%s: %s", message, strings.Join(messages, "; "))
+	return fmt.Errorf("%w: %s: %s", ErrValidationFailed, message, strings.Join(messages, "; "))
 }
 
 // Validator interface for validation operations
@@ -493,14 +491,13 @@ func (r *CreateInvoiceRequest) Validate(ctx context.Context) error {
 	}
 
 	return NewValidationBuilder().
-		WithContext(ctx).
 		AddRequired("number", r.Number).
 		AddPattern("number", r.Number, invoiceIDPattern, "must contain only uppercase letters, numbers, and hyphens").
 		AddRequired("client_id", string(r.ClientID)).
 		AddTimeRequired("date", r.Date).
 		AddTimeRequired("due_date", r.DueDate).
 		AddTimeOrder("due_date", r.Date, r.DueDate, "invoice date", "due date").
-		AddWorkItems("work_items", r.WorkItems).
+		AddWorkItems(ctx, "work_items", r.WorkItems).
 		BuildWithMessage("create invoice request validation failed")
 }
 

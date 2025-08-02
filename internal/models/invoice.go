@@ -283,11 +283,11 @@ func (i *Invoice) formatValidationErrors(errors []ValidationError) error {
 		return nil
 	}
 
-	var messages []string
+	messages := make([]string, 0, len(errors))
 	for _, err := range errors {
 		messages = append(messages, err.Error())
 	}
-	return fmt.Errorf("invoice validation failed: %s", strings.Join(messages, "; "))
+	return fmt.Errorf("%w: %s", ErrInvoiceValidationFailed, strings.Join(messages, "; "))
 }
 
 // AddWorkItem adds a work item to the invoice and recalculates totals
@@ -338,7 +338,7 @@ func (i *Invoice) RemoveWorkItem(ctx context.Context, itemID string) error {
 	}
 
 	if !found {
-		return fmt.Errorf("work item with ID %s not found", itemID)
+		return fmt.Errorf("%w: %s", ErrWorkItemNotFound, itemID)
 	}
 
 	// Recalculate totals
@@ -398,12 +398,12 @@ func (i *Invoice) UpdateStatus(ctx context.Context, newStatus string) error {
 	}
 
 	if !valid {
-		return fmt.Errorf("invalid status '%s', must be one of: %s", newStatus, strings.Join(validStatuses, ", "))
+		return fmt.Errorf("%w: '%s', must be one of: %s", ErrInvalidStatus, newStatus, strings.Join(validStatuses, ", "))
 	}
 
 	// Business rule validation (example: can't void a paid invoice)
 	if i.Status == StatusPaid && newStatus == StatusVoided {
-		return fmt.Errorf("cannot void a paid invoice")
+		return ErrCannotVoidPaidInvoice
 	}
 
 	// Update status

@@ -26,7 +26,8 @@ type ClientStorage struct {
 // ClientStorageTestSuite tests client storage operations
 type ClientStorageTestSuite struct {
 	suite.Suite
-	ctx        context.Context
+
+	ctx        context.Context //nolint:containedctx // Test suite context is acceptable
 	cancelFunc context.CancelFunc
 	storage    *ClientStorage
 	tempDir    string
@@ -92,7 +93,7 @@ func (suite *ClientStorageTestSuite) TestCreateClient() {
 
 	// Verify file content
 	var savedClient models.Client
-	data, err := os.ReadFile(clientPath)
+	data, err := os.ReadFile(clientPath) // #nosec G304 -- Test file path is controlled
 	require.NoError(t, err)
 	err = json.Unmarshal(data, &savedClient)
 	require.NoError(t, err)
@@ -173,12 +174,12 @@ func (suite *ClientStorageTestSuite) TestGetClient() {
 	assert.Equal(t, "CLIENT-999", notFoundErr.ID)
 
 	// Test with empty ID
-	retrieved, err = suite.storage.GetClient(suite.ctx, "")
+	_, err = suite.storage.GetClient(suite.ctx, "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "client ID cannot be empty")
 
 	// Test with whitespace ID
-	retrieved, err = suite.storage.GetClient(suite.ctx, "   ")
+	_, err = suite.storage.GetClient(suite.ctx, "   ")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "client ID cannot be empty")
 
@@ -437,7 +438,7 @@ func (suite *ClientStorageTestSuite) TestListClients() {
 
 	// Test with corrupted client file
 	corruptPath := filepath.Join(suite.tempDir, "clients", "CORRUPT.json")
-	err = os.WriteFile(corruptPath, []byte("invalid json"), 0o644)
+	err = os.WriteFile(corruptPath, []byte("invalid json"), 0o600)
 	require.NoError(t, err)
 
 	// Should skip corrupted files
@@ -520,12 +521,12 @@ func (suite *ClientStorageTestSuite) TestFindClientByEmail() {
 	assert.False(t, client.Active)
 
 	// Test with empty email
-	client, err = suite.storage.FindClientByEmail(suite.ctx, "")
+	_, err = suite.storage.FindClientByEmail(suite.ctx, "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "email cannot be empty")
 
 	// Test with whitespace email
-	client, err = suite.storage.FindClientByEmail(suite.ctx, "   ")
+	_, err = suite.storage.FindClientByEmail(suite.ctx, "   ")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "email cannot be empty")
 
@@ -639,8 +640,8 @@ func (suite *ClientStorageTestSuite) TestConcurrentClientAccess() {
 			defer wg.Done()
 
 			clientID := models.ClientID(fmt.Sprintf("CLIENT-%03d", id))
-			if _, err := suite.storage.GetClient(suite.ctx, clientID); err != nil {
-				errors <- err
+			if _, getErr := suite.storage.GetClient(suite.ctx, clientID); getErr != nil {
+				errors <- getErr
 			}
 		}(i)
 	}
@@ -743,7 +744,7 @@ func (suite *ClientStorageTestSuite) TestClientFileValidation() {
 
 	// Test that the JSON file is properly formatted
 	clientPath := filepath.Join(suite.tempDir, "clients", "CLIENT-FULL.json")
-	data, err := os.ReadFile(clientPath)
+	data, err := os.ReadFile(clientPath) // #nosec G304 -- Test file path is controlled
 	require.NoError(t, err)
 
 	// Verify JSON is indented
@@ -770,7 +771,7 @@ func (suite *ClientStorageTestSuite) TestClientStorageWithInvalidJSON() {
 
 	for filename, content := range invalidFiles {
 		path := filepath.Join(suite.tempDir, "clients", filename)
-		err := os.WriteFile(path, []byte(content), 0o644)
+		err := os.WriteFile(path, []byte(content), 0o600)
 		require.NoError(t, err)
 	}
 

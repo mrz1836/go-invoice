@@ -34,7 +34,7 @@ type Validator interface {
 }
 
 // ConfigService provides configuration management with dependency injection
-type ConfigService struct {
+type ConfigService struct { //nolint:revive // Keeping existing exported type name for API compatibility
 	logger    Logger
 	validator Validator
 }

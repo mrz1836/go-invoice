@@ -53,7 +53,7 @@ type IDGenerator interface {
 }
 
 // CSVParser implements TimesheetParser with context-first design
-type CSVParser struct {
+type CSVParser struct { //nolint:revive // Keeping existing exported type name for API compatibility
 	validator   CSVValidator
 	logger      Logger
 	idGenerator IDGenerator
@@ -277,7 +277,7 @@ func (p *CSVParser) parseRow(ctx context.Context, row []string, headerMap map[st
 }
 
 // processHeader processes the header row and returns field mapping
-func (p *CSVParser) processHeader(ctx context.Context, rows [][]string, options ParseOptions) (map[string]int, int, error) {
+func (p *CSVParser) processHeader(_ context.Context, rows [][]string, _ ParseOptions) (map[string]int, int, error) {
 	if len(rows) == 0 {
 		return nil, 0, ErrNoRowsToProcess
 	}

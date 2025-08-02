@@ -305,7 +305,7 @@ func (p *Prompter) PromptPassword(ctx context.Context, prompt string) (string, e
 
 	fmt.Printf("%s: ", prompt)
 
-	// Note: In a real implementation, we would use a library like golang.org/x/term
+	// In a real implementation, we would use a library like golang.org/x/term
 	// to hide the password input. For now, we'll use regular input with a warning.
 	fmt.Println("(WARNING: Password will be visible)")
 

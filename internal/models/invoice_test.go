@@ -12,7 +12,8 @@ import (
 
 type InvoiceTestSuite struct {
 	suite.Suite
-	ctx        context.Context
+
+	ctx        context.Context //nolint:containedctx // Test suite context is acceptable
 	cancelFunc context.CancelFunc
 }
 
@@ -506,7 +507,7 @@ func (suite *InvoiceTestSuite) TestRemoveWorkItem() {
 	// Try to remove non-existent item
 	err = invoice.RemoveWorkItem(suite.ctx, "ITEM-999")
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "work item with ID ITEM-999 not found")
+	assert.Contains(t, err.Error(), "work item not found: ITEM-999")
 	assert.Len(t, invoice.WorkItems, 1)
 	assert.Equal(t, 2, invoice.Version) // Version should not increment on error
 }

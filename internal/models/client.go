@@ -1,3 +1,4 @@
+// Package models defines the core data structures and types for the invoice system.
 package models
 
 import (

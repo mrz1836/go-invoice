@@ -96,7 +96,7 @@ func (w *WorkItem) UpdateRate(ctx context.Context, rate float64) error {
 	}
 
 	if rate > 10000 {
-		return fmt.Errorf("rate cannot exceed $10,000 per hour")
+		return ErrRateExceedsLimit
 	}
 
 	w.Rate = rate
@@ -119,7 +119,7 @@ func (w *WorkItem) UpdateDescription(ctx context.Context, description string) er
 	}
 
 	if len(description) > 1000 {
-		return fmt.Errorf("description cannot exceed 1000 characters")
+		return ErrDescriptionTooLong
 	}
 
 	w.Description = description

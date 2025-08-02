@@ -1,3 +1,4 @@
+// Package json provides JSON-based storage implementation for the invoice system.
 package json
 
 import (
@@ -178,7 +179,7 @@ func (s *JSONStorage) ListClients(ctx context.Context, activeOnly bool, limit, o
 		return nil, fmt.Errorf("failed to list client files: %w", err)
 	}
 
-	var allClients []*models.Client
+	allClients := make([]*models.Client, 0, len(clientFiles))
 	for _, filePath := range clientFiles {
 		var client models.Client
 		if err := s.readJSONFile(ctx, filePath, &client); err != nil {

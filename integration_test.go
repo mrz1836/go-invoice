@@ -222,8 +222,8 @@ func (suite *IntegrationTestSuite) TestCSVParsingWorkflow() {
 	file, err := os.Open(filepath.Clean(csvFile))
 	suite.Require().NoError(err)
 	defer func() {
-		if err := file.Close(); err != nil {
-			suite.T().Logf("Warning: failed to close CSV file: %v", err)
+		if closeErr := file.Close(); closeErr != nil {
+			suite.T().Logf("Warning: failed to close CSV file: %v", closeErr)
 		}
 	}()
 
@@ -342,8 +342,8 @@ invalid-date,Test Item,8,100`
 	file, err := os.Open(filepath.Clean(csvFile))
 	suite.Require().NoError(err)
 	defer func() {
-		if err := file.Close(); err != nil {
-			suite.T().Logf("Warning: failed to close CSV file: %v", err)
+		if closeErr := file.Close(); closeErr != nil {
+			suite.T().Logf("Warning: failed to close CSV file: %v", closeErr)
 		}
 	}()
 
@@ -396,8 +396,8 @@ func (suite *IntegrationTestSuite) TestCompleteWorkflow() {
 	file, err := os.Open(filepath.Clean(csvFile))
 	suite.Require().NoError(err)
 	defer func() {
-		if err := file.Close(); err != nil {
-			suite.T().Logf("Warning: failed to close CSV file: %v", err)
+		if closeErr := file.Close(); closeErr != nil {
+			suite.T().Logf("Warning: failed to close CSV file: %v", closeErr)
 		}
 	}()
 

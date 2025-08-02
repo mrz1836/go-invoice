@@ -200,7 +200,7 @@ func (a *App) executeImportCreate(ctx context.Context, csvFile, configPath strin
 	importService := a.createImportService(config.Storage.DataDir)
 
 	// Open CSV file
-	file, err := os.Open(csvFile)
+	file, err := os.Open(csvFile) // #nosec G304 -- User-provided file path is expected in CLI
 	if err != nil {
 		return fmt.Errorf("failed to open CSV file: %w", err)
 	}
@@ -250,7 +250,7 @@ func (a *App) executeImportAppend(ctx context.Context, csvFile, configPath strin
 	importService := a.createImportService(config.Storage.DataDir)
 
 	// Open CSV file
-	file, err := os.Open(csvFile)
+	file, err := os.Open(csvFile) // #nosec G304 -- User-provided file path is expected in CLI
 	if err != nil {
 		return fmt.Errorf("failed to open CSV file: %w", err)
 	}
@@ -292,7 +292,7 @@ func (a *App) executeImportValidate(ctx context.Context, csvFile, configPath str
 	importService := a.createImportService(config.Storage.DataDir)
 
 	// Open CSV file
-	file, err := os.Open(csvFile)
+	file, err := os.Open(csvFile) // #nosec G304 -- User-provided file path is expected in CLI
 	if err != nil {
 		return fmt.Errorf("failed to open CSV file: %w", err)
 	}
@@ -471,15 +471,15 @@ type ImportValidateOptions struct {
 // SimpleIDGenerator provides basic ID generation for the import service
 type SimpleIDGenerator struct{}
 
-func (g *SimpleIDGenerator) GenerateInvoiceID(ctx context.Context) (models.InvoiceID, error) {
+func (g *SimpleIDGenerator) GenerateInvoiceID(_ context.Context) (models.InvoiceID, error) {
 	return models.InvoiceID(fmt.Sprintf("inv_%d", time.Now().Unix())), nil
 }
 
-func (g *SimpleIDGenerator) GenerateClientID(ctx context.Context) (models.ClientID, error) {
+func (g *SimpleIDGenerator) GenerateClientID(_ context.Context) (models.ClientID, error) {
 	return models.ClientID(fmt.Sprintf("client_%d", time.Now().Unix())), nil
 }
 
-func (g *SimpleIDGenerator) GenerateWorkItemID(ctx context.Context) (string, error) {
+func (g *SimpleIDGenerator) GenerateWorkItemID(_ context.Context) (string, error) {
 	return fmt.Sprintf("work_%d", time.Now().Unix()), nil
 }
 

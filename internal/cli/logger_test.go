@@ -14,6 +14,7 @@ import (
 // LoggerTestSuite defines the test suite for logger functionality
 type LoggerTestSuite struct {
 	suite.Suite
+
 	logger         *SimpleLogger
 	logOutput      *bytes.Buffer
 	originalOutput *os.File

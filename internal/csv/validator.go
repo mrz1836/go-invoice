@@ -201,7 +201,7 @@ func (v *WorkItemValidator) createStandardRules() []ValidationRule {
 
 // Individual validation rule implementations
 
-func (v *WorkItemValidator) validateDate(ctx context.Context, item *models.WorkItem) error {
+func (v *WorkItemValidator) validateDate(_ context.Context, item *models.WorkItem) error {
 	now := time.Now()
 
 	// Check if date is not zero
@@ -226,7 +226,7 @@ func (v *WorkItemValidator) validateDate(ctx context.Context, item *models.WorkI
 	return nil
 }
 
-func (v *WorkItemValidator) validateHours(ctx context.Context, item *models.WorkItem) error {
+func (v *WorkItemValidator) validateHours(_ context.Context, item *models.WorkItem) error {
 	if item.Hours <= 0 {
 		return fmt.Errorf("%w, got %v", ErrHoursNotPositive, item.Hours)
 	}
@@ -252,7 +252,7 @@ func (v *WorkItemValidator) validateHours(ctx context.Context, item *models.Work
 	return nil
 }
 
-func (v *WorkItemValidator) validateRate(ctx context.Context, item *models.WorkItem) error {
+func (v *WorkItemValidator) validateRate(_ context.Context, item *models.WorkItem) error {
 	if item.Rate <= 0 {
 		return fmt.Errorf("%w, got %v", ErrRateNotPositive, item.Rate)
 	}
@@ -274,7 +274,7 @@ func (v *WorkItemValidator) validateRate(ctx context.Context, item *models.WorkI
 	return nil
 }
 
-func (v *WorkItemValidator) validateDescription(ctx context.Context, item *models.WorkItem) error {
+func (v *WorkItemValidator) validateDescription(_ context.Context, item *models.WorkItem) error {
 	description := strings.TrimSpace(item.Description)
 
 	if description == "" {
@@ -305,7 +305,7 @@ func (v *WorkItemValidator) validateDescription(ctx context.Context, item *model
 	return nil
 }
 
-func (v *WorkItemValidator) validateTotal(ctx context.Context, item *models.WorkItem) error {
+func (v *WorkItemValidator) validateTotal(_ context.Context, item *models.WorkItem) error {
 	expectedTotal := item.Hours * item.Rate
 	tolerance := 0.01 // Allow small floating point differences
 
@@ -317,7 +317,7 @@ func (v *WorkItemValidator) validateTotal(ctx context.Context, item *models.Work
 	return nil
 }
 
-func (v *WorkItemValidator) validateRowFormat(ctx context.Context, row []string, lineNum int) error {
+func (v *WorkItemValidator) validateRowFormat(_ context.Context, row []string, _ int) error {
 	// Check minimum number of fields
 	if len(row) < 4 {
 		return fmt.Errorf("%w: has %d fields, expected at least 4 (date, hours, rate, description)", ErrRowFieldCount, len(row))

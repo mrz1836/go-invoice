@@ -1,3 +1,4 @@
+// Package csv provides CSV parsing and validation functionality for invoice work items.
 package csv
 
 import (
@@ -15,6 +16,7 @@ import (
 // CSVEdgeCasesTestSuite tests edge cases and boundary conditions
 type CSVEdgeCasesTestSuite struct {
 	suite.Suite
+
 	parser    *CSVParser
 	validator *WorkItemValidator
 	logger    *MockLogger
@@ -424,14 +426,14 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 	ctx := context.Background()
 
 	// Static error variable for test validator
-	errNoWeekendsWork := fmt.Errorf("no work allowed on weekends")
+	errNoWeekendsWork := fmt.Errorf("no work allowed on weekends") //nolint:err113 // Test-specific error
 
 	suite.Run("CustomRuleAddition", func() {
 		// Add a custom rule that rejects work on weekends
 		customRule := ValidationRule{
 			Name:        "no_weekends",
 			Description: "No work allowed on weekends",
-			Validator: func(ctx context.Context, item *models.WorkItem) error {
+			Validator: func(_ context.Context, item *models.WorkItem) error {
 				if item.Date.Weekday() == time.Saturday || item.Date.Weekday() == time.Sunday {
 					return errNoWeekendsWork
 				}

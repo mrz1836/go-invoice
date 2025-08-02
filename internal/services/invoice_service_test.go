@@ -17,7 +17,8 @@ import (
 // InvoiceServiceTestSuite tests for the InvoiceService
 type InvoiceServiceTestSuite struct {
 	suite.Suite
-	ctx           context.Context
+
+	ctx           context.Context //nolint:containedctx // Test suite context is acceptable
 	cancelFunc    context.CancelFunc
 	service       *InvoiceService
 	storage       *MockInvoiceStorage
@@ -335,7 +336,7 @@ func (suite *InvoiceServiceTestSuite) TestSendInvoice() {
 		require.NoError(t, err)
 		require.NotNil(t, sentInvoice)
 		assert.Equal(t, models.StatusSent, sentInvoice.Status)
-		// Note: SentAt field doesn't exist in models.Invoice, checking status is sufficient
+		// SentAt field doesn't exist in models.Invoice, checking status is sufficient
 	})
 
 	// Cannot send non-draft invoice
@@ -379,7 +380,7 @@ func (suite *InvoiceServiceTestSuite) TestMarkInvoicePaid() {
 		require.NoError(t, err)
 		require.NotNil(t, paidInvoice)
 		assert.Equal(t, models.StatusPaid, paidInvoice.Status)
-		// Note: PaidAt field doesn't exist in models.Invoice, checking status is sufficient
+		// PaidAt field doesn't exist in models.Invoice, checking status is sufficient
 	})
 
 	// Cannot mark draft invoice as paid

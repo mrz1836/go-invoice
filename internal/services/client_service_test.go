@@ -18,7 +18,8 @@ import (
 // ClientServiceTestSuite tests for the ClientService
 type ClientServiceTestSuite struct {
 	suite.Suite
-	ctx            context.Context
+
+	ctx            context.Context //nolint:containedctx // Test suite context is acceptable
 	cancelFunc     context.CancelFunc
 	service        *ClientService
 	clientStorage  *MockClientStorage
@@ -215,7 +216,7 @@ func (suite *ClientServiceTestSuite) TestUpdateClient() {
 
 		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-001")).Return(existingClient, nil).Once()
 		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(nil, storage.NewNotFoundError("client", "test@example.com")).Once()
-		suite.clientStorage.On("UpdateClient", suite.ctx, client).Return(errors.New("storage error")).Once()
+		suite.clientStorage.On("UpdateClient", suite.ctx, client).Return(errors.New("storage error")).Once() //nolint:err113 // Test mock error
 
 		updatedClient, err := suite.service.UpdateClient(suite.ctx, client)
 

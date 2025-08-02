@@ -11,6 +11,7 @@ import (
 // CSVIntegrationTestSuite tests the integration between parser and validator
 type CSVIntegrationTestSuite struct {
 	suite.Suite
+
 	parser    *CSVParser
 	validator *WorkItemValidator
 	logger    *MockLogger

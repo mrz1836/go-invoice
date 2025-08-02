@@ -22,6 +22,7 @@ func (m *MockLogger) Debug(msg string, _ ...any) { m.messages = append(m.message
 // PrompterTestSuite tests the Prompter functionality
 type PrompterTestSuite struct {
 	suite.Suite
+
 	logger   *MockLogger
 	prompter *Prompter
 }

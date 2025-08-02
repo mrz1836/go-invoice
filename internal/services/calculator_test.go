@@ -47,6 +47,7 @@ func (m *MockLogger) Reset() {
 // CalculatorTestSuite defines a test suite for the InvoiceCalculator
 type CalculatorTestSuite struct {
 	suite.Suite
+
 	calculator *InvoiceCalculator
 	logger     *MockLogger
 }

@@ -13,7 +13,8 @@ import (
 
 type ClientTestSuite struct {
 	suite.Suite
-	ctx        context.Context
+
+	ctx        context.Context //nolint:containedctx // Test suite context is acceptable
 	cancelFunc context.CancelFunc
 }
 

@@ -96,10 +96,7 @@ func (s *ImportService) ImportToNewInvoice(ctx context.Context, reader io.Reader
 	// Generate invoice number if not provided
 	invoiceNumber := req.InvoiceNumber
 	if invoiceNumber == "" {
-		invoiceNumber, err = s.generateInvoiceNumber(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate invoice number: %w", err)
-		}
+		invoiceNumber = s.generateInvoiceNumber(ctx)
 	}
 
 	// Create invoice
@@ -238,7 +235,7 @@ func (s *ImportService) ValidateImport(ctx context.Context, reader io.Reader, re
 			Valid:       false,
 			ParseResult: parseResult,
 			Suggestions: []string{"Check CSV format and field mappings"},
-		}, nil
+		}, fmt.Errorf("failed to parse CSV: %w", err)
 	}
 
 	// Validate batch
@@ -361,10 +358,10 @@ func (s *ImportService) convertToWorkItemRequests(workItems []models.WorkItem) [
 	return workItems
 }
 
-func (s *ImportService) generateInvoiceNumber(ctx context.Context) (string, error) {
+func (s *ImportService) generateInvoiceNumber(_ context.Context) string {
 	// Generate a simple invoice number based on current date and time
 	now := time.Now()
-	return fmt.Sprintf("INV-%s", now.Format("20060102-150405")), nil
+	return fmt.Sprintf("INV-%s", now.Format("20060102-150405"))
 }
 
 func (s *ImportService) detectDuplicates(ctx context.Context, invoiceID models.InvoiceID, newWorkItems []models.WorkItem) ([]csv.ImportWarning, error) {

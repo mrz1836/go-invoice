@@ -17,6 +17,7 @@ import (
 // CSVParserTestSuite defines the test suite for CSV parser functionality
 type CSVParserTestSuite struct {
 	suite.Suite
+
 	parser      *CSVParser
 	validator   *MockValidator
 	logger      *MockLogger
@@ -229,8 +230,8 @@ func (suite *CSVParserTestSuite) TestParseTimesheetValidationError() {
 2024-01-15,8.0,100.00,Development work`
 
 	// Mock validator to return error
-	suite.validator.validateWorkItemFunc = func(ctx context.Context, item *models.WorkItem) error {
-		return fmt.Errorf("validation error")
+	suite.validator.validateWorkItemFunc = func(_ context.Context, _ *models.WorkItem) error {
+		return fmt.Errorf("validation error") //nolint:err113 // Test-specific error
 	}
 
 	reader := strings.NewReader(csvData)
@@ -496,7 +497,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetLargeFile() {
 	// Add 100 rows
 	for i := 1; i <= 100; i++ {
 		csvBuilder.WriteString("2024-01-15,8.0,100.00,Work item ")
-		csvBuilder.WriteString(string(rune('0' + i%10)))
+		csvBuilder.WriteRune(rune('0' + i%10))
 		csvBuilder.WriteString("\n")
 	}
 

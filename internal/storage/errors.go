@@ -2,6 +2,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/mrz/go-invoice/internal/models"
@@ -83,7 +84,7 @@ func NewCorruptedError(resource, id, message string) CorruptedError {
 }
 
 // StorageUnavailableError indicates that the storage system is unavailable
-type StorageUnavailableError struct {
+type StorageUnavailableError struct { //nolint:revive // Keeping existing exported type name for API compatibility
 	Message string
 	Cause   error
 }
@@ -139,48 +140,48 @@ func NewPermissionError(operation, resource, message string) PermissionError {
 
 // IsNotFound checks if an error is a not found error
 func IsNotFound(err error) bool {
-	_, ok := err.(NotFoundError)
-	return ok
+	var notFoundErr NotFoundError
+	return errors.As(err, &notFoundErr)
 }
 
 // IsConflict checks if an error is a conflict error
 func IsConflict(err error) bool {
-	_, ok := err.(ConflictError)
-	return ok
+	var conflictErr ConflictError
+	return errors.As(err, &conflictErr)
 }
 
 // IsVersionMismatch checks if an error is a version mismatch error
 func IsVersionMismatch(err error) bool {
-	_, ok := err.(VersionMismatchError)
-	return ok
+	var versionErr VersionMismatchError
+	return errors.As(err, &versionErr)
 }
 
 // IsCorrupted checks if an error is a corrupted data error
 func IsCorrupted(err error) bool {
-	_, ok := err.(CorruptedError)
-	return ok
+	var corruptedErr CorruptedError
+	return errors.As(err, &corruptedErr)
 }
 
 // IsStorageUnavailable checks if an error is a storage unavailable error
 func IsStorageUnavailable(err error) bool {
-	_, ok := err.(StorageUnavailableError)
-	return ok
+	var unavailableErr StorageUnavailableError
+	return errors.As(err, &unavailableErr)
 }
 
 // IsInvalidFilter checks if an error is an invalid filter error
 func IsInvalidFilter(err error) bool {
-	_, ok := err.(InvalidFilterError)
-	return ok
+	var filterErr InvalidFilterError
+	return errors.As(err, &filterErr)
 }
 
 // IsPermission checks if an error is a permission error
 func IsPermission(err error) bool {
-	_, ok := err.(PermissionError)
-	return ok
+	var permissionErr PermissionError
+	return errors.As(err, &permissionErr)
 }
 
 // StorageStats represents storage statistics and health information
-type StorageStats struct {
+type StorageStats struct { //nolint:revive // Keeping existing exported type name for API compatibility
 	TotalInvoices      int64               `json:"total_invoices"`
 	TotalClients       int64               `json:"total_clients"`
 	DiskUsageBytes     int64               `json:"disk_usage_bytes"`

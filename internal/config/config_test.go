@@ -161,7 +161,7 @@ CURRENCY=GBP
 `
 
 	envFile := filepath.Join(suite.tempDir, "test.env")
-	err := os.WriteFile(envFile, []byte(envContent), 0o644)
+	err := os.WriteFile(envFile, []byte(envContent), 0o600)
 	suite.Require().NoError(err)
 
 	ctx := context.Background()
@@ -311,8 +311,10 @@ func (suite *ConfigTestSuite) TestEnvHelperFunctions() {
 	})
 
 	suite.Run("getEnvDuration", func() {
-		os.Setenv("TEST_DURATION", "5m")
-		defer os.Unsetenv("TEST_DURATION")
+		suite.Require().NoError(os.Setenv("TEST_DURATION", "5m"))
+		defer func() {
+			suite.Require().NoError(os.Unsetenv("TEST_DURATION"))
+		}()
 
 		result := getEnvDuration("TEST_DURATION", time.Hour)
 		suite.Equal(5*time.Minute, result)
@@ -341,7 +343,7 @@ func (suite *ConfigTestSuite) clearTestEnv() {
 	}
 
 	for _, envVar := range testEnvVars {
-		os.Unsetenv(envVar)
+		_ = os.Unsetenv(envVar) // Cleanup, ignore error
 	}
 }
 

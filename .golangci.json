@@ -57,7 +57,6 @@
 			"errname",
 			"errorlint",
 			"exhaustive",
-			"forbidigo",
 			"gocheckcompilerdirectives",
       "gochecknoglobals",
 			"gochecknoinits",
@@ -98,7 +97,8 @@
 			"unparam",
 			"unused",
 			"wastedassign",
-			"zerologlint"
+			"zerologlint",
+      "forbidigo"
 		],
 		"disable": [
 			"gocritic",

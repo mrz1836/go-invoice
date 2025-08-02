@@ -66,7 +66,8 @@ func (m *MockLogger) Clear() {
 // JSONStorageTestSuite tests JSON storage operations
 type JSONStorageTestSuite struct {
 	suite.Suite
-	ctx        context.Context
+
+	ctx        context.Context //nolint:containedctx // Test suite context is acceptable
 	cancelFunc context.CancelFunc
 	storage    *JSONStorage
 	tempDir    string
@@ -137,8 +138,8 @@ func (suite *JSONStorageTestSuite) TestInitialize() {
 	}
 
 	for _, dir := range dirs {
-		info, err := os.Stat(dir)
-		require.NoError(t, err)
+		info, statErr := os.Stat(dir)
+		require.NoError(t, statErr)
 		assert.True(t, info.IsDir(), "Expected %s to be a directory", dir)
 	}
 
@@ -150,7 +151,7 @@ func (suite *JSONStorageTestSuite) TestInitialize() {
 
 	// Read and verify metadata content
 	var metadata map[string]interface{}
-	data, err := os.ReadFile(metadataPath)
+	data, err := os.ReadFile(metadataPath) // #nosec G304 -- Test file path is controlled
 	require.NoError(t, err)
 	err = json.Unmarshal(data, &metadata)
 	require.NoError(t, err)
@@ -193,7 +194,7 @@ func (suite *JSONStorageTestSuite) TestInitializeWithDirectoryCreationError() {
 
 	// Create a file where directory should be
 	badPath := filepath.Join(suite.tempDir, "bad-storage")
-	err := os.WriteFile(badPath, []byte("content"), 0o644)
+	err := os.WriteFile(badPath, []byte("content"), 0o600)
 	require.NoError(t, err)
 
 	storage := NewJSONStorage(filepath.Join(badPath, "subdir"), suite.logger)
@@ -341,7 +342,7 @@ func (suite *JSONStorageTestSuite) TestValidate() {
 	require.NoError(t, err)
 
 	invoicePath := filepath.Join(suite.tempDir, "invoices", "INV-001.json")
-	err = os.WriteFile(invoicePath, invoiceData, 0o644)
+	err = os.WriteFile(invoicePath, invoiceData, 0o600)
 	require.NoError(t, err)
 
 	// Validate with valid files
@@ -349,7 +350,7 @@ func (suite *JSONStorageTestSuite) TestValidate() {
 	require.NoError(t, err)
 
 	// Test with corrupted invoice file
-	err = os.WriteFile(invoicePath, []byte("invalid json"), 0o644)
+	err = os.WriteFile(invoicePath, []byte("invalid json"), 0o600)
 	require.NoError(t, err)
 
 	err = suite.storage.Validate(suite.ctx)
@@ -403,7 +404,7 @@ func (suite *JSONStorageTestSuite) TestCreateInvoice() {
 
 	// Verify file content
 	var savedInvoice models.Invoice
-	data, err := os.ReadFile(invoicePath)
+	data, err := os.ReadFile(invoicePath) // #nosec G304 -- Test file path is controlled
 	require.NoError(t, err)
 	err = json.Unmarshal(data, &savedInvoice)
 	require.NoError(t, err)
@@ -492,12 +493,12 @@ func (suite *JSONStorageTestSuite) TestGetInvoice() {
 	assert.Equal(t, "INV-999", notFoundErr.ID)
 
 	// Test with empty ID
-	retrieved, err = suite.storage.GetInvoice(suite.ctx, "")
+	_, err = suite.storage.GetInvoice(suite.ctx, "")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invoice ID cannot be empty")
 
 	// Test with whitespace ID
-	retrieved, err = suite.storage.GetInvoice(suite.ctx, "   ")
+	_, err = suite.storage.GetInvoice(suite.ctx, "   ")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invoice ID cannot be empty")
 
@@ -893,7 +894,7 @@ func (suite *JSONStorageTestSuite) TestListInvoices() {
 
 	// Test with corrupted invoice file
 	corruptPath := filepath.Join(suite.tempDir, "invoices", "CORRUPT.json")
-	err = os.WriteFile(corruptPath, []byte("invalid json"), 0o644)
+	err = os.WriteFile(corruptPath, []byte("invalid json"), 0o600)
 	require.NoError(t, err)
 
 	// Should skip corrupted files
@@ -1006,8 +1007,8 @@ func (suite *JSONStorageTestSuite) TestConcurrentAccess() {
 				UpdatedAt: time.Now(),
 			}
 
-			if err := suite.storage.CreateInvoice(suite.ctx, invoice); err != nil {
-				errors <- err
+			if createErr := suite.storage.CreateInvoice(suite.ctx, invoice); createErr != nil {
+				errors <- createErr
 			}
 		}(i)
 	}
@@ -1035,8 +1036,8 @@ func (suite *JSONStorageTestSuite) TestConcurrentAccess() {
 			defer wg.Done()
 
 			invoiceID := models.InvoiceID(fmt.Sprintf("INV-%03d", id))
-			if _, err := suite.storage.GetInvoice(suite.ctx, invoiceID); err != nil {
-				errors <- err
+			if _, getErr := suite.storage.GetInvoice(suite.ctx, invoiceID); getErr != nil {
+				errors <- getErr
 			}
 		}(i)
 	}
@@ -1133,7 +1134,7 @@ func (suite *JSONStorageTestSuite) TestAtomicWrites() {
 
 	// Verify final file exists and is valid
 	var savedInvoice models.Invoice
-	data, err := os.ReadFile(invoicePath)
+	data, err := os.ReadFile(invoicePath) // #nosec G304 -- Test file path is controlled
 	require.NoError(t, err)
 	err = json.Unmarshal(data, &savedInvoice)
 	require.NoError(t, err)
@@ -1152,7 +1153,7 @@ func (suite *JSONStorageTestSuite) TestWriteJSONFileError() {
 	err = os.Chmod(suite.storage.invoicesDir, 0o400)
 	require.NoError(t, err)
 	defer func() {
-		if chmodErr := os.Chmod(suite.storage.invoicesDir, 0o750); chmodErr != nil {
+		if chmodErr := os.Chmod(suite.storage.invoicesDir, 0o600); chmodErr != nil {
 			suite.T().Logf("Failed to restore directory permissions: %v", chmodErr)
 		}
 	}() // Restore permissions
@@ -1190,7 +1191,7 @@ func (suite *JSONStorageTestSuite) TestReadJSONFileError() {
 
 	// Create invalid JSON file
 	invalidPath := filepath.Join(suite.storage.invoicesDir, "INVALID.json")
-	err = os.WriteFile(invalidPath, []byte("{invalid json}"), 0o644)
+	err = os.WriteFile(invalidPath, []byte("{invalid json}"), 0o600)
 	require.NoError(t, err)
 
 	// Try to read it

@@ -23,7 +23,7 @@ func (r *SimpleFileReader) ReadFile(ctx context.Context, path string) ([]byte, e
 	default:
 	}
 
-	return os.ReadFile(path)
+	return os.ReadFile(path) // #nosec G304 -- Template path validation handled by caller
 }
 
 func (r *SimpleFileReader) FileExists(ctx context.Context, path string) (bool, error) {
@@ -314,7 +314,7 @@ func (v *SimpleTemplateValidator) CheckSecurity(ctx context.Context, template re
 }
 
 // validateTemplateFunctions checks that only safe template functions are used
-func (v *SimpleTemplateValidator) validateTemplateFunctions(ctx context.Context, template render.Template) error {
+func (v *SimpleTemplateValidator) validateTemplateFunctions(_ context.Context, template render.Template) error {
 	// List of allowed template functions
 	allowedFunctions := map[string]bool{
 		"formatCurrency": true,

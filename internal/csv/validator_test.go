@@ -16,6 +16,7 @@ import (
 // WorkItemValidatorTestSuite defines the test suite for work item validator functionality
 type WorkItemValidatorTestSuite struct {
 	suite.Suite
+
 	validator *WorkItemValidator
 	logger    *MockLogger
 }
@@ -665,7 +666,7 @@ func (suite *WorkItemValidatorTestSuite) TestCustomRules() {
 	customRule := ValidationRule{
 		Name:        "CustomTest",
 		Description: "Test custom rule",
-		Validator: func(ctx context.Context, item *models.WorkItem) error {
+		Validator: func(_ context.Context, item *models.WorkItem) error {
 			if item.Description == "forbidden" {
 				return assert.AnError
 			}

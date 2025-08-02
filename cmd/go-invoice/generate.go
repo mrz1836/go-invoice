@@ -194,8 +194,8 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 	fmt.Printf("📄 Generating invoice: %s (%s)\n", invoice.Number, invoice.Client.Name)
 
 	// Validate calculations if requested
-	if err := a.validateCalculationsIfRequested(ctx, options, invoice, config); err != nil {
-		return err
+	if validateErr := a.validateCalculationsIfRequested(ctx, options, invoice, config); validateErr != nil {
+		return validateErr
 	}
 
 	// Generate HTML content
@@ -225,7 +225,7 @@ func (a *App) setupGenerateServices(ctx context.Context, configPath, invoiceID s
 	}
 
 	// Create render service
-	renderService, err := a.createRenderService(config)
+	renderService, err := a.createRenderService(ctx, config)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to create render service: %w", err)
 	}
@@ -292,7 +292,7 @@ func (a *App) writeGeneratedInvoice(html, outputPath, invoiceNumber string) (str
 	}
 
 	// Write to file
-	if err := os.WriteFile(outputPath, []byte(html), 0o644); err != nil {
+	if err := os.WriteFile(outputPath, []byte(html), 0o600); err != nil {
 		return "", fmt.Errorf("failed to write output file: %w", err)
 	}
 
@@ -344,7 +344,7 @@ func (a *App) executeGeneratePreview(ctx context.Context, invoiceID, configPath 
 	}
 
 	// Create render service
-	renderService, err := a.createRenderService(config)
+	renderService, err := a.createRenderService(ctx, config)
 	if err != nil {
 		return fmt.Errorf("failed to create render service: %w", err)
 	}
@@ -409,7 +409,7 @@ func (a *App) executeGenerateTemplateList(ctx context.Context, configPath string
 	}
 
 	// Create render service
-	renderService, err := a.createRenderService(config)
+	renderService, err := a.createRenderService(ctx, config)
 	if err != nil {
 		return fmt.Errorf("failed to create render service: %w", err)
 	}
@@ -467,7 +467,7 @@ func (a *App) executeGenerateTemplateList(ctx context.Context, configPath string
 
 // Helper methods
 
-func (a *App) createRenderService(_ *config.Config) (*render.TemplateRenderer, error) {
+func (a *App) createRenderService(ctx context.Context, _ *config.Config) (*render.TemplateRenderer, error) {
 	// Create file reader
 	fileReader := &SimpleFileReader{}
 
@@ -478,7 +478,7 @@ func (a *App) createRenderService(_ *config.Config) (*render.TemplateRenderer, e
 	engine := render.NewHTMLTemplateEngine(fileReader, loggerWrapper)
 
 	// Load built-in templates
-	if err := a.loadBuiltInTemplates(engine); err != nil {
+	if err := a.loadBuiltInTemplates(ctx, engine); err != nil {
 		return nil, fmt.Errorf("failed to load built-in templates: %w", err)
 	}
 
@@ -519,9 +519,7 @@ func (a *App) createInvoiceService(dataDir string) *services.InvoiceService {
 	return invoiceService
 }
 
-func (a *App) loadBuiltInTemplates(engine render.TemplateEngine) error {
-	ctx := context.Background()
-
+func (a *App) loadBuiltInTemplates(ctx context.Context, engine render.TemplateEngine) error {
 	// Load default template
 	defaultTemplate, err := os.ReadFile("templates/invoice/default.html")
 	if err != nil {
@@ -689,6 +687,7 @@ type GeneratePreviewOptions struct {
 
 type EnhancedInvoiceData struct {
 	models.Invoice
+
 	Business EnhancedBusinessInfo `json:"business"`
 	Config   EnhancedConfigInfo   `json:"config"`
 }

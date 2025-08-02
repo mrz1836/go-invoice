@@ -42,7 +42,7 @@ func (c *MockTemplateCache) Get(ctx context.Context, name string) (Template, err
 	tmpl, exists := c.templates[name]
 	if !exists {
 		c.stats.MissCount++
-		return nil, fmt.Errorf("template not found in cache")
+		return nil, fmt.Errorf("template not found in cache") //nolint:err113 // Test cache error
 	}
 
 	c.stats.HitCount++
@@ -230,6 +230,7 @@ func (v *MockTemplateValidator) ValidateData(ctx context.Context, template Templ
 // TemplateRendererTestSuite tests the TemplateRenderer
 type TemplateRendererTestSuite struct {
 	suite.Suite
+
 	renderer  *TemplateRenderer
 	engine    *HTMLTemplateEngine
 	cache     *MockTemplateCache
@@ -470,7 +471,7 @@ func (suite *TemplateRendererTestSuite) createTestInvoice() *models.Invoice {
 		Subtotal:  1000.00,
 		TaxRate:   0.10,
 		TaxAmount: 100.00,
-		Total:     1993.75, // Note: intentionally different from subtotal+tax for testing
+		Total:     1993.75, // intentionally different from subtotal+tax for testing
 		CreatedAt: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
 		UpdatedAt: time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC),
 		Version:   1,

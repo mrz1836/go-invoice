@@ -642,9 +642,9 @@ func (a *App) runInvoiceDelete(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Are you sure you want to continue? (yes/no): ")
 
 		var response string
-		if _, err := fmt.Scanln(&response); err != nil {
-			fmt.Printf("Error reading input: %v\n", err)
-			return fmt.Errorf("failed to read user input: %w", err)
+		if _, scanErr := fmt.Scanln(&response); scanErr != nil {
+			fmt.Printf("Error reading input: %v\n", scanErr)
+			return fmt.Errorf("failed to read user input: %w", scanErr)
 		}
 		if strings.ToLower(response) != "yes" {
 			fmt.Println("❌ Delete canceled")
@@ -867,7 +867,7 @@ func (a *App) outputInvoicesCSV(invoices []*models.Invoice) {
 	}
 }
 
-func (a *App) outputInvoicesTable(ctx context.Context, invoices []*models.Invoice, _ *services.ClientService) error {
+func (a *App) outputInvoicesTable(_ context.Context, invoices []*models.Invoice, _ *services.ClientService) error {
 	if len(invoices) == 0 {
 		fmt.Println("No invoices found")
 		return nil
