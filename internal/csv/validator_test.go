@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/mrz/go-invoice/internal/models"
@@ -30,15 +29,15 @@ func (suite *WorkItemValidatorTestSuite) SetupTest() {
 func (suite *WorkItemValidatorTestSuite) TestNewWorkItemValidator() {
 	validator := NewWorkItemValidator(suite.logger)
 	suite.NotNil(validator)
-	assert.Equal(suite.T(), suite.logger, validator.logger)
-	assert.Positive(suite.T(), len(validator.rules), "should have validation rules")
+	suite.Equal(suite.logger, validator.logger)
+	suite.NotEmpty(validator.rules, "should have validation rules")
 }
 
 // TestValidateWorkItemSuccess tests successful work item validation
 func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemSuccess() {
 	ctx := context.Background()
 	workItem, err := models.NewWorkItem(ctx, "test-123", time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC), 8.0, 100.0, "Development work")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	err = suite.validator.ValidateWorkItem(ctx, workItem)
 	suite.NoError(err)
@@ -47,22 +46,22 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemSuccess() {
 // TestValidateWorkItemContextCancellation tests context cancellation
 func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemContextCancellation() {
 	workItem, err := models.NewWorkItem(context.Background(), "test-123", time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC), 8.0, 100.0, "Development work")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
 	err = suite.validator.ValidateWorkItem(ctx, workItem)
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Error(err)
+	suite.Equal(context.Canceled, err)
 }
 
 // TestValidateWorkItemNil tests validation of nil work item
 func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemNil() {
 	ctx := context.Background()
 	err := suite.validator.ValidateWorkItem(ctx, nil)
-	assert.Error(suite.T(), err)
-	assert.Contains(suite.T(), err.Error(), "work item cannot be nil")
+	suite.Error(err)
+	suite.Contains(err.Error(), "work item cannot be nil")
 }
 
 // TestValidateWorkItemDateValidation tests date validation rules
@@ -123,15 +122,15 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemDateValidation() {
 				// Use models.NewWorkItem for valid dates
 				var err error
 				workItem, err = models.NewWorkItem(ctx, "test-123", tt.date, 8.0, 100.0, "Development work")
-				require.NoError(suite.T(), err)
+				suite.Require().NoError(err)
 			}
 
 			err := suite.validator.ValidateWorkItem(ctx, workItem)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 				if tt.errMsg != "" {
-					assert.Contains(suite.T(), err.Error(), tt.errMsg)
+					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
 				suite.NoError(err)
@@ -200,9 +199,9 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemHoursValidation() {
 			err := suite.validator.ValidateWorkItem(ctx, workItem)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 				if tt.errMsg != "" {
-					assert.Contains(suite.T(), err.Error(), tt.errMsg)
+					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
 				suite.NoError(err)
@@ -271,9 +270,9 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemRateValidation() {
 			err := suite.validator.ValidateWorkItem(ctx, workItem)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 				if tt.errMsg != "" {
-					assert.Contains(suite.T(), err.Error(), tt.errMsg)
+					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
 				suite.NoError(err)
@@ -349,9 +348,9 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemDescriptionValidati
 			err := suite.validator.ValidateWorkItem(ctx, workItem)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 				if tt.errMsg != "" {
-					assert.Contains(suite.T(), err.Error(), tt.errMsg)
+					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
 				suite.NoError(err)
@@ -418,9 +417,9 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemTotalValidation() {
 			err := suite.validator.ValidateWorkItem(ctx, workItem)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 				if tt.errMsg != "" {
-					assert.Contains(suite.T(), err.Error(), tt.errMsg)
+					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
 				suite.NoError(err)
@@ -435,7 +434,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateRowSuccess() {
 	row := []string{"2024-01-15", "8.0", "100.00", "Development work"}
 
 	err := suite.validator.ValidateRow(ctx, row, 1)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }
 
 // TestValidateRowContextCancellation tests row validation with context cancellation
@@ -445,8 +444,8 @@ func (suite *WorkItemValidatorTestSuite) TestValidateRowContextCancellation() {
 	cancel() // Cancel immediately
 
 	err := suite.validator.ValidateRow(ctx, row, 1)
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Error(err)
+	suite.Equal(context.Canceled, err)
 }
 
 // TestValidateRowErrors tests various row validation errors
@@ -500,9 +499,9 @@ func (suite *WorkItemValidatorTestSuite) TestValidateRowErrors() {
 			err := suite.validator.ValidateRow(ctx, tt.row, 1)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 				if tt.errMsg != "" {
-					assert.Contains(suite.T(), err.Error(), tt.errMsg)
+					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
 				suite.NoError(err)
@@ -536,7 +535,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchSuccess() {
 	}
 
 	err := suite.validator.ValidateBatch(ctx, workItems)
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }
 
 // TestValidateBatchContextCancellation tests batch validation with context cancellation
@@ -557,8 +556,8 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchContextCancellation() 
 	cancel() // Cancel immediately
 
 	err := suite.validator.ValidateBatch(ctx, workItems)
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Error(err)
+	suite.Equal(context.Canceled, err)
 }
 
 // TestValidateBatchErrors tests various batch validation errors
@@ -615,9 +614,9 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchErrors() {
 			err := suite.validator.ValidateBatch(ctx, tt.workItems)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 				if tt.errMsg != "" {
-					assert.Contains(suite.T(), err.Error(), tt.errMsg)
+					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
 				suite.NoError(err)
@@ -655,7 +654,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchDateRange() {
 	}
 
 	err := suite.validator.ValidateBatch(ctx, workItems)
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Contains(suite.T(), err.Error(), "date range is too large")
 }
 
@@ -688,7 +687,7 @@ func (suite *WorkItemValidatorTestSuite) TestCustomRules() {
 	}
 
 	err := suite.validator.ValidateWorkItem(ctx, workItem)
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Contains(suite.T(), err.Error(), "CustomTest")
 
 	// Remove the custom rule
@@ -697,7 +696,7 @@ func (suite *WorkItemValidatorTestSuite) TestCustomRules() {
 
 	// Test that the rule is no longer applied
 	err = suite.validator.ValidateWorkItem(ctx, workItem)
-	assert.NoError(suite.T(), err) // Should pass now since custom rule is removed
+	suite.NoError(err) // Should pass now since custom rule is removed
 
 	// Try to remove non-existent rule
 	removed = suite.validator.RemoveRule("NonExistent")
@@ -707,7 +706,7 @@ func (suite *WorkItemValidatorTestSuite) TestCustomRules() {
 // TestGetRules tests getting all validation rules
 func (suite *WorkItemValidatorTestSuite) TestGetRules() {
 	rules := suite.validator.GetRules()
-	assert.Positive(suite.T(), len(rules))
+	suite.NotEmpty(rules)
 
 	// Verify we get standard rules
 	ruleNames := make(map[string]bool)
@@ -725,7 +724,7 @@ func (suite *WorkItemValidatorTestSuite) TestGetRules() {
 	}
 
 	for _, expected := range expectedRules {
-		assert.True(suite.T(), ruleNames[expected], "Expected rule %s not found", expected)
+		suite.True(ruleNames[expected], "Expected rule %s not found", expected)
 	}
 }
 
@@ -745,10 +744,10 @@ func (suite *WorkItemValidatorTestSuite) TestValidatorLogging() {
 	}
 
 	err := suite.validator.ValidateBatch(ctx, workItems)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Check that logging occurred
-	assert.True(suite.T(), len(suite.logger.messages) > 0)
+	suite.NotEmpty(suite.logger.messages)
 
 	// Find debug message
 	var foundDebug bool
@@ -758,7 +757,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidatorLogging() {
 			break
 		}
 	}
-	assert.True(suite.T(), foundDebug, "Expected to find batch validation logging message")
+	suite.True(foundDebug, "Expected to find batch validation logging message")
 }
 
 // TestHighHoursWarning tests that high hours trigger debug logging
@@ -775,7 +774,7 @@ func (suite *WorkItemValidatorTestSuite) TestHighHoursWarning() {
 	}
 
 	err := suite.validator.ValidateWorkItem(ctx, workItem)
-	assert.NoError(suite.T(), err) // Should still pass validation
+	suite.NoError(err) // Should still pass validation
 
 	// Check that warning was logged
 	var foundWarning bool
@@ -785,7 +784,7 @@ func (suite *WorkItemValidatorTestSuite) TestHighHoursWarning() {
 			break
 		}
 	}
-	assert.True(suite.T(), foundWarning, "Expected to find high hours warning")
+	suite.True(foundWarning, "Expected to find high hours warning")
 }
 
 // TestHighRateWarning tests that high rates trigger debug logging
@@ -802,7 +801,7 @@ func (suite *WorkItemValidatorTestSuite) TestHighRateWarning() {
 	}
 
 	err := suite.validator.ValidateWorkItem(ctx, workItem)
-	assert.NoError(suite.T(), err) // Should still pass validation
+	suite.NoError(err) // Should still pass validation
 
 	// Check that warning was logged
 	var foundWarning bool

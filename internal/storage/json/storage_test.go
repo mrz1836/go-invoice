@@ -171,7 +171,7 @@ func (suite *JSONStorageTestSuite) TestInitialize() {
 
 	// Verify log messages
 	messages := suite.logger.GetMessages()
-	assert.Greater(t, len(messages), 0)
+	assert.NotEmpty(t, messages)
 	assert.Equal(t, "info", messages[0].Level)
 	assert.Contains(t, messages[0].Msg, "initializing JSON storage")
 }

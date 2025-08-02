@@ -133,7 +133,7 @@ func (suite *ConfigTestSuite) TestLoadConfigFromEnv() {
 			config, err := suite.service.LoadConfig(ctx, "nonexistent.env")
 
 			if tt.wantErr {
-				suite.Error(err)
+				suite.Require().Error(err)
 				suite.Nil(config)
 			} else {
 				suite.Require().NoError(err)
@@ -181,7 +181,7 @@ func (suite *ConfigTestSuite) TestLoadConfigContextCancellation() {
 
 	config, err := suite.service.LoadConfig(ctx, "test.env")
 
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Equal(context.Canceled, err)
 	suite.Nil(config)
 }
@@ -267,9 +267,9 @@ func (suite *ConfigTestSuite) TestValidateConfig() {
 			err := suite.service.ValidateConfig(ctx, tt.config)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				assert.NoError(suite.T(), err)
+				suite.NoError(err)
 			}
 		})
 	}
@@ -282,10 +282,10 @@ func (suite *ConfigTestSuite) TestEnvHelperFunctions() {
 		defer os.Unsetenv("TEST_INT")
 
 		result := getEnvInt("TEST_INT", 10)
-		assert.Equal(suite.T(), 42, result)
+		suite.Equal(42, result)
 
 		result = getEnvInt("NONEXISTENT_INT", 10)
-		assert.Equal(suite.T(), 10, result)
+		suite.Equal(10, result)
 	})
 
 	suite.Run("getEnvFloat", func() {
@@ -293,10 +293,10 @@ func (suite *ConfigTestSuite) TestEnvHelperFunctions() {
 		defer os.Unsetenv("TEST_FLOAT")
 
 		result := getEnvFloat("TEST_FLOAT", 1.0)
-		assert.Equal(suite.T(), 3.14, result)
+		suite.InEpsilon(3.14, result, 1e-9)
 
 		result = getEnvFloat("NONEXISTENT_FLOAT", 1.0)
-		assert.Equal(suite.T(), 1.0, result)
+		suite.InEpsilon(1.0, result, 1e-9)
 	})
 
 	suite.Run("getEnvBool", func() {
@@ -304,7 +304,7 @@ func (suite *ConfigTestSuite) TestEnvHelperFunctions() {
 		defer os.Unsetenv("TEST_BOOL")
 
 		result := getEnvBool("TEST_BOOL", false)
-		assert.True(suite.T(), result)
+		suite.True(result)
 
 		result = getEnvBool("NONEXISTENT_BOOL", false)
 		suite.False(result)
@@ -315,18 +315,18 @@ func (suite *ConfigTestSuite) TestEnvHelperFunctions() {
 		defer os.Unsetenv("TEST_DURATION")
 
 		result := getEnvDuration("TEST_DURATION", time.Hour)
-		assert.Equal(suite.T(), 5*time.Minute, result)
+		suite.Equal(5*time.Minute, result)
 
 		result = getEnvDuration("NONEXISTENT_DURATION", time.Hour)
-		assert.Equal(suite.T(), time.Hour, result)
+		suite.Equal(time.Hour, result)
 	})
 }
 
 // TestDefaultDataDir tests the default data directory logic
 func (suite *ConfigTestSuite) TestDefaultDataDir() {
 	defaultDir := getDefaultDataDir()
-	assert.NotEmpty(suite.T(), defaultDir)
-	assert.Contains(suite.T(), defaultDir, ".go-invoice")
+	suite.NotEmpty(defaultDir)
+	suite.Contains(defaultDir, ".go-invoice")
 }
 
 // clearTestEnv clears test environment variables

@@ -104,9 +104,9 @@ func (suite *CSVParserTestSuite) SetupTest() {
 func (suite *CSVParserTestSuite) TestNewCSVParser() {
 	parser := NewCSVParser(suite.validator, suite.logger, suite.idGenerator)
 	suite.NotNil(parser)
-	assert.Equal(suite.T(), suite.validator, parser.validator)
-	assert.Equal(suite.T(), suite.logger, parser.logger)
-	assert.Equal(suite.T(), suite.idGenerator, parser.idGenerator)
+	suite.Equal(suite.validator, parser.validator)
+	suite.Equal(suite.logger, parser.logger)
+	suite.Equal(suite.idGenerator, parser.idGenerator)
 }
 
 // TestParseTimesheetValidCSV tests parsing valid CSV data
@@ -125,22 +125,22 @@ func (suite *CSVParserTestSuite) TestParseTimesheetValidCSV() {
 	ctx := context.Background()
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Require().NotNil(result)
-	assert.Equal(suite.T(), 3, result.TotalRows)
-	assert.Equal(suite.T(), 3, result.SuccessRows)
-	assert.Equal(suite.T(), 0, result.ErrorRows)
+	suite.Equal(3, result.TotalRows)
+	suite.Equal(3, result.SuccessRows)
+	suite.Equal(0, result.ErrorRows)
 	suite.Len(result.WorkItems, 3)
-	assert.Equal(suite.T(), "standard", result.Format)
+	suite.Equal("standard", result.Format)
 
 	// Verify first work item
 	firstItem := result.WorkItems[0]
 	expectedDate := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
-	assert.Equal(suite.T(), expectedDate, firstItem.Date)
-	assert.Equal(suite.T(), 8.0, firstItem.Hours)
-	assert.Equal(suite.T(), 100.0, firstItem.Rate)
-	assert.Equal(suite.T(), "Development work", firstItem.Description)
-	assert.Equal(suite.T(), 800.0, firstItem.Total)
+	suite.Equal(expectedDate, firstItem.Date)
+	suite.InEpsilon(8.0, firstItem.Hours, 0.001)
+	suite.InEpsilon(100.0, firstItem.Rate, 0.001)
+	suite.Equal("Development work", firstItem.Description)
+	suite.InEpsilon(800.0, firstItem.Total, 0.001)
 }
 
 // TestParseTimesheetContextCancellation tests context cancellation
@@ -157,7 +157,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetContextCancellation() {
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 	suite.Error(err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Equal(context.Canceled, err)
 	suite.Nil(result)
 }
 
@@ -170,7 +170,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetEmptyCSV() {
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 	suite.Error(err)
-	assert.Contains(suite.T(), err.Error(), "CSV file is empty")
+	suite.Contains(err.Error(), "CSV file is empty")
 	suite.Nil(result)
 }
 
@@ -189,7 +189,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetInvalidCSV() {
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 	suite.Error(err)
-	assert.Contains(suite.T(), err.Error(), "parsing failed at line 2")
+	suite.Contains(err.Error(), "parsing failed at line 2")
 	suite.Nil(result)
 }
 
@@ -209,18 +209,18 @@ func (suite *CSVParserTestSuite) TestParseTimesheetContinueOnError() {
 	ctx := context.Background()
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.Require().NotNil(result)
-	assert.Equal(suite.T(), 3, result.TotalRows)
-	assert.Equal(suite.T(), 2, result.SuccessRows)
-	assert.Equal(suite.T(), 1, result.ErrorRows)
-	assert.Len(suite.T(), result.WorkItems, 2)
-	assert.Len(suite.T(), result.Errors, 1)
+	suite.Equal(3, result.TotalRows)
+	suite.Equal(2, result.SuccessRows)
+	suite.Equal(1, result.ErrorRows)
+	suite.Len(result.WorkItems, 2)
+	suite.Len(result.Errors, 1)
 
 	// Verify error details
 	parseError := result.Errors[0]
-	assert.Equal(suite.T(), 3, parseError.Line) // Line 3 has the invalid hours
-	assert.Contains(suite.T(), parseError.Message, "invalid hours")
+	suite.Equal(3, parseError.Line) // Line 3 has the invalid hours
+	suite.Contains(parseError.Message, "invalid hours")
 }
 
 // TestParseTimesheetValidationError tests parsing with validation errors
@@ -230,7 +230,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetValidationError() {
 
 	// Mock validator to return error
 	suite.validator.validateWorkItemFunc = func(ctx context.Context, item *models.WorkItem) error {
-		return assert.AnError
+		return fmt.Errorf("validation error")
 	}
 
 	reader := strings.NewReader(csvData)
@@ -243,7 +243,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetValidationError() {
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 	suite.Error(err)
-	assert.Contains(suite.T(), err.Error(), "validation failed at line 2")
+	suite.Contains(err.Error(), "validation failed at line 2")
 	suite.Nil(result)
 }
 
@@ -286,8 +286,8 @@ func (suite *CSVParserTestSuite) TestParseTimesheetDifferentFormats() {
 			ctx := context.Background()
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-			require.NoError(suite.T(), err)
-			assert.Equal(suite.T(), tt.expected, result.SuccessRows)
+			suite.Require().NoError(err)
+			suite.Equal(tt.expected, result.SuccessRows)
 		})
 	}
 }
@@ -334,7 +334,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetHeaderVariations() {
 				suite.Error(err)
 				suite.Nil(result)
 			} else {
-				require.NoError(suite.T(), err)
+				suite.Require().NoError(err)
 				suite.NotNil(result)
 			}
 		})
@@ -376,9 +376,9 @@ func (suite *CSVParserTestSuite) TestDetectFormat() {
 
 			format, err := suite.parser.DetectFormat(ctx, reader)
 
-			require.NoError(suite.T(), err)
-			assert.Equal(suite.T(), tt.expectedFormat, format.Name)
-			assert.Equal(suite.T(), tt.expectedDelim, format.Delimiter)
+			suite.Require().NoError(err)
+			suite.Equal(tt.expectedFormat, format.Name)
+			suite.Equal(tt.expectedDelim, format.Delimiter)
 		})
 	}
 }
@@ -392,7 +392,7 @@ func (suite *CSVParserTestSuite) TestDetectFormatContextCancellation() {
 	format, err := suite.parser.DetectFormat(ctx, reader)
 
 	suite.Error(err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Equal(context.Canceled, err)
 	suite.Nil(format)
 }
 
@@ -404,7 +404,7 @@ func (suite *CSVParserTestSuite) TestDetectFormatEmptyFile() {
 	format, err := suite.parser.DetectFormat(ctx, reader)
 
 	suite.Error(err)
-	assert.Contains(suite.T(), err.Error(), "cannot detect format of empty file")
+	suite.Contains(err.Error(), "cannot detect format of empty file")
 	suite.Nil(format)
 }
 
@@ -427,7 +427,7 @@ func (suite *CSVParserTestSuite) TestValidateFormatContextCancellation() {
 	err := suite.parser.ValidateFormat(ctx, reader)
 
 	suite.Error(err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Equal(context.Canceled, err)
 }
 
 // TestParseDateFormats tests various date format parsing
@@ -482,7 +482,7 @@ func (suite *CSVParserTestSuite) TestNormalizeHeaderName() {
 	for _, tt := range tests {
 		suite.Run(tt.input, func() {
 			result := suite.parser.normalizeHeaderName(tt.input)
-			assert.Equal(suite.T(), tt.expected, result)
+			suite.Equal(tt.expected, result)
 		})
 	}
 }
@@ -506,10 +506,10 @@ func (suite *CSVParserTestSuite) TestParseTimesheetLargeFile() {
 	ctx := context.Background()
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), 100, result.TotalRows)
-	assert.Equal(suite.T(), 100, result.SuccessRows)
-	assert.Len(suite.T(), result.WorkItems, 100)
+	suite.Require().NoError(err)
+	suite.Equal(100, result.TotalRows)
+	suite.Equal(100, result.SuccessRows)
+	suite.Len(result.WorkItems, 100)
 }
 
 // TestParseTimesheetMissingFields tests parsing CSV with missing fields
@@ -526,12 +526,12 @@ func (suite *CSVParserTestSuite) TestParseTimesheetMissingFields() {
 	ctx := context.Background()
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), 1, result.TotalRows)
-	assert.Equal(suite.T(), 0, result.SuccessRows)
-	assert.Equal(suite.T(), 1, result.ErrorRows)
-	assert.Len(suite.T(), result.Errors, 1)
-	assert.Contains(suite.T(), result.Errors[0].Message, "field is empty: hours")
+	suite.Require().NoError(err)
+	suite.Equal(1, result.TotalRows)
+	suite.Equal(0, result.SuccessRows)
+	suite.Equal(1, result.ErrorRows)
+	suite.Len(result.Errors, 1)
+	suite.Contains(result.Errors[0].Message, "field is empty: hours")
 }
 
 // TestParseTimesheetLogging tests that logging works correctly
@@ -545,10 +545,10 @@ func (suite *CSVParserTestSuite) TestParseTimesheetLogging() {
 	ctx := context.Background()
 	_, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Check that logging occurred
-	assert.Positive(suite.T(), len(suite.logger.messages))
+	suite.NotEmpty(suite.logger.messages)
 
 	// Find start message
 	var foundStart bool
@@ -558,7 +558,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetLogging() {
 			break
 		}
 	}
-	assert.True(suite.T(), foundStart, "Expected to find start logging message")
+	suite.True(foundStart, "Expected to find start logging message")
 }
 
 // TestCSVParserTestSuite runs the CSV parser test suite

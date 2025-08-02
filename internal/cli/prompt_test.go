@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,9 +42,9 @@ func (suite *PrompterTestSuite) createPrompterWithInput(input string) *Prompter 
 
 func (suite *PrompterTestSuite) TestNewPrompter() {
 	prompter := NewPrompter(suite.logger)
-	assert.NotNil(suite.T(), prompter)
-	assert.NotNil(suite.T(), prompter.reader)
-	assert.Equal(suite.T(), suite.logger, prompter.logger)
+	suite.NotNil(prompter)
+	suite.NotNil(prompter.reader)
+	suite.Equal(suite.logger, prompter.logger)
 }
 
 func (suite *PrompterTestSuite) TestPromptString() {
@@ -88,8 +86,8 @@ func (suite *PrompterTestSuite) TestPromptString() {
 			ctx := context.Background()
 
 			result, err := prompter.PromptString(ctx, "Test prompt", tt.defaultValue)
-			require.NoError(suite.T(), err)
-			assert.Equal(suite.T(), tt.expected, result)
+			suite.Require().NoError(err)
+			suite.Equal(tt.expected, result)
 		})
 	}
 }
@@ -101,8 +99,8 @@ func (suite *PrompterTestSuite) TestPromptString_ContextCancellation() {
 	prompter := suite.createPrompterWithInput("test\n")
 	result, err := prompter.PromptString(ctx, "Test prompt", "")
 
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Require().Error(err)
+	suite.Equal(context.Canceled, err)
 	suite.Empty(result)
 }
 
@@ -141,10 +139,10 @@ func (suite *PrompterTestSuite) TestPromptStringRequired() {
 			result, err := prompter.PromptStringRequired(ctx, "Required prompt")
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				require.NoError(suite.T(), err)
-				assert.Equal(suite.T(), tt.expected, result)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, result)
 			}
 		})
 	}
@@ -203,10 +201,10 @@ func (suite *PrompterTestSuite) TestPromptInt() {
 			result, err := prompter.PromptInt(ctx, "Integer prompt", tt.defaultValue)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				require.NoError(suite.T(), err)
-				assert.Equal(suite.T(), tt.expected, result)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, result)
 			}
 		})
 	}
@@ -265,10 +263,10 @@ func (suite *PrompterTestSuite) TestPromptFloat() {
 			result, err := prompter.PromptFloat(ctx, "Float prompt", tt.defaultValue)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				require.NoError(suite.T(), err)
-				assert.Equal(suite.T(), tt.expected, result)
+				suite.Require().NoError(err)
+				suite.InEpsilon(tt.expected, result, 1e-9)
 			}
 		})
 	}
@@ -362,10 +360,10 @@ func (suite *PrompterTestSuite) TestPromptBool() {
 			result, err := prompter.PromptBool(ctx, "Boolean prompt", tt.defaultValue)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				require.NoError(suite.T(), err)
-				assert.Equal(suite.T(), tt.expected, result)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, result)
 			}
 		})
 	}
@@ -427,11 +425,11 @@ func (suite *PrompterTestSuite) TestPromptSelect() {
 			idx, val, err := prompter.PromptSelect(ctx, "Select prompt", tt.options, tt.defaultIndex)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				require.NoError(suite.T(), err)
-				assert.Equal(suite.T(), tt.expectedIdx, idx)
-				assert.Equal(suite.T(), tt.expectedVal, val)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expectedIdx, idx)
+				suite.Equal(tt.expectedVal, val)
 			}
 		})
 	}
@@ -504,11 +502,11 @@ func (suite *PrompterTestSuite) TestPromptMultiSelect() {
 			idx, val, err := prompter.PromptMultiSelect(ctx, "Multi-select prompt", tt.options)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				require.NoError(suite.T(), err)
-				assert.Equal(suite.T(), tt.expectedIdx, idx)
-				assert.Equal(suite.T(), tt.expectedVal, val)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expectedIdx, idx)
+				suite.Equal(tt.expectedVal, val)
 			}
 		})
 	}
@@ -581,10 +579,10 @@ func (suite *PrompterTestSuite) TestPromptDate() {
 			result, err := prompter.PromptDate(ctx, "Date prompt", tt.defaultValue)
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				require.NoError(suite.T(), err)
-				assert.True(suite.T(), tt.expected.Equal(result),
+				suite.Require().NoError(err)
+				suite.True(tt.expected.Equal(result),
 					"expected %v, got %v", tt.expected, result)
 			}
 		})
@@ -626,10 +624,10 @@ func (suite *PrompterTestSuite) TestPromptConfirm() {
 			result, err := prompter.PromptConfirm(ctx, "Confirm message")
 
 			if tt.wantErr {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				require.NoError(suite.T(), err)
-				assert.Equal(suite.T(), tt.expected, result)
+				suite.Require().NoError(err)
+				suite.Equal(tt.expected, result)
 			}
 		})
 	}
@@ -641,8 +639,8 @@ func (suite *PrompterTestSuite) TestPromptPassword() {
 
 	result, err := prompter.PromptPassword(ctx, "Password prompt")
 
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "secret123", result)
+	suite.Require().NoError(err)
+	suite.Equal("secret123", result)
 }
 
 func (suite *PrompterTestSuite) TestPromptPassword_ContextCancellation() {
@@ -652,9 +650,9 @@ func (suite *PrompterTestSuite) TestPromptPassword_ContextCancellation() {
 	prompter := suite.createPrompterWithInput("password\n")
 	result, err := prompter.PromptPassword(ctx, "Password")
 
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
-	assert.Empty(suite.T(), result)
+	suite.Require().Error(err)
+	suite.Equal(context.Canceled, err)
+	suite.Empty(result)
 }
 
 // TestPrompterEdgeCases tests various edge cases
@@ -677,9 +675,9 @@ func (suite *PrompterTestSuite) TestPrompterEdgeCases() {
 
 		// Test with valid default index
 		idx, val, err := prompter.PromptSelect(ctx, "Test", options, 1)
-		require.NoError(suite.T(), err)
-		assert.Equal(suite.T(), 1, idx)
-		assert.Equal(suite.T(), "B", val)
+		suite.Require().NoError(err)
+		suite.Equal(1, idx)
+		suite.Equal("B", val)
 	})
 
 	suite.Run("PromptMultiSelect_AllCaseInsensitive", func() {
@@ -688,9 +686,9 @@ func (suite *PrompterTestSuite) TestPrompterEdgeCases() {
 		options := []string{"A", "B", "C"}
 
 		idx, val, err := prompter.PromptMultiSelect(ctx, "Test", options)
-		require.NoError(suite.T(), err)
-		assert.Equal(suite.T(), []int{0, 1, 2}, idx)
-		assert.Equal(suite.T(), options, val)
+		suite.Require().NoError(err)
+		suite.Equal([]int{0, 1, 2}, idx)
+		suite.Equal(options, val)
 	})
 }
 
@@ -704,7 +702,7 @@ func (suite *PrompterTestSuite) TestPrompterConcurrency() {
 	prompters := make([]*Prompter, 10)
 	for i := range prompters {
 		prompters[i] = NewPrompter(suite.logger)
-		assert.NotNil(suite.T(), prompters[i])
+		suite.NotNil(prompters[i])
 	}
 }
 

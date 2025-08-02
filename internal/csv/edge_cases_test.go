@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/mrz/go-invoice/internal/models"
@@ -174,7 +173,7 @@ func (suite *CSVEdgeCasesTestSuite) TestDateFormatEdgeCases() {
 			} else {
 				// May not error if continue on error is true
 				if err == nil && result != nil {
-					suite.Positive(len(result.Errors), "should have validation errors")
+					suite.NotEmpty(result.Errors, "should have validation errors")
 					suite.Empty(result.WorkItems)
 				}
 			}
@@ -249,8 +248,8 @@ func (suite *CSVEdgeCasesTestSuite) TestNumericFieldEdgeCases() {
 
 					if len(result.WorkItems) > 0 {
 						workItem := result.WorkItems[0]
-						suite.Equal(tt.expectHours, workItem.Hours)
-						suite.Equal(tt.expectRate, workItem.Rate)
+						suite.InEpsilon(tt.expectHours, workItem.Hours, 1e-9)
+						suite.InEpsilon(tt.expectRate, workItem.Rate, 1e-9)
 					}
 				}
 			} else {
@@ -304,7 +303,7 @@ func (suite *CSVEdgeCasesTestSuite) TestFloatingPointPrecision() {
 				suite.Empty(result.Errors)
 			} else {
 				if err == nil {
-					suite.Positive(len(result.Errors))
+					suite.NotEmpty(result.Errors)
 				}
 			}
 		})
@@ -356,7 +355,7 @@ func (suite *CSVEdgeCasesTestSuite) TestDescriptionEdgeCases() {
 				suite.Empty(result.Errors)
 			} else {
 				if err == nil {
-					suite.Positive(len(result.Errors))
+					suite.NotEmpty(result.Errors)
 				}
 			}
 		})
@@ -443,7 +442,7 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 
 		// Test weekend work (should fail)
 		weekendWork, err := models.NewWorkItem(ctx, "test", time.Date(2024, 1, 13, 0, 0, 0, 0, time.UTC), 8.0, 100.0, "Weekend work") // Saturday
-		require.NoError(suite.T(), err)
+		suite.Require().NoError(err)
 
 		err = suite.validator.ValidateWorkItem(ctx, weekendWork)
 		suite.Error(err)
@@ -451,7 +450,7 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 
 		// Test weekday work (should pass)
 		weekdayWork, err := models.NewWorkItem(ctx, "test", time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC), 8.0, 100.0, "Weekday work") // Monday
-		require.NoError(suite.T(), err)
+		suite.Require().NoError(err)
 
 		err = suite.validator.ValidateWorkItem(ctx, weekdayWork)
 		suite.NoError(err)
@@ -598,7 +597,7 @@ func (suite *CSVEdgeCasesTestSuite) TestErrorMessageQuality() {
 			// Check for suggestions if expected
 			if tt.expectedSuggestion {
 				suite.Require().NotNil(result, "result should not be nil for suggestion check")
-				suite.Require().Positive(len(result.Errors), "should have errors for suggestion check")
+				suite.Require().NotEmpty(result.Errors, "should have errors for suggestion check")
 				suite.NotEmpty(result.Errors[0].Suggestion, "should have a suggestion")
 			}
 		})

@@ -824,7 +824,7 @@ func (suite *ClientTestSuite) TestContextCancellation() {
 		UpdatedAt: time.Now(),
 	}
 
-	// Test all update methods with cancelled context
+	// Test all update methods with canceled context
 	err := client.UpdateName(ctx, "New Name")
 	assert.Equal(t, context.Canceled, err)
 
@@ -846,7 +846,7 @@ func (suite *ClientTestSuite) TestContextCancellation() {
 	err = client.Deactivate(ctx)
 	assert.Equal(t, context.Canceled, err)
 
-	// Validate with cancelled context
+	// Validate with canceled context
 	err = client.Validate(ctx)
 	assert.Equal(t, context.Canceled, err)
 }

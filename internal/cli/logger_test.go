@@ -65,9 +65,9 @@ func (suite *LoggerTestSuite) TestInfoLoggingWithFields() {
 
 	output := suite.logOutput.String()
 	suite.Contains(output, "[INFO]")
-	assert.Contains(suite.T(), output, "test message")
-	assert.Contains(suite.T(), output, "key1=value1")
-	assert.Contains(suite.T(), output, "key2=42")
+	suite.Contains(output, "test message")
+	suite.Contains(output, "key1=value1")
+	suite.Contains(output, "key2=42")
 }
 
 // TestErrorLogging tests error message logging
@@ -75,8 +75,8 @@ func (suite *LoggerTestSuite) TestErrorLogging() {
 	suite.logger.Error("test error message")
 
 	output := suite.logOutput.String()
-	assert.Contains(suite.T(), output, "[ERROR]")
-	assert.Contains(suite.T(), output, "test error message")
+	suite.Contains(output, "[ERROR]")
+	suite.Contains(output, "test error message")
 }
 
 // TestErrorLoggingWithFields tests error message logging with fields
@@ -84,10 +84,10 @@ func (suite *LoggerTestSuite) TestErrorLoggingWithFields() {
 	suite.logger.Error("error occurred", "error", "connection failed", "retry", 3)
 
 	output := suite.logOutput.String()
-	assert.Contains(suite.T(), output, "[ERROR]")
-	assert.Contains(suite.T(), output, "error occurred")
-	assert.Contains(suite.T(), output, "error=connection failed")
-	assert.Contains(suite.T(), output, "retry=3")
+	suite.Contains(output, "[ERROR]")
+	suite.Contains(output, "error occurred")
+	suite.Contains(output, "error=connection failed")
+	suite.Contains(output, "retry=3")
 }
 
 // TestDebugLoggingDisabled tests that debug messages are not logged when debug is disabled
@@ -104,8 +104,8 @@ func (suite *LoggerTestSuite) TestDebugLoggingEnabled() {
 	debugLogger.Debug("debug message should appear")
 
 	output := suite.logOutput.String()
-	assert.Contains(suite.T(), output, "[DEBUG]")
-	assert.Contains(suite.T(), output, "debug message should appear")
+	suite.Contains(output, "[DEBUG]")
+	suite.Contains(output, "debug message should appear")
 }
 
 // TestDebugLoggingWithFields tests debug message logging with fields
@@ -114,10 +114,10 @@ func (suite *LoggerTestSuite) TestDebugLoggingWithFields() {
 	debugLogger.Debug("debug info", "component", "config", "action", "validation")
 
 	output := suite.logOutput.String()
-	assert.Contains(suite.T(), output, "[DEBUG]")
-	assert.Contains(suite.T(), output, "debug info")
-	assert.Contains(suite.T(), output, "component=config")
-	assert.Contains(suite.T(), output, "action=validation")
+	suite.Contains(output, "[DEBUG]")
+	suite.Contains(output, "debug info")
+	suite.Contains(output, "component=config")
+	suite.Contains(output, "action=validation")
 }
 
 // TestFormatFields tests the field formatting functionality
@@ -172,10 +172,10 @@ func (suite *LoggerTestSuite) TestLoggerIntegration() {
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 
 	suite.Len(lines, 2)
-	assert.Contains(suite.T(), lines[0], "[INFO]")
-	assert.Contains(suite.T(), lines[0], "application started")
-	assert.Contains(suite.T(), lines[1], "[ERROR]")
-	assert.Contains(suite.T(), lines[1], "database connection failed")
+	suite.Contains(lines[0], "[INFO]")
+	suite.Contains(lines[0], "application started")
+	suite.Contains(lines[1], "[ERROR]")
+	suite.Contains(lines[1], "database connection failed")
 }
 
 // TestLoggerConcurrency tests that the logger is safe for concurrent use
@@ -207,8 +207,8 @@ func (suite *LoggerTestSuite) TestLoggerConcurrency() {
 
 	// All lines should contain [INFO] and "concurrent message"
 	for _, line := range lines {
-		assert.Contains(suite.T(), line, "[INFO]")
-		assert.Contains(suite.T(), line, "concurrent message")
+		suite.Contains(line, "[INFO]")
+		suite.Contains(line, "concurrent message")
 	}
 }
 

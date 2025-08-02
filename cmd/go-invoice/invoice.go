@@ -373,7 +373,7 @@ func (a *App) buildInvoiceUpdateCommand() *cobra.Command {
 		Short: "Update an invoice",
 		Long: `Update invoice details such as dates, status, or description.
 		
-Note: You cannot update invoices that are already paid or cancelled.
+Note: You cannot update invoices that are already paid or canceled.
 Work items should be managed through the import command.`,
 		Args: cobra.ExactArgs(1),
 		Example: `  # Update invoice status
@@ -391,7 +391,7 @@ Work items should be managed through the import command.`,
 	}
 
 	// Add flags
-	cmd.Flags().String("status", "", "Update status (draft, sent, paid, overdue, cancelled)")
+	cmd.Flags().String("status", "", "Update status (draft, sent, paid, overdue, canceled)")
 	cmd.Flags().String("due-date", "", "Update due date (YYYY-MM-DD)")
 	cmd.Flags().String("description", "", "Update description")
 	cmd.Flags().String("notes", "", "Update internal notes")
@@ -647,7 +647,7 @@ func (a *App) runInvoiceDelete(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to read user input: %w", err)
 		}
 		if strings.ToLower(response) != "yes" {
-			fmt.Println("❌ Delete cancelled")
+			fmt.Println("❌ Delete canceled")
 			return nil
 		}
 	}
@@ -1029,7 +1029,7 @@ func (a *App) runInvoiceCreateInteractive(ctx context.Context, invoiceService *s
 
 		index, _, selectErr := prompter.PromptSelect(ctx, "Select a client:", options, -1)
 		if selectErr != nil {
-			return fmt.Errorf("client selection cancelled: %w", selectErr)
+			return fmt.Errorf("client selection canceled: %w", selectErr)
 		}
 
 		if index == 0 {
@@ -1059,20 +1059,20 @@ func (a *App) runInvoiceCreateInteractive(ctx context.Context, invoiceService *s
 	// Invoice date
 	invoiceDate, err := prompter.PromptDate(ctx, "Invoice date", time.Now())
 	if err != nil {
-		return fmt.Errorf("date selection cancelled: %w", err)
+		return fmt.Errorf("date selection canceled: %w", err)
 	}
 
 	// Due date
 	defaultDueDate := invoiceDate.AddDate(0, 0, config.Invoice.DefaultDueDays)
 	dueDate, err := prompter.PromptDate(ctx, "Due date", defaultDueDate)
 	if err != nil {
-		return fmt.Errorf("due date selection cancelled: %w", err)
+		return fmt.Errorf("due date selection canceled: %w", err)
 	}
 
 	// Description
 	description, err := prompter.PromptString(ctx, "Invoice description (optional)", "")
 	if err != nil {
-		return fmt.Errorf("description input cancelled: %w", err)
+		return fmt.Errorf("description input canceled: %w", err)
 	}
 
 	// Generate invoice number
@@ -1094,11 +1094,11 @@ func (a *App) runInvoiceCreateInteractive(ctx context.Context, invoiceService *s
 	// Confirm creation
 	confirmed, err := prompter.PromptConfirm(ctx, "Create this invoice?")
 	if err != nil {
-		return fmt.Errorf("confirmation cancelled: %w", err)
+		return fmt.Errorf("confirmation canceled: %w", err)
 	}
 
 	if !confirmed {
-		fmt.Println("❌ Invoice creation cancelled")
+		fmt.Println("❌ Invoice creation canceled")
 		return nil
 	}
 
@@ -1153,11 +1153,11 @@ func (a *App) runInvoiceUpdateInteractive(ctx context.Context, invoiceService *s
 
 	index, _, err := prompter.PromptSelect(ctx, "What would you like to update?", options, -1)
 	if err != nil {
-		return fmt.Errorf("selection cancelled: %w", err)
+		return fmt.Errorf("selection canceled: %w", err)
 	}
 
 	if index == 3 {
-		fmt.Println("❌ Update cancelled")
+		fmt.Println("❌ Update canceled")
 		return nil
 	}
 
@@ -1170,7 +1170,7 @@ func (a *App) runInvoiceUpdateInteractive(ctx context.Context, invoiceService *s
 		statuses := []string{"draft", "sent", "paid", "overdue", "voided"}
 		statusIndex, newStatus, selectErr := prompter.PromptSelect(ctx, "Select new status:", statuses, -1)
 		if selectErr != nil {
-			return fmt.Errorf("status selection cancelled: %w", selectErr)
+			return fmt.Errorf("status selection canceled: %w", selectErr)
 		}
 		_ = statusIndex // unused
 		req.Status = &newStatus
@@ -1178,14 +1178,14 @@ func (a *App) runInvoiceUpdateInteractive(ctx context.Context, invoiceService *s
 	case 1: // Update due date
 		newDueDate, promptErr := prompter.PromptDate(ctx, "New due date", invoice.DueDate)
 		if promptErr != nil {
-			return fmt.Errorf("due date selection cancelled: %w", promptErr)
+			return fmt.Errorf("due date selection canceled: %w", promptErr)
 		}
 		req.DueDate = &newDueDate
 
 	case 2: // Update description
 		newDescription, promptErr := prompter.PromptString(ctx, "New description", invoice.Description)
 		if promptErr != nil {
-			return fmt.Errorf("description input cancelled: %w", promptErr)
+			return fmt.Errorf("description input canceled: %w", promptErr)
 		}
 		req.Description = &newDescription
 	}
@@ -1205,11 +1205,11 @@ func (a *App) runInvoiceUpdateInteractive(ctx context.Context, invoiceService *s
 
 	confirmed, err := prompter.PromptConfirm(ctx, "Apply these changes?")
 	if err != nil {
-		return fmt.Errorf("confirmation cancelled: %w", err)
+		return fmt.Errorf("confirmation canceled: %w", err)
 	}
 
 	if !confirmed {
-		fmt.Println("❌ Update cancelled")
+		fmt.Println("❌ Update canceled")
 		return nil
 	}
 
@@ -1231,22 +1231,22 @@ func (a *App) createClientInteractive(ctx context.Context, clientService *servic
 	// Prompt for client details
 	name, err := prompter.PromptStringRequired(ctx, "Client name")
 	if err != nil {
-		return nil, fmt.Errorf("name input cancelled: %w", err)
+		return nil, fmt.Errorf("name input canceled: %w", err)
 	}
 
 	email, err := prompter.PromptStringRequired(ctx, "Client email")
 	if err != nil {
-		return nil, fmt.Errorf("email input cancelled: %w", err)
+		return nil, fmt.Errorf("email input canceled: %w", err)
 	}
 
 	phone, err := prompter.PromptString(ctx, "Client phone (optional)", "")
 	if err != nil {
-		return nil, fmt.Errorf("phone input cancelled: %w", err)
+		return nil, fmt.Errorf("phone input canceled: %w", err)
 	}
 
 	address, err := prompter.PromptString(ctx, "Client address (optional)", "")
 	if err != nil {
-		return nil, fmt.Errorf("address input cancelled: %w", err)
+		return nil, fmt.Errorf("address input canceled: %w", err)
 	}
 
 	// Create client

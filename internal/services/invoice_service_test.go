@@ -307,7 +307,7 @@ func (suite *InvoiceServiceTestSuite) TestAddWorkItemToInvoice() {
 		require.NotNil(t, updatedInvoice)
 		assert.Len(t, updatedInvoice.WorkItems, 1)
 		assert.Equal(t, "WORK-001", updatedInvoice.WorkItems[0].ID)
-		assert.Equal(t, 800.0, updatedInvoice.WorkItems[0].Total)
+		assert.InEpsilon(t, 800.0, updatedInvoice.WorkItems[0].Total, 1e-9)
 	})
 }
 

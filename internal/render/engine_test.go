@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/mrz/go-invoice/internal/models"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -183,14 +181,14 @@ func (suite *RenderTestSuite) TestHTMLTemplateEngine_ParseTemplateString() {
 			err := suite.engine.ParseTemplateString(ctx, tc.templateName, tc.content)
 
 			if tc.expectError {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 			} else {
-				require.NoError(suite.T(), err)
+				suite.Require().NoError(err)
 
 				// Verify template was stored
 				template, err := suite.engine.GetTemplate(ctx, tc.templateName)
-				require.NoError(suite.T(), err)
-				assert.Equal(suite.T(), tc.templateName, template.Name())
+				suite.Require().NoError(err)
+				suite.Equal(tc.templateName, template.Name())
 			}
 		})
 	}
@@ -204,12 +202,12 @@ func (suite *RenderTestSuite) TestHTMLTemplateEngine_LoadTemplate() {
 	suite.fileReader.AddFile("test.html", []byte(suite.testTemplate))
 
 	err := suite.engine.LoadTemplate(ctx, "test", "test.html")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Verify template was loaded
 	template, err := suite.engine.GetTemplate(ctx, "test")
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "test", template.Name())
+	suite.Require().NoError(err)
+	suite.Equal("test", template.Name())
 }
 
 // TestHTMLTemplateEngine_LoadTemplate_FileNotFound tests handling of missing files
@@ -217,7 +215,7 @@ func (suite *RenderTestSuite) TestHTMLTemplateEngine_LoadTemplate_FileNotFound()
 	ctx := context.Background()
 
 	err := suite.engine.LoadTemplate(ctx, "missing", "missing.html")
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 }
 
 // TestGoTemplate_Execute tests template execution
@@ -226,11 +224,11 @@ func (suite *RenderTestSuite) TestGoTemplate_Execute() {
 
 	// Parse test template
 	err := suite.engine.ParseTemplateString(ctx, "test", suite.testTemplate)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Get template
 	template, err := suite.engine.GetTemplate(ctx, "test")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Create test data
 	invoice := suite.createTestInvoice()
@@ -238,12 +236,12 @@ func (suite *RenderTestSuite) TestGoTemplate_Execute() {
 	// Execute template
 	var buf bytes.Buffer
 	err = template.Execute(ctx, invoice, &buf)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	output := buf.String()
-	assert.Contains(suite.T(), output, "Invoice #TEST-001")
-	assert.Contains(suite.T(), output, "Test Client")
-	assert.Contains(suite.T(), output, "1993.75 USD")
+	suite.Contains(output, "Invoice #TEST-001")
+	suite.Contains(output, "Test Client")
+	suite.Contains(output, "1993.75 USD")
 }
 
 // TestGoTemplate_ExecuteToString tests template execution to string
@@ -252,22 +250,22 @@ func (suite *RenderTestSuite) TestGoTemplate_ExecuteToString() {
 
 	// Parse test template
 	err := suite.engine.ParseTemplateString(ctx, "test", suite.testTemplate)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Get template
 	template, err := suite.engine.GetTemplate(ctx, "test")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Create test data
 	invoice := suite.createTestInvoice()
 
 	// Execute template to string
 	output, err := template.ExecuteToString(ctx, invoice)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
-	assert.Contains(suite.T(), output, "Invoice #TEST-001")
-	assert.Contains(suite.T(), output, "Test Client")
-	assert.Contains(suite.T(), output, "1993.75 USD")
+	suite.Contains(output, "Invoice #TEST-001")
+	suite.Contains(output, "Test Client")
+	suite.Contains(output, "1993.75 USD")
 }
 
 // TestGoTemplate_Validate tests template validation
@@ -303,17 +301,17 @@ func (suite *RenderTestSuite) TestGoTemplate_Validate() {
 			err := suite.engine.ParseTemplateString(ctx, tc.name, tc.content)
 
 			if tc.expectError {
-				assert.Error(suite.T(), err)
+				suite.Error(err)
 				return
 			}
 
-			require.NoError(suite.T(), err)
+			suite.Require().NoError(err)
 
 			template, err := suite.engine.GetTemplate(ctx, tc.name)
-			require.NoError(suite.T(), err)
+			suite.Require().NoError(err)
 
 			err = template.Validate(ctx)
-			assert.NoError(suite.T(), err)
+			suite.NoError(err)
 		})
 	}
 }
@@ -324,19 +322,19 @@ func (suite *RenderTestSuite) TestHTMLTemplateEngine_UnloadTemplate() {
 
 	// Parse template
 	err := suite.engine.ParseTemplateString(ctx, "test", suite.testTemplate)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Verify template exists
 	_, err = suite.engine.GetTemplate(ctx, "test")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Unload template
 	err = suite.engine.UnloadTemplate(ctx, "test")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Verify template no longer exists
 	_, err = suite.engine.GetTemplate(ctx, "test")
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 }
 
 // TestHTMLTemplateEngine_ClearCache tests cache clearing
@@ -347,23 +345,23 @@ func (suite *RenderTestSuite) TestHTMLTemplateEngine_ClearCache() {
 	templates := []string{"test1", "test2", "test3"}
 	for _, name := range templates {
 		err := suite.engine.ParseTemplateString(ctx, name, suite.testTemplate)
-		require.NoError(suite.T(), err)
+		suite.Require().NoError(err)
 	}
 
 	// Verify templates exist
 	for _, name := range templates {
 		_, err := suite.engine.GetTemplate(ctx, name)
-		require.NoError(suite.T(), err)
+		suite.Require().NoError(err)
 	}
 
 	// Clear cache
 	err := suite.engine.ClearCache(ctx)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Verify templates no longer exist
 	for _, name := range templates {
 		_, err := suite.engine.GetTemplate(ctx, name)
-		assert.Error(suite.T(), err)
+		suite.Error(err)
 	}
 }
 
@@ -412,16 +410,16 @@ func (suite *RenderTestSuite) TestTemplateFunctions() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			err := suite.engine.ParseTemplateString(ctx, tc.name, tc.template)
-			require.NoError(suite.T(), err)
+			suite.Require().NoError(err)
 
 			template, err := suite.engine.GetTemplate(ctx, tc.name)
-			require.NoError(suite.T(), err)
+			suite.Require().NoError(err)
 
 			output, err := template.ExecuteToString(ctx, tc.data)
-			require.NoError(suite.T(), err)
+			suite.Require().NoError(err)
 
 			for _, expected := range tc.expected {
-				assert.Contains(suite.T(), output, expected)
+				suite.Contains(output, expected)
 			}
 		})
 	}
@@ -429,22 +427,22 @@ func (suite *RenderTestSuite) TestTemplateFunctions() {
 
 // TestContextCancellation tests context cancellation handling
 func (suite *RenderTestSuite) TestContextCancellation() {
-	// Create a cancelled context
+	// Create a canceled context
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	// Test various operations with cancelled context
+	// Test various operations with canceled context
 	err := suite.engine.ParseTemplateString(ctx, "test", suite.testTemplate)
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Error(err)
+	suite.Equal(context.Canceled, err)
 
 	_, err = suite.engine.GetTemplate(ctx, "test")
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Error(err)
+	suite.Equal(context.Canceled, err)
 
 	err = suite.engine.ClearCache(ctx)
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Error(err)
+	suite.Equal(context.Canceled, err)
 }
 
 // TestConcurrentAccess tests concurrent template operations
@@ -453,7 +451,7 @@ func (suite *RenderTestSuite) TestConcurrentAccess() {
 
 	// Parse initial template
 	err := suite.engine.ParseTemplateString(ctx, "test", suite.testTemplate)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Run concurrent operations
 	const numGoroutines = 10
@@ -479,7 +477,7 @@ func (suite *RenderTestSuite) TestConcurrentAccess() {
 	// Check results
 	for i := 0; i < numGoroutines*2; i++ {
 		err := <-errChan
-		assert.NoError(suite.T(), err)
+		suite.NoError(err)
 	}
 }
 

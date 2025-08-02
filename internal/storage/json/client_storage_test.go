@@ -38,7 +38,7 @@ func (suite *ClientStorageTestSuite) SetupTest() {
 
 	// Create temporary directory for tests
 	tempDir, err := os.MkdirTemp("", "client-storage-test-*")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.tempDir = tempDir
 
 	// Create mock logger
@@ -50,7 +50,7 @@ func (suite *ClientStorageTestSuite) SetupTest() {
 
 	// Initialize storage
 	err = jsonStorage.Initialize(suite.ctx)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *ClientStorageTestSuite) TearDownTest() {

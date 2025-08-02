@@ -261,12 +261,12 @@ func (suite *TemplateRendererTestSuite) SetupTest() {
 	// Setup default template (without functions for validation compatibility)
 	testTemplate := `<h1>Invoice {{.Number}}</h1><p>{{.Client.Name}}</p><p>Total: {{.Total}}</p>`
 	err := suite.engine.ParseTemplateString(context.Background(), "default", testTemplate)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Setup template with functions for rendering tests
 	funcTemplate := `<h1>Invoice {{.Number}}</h1><p>{{.Client.Name}}</p><p>{{formatCurrency .Total "USD"}}</p>`
 	err = suite.engine.ParseTemplateString(context.Background(), "with_functions", funcTemplate)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *TemplateRendererTestSuite) TestRenderInvoice_Success() {
@@ -274,7 +274,7 @@ func (suite *TemplateRendererTestSuite) TestRenderInvoice_Success() {
 
 	// Use template with functions for this test
 	result, err := suite.renderer.RenderInvoice(ctx, suite.invoice, "with_functions")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	assert.Contains(suite.T(), result, "Invoice TEST-001")
 	assert.Contains(suite.T(), result, "Test Client")
@@ -286,7 +286,7 @@ func (suite *TemplateRendererTestSuite) TestRenderInvoice_DefaultTemplate() {
 
 	// Test with empty template name - should use default
 	result, err := suite.renderer.RenderInvoice(ctx, suite.invoice, "")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	assert.Contains(suite.T(), result, "Invoice TEST-001")
 }
@@ -295,7 +295,7 @@ func (suite *TemplateRendererTestSuite) TestRenderInvoice_TemplateNotFound() {
 	ctx := context.Background()
 
 	_, err := suite.renderer.RenderInvoice(ctx, suite.invoice, "nonexistent")
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Contains(suite.T(), err.Error(), "failed to get template")
 }
 
@@ -306,7 +306,7 @@ func (suite *TemplateRendererTestSuite) TestRenderInvoice_SecurityValidationErro
 	suite.validator.SetDataError(true)
 
 	_, err := suite.renderer.RenderInvoice(ctx, suite.invoice, "default")
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Contains(suite.T(), err.Error(), "data validation failed")
 }
 
@@ -318,7 +318,7 @@ func (suite *TemplateRendererTestSuite) TestRenderInvoice_SecurityDisabled() {
 	suite.validator.SetDataError(true) // This should be ignored
 
 	result, err := suite.renderer.RenderInvoice(ctx, suite.invoice, "default")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	assert.Contains(suite.T(), result, "Invoice TEST-001")
 }
 
@@ -327,8 +327,8 @@ func (suite *TemplateRendererTestSuite) TestRenderInvoice_ContextCancellation() 
 	cancel()
 
 	_, err := suite.renderer.RenderInvoice(ctx, suite.invoice, "default")
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Error(err)
+	suite.Equal(context.Canceled, err)
 }
 
 func (suite *TemplateRendererTestSuite) TestRenderInvoice_Timeout() {
@@ -341,7 +341,7 @@ func (suite *TemplateRendererTestSuite) TestRenderInvoice_Timeout() {
 	suite.validator.SetValidationDelay(10 * time.Millisecond)
 
 	_, err := suite.renderer.RenderInvoice(ctx, suite.invoice, "default")
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	// Error should be related to context timeout, not cancellation
 }
 
@@ -351,7 +351,7 @@ func (suite *TemplateRendererTestSuite) TestRenderInvoiceToWriter_Success() {
 
 	// Use simple template without functions
 	err := suite.renderer.RenderInvoiceToWriter(ctx, suite.invoice, "default", &buf)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	result := buf.String()
 	assert.Contains(suite.T(), result, "Invoice TEST-001")
@@ -363,7 +363,7 @@ func (suite *TemplateRendererTestSuite) TestRenderInvoiceToWriter_TemplateNotFou
 	var buf bytes.Buffer
 
 	err := suite.renderer.RenderInvoiceToWriter(ctx, suite.invoice, "nonexistent", &buf)
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Contains(suite.T(), err.Error(), "failed to get template")
 }
 
@@ -371,14 +371,14 @@ func (suite *TemplateRendererTestSuite) TestValidateTemplate_Success() {
 	ctx := context.Background()
 
 	err := suite.renderer.ValidateTemplate(ctx, "default")
-	assert.NoError(suite.T(), err)
+	suite.NoError(err)
 }
 
 func (suite *TemplateRendererTestSuite) TestValidateTemplate_NotFound() {
 	ctx := context.Background()
 
 	err := suite.renderer.ValidateTemplate(ctx, "nonexistent")
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Contains(suite.T(), err.Error(), "failed to get template")
 }
 
@@ -386,7 +386,7 @@ func (suite *TemplateRendererTestSuite) TestListAvailableTemplates() {
 	ctx := context.Background()
 
 	templates, err := suite.renderer.ListAvailableTemplates(ctx)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Should return built-in templates
 	expected := []string{"default", "professional", "minimal"}
@@ -397,17 +397,17 @@ func (suite *TemplateRendererTestSuite) TestGetTemplateInfo() {
 	ctx := context.Background()
 
 	info, err := suite.renderer.GetTemplateInfo(ctx, "default")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	assert.Equal(suite.T(), "default", info.Name)
-	assert.True(suite.T(), info.SizeBytes > 0)
+	suite.Positive(info.SizeBytes)
 }
 
 func (suite *TemplateRendererTestSuite) TestGetTemplateInfo_NotFound() {
 	ctx := context.Background()
 
 	_, err := suite.renderer.GetTemplateInfo(ctx, "nonexistent")
-	assert.Error(suite.T(), err)
+	suite.Error(err)
 	assert.Contains(suite.T(), err.Error(), "failed to get template")
 }
 
@@ -416,11 +416,11 @@ func (suite *TemplateRendererTestSuite) TestCacheIntegration() {
 
 	// First call should load template and cache it
 	_, err := suite.renderer.RenderInvoice(ctx, suite.invoice, "default")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Check cache stats
 	stats, err := suite.cache.GetStats(ctx)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Should have at least one cache operation
 	assert.True(suite.T(), stats.HitCount > 0 || stats.MissCount > 0)
@@ -429,12 +429,12 @@ func (suite *TemplateRendererTestSuite) TestCacheIntegration() {
 func (suite *TemplateRendererTestSuite) TestNewTemplateRenderer_DefaultOptions() {
 	renderer := NewTemplateRenderer(suite.engine, suite.cache, suite.validator, suite.logger, nil)
 
-	assert.NotNil(suite.T(), renderer.options)
+	suite.NotNil(renderer.options)
 	assert.Equal(suite.T(), "templates", renderer.options.TemplateDir)
 	assert.Equal(suite.T(), 100, renderer.options.CacheSize)
 	assert.Equal(suite.T(), 30*time.Minute, renderer.options.CacheExpiry)
 	assert.True(suite.T(), renderer.options.EnableSecurity)
-	assert.False(suite.T(), renderer.options.EnableCompression)
+	suite.False(renderer.options.EnableCompression)
 	assert.Equal(suite.T(), "default", renderer.options.DefaultTemplate)
 	assert.Equal(suite.T(), 30*time.Second, renderer.options.MaxRenderTime)
 }

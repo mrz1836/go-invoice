@@ -410,7 +410,7 @@ func (suite *CalculatorTestSuite) TestContextCancellation() {
 
 	// Test that canceled context is handled properly
 	_, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Equal(context.Canceled, err)
 }
 

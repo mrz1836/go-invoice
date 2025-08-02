@@ -167,9 +167,9 @@ func (suite *InvoiceTestSuite) TestNewInvoice() {
 				assert.Equal(t, StatusDraft, invoice.Status)
 				assert.InEpsilon(t, tt.taxRate, invoice.TaxRate, 1e-9)
 				assert.Empty(t, invoice.WorkItems)
-				assert.Equal(t, 0.0, invoice.Subtotal)
-				assert.Equal(t, 0.0, invoice.TaxAmount)
-				assert.Equal(t, 0.0, invoice.Total)
+				assert.InDelta(t, 0.0, invoice.Subtotal, 1e-9)
+				assert.InDelta(t, 0.0, invoice.TaxAmount, 1e-9)
+				assert.InDelta(t, 0.0, invoice.Total, 1e-9)
 				assert.Equal(t, 1, invoice.Version)
 			}
 		})

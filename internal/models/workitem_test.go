@@ -585,7 +585,7 @@ func (suite *WorkItemTestSuite) TestContextCancellation() {
 		CreatedAt:   time.Now(),
 	}
 
-	// Test all update methods with cancelled context
+	// Test all update methods with canceled context
 	err := workItem.UpdateHours(ctx, 10.0)
 	assert.Equal(t, context.Canceled, err)
 
@@ -595,7 +595,7 @@ func (suite *WorkItemTestSuite) TestContextCancellation() {
 	err = workItem.UpdateDescription(ctx, "Updated description")
 	assert.Equal(t, context.Canceled, err)
 
-	// Validate with cancelled context
+	// Validate with canceled context
 	err = workItem.Validate(ctx)
 	assert.Equal(t, context.Canceled, err)
 }

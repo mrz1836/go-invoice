@@ -5,8 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -95,15 +93,15 @@ invalid-date,8.0,100.0,Bad date
 
 			if tt.hasError {
 				// Should not error if continue on error is true
-				require.NoError(suite.T(), err)
-				suite.Positive(len(result.Errors), "should have parsing errors")
+				suite.Require().NoError(err)
+				suite.NotEmpty(result.Errors, "should have parsing errors")
 			} else {
-				require.NoError(suite.T(), err)
+				suite.Require().NoError(err)
 				suite.Empty(result.Errors, "should have no errors")
 			}
 
 			suite.Len(result.WorkItems, tt.expected)
-			assert.Equal(suite.T(), len(result.WorkItems), result.SuccessRows)
+			suite.Equal(len(result.WorkItems), result.SuccessRows)
 		})
 	}
 }
@@ -146,9 +144,9 @@ func (suite *CSVIntegrationTestSuite) TestFormatDetectionIntegration() {
 
 			// First detect format
 			formatInfo, err := suite.parser.DetectFormat(ctx, reader)
-			require.NoError(suite.T(), err)
-			assert.Equal(suite.T(), tt.expectFmt, formatInfo.Name)
-			assert.Equal(suite.T(), tt.expectDel, formatInfo.Delimiter)
+			suite.Require().NoError(err)
+			suite.Equal(tt.expectFmt, formatInfo.Name)
+			suite.Equal(tt.expectDel, formatInfo.Delimiter)
 
 			// Reset reader and parse with detected format
 			reader = strings.NewReader(tt.csvData)
@@ -158,9 +156,9 @@ func (suite *CSVIntegrationTestSuite) TestFormatDetectionIntegration() {
 			}
 
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
-			require.NoError(suite.T(), err)
+			suite.Require().NoError(err)
 			suite.Len(result.WorkItems, 1)
-			assert.Equal(suite.T(), formatInfo.Name, result.Format)
+			suite.Equal(formatInfo.Name, result.Format)
 		})
 	}
 }
@@ -179,20 +177,20 @@ func (suite *CSVIntegrationTestSuite) TestErrorHandlingIntegration() {
 		options := ParseOptions{ContinueOnError: true}
 
 		result, err := suite.parser.ParseTimesheet(ctx, reader, options)
-		require.NoError(suite.T(), err)
+		suite.Require().NoError(err)
 
 		// Should have 1 valid work item
 		suite.Len(result.WorkItems, 1)
-		assert.Equal(suite.T(), 4, result.TotalRows)
-		assert.Equal(suite.T(), 1, result.SuccessRows)
-		assert.Equal(suite.T(), 3, result.ErrorRows)
+		suite.Equal(4, result.TotalRows)
+		suite.Equal(1, result.SuccessRows)
+		suite.Equal(3, result.ErrorRows)
 		suite.Len(result.Errors, 3)
 
 		// Check error details
 		errors := result.Errors
-		assert.Contains(suite.T(), errors[0].Message, "hours")
-		assert.Contains(suite.T(), errors[1].Message, "hours")
-		assert.Contains(suite.T(), errors[2].Message, "rate")
+		suite.Contains(errors[0].Message, "hours")
+		suite.Contains(errors[1].Message, "hours")
+		suite.Contains(errors[2].Message, "rate")
 	})
 
 	suite.Run("ValidationErrorsWithoutContinue", func() {
@@ -206,7 +204,7 @@ func (suite *CSVIntegrationTestSuite) TestErrorHandlingIntegration() {
 
 		result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 		suite.Require().Error(err)
-		assert.Contains(suite.T(), err.Error(), "hours")
+		suite.Contains(err.Error(), "hours")
 
 		// Result may be nil when error occurs early
 		if result != nil {
@@ -228,7 +226,7 @@ func (suite *CSVIntegrationTestSuite) TestComplexDataScenarios() {
 		options := ParseOptions{ContinueOnError: true}
 
 		result, err := suite.parser.ParseTimesheet(ctx, reader, options)
-		require.NoError(suite.T(), err)
+		suite.Require().NoError(err)
 
 		// All should parse successfully with auto-detection (fixed EU format to use /)
 		suite.Len(result.WorkItems, 3)
@@ -245,7 +243,7 @@ func (suite *CSVIntegrationTestSuite) TestComplexDataScenarios() {
 		options := ParseOptions{}
 
 		result, err := suite.parser.ParseTimesheet(ctx, reader, options)
-		require.NoError(suite.T(), err)
+		suite.Require().NoError(err)
 
 		suite.Len(result.WorkItems, 2)
 		suite.Equal("Work with, comma", result.WorkItems[0].Description)
@@ -262,10 +260,10 @@ func (suite *CSVIntegrationTestSuite) TestComplexDataScenarios() {
 		options := ParseOptions{}
 
 		result, err := suite.parser.ParseTimesheet(ctx, reader, options)
-		require.NoError(suite.T(), err)
+		suite.Require().NoError(err)
 
 		suite.Len(result.WorkItems, 2)
-		assert.Equal(suite.T(), 2, result.SuccessRows)
+		suite.Equal(2, result.SuccessRows)
 	})
 }
 
@@ -289,8 +287,8 @@ func (suite *CSVIntegrationTestSuite) TestContextCancellation() {
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 	// Should be canceled
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), context.Canceled, err)
+	suite.Error(err)
+	suite.Equal(context.Canceled, err)
 
 	// Result may be nil when canceled early
 	if result != nil {
@@ -312,11 +310,11 @@ func (suite *CSVIntegrationTestSuite) TestLargeFileHandling() {
 	options := ParseOptions{}
 
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	suite.Len(result.WorkItems, 1000)
-	assert.Equal(suite.T(), 1000, result.SuccessRows)
-	assert.Equal(suite.T(), 1000, result.TotalRows)
+	suite.Equal(1000, result.SuccessRows)
+	suite.Equal(1000, result.TotalRows)
 	suite.Empty(result.Errors)
 }
 
@@ -365,7 +363,7 @@ func (suite *CSVIntegrationTestSuite) TestHeaderVariations() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.valid {
-				require.NoError(suite.T(), err)
+				suite.Require().NoError(err)
 				suite.Len(result.WorkItems, 1)
 			} else {
 				suite.Require().Error(err)
