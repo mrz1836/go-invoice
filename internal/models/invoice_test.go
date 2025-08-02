@@ -165,7 +165,7 @@ func (suite *InvoiceTestSuite) TestNewInvoice() {
 				assert.Equal(t, tt.id, invoice.ID)
 				assert.Equal(t, tt.number, invoice.Number)
 				assert.Equal(t, StatusDraft, invoice.Status)
-				assert.InEpsilon(t, tt.taxRate, invoice.TaxRate, 1e-9)
+				assert.InDelta(t, tt.taxRate, invoice.TaxRate, 1e-9)
 				assert.Empty(t, invoice.WorkItems)
 				assert.InDelta(t, 0.0, invoice.Subtotal, 1e-9)
 				assert.InDelta(t, 0.0, invoice.TaxAmount, 1e-9)
@@ -398,9 +398,9 @@ func (suite *InvoiceTestSuite) TestAddWorkItem() {
 	require.NoError(t, err)
 
 	assert.Len(t, invoice.WorkItems, 1)
-	assert.Equal(t, 800.0, invoice.Subtotal)
-	assert.Equal(t, 80.0, invoice.TaxAmount)
-	assert.Equal(t, 880.0, invoice.Total)
+	assert.InDelta(t, 800.0, invoice.Subtotal, 1e-9)
+	assert.InDelta(t, 80.0, invoice.TaxAmount, 1e-9)
+	assert.InDelta(t, 880.0, invoice.Total, 1e-9)
 	assert.Equal(t, 2, invoice.Version)
 
 	// Add another work item
@@ -418,9 +418,9 @@ func (suite *InvoiceTestSuite) TestAddWorkItem() {
 	require.NoError(t, err)
 
 	assert.Len(t, invoice.WorkItems, 2)
-	assert.Equal(t, 1400.0, invoice.Subtotal)
-	assert.Equal(t, 140.0, invoice.TaxAmount)
-	assert.Equal(t, 1540.0, invoice.Total)
+	assert.InDelta(t, 1400.0, invoice.Subtotal, 1e-9)
+	assert.InDelta(t, 140.0, invoice.TaxAmount, 1e-9)
+	assert.InDelta(t, 1540.0, invoice.Total, 1e-9)
 	assert.Equal(t, 3, invoice.Version)
 }
 
@@ -498,9 +498,9 @@ func (suite *InvoiceTestSuite) TestRemoveWorkItem() {
 
 	assert.Len(t, invoice.WorkItems, 1)
 	assert.Equal(t, "ITEM-002", invoice.WorkItems[0].ID)
-	assert.Equal(t, 600.0, invoice.Subtotal)
-	assert.Equal(t, 60.0, invoice.TaxAmount)
-	assert.Equal(t, 660.0, invoice.Total)
+	assert.InDelta(t, 600.0, invoice.Subtotal, 1e-9)
+	assert.InDelta(t, 60.0, invoice.TaxAmount, 1e-9)
+	assert.InDelta(t, 660.0, invoice.Total, 1e-9)
 	assert.Equal(t, 2, invoice.Version)
 
 	// Try to remove non-existent item
@@ -585,9 +585,9 @@ func (suite *InvoiceTestSuite) TestRecalculateTotals() {
 			err := invoice.RecalculateTotals(suite.ctx)
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.expectedSubtotal, invoice.Subtotal)
-			assert.Equal(t, tt.expectedTax, invoice.TaxAmount)
-			assert.Equal(t, tt.expectedTotal, invoice.Total)
+			assert.InDelta(t, tt.expectedSubtotal, invoice.Subtotal, 1e-9)
+			assert.InDelta(t, tt.expectedTax, invoice.TaxAmount, 1e-9)
+			assert.InDelta(t, tt.expectedTotal, invoice.Total, 1e-9)
 		})
 	}
 }

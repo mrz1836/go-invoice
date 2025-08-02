@@ -156,7 +156,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetContextCancellation() {
 
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Equal(context.Canceled, err)
 	suite.Nil(result)
 }
@@ -169,7 +169,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetEmptyCSV() {
 	ctx := context.Background()
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Contains(err.Error(), "CSV file is empty")
 	suite.Nil(result)
 }
@@ -188,7 +188,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetInvalidCSV() {
 	ctx := context.Background()
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Contains(err.Error(), "parsing failed at line 2")
 	suite.Nil(result)
 }
@@ -242,7 +242,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetValidationError() {
 	ctx := context.Background()
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Contains(err.Error(), "validation failed at line 2")
 	suite.Nil(result)
 }
@@ -331,7 +331,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetHeaderVariations() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.wantErr {
-				suite.Error(err)
+				suite.Require().Error(err)
 				suite.Nil(result)
 			} else {
 				suite.Require().NoError(err)
@@ -391,7 +391,7 @@ func (suite *CSVParserTestSuite) TestDetectFormatContextCancellation() {
 
 	format, err := suite.parser.DetectFormat(ctx, reader)
 
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Equal(context.Canceled, err)
 	suite.Nil(format)
 }
@@ -403,7 +403,7 @@ func (suite *CSVParserTestSuite) TestDetectFormatEmptyFile() {
 
 	format, err := suite.parser.DetectFormat(ctx, reader)
 
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Contains(err.Error(), "cannot detect format of empty file")
 	suite.Nil(format)
 }
@@ -415,7 +415,7 @@ func (suite *CSVParserTestSuite) TestValidateFormat() {
 	ctx := context.Background()
 
 	err := suite.parser.ValidateFormat(ctx, reader)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateFormatContextCancellation tests format validation with context cancellation
@@ -426,7 +426,7 @@ func (suite *CSVParserTestSuite) TestValidateFormatContextCancellation() {
 
 	err := suite.parser.ValidateFormat(ctx, reader)
 
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Equal(context.Canceled, err)
 }
 
@@ -452,10 +452,10 @@ func (suite *CSVParserTestSuite) TestParseDateFormats() {
 			date, err := suite.parser.parseDate(tt.dateStr)
 
 			if tt.expectError {
-				suite.Error(err)
+				suite.Require().Error(err)
 				suite.True(date.IsZero())
 			} else {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 				suite.False(date.IsZero())
 			}
 		})

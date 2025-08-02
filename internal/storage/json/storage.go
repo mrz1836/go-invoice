@@ -510,13 +510,17 @@ func (s *JSONStorage) writeJSONFile(ctx context.Context, path string, data inter
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(data); err != nil {
-		os.Remove(tempPath)
+		if removeErr := os.Remove(tempPath); removeErr != nil {
+			s.logger.Error("failed to remove temp file", "path", tempPath, "error", removeErr)
+		}
 		return fmt.Errorf("failed to encode JSON: %w", err)
 	}
 
 	// Sync to disk
 	if err := file.Sync(); err != nil {
-		os.Remove(tempPath)
+		if removeErr := os.Remove(tempPath); removeErr != nil {
+			s.logger.Error("failed to remove temp file", "path", tempPath, "error", removeErr)
+		}
 		return fmt.Errorf("failed to sync file: %w", err)
 	}
 
@@ -524,7 +528,9 @@ func (s *JSONStorage) writeJSONFile(ctx context.Context, path string, data inter
 
 	// Atomic rename
 	if err := os.Rename(tempPath, path); err != nil {
-		os.Remove(tempPath)
+		if removeErr := os.Remove(tempPath); removeErr != nil {
+			s.logger.Error("failed to remove temp file", "path", tempPath, "error", removeErr)
+		}
 		return fmt.Errorf("failed to rename temp file: %w", err)
 	}
 

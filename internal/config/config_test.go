@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -126,7 +127,7 @@ func (suite *ConfigTestSuite) TestLoadConfigFromEnv() {
 
 			// Set test environment variables
 			for key, value := range tt.envVars {
-				os.Setenv(key, value)
+				require.NoError(suite.T(), os.Setenv(key, value))
 			}
 
 			ctx := context.Background()
@@ -278,8 +279,8 @@ func (suite *ConfigTestSuite) TestValidateConfig() {
 // TestEnvHelperFunctions tests the environment variable helper functions
 func (suite *ConfigTestSuite) TestEnvHelperFunctions() {
 	suite.Run("getEnvInt", func() {
-		os.Setenv("TEST_INT", "42")
-		defer os.Unsetenv("TEST_INT")
+		require.NoError(suite.T(), os.Setenv("TEST_INT", "42"))
+		defer func() { require.NoError(suite.T(), os.Unsetenv("TEST_INT")) }()
 
 		result := getEnvInt("TEST_INT", 10)
 		suite.Equal(42, result)
@@ -289,8 +290,8 @@ func (suite *ConfigTestSuite) TestEnvHelperFunctions() {
 	})
 
 	suite.Run("getEnvFloat", func() {
-		os.Setenv("TEST_FLOAT", "3.14")
-		defer os.Unsetenv("TEST_FLOAT")
+		require.NoError(suite.T(), os.Setenv("TEST_FLOAT", "3.14"))
+		defer func() { require.NoError(suite.T(), os.Unsetenv("TEST_FLOAT")) }()
 
 		result := getEnvFloat("TEST_FLOAT", 1.0)
 		suite.InEpsilon(3.14, result, 1e-9)
@@ -300,8 +301,8 @@ func (suite *ConfigTestSuite) TestEnvHelperFunctions() {
 	})
 
 	suite.Run("getEnvBool", func() {
-		os.Setenv("TEST_BOOL", "true")
-		defer os.Unsetenv("TEST_BOOL")
+		require.NoError(suite.T(), os.Setenv("TEST_BOOL", "true"))
+		defer func() { require.NoError(suite.T(), os.Unsetenv("TEST_BOOL")) }()
 
 		result := getEnvBool("TEST_BOOL", false)
 		suite.True(result)

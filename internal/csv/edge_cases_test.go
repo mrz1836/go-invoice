@@ -94,9 +94,9 @@ func (suite *CSVEdgeCasesTestSuite) TestMalformedCSVData() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.expectError {
-				suite.Error(err)
+				suite.Require().Error(err)
 			} else {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			}
 
 			if result != nil {
@@ -165,7 +165,7 @@ func (suite *CSVEdgeCasesTestSuite) TestDateFormatEdgeCases() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.valid {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 				if result != nil {
 					suite.Len(result.WorkItems, 1)
 					suite.Empty(result.Errors)
@@ -241,7 +241,7 @@ func (suite *CSVEdgeCasesTestSuite) TestNumericFieldEdgeCases() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.expectValid {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 				if result != nil {
 					suite.Len(result.WorkItems, 1)
 					suite.Empty(result.Errors)
@@ -298,7 +298,7 @@ func (suite *CSVEdgeCasesTestSuite) TestFloatingPointPrecision() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.valid {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 				suite.Len(result.WorkItems, 1)
 				suite.Empty(result.Errors)
 			} else {
@@ -350,7 +350,7 @@ func (suite *CSVEdgeCasesTestSuite) TestDescriptionEdgeCases() {
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 			if tt.valid {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 				suite.Len(result.WorkItems, 1)
 				suite.Empty(result.Errors)
 			} else {
@@ -410,9 +410,9 @@ func (suite *CSVEdgeCasesTestSuite) TestFormatDetectionEdgeCases() {
 			formatInfo, err := suite.parser.DetectFormat(ctx, reader)
 
 			if tt.expectError {
-				suite.Error(err)
+				suite.Require().Error(err)
 			} else {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 				suite.Equal(tt.expectFmt, formatInfo.Name)
 			}
 		})
@@ -445,7 +445,7 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 		suite.Require().NoError(err)
 
 		err = suite.validator.ValidateWorkItem(ctx, weekendWork)
-		suite.Error(err)
+		suite.Require().Error(err)
 		suite.Contains(err.Error(), "weekends")
 
 		// Test weekday work (should pass)
@@ -453,14 +453,14 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 		suite.Require().NoError(err)
 
 		err = suite.validator.ValidateWorkItem(ctx, weekdayWork)
-		suite.NoError(err)
+		suite.Require().NoError(err)
 
 		// Remove the rule
 		suite.validator.RemoveRule("no_weekends")
 
 		// Weekend work should now pass
 		err = suite.validator.ValidateWorkItem(ctx, weekendWork)
-		suite.NoError(err)
+		suite.Require().NoError(err)
 	})
 
 	suite.Run("BatchValidationConsistency", func() {
@@ -531,7 +531,7 @@ func (suite *CSVEdgeCasesTestSuite) TestMemoryAndPerformance() {
 		options := ParseOptions{}
 
 		result, err := suite.parser.ParseTimesheet(ctx, reader, options)
-		suite.NoError(err)
+		suite.Require().NoError(err)
 		suite.Len(result.WorkItems, 100)
 		suite.Equal(100, result.SuccessRows)
 	})

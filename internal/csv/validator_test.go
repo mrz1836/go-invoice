@@ -40,7 +40,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemSuccess() {
 	suite.Require().NoError(err)
 
 	err = suite.validator.ValidateWorkItem(ctx, workItem)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateWorkItemContextCancellation tests context cancellation
@@ -52,7 +52,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemContextCancellation
 	cancel() // Cancel immediately
 
 	err = suite.validator.ValidateWorkItem(ctx, workItem)
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Equal(context.Canceled, err)
 }
 
@@ -60,7 +60,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemContextCancellation
 func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemNil() {
 	ctx := context.Background()
 	err := suite.validator.ValidateWorkItem(ctx, nil)
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Contains(err.Error(), "work item cannot be nil")
 }
 
@@ -128,12 +128,12 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemDateValidation() {
 			err := suite.validator.ValidateWorkItem(ctx, workItem)
 
 			if tt.wantErr {
-				suite.Error(err)
+				suite.Require().Error(err)
 				if tt.errMsg != "" {
 					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			}
 		})
 	}
@@ -199,12 +199,12 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemHoursValidation() {
 			err := suite.validator.ValidateWorkItem(ctx, workItem)
 
 			if tt.wantErr {
-				suite.Error(err)
+				suite.Require().Error(err)
 				if tt.errMsg != "" {
 					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			}
 		})
 	}
@@ -270,12 +270,12 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemRateValidation() {
 			err := suite.validator.ValidateWorkItem(ctx, workItem)
 
 			if tt.wantErr {
-				suite.Error(err)
+				suite.Require().Error(err)
 				if tt.errMsg != "" {
 					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			}
 		})
 	}
@@ -348,12 +348,12 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemDescriptionValidati
 			err := suite.validator.ValidateWorkItem(ctx, workItem)
 
 			if tt.wantErr {
-				suite.Error(err)
+				suite.Require().Error(err)
 				if tt.errMsg != "" {
 					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			}
 		})
 	}
@@ -417,12 +417,12 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemTotalValidation() {
 			err := suite.validator.ValidateWorkItem(ctx, workItem)
 
 			if tt.wantErr {
-				suite.Error(err)
+				suite.Require().Error(err)
 				if tt.errMsg != "" {
 					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			}
 		})
 	}
@@ -434,7 +434,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateRowSuccess() {
 	row := []string{"2024-01-15", "8.0", "100.00", "Development work"}
 
 	err := suite.validator.ValidateRow(ctx, row, 1)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateRowContextCancellation tests row validation with context cancellation
@@ -444,7 +444,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateRowContextCancellation() {
 	cancel() // Cancel immediately
 
 	err := suite.validator.ValidateRow(ctx, row, 1)
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Equal(context.Canceled, err)
 }
 
@@ -483,13 +483,13 @@ func (suite *WorkItemValidatorTestSuite) TestValidateRowErrors() {
 			name:    "TooFewFields",
 			row:     []string{"2024-01-15", "8.0"},
 			wantErr: true,
-			errMsg:  "row has 2 fields, expected at least 4",
+			errMsg:  "has 2 fields, expected at least 4",
 		},
 		{
 			name:    "TooManyFields",
 			row:     append([]string{"2024-01-15", "8.0", "100.00", "Development work"}, make([]string, 21)...), // 25 fields total
 			wantErr: true,
-			errMsg:  "row has 25 fields, which seems excessive",
+			errMsg:  "has 25 fields, which seems excessive",
 		},
 	}
 
@@ -499,12 +499,12 @@ func (suite *WorkItemValidatorTestSuite) TestValidateRowErrors() {
 			err := suite.validator.ValidateRow(ctx, tt.row, 1)
 
 			if tt.wantErr {
-				suite.Error(err)
+				suite.Require().Error(err)
 				if tt.errMsg != "" {
 					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			}
 		})
 	}
@@ -535,7 +535,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchSuccess() {
 	}
 
 	err := suite.validator.ValidateBatch(ctx, workItems)
-	suite.NoError(err)
+	suite.Require().NoError(err)
 }
 
 // TestValidateBatchContextCancellation tests batch validation with context cancellation
@@ -556,7 +556,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchContextCancellation() 
 	cancel() // Cancel immediately
 
 	err := suite.validator.ValidateBatch(ctx, workItems)
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Equal(context.Canceled, err)
 }
 
@@ -614,12 +614,12 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchErrors() {
 			err := suite.validator.ValidateBatch(ctx, tt.workItems)
 
 			if tt.wantErr {
-				suite.Error(err)
+				suite.Require().Error(err)
 				if tt.errMsg != "" {
 					suite.Contains(err.Error(), tt.errMsg)
 				}
 			} else {
-				suite.NoError(err)
+				suite.Require().NoError(err)
 			}
 		})
 	}
@@ -654,8 +654,8 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchDateRange() {
 	}
 
 	err := suite.validator.ValidateBatch(ctx, workItems)
-	suite.Error(err)
-	assert.Contains(suite.T(), err.Error(), "date range is too large")
+	suite.Require().Error(err)
+	suite.Contains(err.Error(), "date range is too large")
 }
 
 // TestCustomRules tests adding and removing custom validation rules
@@ -687,8 +687,8 @@ func (suite *WorkItemValidatorTestSuite) TestCustomRules() {
 	}
 
 	err := suite.validator.ValidateWorkItem(ctx, workItem)
-	suite.Error(err)
-	assert.Contains(suite.T(), err.Error(), "CustomTest")
+	suite.Require().Error(err)
+	suite.Contains(err.Error(), "CustomTest")
 
 	// Remove the custom rule
 	removed := suite.validator.RemoveRule("CustomTest")
@@ -696,7 +696,7 @@ func (suite *WorkItemValidatorTestSuite) TestCustomRules() {
 
 	// Test that the rule is no longer applied
 	err = suite.validator.ValidateWorkItem(ctx, workItem)
-	suite.NoError(err) // Should pass now since custom rule is removed
+	suite.Require().NoError(err) // Should pass now since custom rule is removed
 
 	// Try to remove non-existent rule
 	removed = suite.validator.RemoveRule("NonExistent")
@@ -774,7 +774,7 @@ func (suite *WorkItemValidatorTestSuite) TestHighHoursWarning() {
 	}
 
 	err := suite.validator.ValidateWorkItem(ctx, workItem)
-	suite.NoError(err) // Should still pass validation
+	suite.Require().NoError(err) // Should still pass validation
 
 	// Check that warning was logged
 	var foundWarning bool
@@ -801,7 +801,7 @@ func (suite *WorkItemValidatorTestSuite) TestHighRateWarning() {
 	}
 
 	err := suite.validator.ValidateWorkItem(ctx, workItem)
-	suite.NoError(err) // Should still pass validation
+	suite.Require().NoError(err) // Should still pass validation
 
 	// Check that warning was logged
 	var foundWarning bool
@@ -811,7 +811,7 @@ func (suite *WorkItemValidatorTestSuite) TestHighRateWarning() {
 			break
 		}
 	}
-	assert.True(suite.T(), foundWarning, "Expected to find high rate warning")
+	suite.True(foundWarning, "Expected to find high rate warning")
 }
 
 // TestWorkItemValidatorTestSuite runs the work item validator test suite

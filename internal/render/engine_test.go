@@ -433,11 +433,11 @@ func (suite *RenderTestSuite) TestContextCancellation() {
 
 	// Test various operations with canceled context
 	err := suite.engine.ParseTemplateString(ctx, "test", suite.testTemplate)
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Equal(context.Canceled, err)
 
 	_, err = suite.engine.GetTemplate(ctx, "test")
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Equal(context.Canceled, err)
 
 	err = suite.engine.ClearCache(ctx)

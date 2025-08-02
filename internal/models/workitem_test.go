@@ -158,10 +158,10 @@ func (suite *WorkItemTestSuite) TestNewWorkItem() {
 				require.NotNil(t, item)
 				assert.Equal(t, tt.id, item.ID)
 				assert.Equal(t, tt.date.Truncate(time.Second), item.Date.Truncate(time.Second))
-				assert.Equal(t, tt.hours, item.Hours)
-				assert.Equal(t, tt.rate, item.Rate)
+				assert.InDelta(t, tt.hours, item.Hours, 1e-9)
+				assert.InDelta(t, tt.rate, item.Rate, 1e-9)
 				assert.Equal(t, tt.description, item.Description)
-				assert.Equal(t, tt.expectedTotal, item.Total)
+				assert.InDelta(t, tt.expectedTotal, item.Total, 1e-9)
 				assert.False(t, item.CreatedAt.IsZero())
 			}
 		})
@@ -399,12 +399,12 @@ func (suite *WorkItemTestSuite) TestUpdateHours() {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
 				// Values should remain unchanged
-				assert.Equal(t, 8.0, workItem.Hours)
-				assert.Equal(t, 800.0, workItem.Total)
+				assert.InDelta(t, 8.0, workItem.Hours, 1e-9)
+				assert.InDelta(t, 800.0, workItem.Total, 1e-9)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tt.newHours, workItem.Hours)
-				assert.Equal(t, tt.expectedTotal, workItem.Total)
+				assert.InDelta(t, tt.newHours, workItem.Hours, 1e-9)
+				assert.InDelta(t, tt.expectedTotal, workItem.Total, 1e-9)
 			}
 		})
 	}

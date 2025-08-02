@@ -78,7 +78,7 @@ func (suite *JSONStorageTestSuite) SetupTest() {
 
 	// Create temporary directory for tests
 	tempDir, err := os.MkdirTemp("", "json-storage-test-*")
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	suite.tempDir = tempDir
 
 	// Create mock logger
@@ -93,7 +93,9 @@ func (suite *JSONStorageTestSuite) TearDownTest() {
 
 	// Clean up temporary directory
 	if suite.tempDir != "" {
-		os.RemoveAll(suite.tempDir)
+		if err := os.RemoveAll(suite.tempDir); err != nil {
+			suite.T().Logf("Failed to clean up temp directory: %v", err)
+		}
 	}
 }
 
@@ -1149,7 +1151,11 @@ func (suite *JSONStorageTestSuite) TestWriteJSONFileError() {
 	// Make invoices directory read-only
 	err = os.Chmod(suite.storage.invoicesDir, 0o400)
 	require.NoError(t, err)
-	defer os.Chmod(suite.storage.invoicesDir, 0o750) // Restore permissions
+	defer func() {
+		if chmodErr := os.Chmod(suite.storage.invoicesDir, 0o750); chmodErr != nil {
+			suite.T().Logf("Failed to restore directory permissions: %v", chmodErr)
+		}
+	}() // Restore permissions
 
 	// Try to create invoice
 	invoice := &models.Invoice{

@@ -12,14 +12,28 @@ import (
 
 // CSV validation errors
 var (
-	ErrWorkItemNil      = fmt.Errorf("work item cannot be nil")
-	ErrRowEmpty         = fmt.Errorf("row is empty")
-	ErrRowNoData        = fmt.Errorf("row contains no data")
-	ErrNoWorkItems      = fmt.Errorf("no work items to validate")
-	ErrWorkDateEmpty    = fmt.Errorf("work date cannot be empty")
-	ErrWorkDateFuture   = fmt.Errorf("work date is too far in the future")
-	ErrWorkDatePast     = fmt.Errorf("work date is too far in the past")
-	ErrHoursNotPositive = fmt.Errorf("hours must be positive")
+	ErrWorkItemNil         = fmt.Errorf("work item cannot be nil")
+	ErrRowEmpty            = fmt.Errorf("row is empty")
+	ErrRowNoData           = fmt.Errorf("row contains no data")
+	ErrNoWorkItems         = fmt.Errorf("no work items to validate")
+	ErrWorkDateEmpty       = fmt.Errorf("work date cannot be empty")
+	ErrWorkDateFuture      = fmt.Errorf("work date is too far in the future")
+	ErrWorkDatePast        = fmt.Errorf("work date is too far in the past")
+	ErrHoursNotPositive    = fmt.Errorf("hours must be positive")
+	ErrHoursTooHigh        = fmt.Errorf("hours cannot exceed 24 per day")
+	ErrHoursPrecision      = fmt.Errorf("hours should not have more than 2 decimal places")
+	ErrRateNotPositive     = fmt.Errorf("hourly rate must be positive")
+	ErrRateTooLow          = fmt.Errorf("hourly rate seems too low")
+	ErrRateTooHigh         = fmt.Errorf("hourly rate seems too high")
+	ErrDescriptionEmpty    = fmt.Errorf("work description cannot be empty")
+	ErrDescriptionTooShort = fmt.Errorf("work description too short")
+	ErrDescriptionTooLong  = fmt.Errorf("work description too long")
+	ErrDescriptionGeneric  = fmt.Errorf("work description too generic")
+	ErrTotalMismatch       = fmt.Errorf("total amount does not match calculated value")
+	ErrRowFieldCount       = fmt.Errorf("row has invalid number of fields")
+	ErrRowTooManyFields    = fmt.Errorf("row has too many fields")
+	ErrDateRangeTooLarge   = fmt.Errorf("work item date range is too large")
+	ErrTotalHoursZero      = fmt.Errorf("total hours cannot be zero")
 )
 
 // WorkItemValidator implements CSVValidator with comprehensive validation rules
@@ -218,7 +232,7 @@ func (v *WorkItemValidator) validateHours(ctx context.Context, item *models.Work
 	}
 
 	if item.Hours > 24 {
-		return fmt.Errorf("hours cannot exceed 24 per day, got %v", item.Hours)
+		return fmt.Errorf("%w, got %v", ErrHoursTooHigh, item.Hours)
 	}
 
 	// Warn about unusual hours (more than 12 per day)
@@ -231,7 +245,7 @@ func (v *WorkItemValidator) validateHours(ctx context.Context, item *models.Work
 	if parsedHours, err := strconv.ParseFloat(hoursStr, 64); err == nil {
 		if parsedHours != item.Hours {
 			// Hours has more than 2 decimal places
-			return fmt.Errorf("hours should not have more than 2 decimal places, got %v", item.Hours)
+			return fmt.Errorf("%w, got %v", ErrHoursPrecision, item.Hours)
 		}
 	}
 
@@ -240,16 +254,16 @@ func (v *WorkItemValidator) validateHours(ctx context.Context, item *models.Work
 
 func (v *WorkItemValidator) validateRate(ctx context.Context, item *models.WorkItem) error {
 	if item.Rate <= 0 {
-		return fmt.Errorf("hourly rate must be positive, got %v", item.Rate)
+		return fmt.Errorf("%w, got %v", ErrRateNotPositive, item.Rate)
 	}
 
 	// Check for reasonable rate limits
 	if item.Rate < 1 {
-		return fmt.Errorf("hourly rate seems too low: $%v per hour", item.Rate)
+		return fmt.Errorf("%w: $%v per hour", ErrRateTooLow, item.Rate)
 	}
 
 	if item.Rate > 1000 {
-		return fmt.Errorf("hourly rate seems too high: $%v per hour", item.Rate)
+		return fmt.Errorf("%w: $%v per hour", ErrRateTooHigh, item.Rate)
 	}
 
 	// Warn about unusual rates
@@ -264,15 +278,15 @@ func (v *WorkItemValidator) validateDescription(ctx context.Context, item *model
 	description := strings.TrimSpace(item.Description)
 
 	if description == "" {
-		return fmt.Errorf("work description cannot be empty")
+		return ErrDescriptionEmpty
 	}
 
 	if len(description) < 3 {
-		return fmt.Errorf("work description too short: '%s' (minimum 3 characters)", description)
+		return fmt.Errorf("%w: '%s' (minimum 3 characters)", ErrDescriptionTooShort, description)
 	}
 
 	if len(description) > 500 {
-		return fmt.Errorf("work description too long: %d characters (maximum 500)", len(description))
+		return fmt.Errorf("%w: %d characters (maximum 500)", ErrDescriptionTooLong, len(description))
 	}
 
 	// Check for placeholder or generic descriptions
@@ -284,7 +298,7 @@ func (v *WorkItemValidator) validateDescription(ctx context.Context, item *model
 	lowerDesc := strings.ToLower(description)
 	for _, generic := range genericDescriptions {
 		if lowerDesc == generic {
-			return fmt.Errorf("work description too generic: '%s' (please be more specific)", description)
+			return fmt.Errorf("%w: '%s' (please be more specific)", ErrDescriptionGeneric, description)
 		}
 	}
 
@@ -296,8 +310,8 @@ func (v *WorkItemValidator) validateTotal(ctx context.Context, item *models.Work
 	tolerance := 0.01 // Allow small floating point differences
 
 	if item.Total < expectedTotal-tolerance || item.Total > expectedTotal+tolerance {
-		return fmt.Errorf("total amount %v does not match calculated value %v (hours: %v, rate: %v)",
-			item.Total, expectedTotal, item.Hours, item.Rate)
+		return fmt.Errorf("%w %v vs %v (hours: %v, rate: %v)",
+			ErrTotalMismatch, item.Total, expectedTotal, item.Hours, item.Rate)
 	}
 
 	return nil
@@ -306,12 +320,12 @@ func (v *WorkItemValidator) validateTotal(ctx context.Context, item *models.Work
 func (v *WorkItemValidator) validateRowFormat(ctx context.Context, row []string, lineNum int) error {
 	// Check minimum number of fields
 	if len(row) < 4 {
-		return fmt.Errorf("row has %d fields, expected at least 4 (date, hours, rate, description)", len(row))
+		return fmt.Errorf("%w: has %d fields, expected at least 4 (date, hours, rate, description)", ErrRowFieldCount, len(row))
 	}
 
 	// Check for excessively long rows
 	if len(row) > 20 {
-		return fmt.Errorf("row has %d fields, which seems excessive (maximum expected: 20)", len(row))
+		return fmt.Errorf("%w: has %d fields, which seems excessive (maximum expected: 20)", ErrRowTooManyFields, len(row))
 	}
 
 	return nil
@@ -344,8 +358,8 @@ func (v *WorkItemValidator) validateDateRange(items []models.WorkItem) error {
 
 	// Check if date range is reasonable (not more than 1 year)
 	if maxDate.Sub(minDate) > 365*24*time.Hour {
-		return fmt.Errorf("work item date range is too large: %s to %s (more than 1 year)",
-			minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
+		return fmt.Errorf("%w: %s to %s (more than 1 year)",
+			ErrDateRangeTooLarge, minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
 	}
 
 	return nil
@@ -380,7 +394,7 @@ func (v *WorkItemValidator) validateTotalHours(items []models.WorkItem) error {
 	}
 
 	if totalHours == 0 {
-		return fmt.Errorf("total hours cannot be zero")
+		return ErrTotalHoursZero
 	}
 
 	return nil

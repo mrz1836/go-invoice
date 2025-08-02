@@ -276,9 +276,9 @@ func (suite *TemplateRendererTestSuite) TestRenderInvoice_Success() {
 	result, err := suite.renderer.RenderInvoice(ctx, suite.invoice, "with_functions")
 	suite.Require().NoError(err)
 
-	assert.Contains(suite.T(), result, "Invoice TEST-001")
-	assert.Contains(suite.T(), result, "Test Client")
-	assert.Contains(suite.T(), result, "1993.75 USD")
+	suite.Contains(result, "Invoice TEST-001")
+	suite.Contains(result, "Test Client")
+	suite.Contains(result, "1993.75 USD")
 }
 
 func (suite *TemplateRendererTestSuite) TestRenderInvoice_DefaultTemplate() {
@@ -288,15 +288,15 @@ func (suite *TemplateRendererTestSuite) TestRenderInvoice_DefaultTemplate() {
 	result, err := suite.renderer.RenderInvoice(ctx, suite.invoice, "")
 	suite.Require().NoError(err)
 
-	assert.Contains(suite.T(), result, "Invoice TEST-001")
+	suite.Contains(result, "Invoice TEST-001")
 }
 
 func (suite *TemplateRendererTestSuite) TestRenderInvoice_TemplateNotFound() {
 	ctx := context.Background()
 
 	_, err := suite.renderer.RenderInvoice(ctx, suite.invoice, "nonexistent")
-	suite.Error(err)
-	assert.Contains(suite.T(), err.Error(), "failed to get template")
+	suite.Require().Error(err)
+	suite.Contains(err.Error(), "failed to get template")
 }
 
 func (suite *TemplateRendererTestSuite) TestRenderInvoice_SecurityValidationError() {
@@ -390,7 +390,7 @@ func (suite *TemplateRendererTestSuite) TestListAvailableTemplates() {
 
 	// Should return built-in templates
 	expected := []string{"default", "professional", "minimal"}
-	assert.Equal(suite.T(), expected, templates)
+	suite.Equal(expected, templates)
 }
 
 func (suite *TemplateRendererTestSuite) TestGetTemplateInfo() {
@@ -399,7 +399,7 @@ func (suite *TemplateRendererTestSuite) TestGetTemplateInfo() {
 	info, err := suite.renderer.GetTemplateInfo(ctx, "default")
 	suite.Require().NoError(err)
 
-	assert.Equal(suite.T(), "default", info.Name)
+	suite.Equal("default", info.Name)
 	suite.Positive(info.SizeBytes)
 }
 
@@ -407,7 +407,7 @@ func (suite *TemplateRendererTestSuite) TestGetTemplateInfo_NotFound() {
 	ctx := context.Background()
 
 	_, err := suite.renderer.GetTemplateInfo(ctx, "nonexistent")
-	suite.Error(err)
+	suite.Require().Error(err)
 	assert.Contains(suite.T(), err.Error(), "failed to get template")
 }
 
@@ -423,7 +423,7 @@ func (suite *TemplateRendererTestSuite) TestCacheIntegration() {
 	suite.Require().NoError(err)
 
 	// Should have at least one cache operation
-	assert.True(suite.T(), stats.HitCount > 0 || stats.MissCount > 0)
+	suite.True(stats.HitCount > 0 || stats.MissCount > 0)
 }
 
 func (suite *TemplateRendererTestSuite) TestNewTemplateRenderer_DefaultOptions() {

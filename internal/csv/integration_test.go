@@ -287,7 +287,7 @@ func (suite *CSVIntegrationTestSuite) TestContextCancellation() {
 	result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 
 	// Should be canceled
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Equal(context.Canceled, err)
 
 	// Result may be nil when canceled early

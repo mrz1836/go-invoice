@@ -204,7 +204,11 @@ func (a *App) executeImportCreate(ctx context.Context, csvFile, configPath strin
 	if err != nil {
 		return fmt.Errorf("failed to open CSV file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			a.logger.Error("failed to close file", "error", closeErr)
+		}
+	}()
 
 	// Prepare import request
 	req := services.ImportToNewInvoiceRequest{
@@ -250,7 +254,11 @@ func (a *App) executeImportAppend(ctx context.Context, csvFile, configPath strin
 	if err != nil {
 		return fmt.Errorf("failed to open CSV file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			a.logger.Error("failed to close file", "error", closeErr)
+		}
+	}()
 
 	// Prepare import request
 	req := services.AppendToInvoiceRequest{
@@ -288,7 +296,11 @@ func (a *App) executeImportValidate(ctx context.Context, csvFile, configPath str
 	if err != nil {
 		return fmt.Errorf("failed to open CSV file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			a.logger.Error("failed to close file", "error", closeErr)
+		}
+	}()
 
 	// Prepare validation request
 	req := csv.ValidateImportRequest{

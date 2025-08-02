@@ -58,7 +58,9 @@ func (suite *ClientStorageTestSuite) TearDownTest() {
 
 	// Clean up temporary directory
 	if suite.tempDir != "" {
-		os.RemoveAll(suite.tempDir)
+		if err := os.RemoveAll(suite.tempDir); err != nil {
+			suite.T().Logf("Failed to clean up temp directory: %v", err)
+		}
 	}
 }
 
