@@ -49,6 +49,50 @@ Configuration structure leverages environment variables for business details whi
 
 ## Implementation Roadmap
 
+### Phase 0: Foundation Alignment (AGENTS.md Compliance)
+**Objective**: Ensure implementation plan fully aligns with established conventions and standards
+
+**Duration**: 30 minutes
+
+**Implementation Agent**: Use Claude Code with go-expert-developer persona
+
+**Key Alignment Areas:**
+1. **Context-First Design**: All operations must accept `context.Context` as first parameter
+2. **Interface Philosophy**: Follow "accept interfaces, return concrete types" pattern
+3. **Error Handling Excellence**: Implement comprehensive error wrapping and context
+4. **Testing Standards**: Use testify suite with table-driven tests and descriptive names
+5. **Security Integration**: Include vulnerability scanning and dependency verification
+6. **No Global State**: Enforce dependency injection patterns throughout
+
+**Enhanced Architecture Principles:**
+- Context flows through entire call stack for cancellation and timeout support
+- Consumer-driven interface design with minimal, focused contracts
+- Comprehensive error handling with actionable messages and proper wrapping
+- Dependency injection eliminates global state and improves testability
+- Security-first approach with automated vulnerability scanning
+
+**Verification Steps:**
+```bash
+# Enhanced security and quality validation
+govulncheck ./...
+go mod verify
+golangci-lint run
+go test -race ./...
+go test -cover ./...
+go vet ./...
+```
+
+**Success Criteria:**
+- ✅ All function signatures include context.Context as first parameter
+- ✅ Interfaces defined at point of use (consumer-driven design)
+- ✅ Error messages provide clear context and actionable guidance
+- ✅ Test coverage exceeds 90% using testify patterns
+- ✅ No security vulnerabilities detected in dependencies
+- ✅ All linting passes per AGENTS.md standards
+- ✅ Dependency injection used throughout (no global state)
+
+---
+
 ### Phase 1: Core Infrastructure and Configuration
 **Objective**: Establish project foundation with configuration management and basic CLI structure
 
@@ -84,30 +128,80 @@ type BusinessConfig struct {
     PaymentTerms  string
     BankDetails   BankDetails
 }
+
+// ConfigService demonstrates context-first design and dependency injection
+type ConfigService struct {
+    logger Logger
+    validator Validator
+}
+
+func NewConfigService(logger Logger, validator Validator) *ConfigService {
+    return &ConfigService{
+        logger: logger,
+        validator: validator,
+    }
+}
+
+func (s *ConfigService) LoadConfig(ctx context.Context, path string) (*Config, error) {
+    select {
+    case <-ctx.Done():
+        return nil, ctx.Err()
+    default:
+    }
+    
+    // Implementation with proper error wrapping
+    config, err := s.readConfigFile(ctx, path)
+    if err != nil {
+        return nil, fmt.Errorf("failed to read config from %s: %w", path, err)
+    }
+    
+    if err := s.validator.ValidateConfig(ctx, config); err != nil {
+        return nil, fmt.Errorf("config validation failed: %w", err)
+    }
+    
+    return config, nil
+}
 ```
 
 **Verification Steps:**
 ```bash
-# 1. Build the application
+# 1. Enhanced security and quality checks
+govulncheck ./...
+go mod verify
+golangci-lint run
+
+# 2. Build the application
 go build -o go-invoice ./cmd/go-invoice
 
-# 2. Test configuration loading
+# 3. Run comprehensive tests with testify
+go test -v -race -cover ./...
+
+# 4. Test configuration loading with context
 ./go-invoice config validate
 
-# 3. Display loaded configuration
+# 5. Display loaded configuration
 ./go-invoice config show
 
-# 4. Run with example config
+# 6. Run with example config
 cp .env.config.example .env.config && ./go-invoice config show
+
+# 7. Verify context cancellation works
+timeout 1s ./go-invoice config validate --slow-operation
 ```
 
 **Success Criteria:**
 - ✅ Project builds successfully from go-template base
-- ✅ Configuration loads from .env.config file
-- ✅ CLI responds to basic commands
-- ✅ Configuration validation catches invalid inputs
+- ✅ Configuration loads from .env.config file with context support
+- ✅ CLI responds to basic commands and respects context cancellation
+- ✅ Configuration validation catches invalid inputs with clear error messages
 - ✅ Help text displays properly for all commands
-- ✅ Final todo: Update the @plans/plan-[number]-status.md file with the results of the implementation
+- ✅ All operations accept context.Context as first parameter
+- ✅ Dependency injection used throughout (no global state)
+- ✅ Error handling follows AGENTS.md excellence patterns
+- ✅ Tests use testify suite with descriptive names
+- ✅ No security vulnerabilities in dependencies
+- ✅ All linting and formatting passes
+- ✅ Final todo: Update the @plans/plan-01-status.md file with the results of the implementation
 
 ### Phase 2: Data Models and Storage Layer
 **Objective**: Implement invoice data models and JSON-based storage system
@@ -149,30 +243,103 @@ type WorkItem struct {
     Description string    `json:"description"`
     Total       float64   `json:"total"`
 }
+
+// Storage interface defined at point of use (consumer-driven design)
+type InvoiceStorage interface {
+    SaveInvoice(ctx context.Context, invoice *Invoice) error
+    GetInvoice(ctx context.Context, id string) (*Invoice, error)
+    ListInvoices(ctx context.Context, filter InvoiceFilter) ([]*Invoice, error)
+    UpdateInvoice(ctx context.Context, invoice *Invoice) error
+    DeleteInvoice(ctx context.Context, id string) error
+}
+
+// Service accepts interface, returns concrete type
+type InvoiceService struct {
+    storage InvoiceStorage
+    logger  Logger
+    idGen   IDGenerator
+}
+
+func NewInvoiceService(storage InvoiceStorage, logger Logger, idGen IDGenerator) *InvoiceService {
+    return &InvoiceService{
+        storage: storage,
+        logger:  logger,
+        idGen:   idGen,
+    }
+}
+
+func (s *InvoiceService) CreateInvoice(ctx context.Context, req CreateInvoiceRequest) (*Invoice, error) {
+    select {
+    case <-ctx.Done():
+        return nil, ctx.Err()
+    default:
+    }
+    
+    if err := req.Validate(); err != nil {
+        return nil, fmt.Errorf("invalid create request: %w", err)
+    }
+    
+    invoice := &Invoice{
+        ID:        s.idGen.GenerateID(),
+        Number:    req.Number,
+        Date:      req.Date,
+        DueDate:   req.DueDate,
+        Client:    req.Client,
+        Status:    "draft",
+        CreatedAt: time.Now(),
+        UpdatedAt: time.Now(),
+    }
+    
+    if err := s.storage.SaveInvoice(ctx, invoice); err != nil {
+        return nil, fmt.Errorf("failed to save invoice %s: %w", invoice.ID, err)
+    }
+    
+    s.logger.Info("invoice created successfully", "id", invoice.ID, "number", invoice.Number)
+    return invoice, nil
+}
 ```
 
 **Verification Steps:**
 ```bash
-# 1. Initialize storage
+# 1. Run security and quality checks
+govulncheck ./...
+go mod verify
+golangci-lint run
+
+# 2. Run comprehensive tests with testify
+go test -v -race -cover ./internal/storage/...
+go test -v -race -cover ./internal/models/...
+
+# 3. Initialize storage
 ./go-invoice init
 
-# 2. Verify storage directory creation
+# 4. Verify storage directory creation
 ls -la ~/.go-invoice/
 
-# 3. Test invoice creation
+# 5. Test invoice creation with context
 ./go-invoice invoice create --client "Test Client"
 
-# 4. List invoices
+# 6. List invoices
 ./go-invoice invoice list
+
+# 7. Test context cancellation
+timeout 1s ./go-invoice invoice create --client "Test" --slow-operation
 ```
 
 **Success Criteria:**
 - ✅ Storage directory initializes correctly
 - ✅ Invoice models serialize/deserialize properly
-- ✅ CRUD operations work for invoices
-- ✅ Storage handles concurrent access safely
-- ✅ Error handling provides clear feedback
-- ✅ Final todo: Update the @plans/plan-[number]-status.md file with the results of the implementation
+- ✅ CRUD operations work for invoices with context support
+- ✅ Storage handles concurrent access safely with proper locking
+- ✅ Error handling provides clear, actionable feedback with proper wrapping
+- ✅ All storage operations accept context.Context as first parameter
+- ✅ Consumer-driven interfaces defined at point of use
+- ✅ Dependency injection used throughout (no global state)
+- ✅ Tests use testify suite with table-driven patterns
+- ✅ Context cancellation works correctly for long operations
+- ✅ No security vulnerabilities in dependencies
+- ✅ All linting and race condition checks pass
+- ✅ Final todo: Update the @plans/plan-01-status.md file with the results of the implementation
 
 ### Phase 3: CSV Import and Work Item Management
 **Objective**: Implement CSV parsing and work item management functionality
@@ -202,35 +369,107 @@ type CSVRow struct {
     Description string
 }
 
-func ParseTimesheet(reader io.Reader) ([]WorkItem, error) {
-    // Parse CSV with validation
-    // Convert to WorkItem structs
-    // Calculate totals
+// CSV parser interface defined at point of use
+type TimesheetParser interface {
+    ParseTimesheet(ctx context.Context, reader io.Reader) ([]WorkItem, error)
+}
+
+type CSVParser struct {
+    validator WorkItemValidator
+    logger    Logger
+}
+
+func NewCSVParser(validator WorkItemValidator, logger Logger) *CSVParser {
+    return &CSVParser{
+        validator: validator,
+        logger:    logger,
+    }
+}
+
+func (p *CSVParser) ParseTimesheet(ctx context.Context, reader io.Reader) ([]WorkItem, error) {
+    select {
+    case <-ctx.Done():
+        return nil, ctx.Err()
+    default:
+    }
+    
+    csvReader := csv.NewReader(reader)
+    rows, err := csvReader.ReadAll()
+    if err != nil {
+        return nil, fmt.Errorf("failed to read CSV data: %w", err)
+    }
+    
+    var workItems []WorkItem
+    for i, row := range rows {
+        if i == 0 {
+            continue // Skip header
+        }
+        
+        select {
+        case <-ctx.Done():
+            return nil, ctx.Err()
+        default:
+        }
+        
+        workItem, err := p.parseRow(ctx, row)
+        if err != nil {
+            return nil, fmt.Errorf("failed to parse row %d: %w", i+1, err)
+        }
+        
+        if err := p.validator.ValidateWorkItem(ctx, workItem); err != nil {
+            return nil, fmt.Errorf("validation failed for row %d: %w", i+1, err)
+        }
+        
+        workItems = append(workItems, workItem)
+    }
+    
+    p.logger.Info("successfully parsed timesheet", "rows", len(workItems))
+    return workItems, nil
 }
 ```
 
 **Verification Steps:**
 ```bash
-# 1. Import CSV data
+# 1. Run security and quality checks
+govulncheck ./...
+go mod verify
+golangci-lint run
+
+# 2. Run comprehensive tests with testify
+go test -v -race -cover ./internal/csv/...
+go test -v -race -cover ./internal/services/...
+
+# 3. Import CSV data with context
 ./go-invoice import --file examples/timesheet.csv --invoice INV-001
 
-# 2. Verify imported data
+# 4. Verify imported data
 ./go-invoice invoice show INV-001
 
-# 3. Test append functionality
+# 5. Test append functionality
 ./go-invoice import --file more-hours.csv --invoice INV-001 --append
 
-# 4. Test validation
+# 6. Test validation with clear error messages
 ./go-invoice import --file invalid.csv --invoice INV-001
+
+# 7. Test context cancellation on large imports
+timeout 2s ./go-invoice import --file large-timesheet.csv --invoice INV-001
 ```
 
 **Success Criteria:**
-- ✅ CSV files parse correctly with proper validation
-- ✅ Work items import with accurate calculations
-- ✅ Append mode adds to existing invoices
-- ✅ Invalid CSV data produces helpful error messages
-- ✅ Import handles various CSV formats gracefully
-- ✅ Final todo: Update the @plans/plan-[number]-status.md file with the results of the implementation
+- ✅ CSV files parse correctly with proper validation and context support
+- ✅ Work items import with accurate calculations and proper error handling
+- ✅ Append mode adds to existing invoices without data corruption
+- ✅ Invalid CSV data produces helpful, actionable error messages
+- ✅ Import handles various CSV formats gracefully with clear feedback
+- ✅ All CSV operations accept context.Context for cancellation support
+- ✅ Consumer-driven interfaces used for parser abstraction
+- ✅ Dependency injection eliminates global state
+- ✅ Tests use testify suite with comprehensive edge-case coverage
+- ✅ Context cancellation works for large file imports
+- ✅ Error wrapping provides clear operation context
+- ✅ No security vulnerabilities in CSV parsing dependencies
+- ✅ Race condition testing passes for concurrent imports
+- ✅ Final todo: Update the @plans/plan-01-status.md file with the results of the implementation
 
 ### Phase 4: Invoice Generation and Template System
 **Objective**: Implement HTML invoice generation with customizable templates
@@ -248,8 +487,53 @@ func ParseTimesheet(reader io.Reader) ([]WorkItem, error) {
 - `templates/invoice/default.html` - Default invoice template
 - `templates/invoice/styles.css` - Printer-optimized styles
 - `internal/render/engine.go` - Template rendering engine
+- `internal/render/interface.go` - Renderer interface definition
 - `internal/services/calculator.go` - Invoice calculation service
 - `cmd/go-invoice/cmd/generate.go` - Generate command
+
+**Enhanced Template Engine Design:**
+```go
+// Renderer interface defined at point of use
+type InvoiceRenderer interface {
+    RenderInvoice(ctx context.Context, invoice *Invoice) (string, error)
+    ValidateTemplate(ctx context.Context, templatePath string) error
+}
+
+type TemplateRenderer struct {
+    logger    Logger
+    validator TemplateValidator
+    cache     TemplateCache
+}
+
+func NewTemplateRenderer(logger Logger, validator TemplateValidator, cache TemplateCache) *TemplateRenderer {
+    return &TemplateRenderer{
+        logger:    logger,
+        validator: validator,
+        cache:     cache,
+    }
+}
+
+func (r *TemplateRenderer) RenderInvoice(ctx context.Context, invoice *Invoice) (string, error) {
+    select {
+    case <-ctx.Done():
+        return "", ctx.Err()
+    default:
+    }
+    
+    tmpl, err := r.cache.GetTemplate(ctx, "default")
+    if err != nil {
+        return "", fmt.Errorf("failed to load template: %w", err)
+    }
+    
+    var buf bytes.Buffer
+    if err := tmpl.Execute(&buf, invoice); err != nil {
+        return "", fmt.Errorf("template execution failed for invoice %s: %w", invoice.ID, err)
+    }
+    
+    r.logger.Info("invoice rendered successfully", "id", invoice.ID, "size", buf.Len())
+    return buf.String(), nil
+}
+```
 
 **Template Structure:**
 ```html
@@ -273,26 +557,45 @@ func ParseTimesheet(reader io.Reader) ([]WorkItem, error) {
 
 **Verification Steps:**
 ```bash
-# 1. Generate invoice HTML
+# 1. Run security and quality checks
+govulncheck ./...
+go mod verify
+golangci-lint run
+
+# 2. Run comprehensive tests with testify
+go test -v -race -cover ./internal/render/...
+go test -v -race -cover ./internal/services/...
+
+# 3. Generate invoice HTML with context
 ./go-invoice generate INV-001
 
-# 2. Open in browser
+# 4. Open in browser
 open invoices/INV-001.html
 
-# 3. Test print preview
+# 5. Test print preview
 ./go-invoice generate INV-001 --preview
 
-# 4. Generate with custom template
+# 6. Generate with custom template
 ./go-invoice generate INV-001 --template custom
+
+# 7. Test context cancellation on large templates
+timeout 2s ./go-invoice generate INV-001 --complex-template
 ```
 
 **Success Criteria:**
-- ✅ Invoice generates valid HTML output
-- ✅ Templates render with correct data
-- ✅ Print layout looks professional
-- ✅ Calculations display accurately
-- ✅ Custom templates load correctly
-- ✅ Final todo: Update the @plans/plan-[number]-status.md file with the results of the implementation
+- ✅ Invoice generates valid HTML output with context support
+- ✅ Templates render with correct data and proper error handling
+- ✅ Print layout looks professional across browsers
+- ✅ Calculations display accurately with validation
+- ✅ Custom templates load correctly with security validation
+- ✅ All template operations accept context.Context for cancellation
+- ✅ Template engine uses dependency injection (no global state)
+- ✅ Error messages provide clear guidance for template issues
+- ✅ Tests use testify suite with template rendering edge cases
+- ✅ Context cancellation works for complex template generation
+- ✅ Security scanning passes for template dependencies
+- ✅ Race condition testing passes for concurrent rendering
+- ✅ Final todo: Update the @plans/plan-01-status.md file with the results of the implementation
 
 ### Phase 5: Complete CLI Implementation
 **Objective**: Implement full CLI functionality with all commands and options
@@ -328,29 +631,49 @@ go-invoice generate <id> [--template <name>]   # Generate HTML
 
 **Verification Steps:**
 ```bash
-# 1. Test full workflow
+# 1. Run security and quality checks
+govulncheck ./...
+go mod verify
+golangci-lint run
+
+# 2. Run comprehensive CLI tests with testify
+go test -v -race -cover ./cmd/go-invoice/...
+go test -v -race -cover ./internal/cli/...
+
+# 3. Test full workflow with context
 ./go-invoice invoice create --client "Acme Corp" --interactive
 
-# 2. Import hours
+# 4. Import hours
 ./go-invoice import --file hours.csv --invoice INV-001
 
-# 3. Generate invoice
+# 5. Generate invoice
 ./go-invoice generate INV-001
 
-# 4. Test search
+# 6. Test search with context
 ./go-invoice invoice search --client "Acme"
 
-# 5. Test filtering
+# 7. Test filtering
 ./go-invoice invoice list --status unpaid --month 2024-01
+
+# 8. Test context cancellation across CLI commands
+timeout 2s ./go-invoice invoice list --slow-query
 ```
 
 **Success Criteria:**
-- ✅ All commands function as documented
-- ✅ Interactive mode provides good UX
-- ✅ Search and filters work accurately
-- ✅ Error messages are helpful and actionable
+- ✅ All commands function as documented with context support
+- ✅ Interactive mode provides good UX with proper error handling
+- ✅ Search and filters work accurately with clear feedback
+- ✅ Error messages are helpful, actionable, and properly wrapped
 - ✅ Help text is comprehensive and clear
-- ✅ Final todo: Update the @plans/plan-[number]-status.md file with the results of the implementation
+- ✅ All CLI operations accept context.Context for cancellation
+- ✅ Dependency injection used throughout CLI layer
+- ✅ Command handlers implement proper error wrapping patterns
+- ✅ Tests use testify suite with comprehensive CLI interaction coverage
+- ✅ Context cancellation works across all CLI commands
+- ✅ Interactive prompts handle context cancellation gracefully
+- ✅ Security scanning passes for CLI dependencies
+- ✅ Race condition testing passes for concurrent CLI usage
+- ✅ Final todo: Update the @plans/plan-01-status.md file with the results of the implementation
 
 ### Phase 6: Testing and Documentation
 **Objective**: Ensure code quality with comprehensive testing and documentation
@@ -373,47 +696,136 @@ go-invoice generate <id> [--template <name>]   # Generate HTML
 
 **Testing Strategy:**
 ```go
-// Unit test example
+// Unit test example using testify suite
 func TestInvoiceCalculation(t *testing.T) {
-    // Test invoice total calculation
-    // Test tax calculation
-    // Test date handling
+    tests := []struct {
+        name        string
+        workItems   []WorkItem
+        taxRate     float64
+        expected    float64
+        expectError bool
+    }{
+        {
+            name: "ValidCalculationWithTax",
+            workItems: []WorkItem{
+                {Hours: 10, Rate: 100, Total: 1000},
+                {Hours: 5, Rate: 150, Total: 750},
+            },
+            taxRate:  0.1,
+            expected: 1925, // (1000 + 750) * 1.1
+        },
+        {
+            name:        "EmptyWorkItems",
+            workItems:   []WorkItem{},
+            taxRate:     0.1,
+            expected:    0,
+            expectError: false,
+        },
+    }
+    
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            ctx := context.Background()
+            calculator := NewInvoiceCalculator()
+            
+            total, err := calculator.CalculateTotal(ctx, tt.workItems, tt.taxRate)
+            
+            if tt.expectError {
+                require.Error(t, err)
+            } else {
+                require.NoError(t, err)
+                assert.InDelta(t, tt.expected, total, 0.01)
+            }
+        })
+    }
 }
 
-// Integration test example
+// Integration test example using testify suite
 func TestFullInvoiceWorkflow(t *testing.T) {
+    ctx := context.Background()
+    
+    // Setup test dependencies with dependency injection
+    storage := NewMemoryStorage()
+    parser := NewCSVParser(NewValidator(), NewLogger())
+    renderer := NewTemplateRenderer(NewLogger())
+    service := NewInvoiceService(storage, NewLogger(), NewIDGenerator())
+    
     // Create invoice
+    invoice, err := service.CreateInvoice(ctx, CreateInvoiceRequest{
+        Number: "TEST-001",
+        Client: Client{Name: "Test Client"},
+        Date:   time.Now(),
+    })
+    require.NoError(t, err)
+    require.NotNil(t, invoice)
+    
     // Import CSV
+    csvData := strings.NewReader("Date,Hours,Rate,Description\n2024-01-01,8,100,Development")
+    workItems, err := parser.ParseTimesheet(ctx, csvData)
+    require.NoError(t, err)
+    require.Len(t, workItems, 1)
+    
+    // Add work items to invoice
+    err = service.AddWorkItems(ctx, invoice.ID, workItems)
+    require.NoError(t, err)
+    
     // Generate HTML
-    // Verify output
+    html, err := renderer.RenderInvoice(ctx, invoice)
+    require.NoError(t, err)
+    require.Contains(t, html, "TEST-001")
+    require.Contains(t, html, "Test Client")
 }
 ```
 
 **Verification Steps:**
 ```bash
-# 1. Run unit tests
-go test ./...
+# 1. Run comprehensive security and quality checks
+govulncheck ./...
+go mod verify
+gitleaks detect --source . --log-opts="--all" --verbose
 
-# 2. Run with coverage
-go test -cover ./...
+# 2. Run unit tests with testify and race detection
+go test -v -race -cover ./...
 
-# 3. Run integration tests
-go test ./test/...
+# 3. Run tests with coverage threshold validation
+go test -cover ./... | grep -E "coverage: [0-9]+" | awk '{if ($2 < 90) exit 1}'
 
-# 4. Run linter
+# 4. Run integration tests
+go test -v -race ./test/...
+
+# 5. Run comprehensive linting per AGENTS.md standards
 golangci-lint run
+go vet ./...
+gofumpt -l .
+goimports -l .
 
-# 5. Build and test release
+# 6. Test context cancellation across the application
+go test -v -run TestContext ./...
+
+# 7. Build and test release
 goreleaser build --snapshot --clean
+
+# 8. Verify no global state or init functions
+grep -r "var.*=" internal/ cmd/ | grep -v test | grep -v const
+grep -r "func init()" internal/ cmd/
 ```
 
 **Success Criteria:**
-- ✅ Test coverage exceeds 80%
-- ✅ All critical paths have tests
-- ✅ Documentation is clear and complete
-- ✅ Examples demonstrate key workflows
-- ✅ CI/CD pipeline passes all checks
-- ✅ Final todo: Update the @plans/plan-[number]-status.md file with the results of the implementation
+- ✅ Test coverage exceeds 90% using testify suite patterns
+- ✅ All critical paths have comprehensive tests with edge cases
+- ✅ Documentation is clear, complete, and follows AGENTS.md standards
+- ✅ Examples demonstrate key workflows with context handling
+- ✅ CI/CD pipeline passes all enhanced checks including security scanning
+- ✅ All tests use testify assertions and table-driven patterns
+- ✅ Context cancellation tested across all operations
+- ✅ Error handling tested with proper wrapping verification
+- ✅ No global state or init functions detected in codebase
+- ✅ Race condition testing passes for all concurrent operations
+- ✅ Dependency injection patterns verified in all tests
+- ✅ Security vulnerabilities scan clean (govulncheck)
+- ✅ Secret detection passes (gitleaks)
+- ✅ All linting and formatting per AGENTS.md standards passes
+- ✅ Final todo: Update the @plans/plan-01-status.md file with the results of the implementation
 
 ## Configuration Examples
 
@@ -488,6 +900,7 @@ VAT_RATE="20"
 
 ## Implementation Timeline
 
+- **Session 0**: Foundation Alignment (Phase 0) - 30 minutes
 - **Session 1**: Core Infrastructure (Phase 1) - 2-3 hours
 - **Session 2**: Data Models and Storage (Phase 2) - 3-4 hours
 - **Session 3**: CSV Import (Phase 3) - 2-3 hours
@@ -495,7 +908,7 @@ VAT_RATE="20"
 - **Session 5**: CLI Commands (Phase 5) - 2-3 hours
 - **Session 6**: Testing and Documentation (Phase 6) - 3-4 hours
 
-Total estimated time: 15-21 hours across 6 focused sessions
+Total estimated time: 15.5-21.5 hours across 7 focused sessions
 
 ## Success Metrics
 
@@ -527,18 +940,28 @@ Total estimated time: 15-21 hours across 6 focused sessions
 
 go-invoice represents a focused approach to invoice management, prioritizing developer workflow and professional output. By leveraging Go's strengths and maintaining a clean architecture, the tool provides immediate value while remaining extensible for future enhancements.
 
-**Key improvements in this plan:**
-- **Phased Approach**: Each phase delivers working functionality
-- **Testing Focus**: Comprehensive testing ensures reliability
-- **User-Centric Design**: Commands mirror natural workflow
+**Key improvements in this enhanced plan:**
+- **AGENTS.md Compliance**: Full alignment with established engineering standards
+- **Context-First Architecture**: All operations support cancellation and timeout
+- **Security-First Approach**: Integrated vulnerability scanning and dependency verification
+- **Excellence in Error Handling**: Comprehensive error wrapping with actionable messages
+- **Testify Integration**: Comprehensive test coverage using established patterns
+- **Dependency Injection**: Eliminates global state for better testability
+- **Consumer-Driven Interfaces**: Minimal, focused contracts defined at point of use
+- **Phased Approach**: Each phase delivers working functionality with quality gates
 - **Performance First**: Efficient operations even with large datasets
 - **Future-Ready**: Architecture supports PDF, email, and cloud storage additions
 
-This implementation follows established Go patterns:
+This implementation exemplifies established Go patterns from AGENTS.md:
 - **Standard Project Layout** following go-template structure
-- **Interface-Based Design** for pluggable components
-- **Context-Aware Operations** for proper cancellation
+- **Interface-Based Design** for pluggable components (accept interfaces, return concrete types)
+- **Context-Aware Operations** for proper cancellation and timeout handling
 - **Structured Logging** for debugging and monitoring
 - **Configuration as Code** with validation and defaults
+- **No Global State** - dependency injection throughout
+- **No init() Functions** - explicit initialization patterns
+- **Error Handling Excellence** - comprehensive wrapping and context
+- **Security Integration** - govulncheck, go mod verify, gitleaks
+- **Testing Standards** - testify suite with table-driven tests
 
-go-invoice positions itself as the go-to solution for developers who value simplicity, control, and professional results in their invoicing workflow.
+go-invoice positions itself as the go-to solution for developers who value engineering excellence, simplicity, control, and professional results in their invoicing workflow.

@@ -1293,24 +1293,3 @@ Before merging any workflow changes, verify:
 * [ ] Error handling covers expected failure scenarios
 * [ ] Workflow has been tested in a draft PR
 * [ ] Documentation reflects any new workflow dependencies or requirements
-
-<br/>
-
----
-
-<br/>
-
-## 🕓 Change Log (AGENTS.md)
-
-This section tracks notable updates to `AGENTS.md`, including the date, author, and purpose of each revision.
-All contributors are expected to append entries here when making meaningful changes to agent behavior, conventions, or policies.
-
-
-| Date       | Author   | Summary of Changes                                    |
-|------------|----------|-------------------------------------------------------|
-| 2025-07-10 | @mrz1836 | Go essentials section, labels, and more!              |
-| 2025-07-07 | @mrz1836 | Minor mods in formatting, linting, gitleaks           |
-| 2025-06-30 | @mrz1836 | Added pre-commit hook guidelines and config reference |
-| 2025-06-27 | @mrz1836 | Adapted to fix this project                           |
-> For minor edits (typos, formatting), this log update is optional. For all behavioral or structural changes, log entries are **required**.
-
