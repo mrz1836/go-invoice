@@ -9,6 +9,8 @@ import (
 
 	"github.com/mrz/go-invoice/internal/cli"
 	"github.com/mrz/go-invoice/internal/config"
+	"github.com/mrz/go-invoice/internal/storage"
+	jsonStorage "github.com/mrz/go-invoice/internal/storage/json"
 	"github.com/spf13/cobra"
 )
 
@@ -76,6 +78,7 @@ Key features:
 
 	// Add subcommands
 	rootCmd.AddCommand(a.buildConfigCommand())
+	rootCmd.AddCommand(a.buildInitCommand())
 
 	return rootCmd
 }
@@ -143,6 +146,83 @@ func (a *App) buildConfigShowCommand() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+// buildInitCommand creates the init command for storage initialization
+func (a *App) buildInitCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "init",
+		Short: "Initialize storage system",
+		Long: `Initialize the local storage system by creating the necessary directories 
+and metadata files for invoice and client data.
+
+This command must be run before using other invoice management commands.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, cancel := context.WithCancel(cmd.Context())
+			defer cancel()
+
+			configPath, _ := cmd.Flags().GetString("config")
+
+			a.logger.Info("initializing storage system")
+			fmt.Println("🔧 Initializing go-invoice storage...")
+
+			// Load configuration to get storage settings
+			config, err := a.configService.LoadConfig(ctx, configPath)
+			if err != nil {
+				return fmt.Errorf("failed to load configuration: %w", err)
+			}
+
+			// Initialize storage system
+			if err := a.initializeStorage(ctx, config); err != nil {
+				fmt.Printf("❌ Storage initialization failed: %v\n", err)
+				return err
+			}
+
+			fmt.Println("✅ Storage system initialized successfully!")
+			fmt.Printf("   Data directory: %s\n", config.Storage.DataDir)
+			fmt.Printf("   Backup directory: %s\n", config.Storage.BackupDir)
+			fmt.Println()
+			fmt.Println("💡 Next steps:")
+			fmt.Println("   • Create clients with: go-invoice client create")
+			fmt.Println("   • Create invoices with: go-invoice invoice create")
+			fmt.Println("   • View help with: go-invoice --help")
+
+			return nil
+		},
+	}
+}
+
+// initializeStorage sets up the storage system using the provided configuration
+func (a *App) initializeStorage(ctx context.Context, config *config.Config) error {
+	// Create storage instance
+	storage := a.createJSONStorage(config.Storage.DataDir)
+
+	// Check if already initialized
+	if initialized, err := storage.IsInitialized(ctx); err != nil {
+		return fmt.Errorf("failed to check initialization status: %w", err)
+	} else if initialized {
+		a.logger.Info("storage already initialized")
+		fmt.Println("⚠️  Storage is already initialized")
+		return nil
+	}
+
+	// Initialize storage
+	if err := storage.Initialize(ctx); err != nil {
+		return fmt.Errorf("storage initialization failed: %w", err)
+	}
+
+	// Validate the initialized storage
+	if err := storage.Validate(ctx); err != nil {
+		return fmt.Errorf("storage validation failed: %w", err)
+	}
+
+	a.logger.Info("storage system initialized", "data_dir", config.Storage.DataDir)
+	return nil
+}
+
+// createJSONStorage creates a new JSON storage instance
+func (a *App) createJSONStorage(dataDir string) storage.StorageInitializer {
+	return jsonStorage.NewJSONStorage(dataDir, a.logger)
 }
 
 // displayConfig prints the configuration in a user-friendly format

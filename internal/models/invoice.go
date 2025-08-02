@@ -1,0 +1,402 @@
+package models
+
+import (
+	"context"
+	"fmt"
+	"math"
+	"strings"
+	"time"
+)
+
+// Invoice represents a complete invoice entity
+type Invoice struct {
+	ID          InvoiceID  `json:"id"`
+	Number      string     `json:"number"`
+	Date        time.Time  `json:"date"`
+	DueDate     time.Time  `json:"due_date"`
+	Client      Client     `json:"client"`
+	WorkItems   []WorkItem `json:"work_items"`
+	Status      string     `json:"status"`
+	Description string     `json:"description,omitempty"`
+	Subtotal    float64    `json:"subtotal"`
+	TaxRate     float64    `json:"tax_rate"`
+	TaxAmount   float64    `json:"tax_amount"`
+	Total       float64    `json:"total"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	Version     int        `json:"version"` // For optimistic locking
+}
+
+// WorkItem represents a single work entry on an invoice
+type WorkItem struct {
+	ID          string    `json:"id"`
+	Date        time.Time `json:"date"`
+	Hours       float64   `json:"hours"`
+	Rate        float64   `json:"rate"`
+	Description string    `json:"description"`
+	Total       float64   `json:"total"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+// Client represents customer information
+type Client struct {
+	ID        ClientID  `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Phone     string    `json:"phone,omitempty"`
+	Address   string    `json:"address,omitempty"`
+	TaxID     string    `json:"tax_id,omitempty"`
+	Active    bool      `json:"active"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// NewInvoice creates a new invoice with validation
+func NewInvoice(ctx context.Context, id InvoiceID, number string, date, dueDate time.Time, client Client, taxRate float64) (*Invoice, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	now := time.Now()
+	invoice := &Invoice{
+		ID:        id,
+		Number:    number,
+		Date:      date,
+		DueDate:   dueDate,
+		Client:    client,
+		WorkItems: make([]WorkItem, 0),
+		Status:    StatusDraft,
+		TaxRate:   taxRate,
+		CreatedAt: now,
+		UpdatedAt: now,
+		Version:   1,
+	}
+
+	// Calculate initial totals (will be zero for empty work items)
+	if err := invoice.RecalculateTotals(ctx); err != nil {
+		return nil, fmt.Errorf("failed to calculate initial totals: %w", err)
+	}
+
+	// Validate the new invoice
+	if err := invoice.Validate(ctx); err != nil {
+		return nil, fmt.Errorf("invoice validation failed: %w", err)
+	}
+
+	return invoice, nil
+}
+
+// Validate performs comprehensive validation of the invoice
+func (i *Invoice) Validate(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	var errors []ValidationError
+
+	// Validate ID
+	if strings.TrimSpace(string(i.ID)) == "" {
+		errors = append(errors, ValidationError{
+			Field:   "id",
+			Message: "is required",
+			Value:   i.ID,
+		})
+	}
+
+	// Validate number
+	if strings.TrimSpace(i.Number) == "" {
+		errors = append(errors, ValidationError{
+			Field:   "number",
+			Message: "is required",
+			Value:   i.Number,
+		})
+	} else if !invoiceIDPattern.MatchString(i.Number) {
+		errors = append(errors, ValidationError{
+			Field:   "number",
+			Message: "must contain only uppercase letters, numbers, and hyphens",
+			Value:   i.Number,
+		})
+	}
+
+	// Validate dates
+	if i.Date.IsZero() {
+		errors = append(errors, ValidationError{
+			Field:   "date",
+			Message: "is required",
+			Value:   i.Date,
+		})
+	}
+
+	if i.DueDate.IsZero() {
+		errors = append(errors, ValidationError{
+			Field:   "due_date",
+			Message: "is required",
+			Value:   i.DueDate,
+		})
+	}
+
+	if !i.Date.IsZero() && !i.DueDate.IsZero() && i.DueDate.Before(i.Date) {
+		errors = append(errors, ValidationError{
+			Field:   "due_date",
+			Message: "must be on or after invoice date",
+			Value:   fmt.Sprintf("due: %v, invoice: %v", i.DueDate, i.Date),
+		})
+	}
+
+	// Validate status
+	validStatuses := []string{StatusDraft, StatusSent, StatusPaid, StatusOverdue, StatusVoided}
+	valid := false
+	for _, status := range validStatuses {
+		if i.Status == status {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		errors = append(errors, ValidationError{
+			Field:   "status",
+			Message: fmt.Sprintf("must be one of: %s", strings.Join(validStatuses, ", ")),
+			Value:   i.Status,
+		})
+	}
+
+	// Validate client
+	if err := i.Client.Validate(ctx); err != nil {
+		errors = append(errors, ValidationError{
+			Field:   "client",
+			Message: err.Error(),
+			Value:   i.Client,
+		})
+	}
+
+	// Validate work items
+	for idx, item := range i.WorkItems {
+		if err := item.Validate(ctx); err != nil {
+			errors = append(errors, ValidationError{
+				Field:   fmt.Sprintf("work_items[%d]", idx),
+				Message: err.Error(),
+				Value:   item,
+			})
+		}
+	}
+
+	// Validate tax rate
+	if i.TaxRate < 0 || i.TaxRate > 1 {
+		errors = append(errors, ValidationError{
+			Field:   "tax_rate",
+			Message: "must be between 0 and 1",
+			Value:   i.TaxRate,
+		})
+	}
+
+	// Validate financial amounts
+	if i.Subtotal < 0 {
+		errors = append(errors, ValidationError{
+			Field:   "subtotal",
+			Message: "must be non-negative",
+			Value:   i.Subtotal,
+		})
+	}
+
+	if i.TaxAmount < 0 {
+		errors = append(errors, ValidationError{
+			Field:   "tax_amount",
+			Message: "must be non-negative",
+			Value:   i.TaxAmount,
+		})
+	}
+
+	if i.Total < 0 {
+		errors = append(errors, ValidationError{
+			Field:   "total",
+			Message: "must be non-negative",
+			Value:   i.Total,
+		})
+	}
+
+	// Validate timestamps
+	if i.CreatedAt.IsZero() {
+		errors = append(errors, ValidationError{
+			Field:   "created_at",
+			Message: "is required",
+			Value:   i.CreatedAt,
+		})
+	}
+
+	if i.UpdatedAt.IsZero() {
+		errors = append(errors, ValidationError{
+			Field:   "updated_at",
+			Message: "is required",
+			Value:   i.UpdatedAt,
+		})
+	}
+
+	if !i.CreatedAt.IsZero() && !i.UpdatedAt.IsZero() && i.UpdatedAt.Before(i.CreatedAt) {
+		errors = append(errors, ValidationError{
+			Field:   "updated_at",
+			Message: "must be on or after created_at",
+			Value:   fmt.Sprintf("updated: %v, created: %v", i.UpdatedAt, i.CreatedAt),
+		})
+	}
+
+	// Validate version
+	if i.Version < 1 {
+		errors = append(errors, ValidationError{
+			Field:   "version",
+			Message: "must be at least 1",
+			Value:   i.Version,
+		})
+	}
+
+	if len(errors) > 0 {
+		var messages []string
+		for _, err := range errors {
+			messages = append(messages, err.Error())
+		}
+		return fmt.Errorf("invoice validation failed: %s", strings.Join(messages, "; "))
+	}
+
+	return nil
+}
+
+// AddWorkItem adds a work item to the invoice and recalculates totals
+func (i *Invoice) AddWorkItem(ctx context.Context, item WorkItem) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Validate the work item
+	if err := item.Validate(ctx); err != nil {
+		return fmt.Errorf("invalid work item: %w", err)
+	}
+
+	// Add the item
+	i.WorkItems = append(i.WorkItems, item)
+
+	// Recalculate totals
+	if err := i.RecalculateTotals(ctx); err != nil {
+		return fmt.Errorf("failed to recalculate totals after adding work item: %w", err)
+	}
+
+	// Update timestamp and version
+	i.UpdatedAt = time.Now()
+	i.Version++
+
+	return nil
+}
+
+// RemoveWorkItem removes a work item by ID and recalculates totals
+func (i *Invoice) RemoveWorkItem(ctx context.Context, itemID string) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Find and remove the item
+	found := false
+	for idx, item := range i.WorkItems {
+		if item.ID == itemID {
+			// Remove item by slicing
+			i.WorkItems = append(i.WorkItems[:idx], i.WorkItems[idx+1:]...)
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("work item with ID %s not found", itemID)
+	}
+
+	// Recalculate totals
+	if err := i.RecalculateTotals(ctx); err != nil {
+		return fmt.Errorf("failed to recalculate totals after removing work item: %w", err)
+	}
+
+	// Update timestamp and version
+	i.UpdatedAt = time.Now()
+	i.Version++
+
+	return nil
+}
+
+// RecalculateTotals recalculates all financial totals based on work items
+func (i *Invoice) RecalculateTotals(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Calculate subtotal from work items
+	subtotal := 0.0
+	for _, item := range i.WorkItems {
+		subtotal += item.Total
+	}
+
+	// Round to avoid floating point precision issues
+	i.Subtotal = math.Round(subtotal*100) / 100
+
+	// Calculate tax amount
+	i.TaxAmount = math.Round(i.Subtotal*i.TaxRate*100) / 100
+
+	// Calculate total
+	i.Total = math.Round((i.Subtotal+i.TaxAmount)*100) / 100
+
+	return nil
+}
+
+// UpdateStatus updates the invoice status with validation
+func (i *Invoice) UpdateStatus(ctx context.Context, newStatus string) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Validate new status
+	validStatuses := []string{StatusDraft, StatusSent, StatusPaid, StatusOverdue, StatusVoided}
+	valid := false
+	for _, status := range validStatuses {
+		if newStatus == status {
+			valid = true
+			break
+		}
+	}
+
+	if !valid {
+		return fmt.Errorf("invalid status '%s', must be one of: %s", newStatus, strings.Join(validStatuses, ", "))
+	}
+
+	// Business rule validation (example: can't void a paid invoice)
+	if i.Status == StatusPaid && newStatus == StatusVoided {
+		return fmt.Errorf("cannot void a paid invoice")
+	}
+
+	// Update status
+	i.Status = newStatus
+	i.UpdatedAt = time.Now()
+	i.Version++
+
+	return nil
+}
+
+// IsOverdue checks if the invoice is overdue
+func (i *Invoice) IsOverdue() bool {
+	return i.Status != StatusPaid && i.Status != StatusVoided && time.Now().After(i.DueDate)
+}
+
+// GetAgeInDays returns the age of the invoice in days
+func (i *Invoice) GetAgeInDays() int {
+	return int(time.Since(i.Date).Hours() / 24)
+}
+
+// GetDaysUntilDue returns the number of days until the due date (negative if overdue)
+func (i *Invoice) GetDaysUntilDue() int {
+	return int(time.Until(i.DueDate).Hours() / 24)
+}
