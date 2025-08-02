@@ -1,3 +1,4 @@
+// Package render provides template rendering and PDF generation services.
 package render
 
 import (
@@ -11,6 +12,8 @@ import (
 	"time"
 
 	"github.com/mrz/go-invoice/internal/models"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Logger defines the interface for logging operations
@@ -408,7 +411,7 @@ func (e *HTMLTemplateEngine) getTemplateFunctions() template.FuncMap {
 		},
 		"upper": strings.ToUpper,
 		"lower": strings.ToLower,
-		"title": strings.Title,
+		"title": cases.Title(language.English).String,
 		"add": func(a, b float64) float64 {
 			return a + b
 		},

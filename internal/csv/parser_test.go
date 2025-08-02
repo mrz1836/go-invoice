@@ -624,7 +624,7 @@ func TestParseRow(t *testing.T) {
 			workItem, err := parser.parseRow(ctx, tt.row, headerMap, tt.lineNum)
 
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, workItem)
 			} else {
 				require.NoError(t, err)

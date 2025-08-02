@@ -480,12 +480,12 @@ func (suite *WorkItemTestSuite) TestUpdateRate() {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
 				// Values should remain unchanged
-				assert.Equal(t, 100.0, workItem.Rate)
-				assert.Equal(t, 800.0, workItem.Total)
+				assert.InEpsilon(t, 100.0, workItem.Rate, 1e-9)
+				assert.InEpsilon(t, 800.0, workItem.Total, 1e-9)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tt.newRate, workItem.Rate)
-				assert.Equal(t, tt.expectedTotal, workItem.Total)
+				assert.InEpsilon(t, tt.newRate, workItem.Rate, 1e-9)
+				assert.InEpsilon(t, tt.expectedTotal, workItem.Total, 1e-9)
 			}
 		})
 	}

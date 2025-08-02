@@ -228,7 +228,7 @@ func (a *App) buildInvoiceListCommand() *cobra.Command {
 }
 
 // runInvoiceList handles the invoice list command
-func (a *App) runInvoiceList(cmd *cobra.Command, args []string) error {
+func (a *App) runInvoiceList(cmd *cobra.Command, _ []string) error {
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
@@ -246,7 +246,7 @@ func (a *App) runInvoiceList(cmd *cobra.Command, args []string) error {
 	clientService := services.NewClientService(clientStorage, invoiceStorage, a.logger, idGen)
 
 	// Build filter from flags
-	filter, err := a.buildInvoiceFilter(cmd, clientService, ctx)
+	filter, err := a.buildInvoiceFilter(ctx, cmd, clientService)
 	if err != nil {
 		return err
 	}
@@ -270,7 +270,7 @@ func (a *App) runInvoiceList(cmd *cobra.Command, args []string) error {
 		a.outputInvoicesCSV(invoices)
 		return nil
 	default:
-		if err := a.outputInvoicesTable(invoices, clientService, ctx); err != nil {
+		if err := a.outputInvoicesTable(ctx, invoices, clientService); err != nil {
 			return err
 		}
 		if showSummary {
@@ -739,7 +739,7 @@ func (a *App) findOrCreateClient(ctx context.Context, clientService *services.Cl
 }
 
 // buildInvoiceFilter builds an invoice filter from command flags
-func (a *App) buildInvoiceFilter(cmd *cobra.Command, clientService *services.ClientService, ctx context.Context) (models.InvoiceFilter, error) {
+func (a *App) buildInvoiceFilter(ctx context.Context, cmd *cobra.Command, clientService *services.ClientService) (models.InvoiceFilter, error) {
 	filter := models.InvoiceFilter{}
 
 	// Build status filter
@@ -748,7 +748,7 @@ func (a *App) buildInvoiceFilter(cmd *cobra.Command, clientService *services.Cli
 	}
 
 	// Build client filter
-	if err := a.buildClientFilter(cmd, clientService, ctx, &filter); err != nil {
+	if err := a.buildClientFilter(ctx, cmd, clientService, &filter); err != nil {
 		return filter, err
 	}
 
@@ -782,7 +782,7 @@ func (a *App) buildStatusFilter(cmd *cobra.Command, filter *models.InvoiceFilter
 }
 
 // buildClientFilter builds the client filter from command flags
-func (a *App) buildClientFilter(cmd *cobra.Command, clientService *services.ClientService, ctx context.Context, filter *models.InvoiceFilter) error {
+func (a *App) buildClientFilter(ctx context.Context, cmd *cobra.Command, clientService *services.ClientService, filter *models.InvoiceFilter) error {
 	clientName, _ := cmd.Flags().GetString("client")
 	if clientName == "" {
 		return nil
@@ -867,7 +867,7 @@ func (a *App) outputInvoicesCSV(invoices []*models.Invoice) {
 	}
 }
 
-func (a *App) outputInvoicesTable(invoices []*models.Invoice, _ *services.ClientService, ctx context.Context) error {
+func (a *App) outputInvoicesTable(ctx context.Context, invoices []*models.Invoice, _ *services.ClientService) error {
 	if len(invoices) == 0 {
 		fmt.Println("No invoices found")
 		return nil

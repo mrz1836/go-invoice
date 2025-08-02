@@ -477,7 +477,7 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 
 		// ValidateBatch returns an error, not warnings - but logs warnings
 		err := suite.validator.ValidateBatch(ctx, workItems)
-		suite.NoError(err, "batch validation should not error, just log warnings")
+		suite.Require().NoError(err, "batch validation should not error, just log warnings")
 
 		// Check that rate inconsistency was logged (similar to existing tests)
 		var foundWarning bool

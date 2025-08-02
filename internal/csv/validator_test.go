@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/mrz/go-invoice/internal/models"
@@ -842,7 +843,7 @@ func TestValidateRateConsistency(t *testing.T) {
 
 	ctx := context.Background()
 	err := validator.ValidateBatch(ctx, workItems)
-	assert.NoError(t, err) // Should pass validation
+	require.NoError(t, err) // Should pass validation
 
 	// Check that rate inconsistency was logged
 	var foundWarning bool
@@ -876,7 +877,7 @@ func TestValidateTotalHoursWarning(t *testing.T) {
 
 	ctx := context.Background()
 	err := validator.ValidateBatch(ctx, workItems)
-	assert.NoError(t, err) // Should pass validation
+	require.NoError(t, err) // Should pass validation
 
 	// Check that high total hours was logged
 	var foundWarning bool

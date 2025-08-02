@@ -58,7 +58,7 @@ func (m *MockFileReader) SetError(err error) {
 	m.err = err
 }
 
-func (m *MockFileReader) ReadFile(ctx context.Context, path string) ([]byte, error) {
+func (m *MockFileReader) ReadFile(_ context.Context, path string) ([]byte, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -75,7 +75,7 @@ func (m *MockFileReader) ReadFile(ctx context.Context, path string) ([]byte, err
 	return content, nil
 }
 
-func (m *MockFileReader) FileExists(ctx context.Context, path string) (bool, error) {
+func (m *MockFileReader) FileExists(_ context.Context, path string) (bool, error) {
 	if m.err != nil {
 		return false, m.err
 	}
@@ -84,7 +84,7 @@ func (m *MockFileReader) FileExists(ctx context.Context, path string) (bool, err
 	return exists, nil
 }
 
-func (m *MockFileReader) GetFileInfo(ctx context.Context, path string) (FileInfo, error) {
+func (m *MockFileReader) GetFileInfo(_ context.Context, path string) (FileInfo, error) {
 	if m.err != nil {
 		return FileInfo{}, m.err
 	}
@@ -441,7 +441,7 @@ func (suite *RenderTestSuite) TestContextCancellation() {
 	suite.Equal(context.Canceled, err)
 
 	err = suite.engine.ClearCache(ctx)
-	suite.Error(err)
+	suite.Require().Error(err)
 	suite.Equal(context.Canceled, err)
 }
 

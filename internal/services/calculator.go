@@ -1,3 +1,4 @@
+// Package services provides business logic and orchestration services.
 package services
 
 import (

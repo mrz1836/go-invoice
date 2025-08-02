@@ -15,9 +15,9 @@ type MockLogger struct {
 	messages []string
 }
 
-func (m *MockLogger) Info(msg string, fields ...any)  { m.messages = append(m.messages, msg) }
-func (m *MockLogger) Error(msg string, fields ...any) { m.messages = append(m.messages, msg) }
-func (m *MockLogger) Debug(msg string, fields ...any) { m.messages = append(m.messages, msg) }
+func (m *MockLogger) Info(msg string, _ ...any)  { m.messages = append(m.messages, msg) }
+func (m *MockLogger) Error(msg string, _ ...any) { m.messages = append(m.messages, msg) }
+func (m *MockLogger) Debug(msg string, _ ...any) { m.messages = append(m.messages, msg) }
 
 // PrompterTestSuite tests the Prompter functionality
 type PrompterTestSuite struct {

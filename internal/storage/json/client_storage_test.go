@@ -106,7 +106,7 @@ func (suite *ClientStorageTestSuite) TestCreateClient() {
 	err = suite.storage.CreateClient(suite.ctx, client)
 	require.Error(t, err)
 	var conflictErr storageTypes.ConflictError
-	assert.ErrorAs(t, err, &conflictErr)
+	require.ErrorAs(t, err, &conflictErr)
 	assert.Equal(t, "client", conflictErr.Resource)
 	assert.Equal(t, "CLIENT-001", conflictErr.ID)
 
@@ -168,7 +168,7 @@ func (suite *ClientStorageTestSuite) TestGetClient() {
 	require.Error(t, err)
 	assert.Nil(t, retrieved)
 	var notFoundErr storageTypes.NotFoundError
-	assert.ErrorAs(t, err, &notFoundErr)
+	require.ErrorAs(t, err, &notFoundErr)
 	assert.Equal(t, "client", notFoundErr.Resource)
 	assert.Equal(t, "CLIENT-999", notFoundErr.ID)
 
@@ -260,7 +260,7 @@ func (suite *ClientStorageTestSuite) TestUpdateClient() {
 	err = suite.storage.UpdateClient(suite.ctx, nonExistent)
 	require.Error(t, err)
 	var notFoundErr storageTypes.NotFoundError
-	assert.ErrorAs(t, err, &notFoundErr)
+	require.ErrorAs(t, err, &notFoundErr)
 
 	// Test with nil client
 	err = suite.storage.UpdateClient(suite.ctx, nil)
@@ -316,7 +316,7 @@ func (suite *ClientStorageTestSuite) TestDeleteClient() {
 	err = suite.storage.DeleteClient(suite.ctx, "CLIENT-999")
 	require.Error(t, err)
 	var notFoundErr storageTypes.NotFoundError
-	assert.ErrorAs(t, err, &notFoundErr)
+	require.ErrorAs(t, err, &notFoundErr)
 
 	// Test with empty ID
 	err = suite.storage.DeleteClient(suite.ctx, "")
@@ -462,7 +462,7 @@ func (suite *ClientStorageTestSuite) TestFindClientByEmail() {
 	require.Error(t, err)
 	assert.Nil(t, client)
 	var notFoundErr storageTypes.NotFoundError
-	assert.ErrorAs(t, err, &notFoundErr)
+	require.ErrorAs(t, err, &notFoundErr)
 
 	// Create test clients
 	clients := []*models.Client{
@@ -844,7 +844,7 @@ func (suite *ClientStorageTestSuite) TestEmailIndexConsistency() {
 	_, err = suite.storage.FindClientByEmail(suite.ctx, "original@example.com")
 	require.Error(t, err)
 	var notFoundErr storageTypes.NotFoundError
-	assert.ErrorAs(t, err, &notFoundErr)
+	require.ErrorAs(t, err, &notFoundErr)
 
 	// New email should find the client
 	found, err = suite.storage.FindClientByEmail(suite.ctx, "updated@example.com")

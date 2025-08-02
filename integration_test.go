@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -214,7 +215,8 @@ func (suite *IntegrationTestSuite) TestCSVParsingWorkflow() {
 
 	// Open and parse CSV file
 	// Validate that csvFile is within tempDir to prevent path traversal
-	if !filepath.HasPrefix(csvFile, suite.tempDir) {
+	rel, err := filepath.Rel(suite.tempDir, csvFile)
+	if err != nil || strings.HasPrefix(rel, "..") {
 		suite.T().Fatal("invalid file path")
 	}
 	file, err := os.Open(filepath.Clean(csvFile))
@@ -333,7 +335,8 @@ invalid-date,Test Item,8,100`
 	suite.Require().NoError(err)
 
 	// Validate that csvFile is within tempDir to prevent path traversal
-	if !filepath.HasPrefix(csvFile, suite.tempDir) {
+	rel, err := filepath.Rel(suite.tempDir, csvFile)
+	if err != nil || strings.HasPrefix(rel, "..") {
 		suite.T().Fatal("invalid file path")
 	}
 	file, err := os.Open(filepath.Clean(csvFile))
@@ -386,7 +389,8 @@ func (suite *IntegrationTestSuite) TestCompleteWorkflow() {
 	suite.Require().NoError(err)
 
 	// Validate that csvFile is within tempDir to prevent path traversal
-	if !filepath.HasPrefix(csvFile, suite.tempDir) {
+	rel, err := filepath.Rel(suite.tempDir, csvFile)
+	if err != nil || strings.HasPrefix(rel, "..") {
 		suite.T().Fatal("invalid file path")
 	}
 	file, err := os.Open(filepath.Clean(csvFile))
