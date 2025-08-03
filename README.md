@@ -17,9 +17,9 @@
           <img src="https://img.shields.io/github/release-pre/mrz1836/go-invoice?logo=github&style=flat&v=1" alt="Latest Release">
         </a><br/>
         <a href="https://github.com/mrz1836/go-invoice/actions">
-          <img src="https://img.shields.io/github/actions/workflow/status/mrz1836/go-invoice/fortress.yml?branch=main&logo=github&style=flat" alt="Build Status">
+          <img src="https://img.shields.io/github/actions/workflow/status/mrz1836/go-invoice/fortress.yml?branch=master&logo=github&style=flat" alt="Build Status">
         </a><br/>
-        <a href="https://github.com/mrz1836/go-invoice/commits/main">
+        <a href="https://github.com/mrz1836/go-invoice/commits/master">
           <img src="https://img.shields.io/github/last-commit/mrz1836/go-invoice?style=flat&logo=clockify&logoColor=white" alt="Last commit">
         </a>
       </td>
@@ -439,7 +439,7 @@ go-invoice invoice generate \
 
 ```
 go-invoice/
-├── cmd/                    # CLI application entry point
+├── cmd/                   # CLI application entry point
 ├── internal/
 │   ├── cli/               # CLI interface and prompting
 │   ├── config/            # Configuration management
