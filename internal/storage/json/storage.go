@@ -516,6 +516,16 @@ func (s *JSONStorage) writeJSONFile(ctx context.Context, path string, data inter
 		}
 	}()
 
+	// Check context after file creation
+	select {
+	case <-ctx.Done():
+		if removeErr := os.Remove(tempPath); removeErr != nil {
+			s.logger.Error("failed to remove temp file", "path", tempPath, "error", removeErr)
+		}
+		return ctx.Err()
+	default:
+	}
+
 	// Encode JSON with indentation for readability
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
@@ -526,6 +536,16 @@ func (s *JSONStorage) writeJSONFile(ctx context.Context, path string, data inter
 		return fmt.Errorf("failed to encode JSON: %w", err)
 	}
 
+	// Check context after JSON encoding
+	select {
+	case <-ctx.Done():
+		if removeErr := os.Remove(tempPath); removeErr != nil {
+			s.logger.Error("failed to remove temp file", "path", tempPath, "error", removeErr)
+		}
+		return ctx.Err()
+	default:
+	}
+
 	// Sync to disk
 	if err := file.Sync(); err != nil {
 		if removeErr := os.Remove(tempPath); removeErr != nil {
@@ -534,9 +554,29 @@ func (s *JSONStorage) writeJSONFile(ctx context.Context, path string, data inter
 		return fmt.Errorf("failed to sync file: %w", err)
 	}
 
+	// Check context after sync
+	select {
+	case <-ctx.Done():
+		if removeErr := os.Remove(tempPath); removeErr != nil {
+			s.logger.Error("failed to remove temp file", "path", tempPath, "error", removeErr)
+		}
+		return ctx.Err()
+	default:
+	}
+
 	if err := file.Close(); err != nil {
 		s.logger.Error("failed to close temp file before rename", "error", err, "path", tempPath)
 		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+
+	// Check context before final rename
+	select {
+	case <-ctx.Done():
+		if removeErr := os.Remove(tempPath); removeErr != nil {
+			s.logger.Error("failed to remove temp file", "path", tempPath, "error", removeErr)
+		}
+		return ctx.Err()
+	default:
 	}
 
 	// Atomic rename

@@ -86,7 +86,7 @@ func (vb *ValidationBuilder) AddRequired(field string, value string) *Validation
 
 // AddMaxLength adds a max length validation error if the value exceeds the limit
 func (vb *ValidationBuilder) AddMaxLength(field string, value string, maxLen int) *ValidationBuilder {
-	if len(strings.TrimSpace(value)) > maxLen {
+	if len(value) > maxLen {
 		vb.errors = append(vb.errors, ValidationError{
 			Field:   field,
 			Message: fmt.Sprintf("cannot exceed %d characters", maxLen),
@@ -111,12 +111,11 @@ func (vb *ValidationBuilder) AddMinLength(field string, value string, minLen int
 
 // AddLengthRange adds a length range validation error if the value is outside the range
 func (vb *ValidationBuilder) AddLengthRange(field string, value string, minLen, maxLen int) *ValidationBuilder {
-	trimmed := strings.TrimSpace(value)
-	if value != "" && (len(trimmed) < minLen || len(trimmed) > maxLen) {
+	if value != "" && (len(value) < minLen || len(value) > maxLen) {
 		vb.errors = append(vb.errors, ValidationError{
 			Field:   field,
 			Message: fmt.Sprintf("must be between %d and %d characters", minLen, maxLen),
-			Value:   value,
+			Value:   len(value),
 		})
 	}
 	return vb

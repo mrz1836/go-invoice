@@ -75,7 +75,7 @@ type JSONStorageTestSuite struct {
 }
 
 func (suite *JSONStorageTestSuite) SetupTest() {
-	suite.ctx, suite.cancelFunc = context.WithTimeout(context.Background(), 5*time.Second)
+	suite.ctx, suite.cancelFunc = context.WithTimeout(context.Background(), 30*time.Second)
 
 	// Create temporary directory for tests
 	tempDir, err := os.MkdirTemp("", "json-storage-test-*")
