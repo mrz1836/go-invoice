@@ -815,6 +815,196 @@ func (suite *ClientStorageTestSuite) TestClientStorageWithInvalidJSON() {
 	// We just verify they don't show up in the list above
 }
 
+func (suite *ClientStorageTestSuite) TestHardDeleteClient() {
+	t := suite.T()
+
+	// Create test client
+	client := &models.Client{
+		ID:        "CLIENT-HARD-DELETE",
+		Name:      "Test Client",
+		Email:     "harddelete@example.com",
+		Active:    true,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	// Save client
+	err := suite.storage.CreateClient(suite.ctx, client)
+	require.NoError(t, err)
+
+	// Verify file exists
+	clientPath := filepath.Join(suite.tempDir, "clients", "CLIENT-HARD-DELETE.json")
+	_, err = os.Stat(clientPath)
+	require.NoError(t, err)
+
+	// Verify client can be retrieved
+	retrieved, err := suite.storage.GetClient(suite.ctx, "CLIENT-HARD-DELETE")
+	require.NoError(t, err)
+	assert.Equal(t, client.ID, retrieved.ID)
+
+	// Hard delete client
+	err = suite.storage.HardDeleteClient(suite.ctx, "CLIENT-HARD-DELETE")
+	require.NoError(t, err)
+
+	// Verify file no longer exists
+	_, err = os.Stat(clientPath)
+	require.Error(t, err)
+	assert.True(t, os.IsNotExist(err))
+
+	// Verify client cannot be retrieved
+	_, err = suite.storage.GetClient(suite.ctx, "CLIENT-HARD-DELETE")
+	require.Error(t, err)
+	var notFoundErr storageTypes.NotFoundError
+	require.ErrorAs(t, err, &notFoundErr)
+
+	// Verify client doesn't exist
+	exists, err := suite.storage.ExistsClient(suite.ctx, "CLIENT-HARD-DELETE")
+	require.NoError(t, err)
+	assert.False(t, exists)
+
+	// Test hard delete non-existent client
+	err = suite.storage.HardDeleteClient(suite.ctx, "CLIENT-NONEXISTENT")
+	require.Error(t, err)
+	require.ErrorAs(t, err, &notFoundErr)
+
+	// Test with empty ID
+	err = suite.storage.HardDeleteClient(suite.ctx, "")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "client ID cannot be empty")
+
+	// Test with whitespace ID
+	err = suite.storage.HardDeleteClient(suite.ctx, "   ")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "client ID cannot be empty")
+
+	// Test with context cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err = suite.storage.HardDeleteClient(ctx, "CLIENT-HARD-DELETE")
+	assert.Equal(t, context.Canceled, err)
+}
+
+func (suite *ClientStorageTestSuite) TestRestoreClient() {
+	t := suite.T()
+
+	// Create test client
+	client := &models.Client{
+		ID:        "CLIENT-RESTORE",
+		Name:      "Test Client",
+		Email:     "restore@example.com",
+		Active:    true,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	// Save client
+	err := suite.storage.CreateClient(suite.ctx, client)
+	require.NoError(t, err)
+
+	// Soft delete client
+	err = suite.storage.DeleteClient(suite.ctx, "CLIENT-RESTORE")
+	require.NoError(t, err)
+
+	// Verify client is inactive
+	retrieved, err := suite.storage.GetClient(suite.ctx, "CLIENT-RESTORE")
+	require.NoError(t, err)
+	assert.False(t, retrieved.Active)
+
+	// Restore client
+	err = suite.storage.RestoreClient(suite.ctx, "CLIENT-RESTORE")
+	require.NoError(t, err)
+
+	// Verify client is active again
+	retrieved, err = suite.storage.GetClient(suite.ctx, "CLIENT-RESTORE")
+	require.NoError(t, err)
+	assert.True(t, retrieved.Active)
+	assert.True(t, retrieved.UpdatedAt.After(time.Now().Add(-time.Second)))
+
+	// Test restore non-existent client
+	err = suite.storage.RestoreClient(suite.ctx, "CLIENT-NONEXISTENT")
+	require.Error(t, err)
+	var notFoundErr storageTypes.NotFoundError
+	require.ErrorAs(t, err, &notFoundErr)
+
+	// Test with context cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err = suite.storage.RestoreClient(ctx, "CLIENT-RESTORE")
+	assert.Equal(t, context.Canceled, err)
+}
+
+func (suite *ClientStorageTestSuite) TestGetClientInvoiceCount() {
+	t := suite.T()
+
+	// Create test client
+	client := &models.Client{
+		ID:        "CLIENT-COUNT",
+		Name:      "Count Test Client",
+		Email:     "count@example.com",
+		Active:    true,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	err := suite.storage.CreateClient(suite.ctx, client)
+	require.NoError(t, err)
+
+	// Test with no invoices (CountInvoices method might not exist, so this tests the interface)
+	count, err := suite.storage.GetClientInvoiceCount(suite.ctx, "CLIENT-COUNT")
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), count)
+
+	// Test with non-existent client
+	count, err = suite.storage.GetClientInvoiceCount(suite.ctx, "CLIENT-NONEXISTENT")
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), count)
+
+	// Test with context cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	count, err = suite.storage.GetClientInvoiceCount(ctx, "CLIENT-COUNT")
+	assert.Equal(t, context.Canceled, err)
+	assert.Equal(t, int64(0), count)
+}
+
+func (suite *ClientStorageTestSuite) TestGetClientActiveInvoices() {
+	t := suite.T()
+
+	// Create test client
+	client := &models.Client{
+		ID:        "CLIENT-ACTIVE",
+		Name:      "Active Test Client",
+		Email:     "active@example.com",
+		Active:    true,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	err := suite.storage.CreateClient(suite.ctx, client)
+	require.NoError(t, err)
+
+	// Test with no invoices
+	invoices, err := suite.storage.GetClientActiveInvoices(suite.ctx, "CLIENT-ACTIVE")
+	require.NoError(t, err)
+	assert.Empty(t, invoices)
+
+	// Test with non-existent client
+	invoices, err = suite.storage.GetClientActiveInvoices(suite.ctx, "CLIENT-NONEXISTENT")
+	require.NoError(t, err)
+	assert.Empty(t, invoices)
+
+	// Test with context cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	invoices, err = suite.storage.GetClientActiveInvoices(ctx, "CLIENT-ACTIVE")
+	assert.Equal(t, context.Canceled, err)
+	assert.Nil(t, invoices)
+}
+
 func (suite *ClientStorageTestSuite) TestEmailIndexConsistency() {
 	t := suite.T()
 

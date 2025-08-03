@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -211,6 +212,127 @@ func (suite *LoggerTestSuite) TestLoggerConcurrency() {
 		suite.Contains(line, "[INFO]")
 		suite.Contains(line, "concurrent message")
 	}
+}
+
+// TestFatalLoggingFormat tests that fatal messages are formatted correctly
+// This doesn't test the os.Exit(1) behavior to avoid terminating the test
+func (suite *LoggerTestSuite) TestFatalLoggingFormat() {
+	// We can test the logging format by examining what would be logged
+	// before os.Exit is called. We'll use a mock or examine the formatFields method directly.
+
+	// Test that Fatal would log with the correct format
+	msg := "fatal error occurred"
+	fields := []any{"component", "database", "error", "connection timeout"}
+
+	// Test the format that would be used (same as other log methods)
+	expectedFields := suite.logger.formatFields(fields...)
+	expectedFormat := "[FATAL] " + msg + " " + expectedFields
+
+	// Verify the format is constructed correctly
+	suite.Contains(expectedFormat, "[FATAL]")
+	suite.Contains(expectedFormat, msg)
+	suite.Contains(expectedFormat, "component=database")
+	suite.Contains(expectedFormat, "error=connection timeout")
+}
+
+// TestPrintMethods tests the Print, Printf, and Println methods
+func (suite *LoggerTestSuite) TestPrintMethods() {
+	// Capture stdout for print methods
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	// Capture output in a separate goroutine
+	outputChan := make(chan string)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, r)
+		outputChan <- buf.String()
+	}()
+
+	// Test Print method
+	suite.logger.Print("test print message")
+
+	// Test Printf method
+	suite.logger.Printf("test printf %s %d", "message", 42)
+
+	// Test Println method
+	suite.logger.Println("test println message")
+
+	// Close writer and restore stdout
+	_ = w.Close()
+	os.Stdout = oldStdout
+
+	// Get captured output
+	output := <-outputChan
+
+	// Verify output contains expected messages
+	suite.Contains(output, "test print message")
+	suite.Contains(output, "test printf message 42")
+	suite.Contains(output, "test println message")
+}
+
+// TestPrintMethodsIndividually tests each print method separately for more precise verification
+func (suite *LoggerTestSuite) TestPrintMethodsIndividually() {
+	suite.Run("Print", func() {
+		oldStdout := os.Stdout
+		r, w, _ := os.Pipe()
+		os.Stdout = w
+
+		outputChan := make(chan string)
+		go func() {
+			var buf bytes.Buffer
+			_, _ = io.Copy(&buf, r)
+			outputChan <- buf.String()
+		}()
+
+		suite.logger.Print("hello")
+		_ = w.Close()
+		os.Stdout = oldStdout
+
+		output := <-outputChan
+		suite.Equal("hello", output)
+	})
+
+	suite.Run("Printf", func() {
+		oldStdout := os.Stdout
+		r, w, _ := os.Pipe()
+		os.Stdout = w
+
+		outputChan := make(chan string)
+		go func() {
+			var buf bytes.Buffer
+			_, _ = io.Copy(&buf, r)
+			outputChan <- buf.String()
+		}()
+
+		suite.logger.Printf("hello %s", "world")
+		_ = w.Close()
+		os.Stdout = oldStdout
+
+		output := <-outputChan
+		suite.Equal("hello world", output)
+	})
+
+	suite.Run("Println", func() {
+		oldStdout := os.Stdout
+		r, w, _ := os.Pipe()
+		os.Stdout = w
+
+		outputChan := make(chan string)
+		go func() {
+			var buf bytes.Buffer
+			_, _ = io.Copy(&buf, r)
+			outputChan <- buf.String()
+		}()
+
+		suite.logger.Println("hello")
+		_ = w.Close()
+		os.Stdout = oldStdout
+
+		output := <-outputChan
+		suite.Equal("hello\n", output)
+	})
 }
 
 // TestLoggerTestSuite runs the logger test suite

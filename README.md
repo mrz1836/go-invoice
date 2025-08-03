@@ -782,13 +782,13 @@ All kinds of contributions are welcome! :raised_hands:
 - **🔧 Submit pull requests** with bug fixes or new features
 - **💬 Join discussions** and help other users
 
+<br/>
 
 ## 📝 License
 
 [![License](https://img.shields.io/github/license/mrz1836/go-invoice.svg?style=flat&v=1)](LICENSE)
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
+<br/>
 <br/>
 
 <div align="center">

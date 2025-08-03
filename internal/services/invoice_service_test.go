@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/mrz/go-invoice/internal/models"
 	"github.com/mrz/go-invoice/internal/storage"
 )
+
+var errConnectionTimeout = errors.New("connection timeout")
 
 // InvoiceServiceTestSuite tests for the InvoiceService
 type InvoiceServiceTestSuite struct {
@@ -424,6 +427,188 @@ func (suite *InvoiceServiceTestSuite) TestGetOverdueInvoices() {
 		require.NoError(t, err)
 		assert.Len(t, invoices, 2)
 		assert.Equal(t, models.StatusOverdue, invoices[0].Status)
+	})
+}
+
+func (suite *InvoiceServiceTestSuite) TestRemoveWorkItemFromInvoice() {
+	t := suite.T()
+
+	// Create test invoice with multiple work items
+	invoiceWithWorkItems := &models.Invoice{
+		ID:      "INV-001",
+		Number:  "INV-2024-001",
+		Status:  models.StatusDraft,
+		Version: 1,
+		Client: models.Client{
+			ID:        "CLIENT-001",
+			Name:      "Test Client",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		WorkItems: []models.WorkItem{
+			{
+				ID:          "WORK-001",
+				Date:        time.Now(),
+				Hours:       8.0,
+				Rate:        100.0,
+				Description: "First work item",
+				Total:       800.0,
+				CreatedAt:   time.Now(),
+			},
+			{
+				ID:          "WORK-002",
+				Date:        time.Now(),
+				Hours:       4.0,
+				Rate:        150.0,
+				Description: "Second work item",
+				Total:       600.0,
+				CreatedAt:   time.Now(),
+			},
+		},
+		Date:      time.Now(),
+		DueDate:   time.Now().AddDate(0, 0, 30),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	// Success case - remove existing work item
+	suite.Run("Success", func() {
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(invoiceWithWorkItems, nil).Once()
+		suite.storage.On("UpdateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(nil).Once()
+
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-001", "WORK-001")
+
+		require.NoError(t, err)
+		require.NotNil(t, updatedInvoice)
+		assert.Len(t, updatedInvoice.WorkItems, 1) // Should have 1 work item left
+		assert.Equal(t, "WORK-002", updatedInvoice.WorkItems[0].ID)
+	})
+
+	// Invoice not found
+	suite.Run("InvoiceNotFound", func() {
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-999")).Return(nil, storage.NewNotFoundError("invoice", "INV-999")).Once()
+
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-999", "WORK-001")
+
+		require.Error(t, err)
+		assert.Nil(t, updatedInvoice)
+		assert.Contains(t, err.Error(), "failed to retrieve invoice")
+	})
+
+	// Cannot remove from non-draft invoice
+	suite.Run("CannotRemoveFromNonDraft", func() {
+		sentInvoice := &models.Invoice{
+			ID:      "INV-001",
+			Status:  models.StatusSent,
+			Version: 1,
+			WorkItems: []models.WorkItem{
+				{ID: "WORK-001", Hours: 8, Rate: 100, Total: 800},
+			},
+		}
+
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(sentInvoice, nil).Once()
+
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-001", "WORK-001")
+
+		require.Error(t, err)
+		assert.Nil(t, updatedInvoice)
+		assert.Contains(t, err.Error(), "can only remove work items from draft invoices")
+		assert.Contains(t, err.Error(), "current status: sent")
+	})
+
+	// Work item not found
+	suite.Run("WorkItemNotFound", func() {
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(invoiceWithWorkItems, nil).Once()
+
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-001", "WORK-999")
+
+		require.Error(t, err)
+		assert.Nil(t, updatedInvoice)
+		assert.Contains(t, err.Error(), "failed to remove work item")
+	})
+
+	// Remove last work item
+	suite.Run("RemoveLastWorkItem", func() {
+		invoiceWithOneItem := &models.Invoice{
+			ID:      "INV-001",
+			Status:  models.StatusDraft,
+			Version: 1,
+			WorkItems: []models.WorkItem{
+				{ID: "WORK-001", Hours: 8, Rate: 100, Total: 800},
+			},
+			Client: models.Client{
+				ID:        "CLIENT-001",
+				Name:      "Test Client",
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+			Date:      time.Now(),
+			DueDate:   time.Now().AddDate(0, 0, 30),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(invoiceWithOneItem, nil).Once()
+		suite.storage.On("UpdateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(nil).Once()
+
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-001", "WORK-001")
+
+		require.NoError(t, err)
+		require.NotNil(t, updatedInvoice)
+		assert.Empty(t, updatedInvoice.WorkItems) // Should have no work items left
+	})
+
+	// Storage update failure
+	suite.Run("StorageUpdateFailure", func() {
+		// Create a copy so we can modify it without affecting other tests
+		testInvoice := &models.Invoice{
+			ID:      "INV-STORAGE-FAIL",
+			Number:  "INV-2024-001",
+			Status:  models.StatusDraft,
+			Version: 1,
+			Client: models.Client{
+				ID:        "CLIENT-001",
+				Name:      "Test Client",
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+			WorkItems: []models.WorkItem{
+				{
+					ID:          "WORK-001",
+					Date:        time.Now(),
+					Hours:       8.0,
+					Rate:        100.0,
+					Description: "First work item",
+					Total:       800.0,
+					CreatedAt:   time.Now(),
+				},
+			},
+			Date:      time.Now(),
+			DueDate:   time.Now().AddDate(0, 0, 30),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-STORAGE-FAIL")).Return(testInvoice, nil).Once()
+		suite.storage.On("UpdateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(storage.NewStorageUnavailableError("database connection lost", errConnectionTimeout)).Once()
+
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-STORAGE-FAIL", "WORK-001")
+
+		require.Error(t, err)
+		assert.Nil(t, updatedInvoice)
+		assert.Contains(t, err.Error(), "failed to update invoice after removing work item")
+	})
+
+	// Context cancellation
+	suite.Run("ContextCanceled", func() {
+		canceledCtx, cancel := context.WithCancel(context.Background())
+		cancel() // Cancel immediately
+
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(canceledCtx, "INV-001", "WORK-001")
+
+		require.Error(t, err)
+		assert.Nil(t, updatedInvoice)
+		assert.Equal(t, context.Canceled, err)
 	})
 }
 
