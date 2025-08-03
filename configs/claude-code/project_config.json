@@ -1,0 +1,61 @@
+{
+  "// NOTE": "This is a template. Copy to your project root as .claude_config.json",
+  "mcp": {
+    "servers": {
+      "go-invoice": {
+        "command": "./bin/go-invoice-mcp",
+        "args": [
+          "--stdio",
+          "--config",
+          "./invoice-config.json"
+        ],
+        "workingDirectory": ".",
+        "env": {
+          "GO_INVOICE_PROJECT": "./",
+          "MCP_TRANSPORT": "stdio",
+          "MCP_LOG_FILE": "./.go-invoice/mcp.log"
+        },
+        "projectSettings": {
+          "defaultClient": "",
+          "invoicePrefix": "INV",
+          "autoImportPath": "./timesheets",
+          "outputPath": "./invoices",
+          "templatePath": "./templates/invoice.html"
+        }
+      }
+    },
+    "shortcuts": {
+      "invoice": {
+        "description": "Quick invoice creation",
+        "server": "go-invoice",
+        "tool": "invoice_create"
+      },
+      "import": {
+        "description": "Import timesheet",
+        "server": "go-invoice",
+        "tool": "import_csv"
+      },
+      "generate": {
+        "description": "Generate invoice HTML",
+        "server": "go-invoice",
+        "tool": "generate_html"
+      }
+    }
+  },
+  "workspace": {
+    "invoices": {
+      "path": "./invoices",
+      "watch": true,
+      "autoOpen": true
+    },
+    "timesheets": {
+      "path": "./timesheets",
+      "watch": true,
+      "patterns": ["*.csv", "*.xlsx"]
+    },
+    "templates": {
+      "path": "./templates",
+      "watch": false
+    }
+  }
+}

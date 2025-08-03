@@ -1,0 +1,137 @@
+# Logging configuration for go-invoice MCP integration
+version: "1.0"
+
+# Global settings
+global:
+  level: "info"
+  format: "json"
+  timestamp_format: "2006-01-02T15:04:05.000Z07:00"
+  caller_info: true
+  stacktrace_level: "error"
+
+# Output configurations
+outputs:
+  # File output for general logs
+  file:
+    enabled: true
+    path: "~/.go-invoice/logs/mcp-server.log"
+    max_size_mb: 50
+    max_backups: 5
+    max_age_days: 30
+    compress: true
+    permissions: "0644"
+
+  # Separate file for audit logs
+  audit:
+    enabled: true
+    path: "~/.go-invoice/logs/audit.log"
+    max_size_mb: 100
+    max_backups: 10
+    max_age_days: 90
+    compress: true
+    permissions: "0600"
+    format: "json"
+
+  # Console output (disabled by default)
+  console:
+    enabled: false
+    format: "text"
+    color: true
+    
+  # Syslog output (optional)
+  syslog:
+    enabled: false
+    network: "udp"
+    address: "localhost:514"
+    facility: "local0"
+    tag: "go-invoice-mcp"
+
+# Logger configurations by component
+loggers:
+  # MCP server logs
+  mcp.server:
+    level: "info"
+    outputs: ["file", "console"]
+    
+  # Transport-specific logs
+  mcp.transport.stdio:
+    level: "debug"
+    outputs: ["file"]
+    
+  mcp.transport.http:
+    level: "info"
+    outputs: ["file"]
+    
+  # Tool execution logs
+  mcp.tools:
+    level: "info"
+    outputs: ["file", "audit"]
+    
+  # Health check logs
+  mcp.health:
+    level: "warn"
+    outputs: ["file"]
+    
+  # Security and audit logs
+  mcp.security:
+    level: "info"
+    outputs: ["audit"]
+    
+  # CLI bridge logs
+  mcp.bridge:
+    level: "debug"
+    outputs: ["file"]
+    
+  # Performance metrics
+  mcp.metrics:
+    level: "info"
+    outputs: ["file"]
+
+# Log filtering rules
+filters:
+  # Exclude health check spam
+  - type: "exclude"
+    logger: "mcp.health"
+    message_regex: "health check completed.*status=healthy"
+    
+  # Exclude verbose stdio transport messages
+  - type: "exclude"
+    logger: "mcp.transport.stdio"
+    message_regex: "received stdio message.*method=ping"
+    
+  # Include only errors for certain operations
+  - type: "include"
+    logger: "mcp.tools"
+    level: ["error", "fatal"]
+    condition: "production"
+
+# Sampling configuration for high-volume logs
+sampling:
+  enabled: true
+  initial: 100
+  thereafter: 100
+  
+# Hooks for external processing
+hooks:
+  # Send errors to external monitoring
+  error_notification:
+    enabled: false
+    type: "webhook"
+    url: "https://monitoring.example.com/webhook"
+    levels: ["error", "fatal"]
+    
+  # Archive old logs
+  archive:
+    enabled: true
+    schedule: "0 2 * * 0"  # Weekly at 2 AM Sunday
+    destination: "~/.go-invoice/logs/archive"
+    keep_days: 7
+
+# Development mode overrides
+development:
+  enabled: false
+  console_output: true
+  file_output: false
+  level: "debug"
+  format: "text"
+  color: true

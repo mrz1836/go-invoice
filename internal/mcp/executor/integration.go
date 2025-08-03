@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mrz1836/go-invoice/internal/mcp"
-	"github.com/mrz1836/go-invoice/internal/mcp/tools"
+	"github.com/mrz/go-invoice/internal/mcp"
+	"github.com/mrz/go-invoice/internal/mcp/tools"
 )
 
 // MCPExecutorBridge integrates the Phase 3 executor with the MCP server.

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/mrz1836/go-invoice/internal/mcp/executor"
-	"github.com/mrz1836/go-invoice/internal/mcp/tools"
+	"github.com/mrz/go-invoice/internal/mcp/executor"
+	"github.com/mrz/go-invoice/internal/mcp/tools"
 )
 
 // EnhancedMCPHandler implements MCPHandler with Phase 3 executor integration.
@@ -148,6 +148,8 @@ func (h *EnhancedMCPHandler) HandleToolCall(ctx context.Context, req *MCPRequest
 
 // CreateProductionHandler creates a production-ready MCP handler with all integrations.
 func CreateProductionHandler(config *Config) (MCPHandler, error) {
+	ctx := context.Background()
+
 	// Create logger
 	logger := NewDefaultLogger(config.Server.LogLevel)
 
@@ -239,14 +241,18 @@ func CreateProductionHandler(config *Config) (MCPHandler, error) {
 		config,
 	)
 
+	// Get tool count safely
+	toolList, err := toolRegistry.ListTools(ctx)
+	toolCount := 0
+	if err == nil {
+		toolCount = len(toolList)
+	}
+
 	logger.Info("production MCP handler created",
 		"auditEnabled", securityConfig.AuditEnabled,
 		"strictMode", securityConfig.StrictMode,
-		"toolCount", len(toolRegistry.ListTools(ctx)),
+		"toolCount", toolCount,
 	)
 
 	return handler, nil
 }
-
-// ctx is a placeholder for the context parameter in the initialization
-var ctx = context.Background()

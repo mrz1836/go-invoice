@@ -1,0 +1,67 @@
+{
+  "tools": {
+    "categories": {
+      "invoice_management": {
+        "name": "Invoice Management",
+        "description": "Create, list, update, and manage invoices",
+        "icon": "📄",
+        "priority": 1
+      },
+      "client_management": {
+        "name": "Client Management",
+        "description": "Manage client information and relationships",
+        "icon": "👥",
+        "priority": 2
+      },
+      "data_import": {
+        "name": "Data Import",
+        "description": "Import timesheets and data from CSV files",
+        "icon": "📊",
+        "priority": 3
+      },
+      "document_generation": {
+        "name": "Document Generation",
+        "description": "Generate invoices, reports, and summaries",
+        "icon": "📑",
+        "priority": 4
+      },
+      "configuration": {
+        "name": "Configuration",
+        "description": "Manage system configuration and settings",
+        "icon": "⚙️",
+        "priority": 5
+      }
+    },
+    "favorites": [
+      "invoice_create",
+      "invoice_list",
+      "import_csv",
+      "generate_html",
+      "client_list"
+    ],
+    "shortcuts": {
+      "quick_invoice": {
+        "description": "Quickly create an invoice for a known client",
+        "tools": ["invoice_create"],
+        "template": "Create an invoice for {client_name}"
+      },
+      "monthly_billing": {
+        "description": "Generate all pending invoices for the month",
+        "tools": ["invoice_list", "generate_html"],
+        "template": "Generate HTML for all unpaid invoices from this month"
+      },
+      "import_and_invoice": {
+        "description": "Import timesheet and create invoice",
+        "tools": ["import_csv", "invoice_create"],
+        "template": "Import {csv_file} and create invoice for {client_name}"
+      }
+    },
+    "ui_preferences": {
+      "show_categories": true,
+      "show_favorites": true,
+      "show_examples": true,
+      "compact_mode": false,
+      "theme": "auto"
+    }
+  }
+}

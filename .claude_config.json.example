@@ -1,0 +1,19 @@
+{
+  "mcp": {
+    "servers": {
+      "go-invoice": {
+        "command": "go-invoice-mcp",
+        "args": [
+          "--stdio",
+          "--config",
+          "./.go-invoice/config.json"
+        ],
+        "workingDirectory": ".",
+        "env": {
+          "GO_INVOICE_PROJECT": "./",
+          "MCP_TRANSPORT": "stdio"
+        }
+      }
+    }
+  }
+}
