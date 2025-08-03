@@ -5,16 +5,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/mrz/go-invoice/internal/mcp/types"
 )
 
 // MCPHandler defines the interface for handling MCP requests (consumer-driven)
 //
 //nolint:revive // MCPHandler is intentionally prefixed to distinguish from generic handlers
 type MCPHandler interface {
-	HandleInitialize(ctx context.Context, req *MCPRequest) (*MCPResponse, error)
-	HandlePing(ctx context.Context, req *MCPRequest) (*MCPResponse, error)
-	HandleToolsList(ctx context.Context, req *MCPRequest) (*MCPResponse, error)
-	HandleToolCall(ctx context.Context, req *MCPRequest) (*MCPResponse, error)
+	HandleInitialize(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error)
+	HandlePing(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error)
+	HandleToolsList(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error)
+	HandleToolCall(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error)
 }
 
 // DefaultMCPHandler implements the MCPHandler interface
@@ -34,7 +36,7 @@ func NewMCPHandler(logger Logger, bridge CLIBridge, config *Config) MCPHandler {
 }
 
 // HandleInitialize handles the MCP initialize request
-func (h *DefaultMCPHandler) HandleInitialize(ctx context.Context, req *MCPRequest) (*MCPResponse, error) {
+func (h *DefaultMCPHandler) HandleInitialize(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -43,18 +45,20 @@ func (h *DefaultMCPHandler) HandleInitialize(ctx context.Context, req *MCPReques
 
 	h.logger.Info("Handling initialize request")
 
-	result := InitializeResult{
+	result := types.InitializeResult{
 		ProtocolVersion: "2024-11-05",
-		Capabilities: Capabilities{
-			Tools: []string{"tools"},
+		Capabilities: types.Capabilities{
+			Tools: &types.ToolsCapability{
+				ListChanged: false,
+			},
 		},
-		ServerInfo: ServerInfo{
+		ServerInfo: types.ServerInfo{
 			Name:    "go-invoice-mcp",
 			Version: "1.0.0",
 		},
 	}
 
-	return &MCPResponse{
+	return &types.MCPResponse{
 		JSONRPC: "2.0",
 		ID:      req.ID,
 		Result:  result,
@@ -62,14 +66,14 @@ func (h *DefaultMCPHandler) HandleInitialize(ctx context.Context, req *MCPReques
 }
 
 // HandlePing handles the MCP ping request
-func (h *DefaultMCPHandler) HandlePing(ctx context.Context, req *MCPRequest) (*MCPResponse, error) {
+func (h *DefaultMCPHandler) HandlePing(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	default:
 	}
 
-	return &MCPResponse{
+	return &types.MCPResponse{
 		JSONRPC: "2.0",
 		ID:      req.ID,
 		Result:  map[string]string{"status": "ok"},
@@ -77,7 +81,7 @@ func (h *DefaultMCPHandler) HandlePing(ctx context.Context, req *MCPRequest) (*M
 }
 
 // HandleToolsList handles the tools/list request
-func (h *DefaultMCPHandler) HandleToolsList(ctx context.Context, req *MCPRequest) (*MCPResponse, error) {
+func (h *DefaultMCPHandler) HandleToolsList(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -111,7 +115,7 @@ func (h *DefaultMCPHandler) HandleToolsList(ctx context.Context, req *MCPRequest
 		Tools: tools,
 	}
 
-	return &MCPResponse{
+	return &types.MCPResponse{
 		JSONRPC: "2.0",
 		ID:      req.ID,
 		Result:  result,
@@ -119,7 +123,7 @@ func (h *DefaultMCPHandler) HandleToolsList(ctx context.Context, req *MCPRequest
 }
 
 // HandleToolCall handles the tools/call request
-func (h *DefaultMCPHandler) HandleToolCall(ctx context.Context, req *MCPRequest) (*MCPResponse, error) {
+func (h *DefaultMCPHandler) HandleToolCall(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -145,7 +149,7 @@ func (h *DefaultMCPHandler) HandleToolCall(ctx context.Context, req *MCPRequest)
 	case "version":
 		return h.handleVersionTool(ctx, req, &params)
 	default:
-		return &MCPResponse{
+		return &types.MCPResponse{
 			JSONRPC: "2.0",
 			ID:      req.ID,
 			Error: &MCPError{
@@ -158,7 +162,7 @@ func (h *DefaultMCPHandler) HandleToolCall(ctx context.Context, req *MCPRequest)
 }
 
 // handlePingTool handles the ping tool call
-func (h *DefaultMCPHandler) handlePingTool(ctx context.Context, req *MCPRequest, _ *ToolCallParams) (*MCPResponse, error) {
+func (h *DefaultMCPHandler) handlePingTool(ctx context.Context, req *types.MCPRequest, _ *ToolCallParams) (*types.MCPResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -184,7 +188,7 @@ func (h *DefaultMCPHandler) handlePingTool(ctx context.Context, req *MCPRequest,
 			IsError: true,
 		}
 
-		return &MCPResponse{
+		return &types.MCPResponse{
 			JSONRPC: "2.0",
 			ID:      req.ID,
 			Result:  result,
@@ -201,7 +205,7 @@ func (h *DefaultMCPHandler) handlePingTool(ctx context.Context, req *MCPRequest,
 		IsError: false,
 	}
 
-	return &MCPResponse{
+	return &types.MCPResponse{
 		JSONRPC: "2.0",
 		ID:      req.ID,
 		Result:  result,
@@ -209,7 +213,7 @@ func (h *DefaultMCPHandler) handlePingTool(ctx context.Context, req *MCPRequest,
 }
 
 // handleVersionTool handles the version tool call
-func (h *DefaultMCPHandler) handleVersionTool(ctx context.Context, req *MCPRequest, _ *ToolCallParams) (*MCPResponse, error) {
+func (h *DefaultMCPHandler) handleVersionTool(ctx context.Context, req *types.MCPRequest, _ *ToolCallParams) (*types.MCPResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -235,7 +239,7 @@ func (h *DefaultMCPHandler) handleVersionTool(ctx context.Context, req *MCPReque
 			IsError: true,
 		}
 
-		return &MCPResponse{
+		return &types.MCPResponse{
 			JSONRPC: "2.0",
 			ID:      req.ID,
 			Result:  result,
@@ -252,7 +256,7 @@ func (h *DefaultMCPHandler) handleVersionTool(ctx context.Context, req *MCPReque
 		IsError: resp.ExitCode != 0,
 	}
 
-	return &MCPResponse{
+	return &types.MCPResponse{
 		JSONRPC: "2.0",
 		ID:      req.ID,
 		Result:  result,

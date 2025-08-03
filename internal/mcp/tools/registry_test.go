@@ -1039,7 +1039,7 @@ func TestToolValidation_EdgeCases(t *testing.T) {
 			Timeout:     24 * time.Hour, // Excessive timeout
 		}
 
-		logger.On("Error", mock.Anything, mock.Anything).Once()
+		logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
 		err := registry.RegisterTool(context.Background(), tool)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "tool timeout must be between 1 second and 10 minutes")
@@ -1056,7 +1056,7 @@ func TestToolValidation_EdgeCases(t *testing.T) {
 			Timeout:     10 * time.Second,
 		}
 
-		logger.On("Error", mock.Anything, mock.Anything).Once()
+		logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
 		err := registry.RegisterTool(context.Background(), tool)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "tool version cannot be empty")
@@ -1073,7 +1073,7 @@ func TestToolValidation_EdgeCases(t *testing.T) {
 			Timeout:     10 * time.Second,
 		}
 
-		logger.On("Error", mock.Anything, mock.Anything).Once()
+		logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
 		err := registry.RegisterTool(context.Background(), tool)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "tool CLI command cannot be empty")

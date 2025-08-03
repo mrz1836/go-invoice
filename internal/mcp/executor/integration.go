@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/mcp"
 	"github.com/mrz/go-invoice/internal/mcp/tools"
+	"github.com/mrz/go-invoice/internal/mcp/types"
 )
 
 // MCPExecutorBridge integrates the Phase 3 executor with the MCP server.
@@ -17,7 +17,7 @@ type MCPExecutorBridge struct {
 	executor       CommandExecutor
 	parser         OutputParser
 	tracker        ProgressTracker
-	toolRegistry   tools.Registry
+	toolRegistry   *tools.DefaultToolRegistry
 	auditLogger    AuditLogger
 	securityConfig *SecurityConfig
 }
@@ -29,7 +29,7 @@ func NewMCPExecutorBridge(
 	parser OutputParser,
 	tracker ProgressTracker,
 	fileHandler FileHandler,
-	toolRegistry tools.Registry,
+	toolRegistry *tools.DefaultToolRegistry,
 	auditLogger AuditLogger,
 	config *SecurityConfig,
 	cliPath string,
@@ -71,8 +71,8 @@ func NewMCPExecutorBridge(
 	}
 }
 
-// ExecuteCommand implements the mcp.CLIBridge interface.
-func (m *MCPExecutorBridge) ExecuteCommand(ctx context.Context, req *mcp.CommandRequest) (*mcp.CommandResponse, error) {
+// ExecuteCommand implements the CLIBridge interface.
+func (m *MCPExecutorBridge) ExecuteCommand(ctx context.Context, req *types.CommandRequest) (*types.CommandResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -118,7 +118,7 @@ func (m *MCPExecutorBridge) ExecuteCommand(ctx context.Context, req *mcp.Command
 	}
 
 	// Convert executor response to MCP response
-	resp := &mcp.CommandResponse{
+	resp := &types.CommandResponse{
 		ExitCode: execResp.ExitCode,
 		Stdout:   execResp.Stdout,
 		Stderr:   execResp.Stderr,
@@ -168,7 +168,7 @@ func (m *MCPExecutorBridge) PrepareWorkspace(_ context.Context, _ string) (strin
 type ToolCallHandler struct {
 	logger       Logger
 	bridge       *MCPExecutorBridge
-	toolRegistry tools.Registry
+	toolRegistry *tools.DefaultToolRegistry
 	parser       OutputParser
 	tracker      ProgressTracker
 }
@@ -177,7 +177,7 @@ type ToolCallHandler struct {
 func NewToolCallHandler(
 	logger Logger,
 	bridge *MCPExecutorBridge,
-	toolRegistry tools.Registry,
+	toolRegistry *tools.DefaultToolRegistry,
 	parser OutputParser,
 	tracker ProgressTracker,
 ) *ToolCallHandler {
@@ -207,7 +207,7 @@ func NewToolCallHandler(
 }
 
 // HandleToolCall processes an MCP tool call request.
-func (h *ToolCallHandler) HandleToolCall(ctx context.Context, req *mcp.MCPRequest) (*mcp.MCPResponse, error) {
+func (h *ToolCallHandler) HandleToolCall(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -215,7 +215,7 @@ func (h *ToolCallHandler) HandleToolCall(ctx context.Context, req *mcp.MCPReques
 	}
 
 	// Parse tool call parameters
-	var params mcp.ToolCallParams
+	var params types.ToolCallParams
 	if err := convertParams(req.Params, &params); err != nil {
 		return nil, fmt.Errorf("failed to parse tool call params: %w", err)
 	}
@@ -228,10 +228,10 @@ func (h *ToolCallHandler) HandleToolCall(ctx context.Context, req *mcp.MCPReques
 	// Get tool definition from registry
 	toolDef, err := h.toolRegistry.GetTool(ctx, params.Name)
 	if err != nil {
-		return &mcp.MCPResponse{
+		return &types.MCPResponse{
 			JSONRPC: "2.0",
 			ID:      req.ID,
-			Error: &mcp.MCPError{
+			Error: &types.MCPError{
 				Code:    -32602,
 				Message: "Invalid params",
 				Data:    fmt.Sprintf("Unknown tool: %s", params.Name),
@@ -240,11 +240,11 @@ func (h *ToolCallHandler) HandleToolCall(ctx context.Context, req *mcp.MCPReques
 	}
 
 	// Validate tool arguments
-	if err := h.toolRegistry.ValidateTool(ctx, params.Name, params.Arguments); err != nil {
-		return &mcp.MCPResponse{
+	if err := h.toolRegistry.ValidateToolInput(ctx, params.Name, params.Arguments); err != nil {
+		return &types.MCPResponse{
 			JSONRPC: "2.0",
 			ID:      req.ID,
-			Error: &mcp.MCPError{
+			Error: &types.MCPError{
 				Code:    -32602,
 				Message: "Invalid params",
 				Data:    fmt.Sprintf("Invalid arguments for tool %s: %v", params.Name, err),
@@ -268,10 +268,10 @@ func (h *ToolCallHandler) HandleToolCall(ctx context.Context, req *mcp.MCPReques
 		if operation != nil {
 			operation.Complete(err)
 		}
-		return &mcp.MCPResponse{
+		return &types.MCPResponse{
 			JSONRPC: "2.0",
 			ID:      req.ID,
-			Error: &mcp.MCPError{
+			Error: &types.MCPError{
 				Code:    -32603,
 				Message: "Internal error",
 				Data:    fmt.Sprintf("Tool execution failed: %v", err),
@@ -292,7 +292,7 @@ func (h *ToolCallHandler) HandleToolCall(ctx context.Context, req *mcp.MCPReques
 			"error", err,
 		)
 		// Continue with raw output
-		content = []mcp.Content{
+		content = []types.Content{
 			{
 				Type: "text",
 				Text: resp.Stdout,
@@ -300,12 +300,12 @@ func (h *ToolCallHandler) HandleToolCall(ctx context.Context, req *mcp.MCPReques
 		}
 	}
 
-	result := mcp.ToolCallResult{
+	result := types.ToolCallResult{
 		Content: content,
 		IsError: resp.ExitCode != 0,
 	}
 
-	return &mcp.MCPResponse{
+	return &types.MCPResponse{
 		JSONRPC: "2.0",
 		ID:      req.ID,
 		Result:  result,
@@ -313,29 +313,15 @@ func (h *ToolCallHandler) HandleToolCall(ctx context.Context, req *mcp.MCPReques
 }
 
 // parseToolOutput parses tool output based on the tool definition.
-func (h *ToolCallHandler) parseToolOutput(ctx context.Context, tool *tools.Tool, resp *ExecutionResponse) ([]mcp.Content, error) {
-	// Check if tool expects JSON output
-	if tool.OutputSchema != nil {
-		// Try to parse as JSON
-		if resp.Stdout != "" {
-			data, err := h.parser.ParseJSON(ctx, resp.Stdout)
-			if err == nil {
-				// Successfully parsed JSON
-				return []mcp.Content{
-					{
-						Type: "text",
-						Text: formatJSONOutput(data),
-					},
-				}, nil
-			}
-		}
-	}
+func (h *ToolCallHandler) parseToolOutput(ctx context.Context, tool *tools.MCPTool, resp *ExecutionResponse) ([]types.Content, error) {
+	// TODO: Add OutputSchema support to MCPTool when needed
+	// For now, we'll parse output generically
 
 	// Check for error output
 	if resp.ExitCode != 0 {
 		err := h.parser.ExtractError(ctx, resp.Stdout, resp.Stderr, resp.ExitCode)
 		if err != nil {
-			return []mcp.Content{
+			return []types.Content{
 				{
 					Type: "text",
 					Text: fmt.Sprintf("Error: %v\n\nStderr:\n%s", err, resp.Stderr),
@@ -345,15 +331,15 @@ func (h *ToolCallHandler) parseToolOutput(ctx context.Context, tool *tools.Tool,
 	}
 
 	// Return raw output
-	content := []mcp.Content{}
+	content := []types.Content{}
 	if resp.Stdout != "" {
-		content = append(content, mcp.Content{
+		content = append(content, types.Content{
 			Type: "text",
 			Text: resp.Stdout,
 		})
 	}
 	if resp.Stderr != "" && resp.ExitCode != 0 {
-		content = append(content, mcp.Content{
+		content = append(content, types.Content{
 			Type: "text",
 			Text: fmt.Sprintf("Error output:\n%s", resp.Stderr),
 		})
@@ -361,7 +347,7 @@ func (h *ToolCallHandler) parseToolOutput(ctx context.Context, tool *tools.Tool,
 
 	// Add file references if any
 	for _, file := range resp.OutputFiles {
-		content = append(content, mcp.Content{
+		content = append(content, types.Content{
 			Type: "text",
 			Text: fmt.Sprintf("Generated file: %s (size: %d bytes)", file.Path, file.Size),
 		})

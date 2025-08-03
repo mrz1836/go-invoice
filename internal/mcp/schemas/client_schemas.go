@@ -27,29 +27,29 @@ func ClientCreateSchema() map[string]interface{} {
 			"name": map[string]interface{}{
 				"type":        "string",
 				"description": "Client name or company name. This will be displayed on invoices and used for client identification.",
-				"minLength":   1,
-				"maxLength":   200,
-				"examples":    []string{"Acme Corporation", "John Smith Consulting", "Tech Solutions Inc"},
+				"minLength":   1.0,
+				"maxLength":   200.0,
+				"examples":    []interface{}{"Acme Corporation", "John Smith Consulting", "Tech Solutions Inc"},
 			},
 			"email": map[string]interface{}{
 				"type":        "string",
 				"format":      "email",
 				"description": "Primary email address for the client. Must be unique across all clients and will be used for invoice delivery.",
-				"examples":    []string{"contact@acme.com", "john@smithconsulting.com", "billing@techsolutions.com"},
+				"examples":    []interface{}{"contact@acme.com", "john@smithconsulting.com", "billing@techsolutions.com"},
 			},
 			"phone": map[string]interface{}{
 				"type":        "string",
 				"description": "Phone number for the client. Can include country codes and various formats.",
-				"minLength":   10,
-				"maxLength":   20,
+				"minLength":   10.0,
+				"maxLength":   20.0,
 				"pattern":     "^[\\d\\s\\+\\-\\(\\)\\.\\/ext]+$",
-				"examples":    []string{"+1-555-123-4567", "(555) 987-6543", "+49-30-12345678"},
+				"examples":    []interface{}{"+1-555-123-4567", "(555) 987-6543", "+49-30-12345678"},
 			},
 			"address": map[string]interface{}{
 				"type":        "string",
 				"description": "Physical or mailing address for the client. Used for formal correspondence and invoicing.",
-				"maxLength":   500,
-				"examples": []string{
+				"maxLength":   500.0,
+				"examples": []interface{}{
 					"123 Business Ave, Suite 200, Metro City, MC 12345",
 					"456 Main Street, Small Town, ST 67890",
 					"Hauptstraße 42, 10117 Berlin, Germany",
@@ -58,11 +58,11 @@ func ClientCreateSchema() map[string]interface{} {
 			"tax_id": map[string]interface{}{
 				"type":        "string",
 				"description": "Tax identification number (EIN, VAT number, etc.) for business clients. Used for tax reporting and compliance.",
-				"maxLength":   50,
-				"examples":    []string{"EIN-12-3456789", "DE123456789", "VAT-GB123456789"},
+				"maxLength":   50.0,
+				"examples":    []interface{}{"EIN-12-3456789", "DE123456789", "VAT-GB123456789"},
 			},
 		},
-		"required":             []string{"name", "email"},
+		"required":             []interface{}{"name", "email"},
 		"additionalProperties": false,
 	}
 }
@@ -88,28 +88,28 @@ func ClientListSchema() map[string]interface{} {
 			"name_search": map[string]interface{}{
 				"type":        "string",
 				"description": "Search clients by name (partial matches supported). Case-insensitive search.",
-				"examples":    []string{"Acme", "Tech", "John", "Corp"},
+				"examples":    []interface{}{"Acme", "Tech", "John", "Corp"},
 			},
 			"email_search": map[string]interface{}{
 				"type":        "string",
 				"description": "Search clients by email address (partial matches supported).",
-				"examples":    []string{"@acme.com", "contact", "billing"},
+				"examples":    []interface{}{"@acme.com", "contact", "billing"},
 			},
 			"sort_by": map[string]interface{}{
 				"type":        "string",
-				"enum":        []string{"name", "email", "created_date", "last_invoice_date", "total_invoiced"},
+				"enum":        []interface{}{"name", "email", "created_date", "last_invoice_date", "total_invoiced"},
 				"default":     "name",
 				"description": "Field to sort results by.",
 			},
 			"sort_order": map[string]interface{}{
 				"type":        "string",
-				"enum":        []string{"asc", "desc"},
+				"enum":        []interface{}{"asc", "desc"},
 				"default":     "asc",
 				"description": "Sort order: ascending or descending.",
 			},
 			"limit": map[string]interface{}{
 				"type":        "number",
-				"minimum":     1,
+				"minimum":     1.0,
 				"maximum":     1000,
 				"default":     50,
 				"description": "Maximum number of clients to return.",
@@ -122,7 +122,7 @@ func ClientListSchema() map[string]interface{} {
 			},
 			"output_format": map[string]interface{}{
 				"type":        "string",
-				"enum":        []string{"table", "json", "csv"},
+				"enum":        []interface{}{"table", "json", "csv"},
 				"default":     "table",
 				"description": "Output format for the results.",
 			},
@@ -157,24 +157,24 @@ func ClientShowSchema() map[string]interface{} {
 			"client_id": map[string]interface{}{
 				"type":        "string",
 				"description": "Client ID to display details for.",
-				"minLength":   1,
-				"examples":    []string{"client_123", "acme-corp-id"},
+				"minLength":   1.0,
+				"examples":    []interface{}{"client_123", "acme-corp-id"},
 			},
 			"client_name": map[string]interface{}{
 				"type":        "string",
 				"description": "Client name to display details for (alternative to client_id).",
-				"minLength":   1,
-				"examples":    []string{"Acme Corporation", "John Smith", "Tech Solutions"},
+				"minLength":   1.0,
+				"examples":    []interface{}{"Acme Corporation", "John Smith", "Tech Solutions"},
 			},
 			"client_email": map[string]interface{}{
 				"type":        "string",
 				"format":      "email",
 				"description": "Client email to display details for (alternative to client_id or name).",
-				"examples":    []string{"contact@acme.com", "john@example.com"},
+				"examples":    []interface{}{"contact@acme.com", "john@example.com"},
 			},
 			"output_format": map[string]interface{}{
 				"type":        "string",
-				"enum":        []string{"text", "json", "yaml"},
+				"enum":        []interface{}{"text", "json", "yaml"},
 				"default":     "text",
 				"description": "Output format for client details.",
 			},
@@ -200,16 +200,16 @@ func ClientShowSchema() map[string]interface{} {
 			},
 			"invoice_limit": map[string]interface{}{
 				"type":        "number",
-				"minimum":     1,
-				"maximum":     100,
+				"minimum":     1.0,
+				"maximum":     100.0,
 				"default":     10,
 				"description": "Maximum number of recent invoices to include.",
 			},
 		},
 		"anyOf": []map[string]interface{}{
-			{"required": []string{"client_id"}},
-			{"required": []string{"client_name"}},
-			{"required": []string{"client_email"}},
+			{"required": []interface{}{"client_id"}},
+			{"required": []interface{}{"client_name"}},
+			{"required": []interface{}{"client_email"}},
 		},
 		"additionalProperties": false,
 	}
@@ -226,47 +226,47 @@ func ClientUpdateSchema() map[string]interface{} {
 			"client_id": map[string]interface{}{
 				"type":        "string",
 				"description": "Client ID to update.",
-				"minLength":   1,
-				"examples":    []string{"client_123", "acme-corp-id"},
+				"minLength":   1.0,
+				"examples":    []interface{}{"client_123", "acme-corp-id"},
 			},
 			"client_name": map[string]interface{}{
 				"type":        "string",
 				"description": "Client name to update (alternative to client_id).",
-				"minLength":   1,
-				"examples":    []string{"Acme Corporation", "John Smith"},
+				"minLength":   1.0,
+				"examples":    []interface{}{"Acme Corporation", "John Smith"},
 			},
 			"client_email": map[string]interface{}{
 				"type":        "string",
 				"format":      "email",
 				"description": "Client email to identify the client to update (alternative to client_id or name).",
-				"examples":    []string{"contact@acme.com", "john@example.com"},
+				"examples":    []interface{}{"contact@acme.com", "john@example.com"},
 			},
 			"name": map[string]interface{}{
 				"type":        "string",
 				"description": "Update client name or company name.",
-				"minLength":   1,
-				"maxLength":   200,
-				"examples":    []string{"Updated Company Name", "John Smith LLC"},
+				"minLength":   1.0,
+				"maxLength":   200.0,
+				"examples":    []interface{}{"Updated Company Name", "John Smith LLC"},
 			},
 			"email": map[string]interface{}{
 				"type":        "string",
 				"format":      "email",
 				"description": "Update client email address. Must be unique across all clients.",
-				"examples":    []string{"newemail@company.com", "updated@example.com"},
+				"examples":    []interface{}{"newemail@company.com", "updated@example.com"},
 			},
 			"phone": map[string]interface{}{
 				"type":        "string",
 				"description": "Update client phone number. Can include country codes and various formats.",
-				"minLength":   10,
-				"maxLength":   20,
+				"minLength":   10.0,
+				"maxLength":   20.0,
 				"pattern":     "^[\\d\\s\\+\\-\\(\\)\\.\\/ext]+$",
-				"examples":    []string{"+1-555-999-8888", "(555) 111-2222"},
+				"examples":    []interface{}{"+1-555-999-8888", "(555) 111-2222"},
 			},
 			"address": map[string]interface{}{
 				"type":        "string",
 				"description": "Update client address information.",
-				"maxLength":   500,
-				"examples": []string{
+				"maxLength":   500.0,
+				"examples": []interface{}{
 					"789 New Business Plaza, Suite 500, Metro City, MC 67890",
 					"Updated Address, New City, NC 12345",
 				},
@@ -274,8 +274,8 @@ func ClientUpdateSchema() map[string]interface{} {
 			"tax_id": map[string]interface{}{
 				"type":        "string",
 				"description": "Update tax identification number for the client.",
-				"maxLength":   50,
-				"examples":    []string{"EIN-98-7654321", "VAT-GB987654321"},
+				"maxLength":   50.0,
+				"examples":    []interface{}{"EIN-98-7654321", "VAT-GB987654321"},
 			},
 			"activate": map[string]interface{}{
 				"type":        "boolean",
@@ -289,27 +289,27 @@ func ClientUpdateSchema() map[string]interface{} {
 		"allOf": []map[string]interface{}{
 			{
 				"anyOf": []map[string]interface{}{
-					{"required": []string{"client_id"}},
-					{"required": []string{"client_name"}},
-					{"required": []string{"client_email"}},
+					{"required": []interface{}{"client_id"}},
+					{"required": []interface{}{"client_name"}},
+					{"required": []interface{}{"client_email"}},
 				},
 			},
 			{
 				"anyOf": []map[string]interface{}{
-					{"required": []string{"name"}},
-					{"required": []string{"email"}},
-					{"required": []string{"phone"}},
-					{"required": []string{"address"}},
-					{"required": []string{"tax_id"}},
-					{"required": []string{"activate"}},
-					{"required": []string{"deactivate"}},
+					{"required": []interface{}{"name"}},
+					{"required": []interface{}{"email"}},
+					{"required": []interface{}{"phone"}},
+					{"required": []interface{}{"address"}},
+					{"required": []interface{}{"tax_id"}},
+					{"required": []interface{}{"activate"}},
+					{"required": []interface{}{"deactivate"}},
 				},
 			},
 			{
 				"not": map[string]interface{}{
 					"allOf": []map[string]interface{}{
-						{"required": []string{"activate"}},
-						{"required": []string{"deactivate"}},
+						{"required": []interface{}{"activate"}},
+						{"required": []interface{}{"deactivate"}},
 					},
 				},
 			},
@@ -329,20 +329,20 @@ func ClientDeleteSchema() map[string]interface{} {
 			"client_id": map[string]interface{}{
 				"type":        "string",
 				"description": "Client ID to delete.",
-				"minLength":   1,
-				"examples":    []string{"client_123", "test-client"},
+				"minLength":   1.0,
+				"examples":    []interface{}{"client_123", "test-client"},
 			},
 			"client_name": map[string]interface{}{
 				"type":        "string",
 				"description": "Client name to delete (alternative to client_id).",
-				"minLength":   1,
-				"examples":    []string{"Test Client", "Inactive Corp"},
+				"minLength":   1.0,
+				"examples":    []interface{}{"Test Client", "Inactive Corp"},
 			},
 			"client_email": map[string]interface{}{
 				"type":        "string",
 				"format":      "email",
 				"description": "Client email to identify the client to delete (alternative to client_id or name).",
-				"examples":    []string{"test@example.com", "inactive@corp.com"},
+				"examples":    []interface{}{"test@example.com", "inactive@corp.com"},
 			},
 			"soft_delete": map[string]interface{}{
 				"type":        "boolean",
@@ -373,16 +373,16 @@ func ClientDeleteSchema() map[string]interface{} {
 		"allOf": []map[string]interface{}{
 			{
 				"anyOf": []map[string]interface{}{
-					{"required": []string{"client_id"}},
-					{"required": []string{"client_name"}},
-					{"required": []string{"client_email"}},
+					{"required": []interface{}{"client_id"}},
+					{"required": []interface{}{"client_name"}},
+					{"required": []interface{}{"client_email"}},
 				},
 			},
 			{
 				"not": map[string]interface{}{
 					"allOf": []map[string]interface{}{
-						{"required": []string{"soft_delete"}},
-						{"required": []string{"hard_delete"}},
+						{"required": []interface{}{"soft_delete"}},
+						{"required": []interface{}{"hard_delete"}},
 					},
 				},
 			},

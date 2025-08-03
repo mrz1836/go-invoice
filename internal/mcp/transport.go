@@ -7,11 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/mrz/go-invoice/internal/mcp/types"
 )
 
 // Transport errors
@@ -22,20 +25,12 @@ var (
 	ErrMessageTooLarge         = errors.New("message exceeds size limit")
 )
 
-// TransportType represents the type of transport
-type TransportType string
-
-const (
-	// TransportStdio uses standard input/output
-	TransportStdio TransportType = "stdio"
-	// TransportHTTP uses HTTP server
-	TransportHTTP TransportType = "http"
-)
+// Use TransportType and constants from types package
 
 // Transport defines the interface for MCP communication
 type Transport interface {
 	// Type returns the transport type
-	Type() TransportType
+	Type() types.TransportType
 
 	// Start initializes the transport
 	Start(ctx context.Context) error
@@ -44,10 +39,10 @@ type Transport interface {
 	Stop(ctx context.Context) error
 
 	// Receive reads the next message
-	Receive(ctx context.Context) (*MCPRequest, error)
+	Receive(ctx context.Context) (*types.MCPRequest, error)
 
 	// Send writes a response
-	Send(ctx context.Context, response *MCPResponse) error
+	Send(ctx context.Context, response *types.MCPResponse) error
 
 	// IsHealthy checks transport health
 	IsHealthy(ctx context.Context) bool
@@ -55,21 +50,21 @@ type Transport interface {
 
 // TransportConfig holds configuration for transports
 type TransportConfig struct {
-	Type           TransportType `json:"type"`
-	Host           string        `json:"host,omitempty"`
-	Port           int           `json:"port,omitempty"`
-	ReadTimeout    time.Duration `json:"readTimeout"`
-	WriteTimeout   time.Duration `json:"writeTimeout"`
-	MaxMessageSize int64         `json:"maxMessageSize"`
-	EnableLogging  bool          `json:"enableLogging"`
-	LogLevel       string        `json:"logLevel"`
-	MetricsEnabled bool          `json:"metricsEnabled"`
+	Type           types.TransportType `json:"type"`
+	Host           string              `json:"host,omitempty"`
+	Port           int                 `json:"port,omitempty"`
+	ReadTimeout    time.Duration       `json:"readTimeout"`
+	WriteTimeout   time.Duration       `json:"writeTimeout"`
+	MaxMessageSize int64               `json:"maxMessageSize"`
+	EnableLogging  bool                `json:"enableLogging"`
+	LogLevel       string              `json:"logLevel"`
+	MetricsEnabled bool                `json:"metricsEnabled"`
 }
 
 // DefaultTransportConfig returns default transport configuration
 func DefaultTransportConfig() *TransportConfig {
 	return &TransportConfig{
-		Type:           TransportStdio,
+		Type:           types.TransportStdio,
 		Host:           "localhost",
 		Port:           0, // Auto-assign
 		ReadTimeout:    30 * time.Second,
@@ -112,8 +107,8 @@ func NewStdioTransport(logger Logger, config *TransportConfig) *StdioTransport {
 }
 
 // Type returns the transport type
-func (t *StdioTransport) Type() TransportType {
-	return TransportStdio
+func (t *StdioTransport) Type() types.TransportType {
+	return types.TransportStdio
 }
 
 // Start initializes the stdio transport
@@ -164,7 +159,7 @@ func (t *StdioTransport) Stop(ctx context.Context) error {
 }
 
 // Receive reads the next message from stdin
-func (t *StdioTransport) Receive(ctx context.Context) (*MCPRequest, error) {
+func (t *StdioTransport) Receive(ctx context.Context) (*types.MCPRequest, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -180,13 +175,13 @@ func (t *StdioTransport) Receive(ctx context.Context) (*MCPRequest, error) {
 
 	// Read with timeout
 	type result struct {
-		req *MCPRequest
+		req *types.MCPRequest
 		err error
 	}
 
 	resultCh := make(chan result, 1)
 	go func() {
-		var req MCPRequest
+		var req types.MCPRequest
 		err := t.decoder.Decode(&req)
 		resultCh <- result{&req, err}
 	}()
@@ -213,7 +208,7 @@ func (t *StdioTransport) Receive(ctx context.Context) (*MCPRequest, error) {
 }
 
 // Send writes a response to stdout
-func (t *StdioTransport) Send(ctx context.Context, response *MCPResponse) error {
+func (t *StdioTransport) Send(ctx context.Context, response *types.MCPResponse) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -268,13 +263,13 @@ type HTTPTransport struct {
 }
 
 type httpRequest struct {
-	req      *MCPRequest
-	respChan chan *MCPResponse
+	req      *types.MCPRequest
+	respChan chan *types.MCPResponse
 	errChan  chan error
 }
 
 // NewHTTPTransport creates a new HTTP transport
-func NewHTTPTransport(logger Logger, config *TransportConfig, handler MCPHandler) *HTTPTransport {
+func NewHTTPTransport(logger Logger, config *TransportConfig, handler types.MCPHandler) *HTTPTransport {
 	if logger == nil {
 		panic("logger is required")
 	}
@@ -304,8 +299,8 @@ func NewHTTPTransport(logger Logger, config *TransportConfig, handler MCPHandler
 }
 
 // Type returns the transport type
-func (t *HTTPTransport) Type() TransportType {
-	return TransportHTTP
+func (t *HTTPTransport) Type() types.TransportType {
+	return types.TransportHTTP
 }
 
 // Start initializes the HTTP transport
@@ -383,7 +378,7 @@ func (t *HTTPTransport) Stop(ctx context.Context) error {
 }
 
 // Receive waits for the next HTTP request
-func (t *HTTPTransport) Receive(ctx context.Context) (*MCPRequest, error) {
+func (t *HTTPTransport) Receive(ctx context.Context) (*types.MCPRequest, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -396,7 +391,7 @@ func (t *HTTPTransport) Receive(ctx context.Context) (*MCPRequest, error) {
 }
 
 // Send sends a response for the current HTTP request
-func (t *HTTPTransport) Send(ctx context.Context, response *MCPResponse) error {
+func (t *HTTPTransport) Send(ctx context.Context, response *types.MCPResponse) error {
 	// For HTTP transport, responses are sent directly in the handler
 	// This method is here for interface compliance
 	return nil
@@ -428,7 +423,7 @@ func (t *HTTPTransport) handleMCPRequest(w http.ResponseWriter, r *http.Request)
 	r.Body = http.MaxBytesReader(w, r.Body, t.config.MaxMessageSize)
 
 	// Decode request
-	var req MCPRequest
+	var req types.MCPRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		t.logger.Error("failed to decode request", "error", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -512,11 +507,11 @@ func NewTransportFactory(logger Logger) *TransportFactory {
 }
 
 // CreateTransport creates a transport based on configuration
-func (f *TransportFactory) CreateTransport(config *TransportConfig, handler MCPHandler) (Transport, error) {
+func (f *TransportFactory) CreateTransport(config *TransportConfig, handler types.MCPHandler) (Transport, error) {
 	switch config.Type {
-	case TransportStdio:
+	case types.TransportStdio:
 		return NewStdioTransport(f.logger, config), nil
-	case TransportHTTP:
+	case types.TransportHTTP:
 		if handler == nil {
 			return nil, fmt.Errorf("handler required for HTTP transport")
 		}
@@ -527,30 +522,30 @@ func (f *TransportFactory) CreateTransport(config *TransportConfig, handler MCPH
 }
 
 // DetectTransport detects the appropriate transport type
-func DetectTransport() TransportType {
+func DetectTransport() types.TransportType {
 	// Check command line arguments
 	for _, arg := range os.Args[1:] {
 		switch arg {
 		case "--stdio":
-			return TransportStdio
+			return types.TransportStdio
 		case "--http":
-			return TransportHTTP
+			return types.TransportHTTP
 		}
 	}
 
 	// Check environment variable
 	if transport := os.Getenv("MCP_TRANSPORT"); transport != "" {
-		return TransportType(strings.ToLower(transport))
+		return types.TransportType(strings.ToLower(transport))
 	}
 
 	// Check if running in a terminal
 	if fileInfo, _ := os.Stdin.Stat(); (fileInfo.Mode() & os.ModeCharDevice) == 0 {
 		// Input is from pipe, likely stdio
-		return TransportStdio
+		return types.TransportStdio
 	}
 
 	// Default to stdio for Claude Code compatibility
-	return TransportStdio
+	return types.TransportStdio
 }
 
 // TransportMetrics tracks transport performance
