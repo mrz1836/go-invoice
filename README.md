@@ -1,10 +1,70 @@
 # 💸 go-invoice
 > A simple, fast, and efficient CLI application for managing invoices and time tracking.
 
-[![Go version](https://img.shields.io/github/go-mod/go-version/mrz/go-invoice?style=flat)](https://golang.org/)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=flat)](https://github.com/mrz/go-invoice)
-[![Go Report Card](https://img.shields.io/badge/go%20report-A+-brightgreen?style=flat)](https://goreportcard.com/report/github.com/mrz/go-invoice)
-[![License](https://img.shields.io/github/license/mrz/go-invoice.svg?style=flat)](LICENSE)
+<table>
+  <thead>
+    <tr>
+      <th>CI&nbsp;/&nbsp;CD</th>
+      <th>Quality&nbsp;&amp;&nbsp;Security</th>
+      <th>Docs&nbsp;&amp;&nbsp;Meta</th>
+      <th>Community</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td valign="top" align="left">
+        <a href="https://github.com/mrz1836/go-invoice/releases">
+          <img src="https://img.shields.io/github/release-pre/mrz1836/go-invoice?logo=github&style=flat&v=1" alt="Latest Release">
+        </a><br/>
+        <a href="https://github.com/mrz1836/go-invoice/actions">
+          <img src="https://img.shields.io/github/actions/workflow/status/mrz1836/go-invoice/fortress.yml?branch=main&logo=github&style=flat" alt="Build Status">
+        </a><br/>
+        <a href="https://github.com/mrz1836/go-invoice/commits/main">
+          <img src="https://img.shields.io/github/last-commit/mrz1836/go-invoice?style=flat&logo=clockify&logoColor=white" alt="Last commit">
+        </a>
+      </td>
+      <td valign="top" align="left">
+        <a href="https://goreportcard.com/report/github.com/mrz1836/go-invoice">
+          <img src="https://goreportcard.com/badge/github.com/mrz1836/go-invoice?style=flat&v=1" alt="Go Report Card">
+        </a><br/>
+        <a href="https://app.codecov.io/gh/mrz1836/go-invoice/tree/master">
+          <img src="https://codecov.io/gh/mrz1836/go-invoice/branch/master/graph/badge.svg?style=flat" alt="Code Coverage">
+        </a><br/>
+        <a href="https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck">
+          <img src="https://img.shields.io/badge/security-govulncheck-blue?style=flat&logo=springsecurity&logoColor=white" alt="Security Scanning">
+        </a><br/>
+        <a href=".github/SECURITY.md">
+          <img src="https://img.shields.io/badge/security-policy-blue?style=flat&logo=springsecurity&logoColor=white" alt="Security Policy">
+        </a>
+      </td>
+      <td valign="top" align="left">
+        <a href="https://golang.org/">
+          <img src="https://img.shields.io/github/go-mod/go-version/mrz1836/go-invoice?style=flat" alt="Go version">
+        </a><br/>
+        <a href="https://pkg.go.dev/github.com/mrz1836/go-invoice">
+          <img src="https://pkg.go.dev/badge/github.com/mrz1836/go-invoice.svg?style=flat" alt="Go docs">
+        </a><br/>
+        <a href=".github/AGENTS.md">
+          <img src="https://img.shields.io/badge/AGENTS.md-found-40b814?style=flat&logo=openai" alt="AI Agent Rules">
+        </a><br/>
+        <a href="https://magefile.org/">
+          <img src="https://img.shields.io/badge/mage-powered-brightgreen?style=flat&logo=probot&logoColor=white" alt="Mage Powered">
+        </a>
+      </td>
+      <td valign="top" align="left">
+        <a href="https://github.com/mrz1836/go-invoice/graphs/contributors">
+          <img src="https://img.shields.io/github/contributors/mrz1836/go-invoice?style=flat&logo=contentful&logoColor=white" alt="Contributors">
+        </a><br/>
+        <a href="https://github.com/sponsors/mrz">
+          <img src="https://img.shields.io/badge/sponsor-mrz-181717.svg?logo=github&style=flat" alt="Sponsor">
+        </a><br/>
+        <a href="https://github.com/mrz1836/go-invoice/stargazers">
+          <img src="https://img.shields.io/github/stars/mrz1836/go-invoice?style=social?v=1" alt="Stars">
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 <br/>
 
@@ -18,6 +78,8 @@
 * [Templates](#-templates)
 * [Development](#-development)
 * [Testing](#-testing)
+* [AI Compliance](#-ai-compliance)
+* [Maintainers](#-maintainers)
 * [Contributing](#-contributing)
 * [License](#-license)
 
@@ -684,11 +746,50 @@ go-invoice invoice create --client "Test Client" --verbose
 
 <br/>
 
+## 🤖 AI Compliance
+
+MAGE-X includes comprehensive AI assistant guidelines:
+
+- **[AGENTS.md](.github/AGENTS.md)** — Complete rules for coding style, workflows, and best practices
+- **[CLAUDE.md](.github/CLAUDE.md)** — Guidelines for AI assistant integration
+- **[.cursorrules](.cursorrules)** — Machine-readable policies for Cursor and similar tools
+- **[sweep.yaml](.github/sweep.yaml)** — Configuration for Sweep AI code review
+
+These files ensure that AI assistants follow the same high standards as human contributors, maintaining code quality and consistency across all contributions.
+
+<br/>
+
+## 👥 Maintainers
+
+| [<img src="https://github.com/mrz1836.png" height="50" width="50" alt="Maintainer" />](https://github.com/mrz1836) |
+|:------------------------------------------------------------------------------------------------------------------:|
+|                                         [mrz](https://github.com/mrz1836)                                          |
+
+<br/>
+
+## 🤝 Contributing
+
+We welcome contributions from the community! Please read our [contributing guidelines](.github/CONTRIBUTING.md) and [code of conduct](.github/CODE_OF_CONDUCT.md).
+
+### How Can I Help?
+
+All kinds of contributions are welcome! :raised_hands:
+
+- **⭐ Star the project** to show your support
+- **🐛 Report bugs** through GitHub issues
+- **💡 Suggest features** with detailed use cases
+- **📝 Improve documentation** with examples and clarity
+- **🔧 Submit pull requests** with bug fixes or new features
+- **💬 Join discussions** and help other users
+
+
 ## 📝 License
+
+[![License](https://img.shields.io/github/license/mrz1836/go-invoice.svg?style=flat&v=1)](LICENSE)
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
+<br/>
 
 <div align="center">
 
