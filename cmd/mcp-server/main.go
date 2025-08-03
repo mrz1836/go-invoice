@@ -21,11 +21,8 @@ var (
 
 func main() {
 	var (
-		configPath  = flag.String("config", "~/.go-invoice/mcp-config.json", "Path to configuration file")
 		stdio       = flag.Bool("stdio", false, "Use stdio transport")
 		httpFlag    = flag.Bool("http", false, "Use HTTP transport")
-		port        = flag.Int("port", 0, "HTTP port (0 for auto-assign)")
-		host        = flag.String("host", "127.0.0.1", "HTTP host")
 		logLevel    = flag.String("log-level", "", "Log level (debug, info, warn, error)")
 		versionFlag = flag.Bool("version", false, "Show version information")
 		healthCheck = flag.Bool("health", false, "Perform health check and exit")
@@ -41,18 +38,19 @@ func main() {
 	}
 
 	// Load configuration
-	config, err := mcp.LoadConfig(*configPath)
+	ctx := context.Background()
+	config, err := mcp.LoadConfig(ctx)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
 	// Override log level if specified
 	if *logLevel != "" {
-		config.Server.LogLevel = *logLevel
+		config.LogLevel = *logLevel
 	}
 
 	// Create logger
-	logger := mcp.NewDefaultLogger(config.Server.LogLevel)
+	logger := mcp.NewLogger(config.LogLevel)
 
 	// Determine transport type
 	transportType := determineTransportType(*stdio, *httpFlag)
@@ -67,11 +65,10 @@ func main() {
 		return
 	}
 
-	// Create CLI bridge
-	bridge := mcp.NewDefaultCLIBridge(logger, config)
-
-	// Create MCP handler
-	handler := mcp.NewMCPHandler(logger, bridge, config)
+	// Create CLI bridge components
+	validator := mcp.NewCommandValidator(config.Security.AllowedCommands)
+	fileHandler := mcp.NewFileHandler(config.Security.WorkingDir)
+	bridge := mcp.NewCLIBridge(logger, validator, fileHandler, config.CLI)
 
 	// Create server
 	server := mcp.NewServer(logger, bridge, config)
@@ -121,26 +118,15 @@ func performHealthCheck(config *mcp.Config, logger mcp.Logger) error {
 	defer cancel()
 
 	// Create a simple health checker
-	healthChecker := mcp.NewHealthChecker(&mcp.HealthConfig{
-		Enabled:  true,
-		Interval: "30s",
-		Timeout:  "5s",
-		Checks: mcp.HealthChecks{
-			CLI:     true,
-			Storage: true,
-			Memory:  true,
-		},
-		CLIPath:    config.CLI.Path,
-		WorkingDir: config.CLI.WorkingDir,
-	})
+	healthChecker := mcp.NewHealthChecker(logger, config)
 
 	status, err := healthChecker.CheckHealth(ctx)
 	if err != nil {
 		return fmt.Errorf("health check failed: %w", err)
 	}
 
-	if !status.Healthy {
-		return fmt.Errorf("server is unhealthy: %s", status.Message)
+	if status.Status != "healthy" {
+		return fmt.Errorf("server is unhealthy: %s", status.LastError)
 	}
 
 	return nil
