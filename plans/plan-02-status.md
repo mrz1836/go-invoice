@@ -6,14 +6,14 @@ This document tracks the implementation progress of the go-invoice MCP Integrati
 
 ## Phase Summary
 
-| Phase                                           | Status         | Start Date | End Date   | Duration | Agent               | Notes              |
-|-------------------------------------------------|----------------|------------|------------|----------|---------------------|-------------------|
-| Phase 0: Foundation Alignment (AGENTS.md)      | ⏳ Pending     | -          | -          | 30min    | Claude Code         | Not started       |
-| Phase 1: MCP Server Foundation                 | ⏳ Pending     | -          | -          | 3-4h     | Claude Code         | Not started       |
-| Phase 2: Tool Definitions and Schema           | ⏳ Pending     | -          | -          | 3-4h     | Claude Code         | Not started       |
-| Phase 3: Command Execution and Response        | ⏳ Pending     | -          | -          | 3-4h     | Claude Code         | Not started       |
-| Phase 4: Claude Desktop Integration            | ⏳ Pending     | -          | -          | 2-3h     | Claude Code         | Not started       |
-| Phase 5: Testing and Documentation             | ⏳ Pending     | -          | -          | 3-4h     | Claude Code         | Not started       |
+| Phase                                     | Status    | Start Date | End Date | Duration | Agent       | Notes       |
+|-------------------------------------------|-----------|------------|----------|----------|-------------|-------------|
+| Phase 0: Foundation Alignment (AGENTS.md) | ⏳ Pending | -          | -        | 30min    | Claude Code | Not started |
+| Phase 1: MCP Server Foundation            | ⏳ Pending | -          | -        | 3-4h     | Claude Code | Not started |
+| Phase 2: Tool Definitions and Schema      | ⏳ Pending | -          | -        | 3-4h     | Claude Code | Not started |
+| Phase 3: Command Execution and Response   | ⏳ Pending | -          | -        | 3-4h     | Claude Code | Not started |
+| Phase 4: Claude Desktop Integration       | ⏳ Pending | -          | -        | 2-3h     | Claude Code | Not started |
+| Phase 5: Testing and Documentation        | ⏳ Pending | -          | -        | 3-4h     | Claude Code | Not started |
 
 ## Detailed Phase Status
 
@@ -316,18 +316,18 @@ This document tracks the implementation progress of the go-invoice MCP Integrati
 
 **Target Performance Metrics:**
 
-| Operation                        | Target    | Actual | Status    |
-|----------------------------------|-----------|--------|-----------| 
-| MCP Server Startup (stdio)      | < 200ms   | -      | ⏳ Pending |
-| MCP Server Startup (HTTP)       | < 500ms   | -      | ⏳ Pending |
-| Tool Execution (simple)         | < 2s      | -      | ⏳ Pending |
-| Tool Execution (complex)        | < 10s     | -      | ⏳ Pending |
-| Claude Desktop Response (HTTP)  | < 3s      | -      | ⏳ Pending |
-| Claude Code Response (stdio)    | < 1s      | -      | ⏳ Pending |
-| Transport Switch Time           | < 100ms   | -      | ⏳ Pending |
-| Concurrent Tool Executions     | 5 max     | -      | ⏳ Pending |
-| Resource Mention Resolution    | < 500ms   | -      | ⏳ Pending |
-| Slash Command Processing       | < 300ms   | -      | ⏳ Pending |
+| Operation                      | Target  | Actual | Status    |
+|--------------------------------|---------|--------|-----------| 
+| MCP Server Startup (stdio)     | < 200ms | -      | ⏳ Pending |
+| MCP Server Startup (HTTP)      | < 500ms | -      | ⏳ Pending |
+| Tool Execution (simple)        | < 2s    | -      | ⏳ Pending |
+| Tool Execution (complex)       | < 10s   | -      | ⏳ Pending |
+| Claude Desktop Response (HTTP) | < 3s    | -      | ⏳ Pending |
+| Claude Code Response (stdio)   | < 1s    | -      | ⏳ Pending |
+| Transport Switch Time          | < 100ms | -      | ⏳ Pending |
+| Concurrent Tool Executions     | 5 max   | -      | ⏳ Pending |
+| Resource Mention Resolution    | < 500ms | -      | ⏳ Pending |
+| Slash Command Processing       | < 300ms | -      | ⏳ Pending |
 
 ## Risk & Issues Log
 
