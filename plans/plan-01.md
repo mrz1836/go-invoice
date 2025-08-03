@@ -898,6 +898,259 @@ INVOICE_START_NUMBER="5000"
 VAT_RATE="20"
 ```
 
+## Claude Code MCP Integration
+
+go-invoice includes comprehensive support for Claude Code through the Model Context Protocol (MCP), enabling natural language invoice management within your development environment. The MCP integration operates alongside the existing CLI without any disruption to current workflows.
+
+### Integration Overview
+
+The MCP server provides a bridge between Claude Code and the go-invoice CLI, allowing developers to manage invoices through natural language while maintaining all the security and functionality of the command-line interface.
+
+**Key Benefits:**
+- **Natural Language Interface**: Manage invoices through conversational interactions
+- **Seamless Integration**: Works alongside existing CLI workflows without disruption
+- **Local Operation**: All processing happens locally with no external dependencies
+- **Resource Access**: Direct access to invoice and client data through "@" mentions
+- **Slash Commands**: Custom commands exposed as `/mcp__go_invoice__*` patterns
+
+### Local stdio Transport Configuration
+
+Claude Code integrates with go-invoice through local stdio transport, providing secure and efficient communication.
+
+#### MCP Server Configuration
+```json
+{
+  "mcpServers": {
+    "go-invoice": {
+      "command": "go-invoice-mcp",
+      "args": ["--stdio"],
+      "env": {
+        "GO_INVOICE_HOME": "~/.go-invoice",
+        "MCP_LOG_LEVEL": "info"
+      }
+    }
+  }
+}
+```
+
+#### Project-Scope Configuration
+For project-specific invoice management, configure the MCP server at the project level:
+
+```json
+// .claude_config.json (project root)
+{
+  "mcp": {
+    "servers": {
+      "go-invoice": {
+        "command": "./bin/go-invoice-mcp",
+        "args": ["--stdio", "--config", "./invoice-config.json"],
+        "workingDirectory": "."
+      }
+    }
+  }
+}
+```
+
+### Claude Code Integration Patterns
+
+#### Slash Commands
+Claude Code exposes go-invoice functionality through slash commands:
+
+```bash
+# Invoice management commands
+/mcp__go_invoice__create_invoice
+/mcp__go_invoice__list_invoices  
+/mcp__go_invoice__show_invoice
+/mcp__go_invoice__import_csv
+/mcp__go_invoice__generate_html
+
+# Configuration commands
+/mcp__go_invoice__show_config
+/mcp__go_invoice__validate_setup
+```
+
+#### Resource Mentions
+Access invoice data directly using "@" mention patterns:
+
+```bash
+# Reference specific invoices
+@invoice:INV-2025-001
+@invoice:latest
+@invoice:unpaid
+
+# Reference client data
+@client:acme-corp
+@client:all
+
+# Reference timesheet files
+@timesheet:./hours/january-2025.csv
+```
+
+#### Example Interactions
+
+**Creating and Managing Invoices:**
+```
+User: /mcp__go_invoice__create_invoice Create an invoice for Acme Corp
+
+Claude: I'll create a new invoice for Acme Corp using the go-invoice MCP tool.
+
+[MCP tool execution: invoice_create with client="Acme Corp"]
+
+✅ Invoice INV-2025-003 created successfully for Acme Corp
+- Invoice ID: INV-2025-003
+- Client: Acme Corp  
+- Status: Draft
+- Due Date: 2025-09-01
+
+User: Import my timesheet data into @invoice:INV-2025-003
+
+Claude: I'll import your timesheet data into invoice INV-2025-003.
+
+[MCP tool execution: import_csv with invoice_id="INV-2025-003"]
+
+✅ Imported 24 work items totaling 156 hours
+- Total Amount: $15,600.00
+- Date Range: 2025-08-01 to 2025-08-31
+- Ready for generation
+```
+
+**Data Analysis and Reporting:**
+```
+User: Show me all unpaid invoices from @client:acme-corp
+
+Claude: Let me retrieve all unpaid invoices for Acme Corp.
+
+[MCP tool execution: list_invoices with filters]
+
+📊 Found 3 unpaid invoices for Acme Corp:
+- INV-2025-001: $8,400 (Due: 2025-08-15) - OVERDUE
+- INV-2025-002: $12,200 (Due: 2025-09-01) 
+- INV-2025-003: $15,600 (Due: 2025-09-01)
+
+Total Outstanding: $36,200
+
+User: Generate HTML for all of these invoices
+
+Claude: I'll generate HTML invoices for all 3 unpaid Acme Corp invoices.
+
+[MCP tool execution: generate_invoice for each]
+
+✅ Generated 3 HTML invoices:
+- invoice-2025-001.html (Ready for sending)
+- invoice-2025-002.html (Ready for sending) 
+- invoice-2025-003.html (Ready for sending)
+```
+
+### Security and Local Operation
+
+The MCP integration prioritizes security through local-only operation and comprehensive validation:
+
+**Local Security Measures:**
+- **Stdio Transport**: All communication through secure local stdio pipes
+- **Command Validation**: All CLI commands validated before execution
+- **File System Sandboxing**: Restricted file access to invoice directories only
+- **Input Sanitization**: All user inputs sanitized to prevent injection attacks
+- **No Network Dependencies**: Completely offline operation
+
+**Configuration Security:**
+```json
+{
+  "security": {
+    "allowedCommands": [
+      "go-invoice",
+      "config", 
+      "invoice",
+      "import",
+      "generate"
+    ],
+    "restrictedPaths": [
+      "~/.go-invoice/",
+      "./invoices/",
+      "./timesheets/"
+    ],
+    "maxExecutionTime": "30s",
+    "enableLogging": true
+  }
+}
+```
+
+### Installation and Setup
+
+**Prerequisites:**
+- go-invoice CLI installed and configured
+- Claude Code with MCP support
+- Go 1.24+ for building from source
+
+**Quick Setup:**
+```bash
+# Build MCP server
+go build -o bin/go-invoice-mcp ./cmd/go-invoice-mcp
+
+# Install for user-scope access
+cp bin/go-invoice-mcp ~/bin/
+
+# Configure Claude Code (automatic via setup script)
+./scripts/setup-claude-code-integration.sh
+
+# Test integration
+echo "Test MCP integration" | go-invoice-mcp --stdio --test
+```
+
+**Manual Configuration:**
+Add to your Claude Code MCP configuration:
+```json
+{
+  "go-invoice": {
+    "command": "go-invoice-mcp", 
+    "args": ["--stdio"],
+    "env": {
+      "GO_INVOICE_HOME": "~/.go-invoice"
+    }
+  }
+}
+```
+
+### Development Workflow Integration
+
+The MCP integration enhances development workflows by providing contextual invoice management:
+
+**During Development:**
+```
+User: I just finished the authentication module for @client:startup-xyz. 
+      Log 8 hours at $150/hour to their current invoice.
+
+Claude: I'll add 8 hours of authentication development work to StartupXYZ's current invoice.
+
+[Creates work item and adds to invoice]
+
+✅ Added work item:
+- Date: 2025-08-03
+- Hours: 8.0
+- Rate: $150/hour  
+- Description: Authentication module development
+- Total: $1,200
+- Added to: INV-2025-004 (StartupXYZ)
+```
+
+**Project Completion:**
+```
+User: The project is complete. Generate final invoices for all clients 
+      and show me the total earnings for this month.
+
+Claude: I'll generate final invoices and calculate monthly earnings.
+
+[Generates invoices and calculates totals]
+
+✅ Generated 5 final invoices
+📊 August 2025 Summary:
+- Total Hours: 168
+- Total Earnings: $25,200
+- Clients Invoiced: 5
+- Average Rate: $150/hour
+```
+
+This integration transforms invoice management from a separate administrative task into a natural part of the development workflow, accessible through the same interface used for coding and project management.
+
 ## Implementation Timeline
 
 - **Session 0**: Foundation Alignment (Phase 0) - 30 minutes
