@@ -173,7 +173,7 @@ test-fuzz: ## Run fuzz tests only (no unit tests)
 		gopkg=$$(go list "$$pkg" | grep "^$$modpath"); \
 		for fuzz in $$(go test -list ^Fuzz "$$gopkg" | grep ^Fuzz); do \
 			echo "Fuzzing $$fuzz in $$gopkg..."; \
-			CMD="go test -run=^$$ -fuzz=\"$$fuzz\" -fuzztime=5s $$gopkg"; \
+			CMD="go test -run=^$$ -fuzz=\"^$$fuzz$$\" -fuzztime=5s $$gopkg"; \
 			[ "$(VERBOSE)" = "true" ] && CMD="$$CMD -v"; \
 			eval "$$CMD" || exit 1; \
 		done; \
