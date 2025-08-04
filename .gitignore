@@ -44,3 +44,7 @@ testdata
 node_modules/
 /go-invoice
 /coverage.html
+/bin/go-invoice-mcp
+/go-invoice-mcp
+/bin/go-invoice
+/bin/mcp-server

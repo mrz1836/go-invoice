@@ -145,7 +145,7 @@ type CacheStats struct {
 }
 
 // RenderOptions represents options for rendering operations
-type RenderOptions struct { //nolint:revive // Keeping existing exported type name for API compatibility
+type RenderOptions struct {
 	TemplateName    string            `json:"template_name"`            // Template to use
 	OutputFormat    string            `json:"output_format"`            // "html", "pdf", etc.
 	Minify          bool              `json:"minify"`                   // Whether to minify output
@@ -160,7 +160,7 @@ type RenderOptions struct { //nolint:revive // Keeping existing exported type na
 }
 
 // RenderResult represents the result of a rendering operation
-type RenderResult struct { //nolint:revive // Keeping existing exported type name for API compatibility
+type RenderResult struct {
 	Content          string            `json:"content"`                     // Rendered content
 	Size             int64             `json:"size"`                        // Content size in bytes
 	RenderTimeMs     float64           `json:"render_time_ms"`              // Rendering time in milliseconds

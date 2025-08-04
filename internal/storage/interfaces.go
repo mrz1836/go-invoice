@@ -69,7 +69,7 @@ type ClientStorage interface {
 
 // StorageInitializer defines the interface for storage system initialization
 // Consumer-driven interface for setup and configuration operations
-type StorageInitializer interface { //nolint:revive // Keeping existing exported type name for API compatibility
+type StorageInitializer interface {
 	// Initialize sets up the storage system (creates directories, indexes, etc.)
 	// Returns StorageUnavailableError if initialization fails
 	Initialize(ctx context.Context) error
@@ -87,7 +87,7 @@ type StorageInitializer interface { //nolint:revive // Keeping existing exported
 
 // StorageHealthMonitor defines the interface for monitoring storage health
 // Consumer-driven interface for health checks and performance monitoring
-type StorageHealthMonitor interface { //nolint:revive // Keeping existing exported type name for API compatibility
+type StorageHealthMonitor interface {
 	// GetStats returns current storage statistics and health information
 	GetStats(ctx context.Context) (*StorageStats, error)
 
@@ -144,7 +144,7 @@ type Transaction interface {
 }
 
 // StorageInfo represents information about the storage system
-type StorageInfo struct { //nolint:revive // Keeping existing exported type name for API compatibility
+type StorageInfo struct {
 	Type             string `json:"type"`              // "json", "sqlite", etc.
 	Version          string `json:"version"`           // Storage format version
 	Path             string `json:"path"`              // Storage location

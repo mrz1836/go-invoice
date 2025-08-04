@@ -49,7 +49,7 @@ The MCP server acts as a protocol bridge, translating natural language requests 
 
 ## Implementation Roadmap
 
-### Phase 0: Foundation Alignment (AGENTS.md Compliance)
+### Phase 0: Foundation Alignment (.github/AGENTS.md Compliance)
 **Objective**: Ensure MCP implementation plan fully aligns with established conventions and standards
 
 **Duration**: 30 minutes
@@ -88,7 +88,7 @@ go vet ./...
 - ✅ Error messages provide clear context and actionable guidance
 - ✅ Test coverage exceeds 90% using testify patterns
 - ✅ No security vulnerabilities detected in dependencies
-- ✅ All linting passes per AGENTS.md standards
+- ✅ All linting passes per .github/AGENTS.md standards
 - ✅ Dependency injection used throughout (no global state)
 
 ---
@@ -173,41 +173,60 @@ func (s *MCPServer) HandleToolCall(ctx context.Context, req *MCPToolRequest) (*M
 }
 ```
 
-**Verification Steps:**
+**Verification Steps (Enhanced .github/AGENTS.md Compliance):**
 ```bash
-# 1. Enhanced security and quality checks
+# 1. Comprehensive security scanning
 govulncheck ./...
 go mod verify
+gitleaks detect --source . --log-opts="--all" --verbose
+
+# 2. Complete code quality validation
 golangci-lint run
+go vet ./...
+gofumpt -l .
+goimports -l .
 
-# 2. Build MCP server
-go build -o go-invoice-mcp ./cmd/go-invoice-mcp
+# 3. Build MCP server with optimization
+go build -ldflags="-s -w" -o go-invoice-mcp ./cmd/go-invoice-mcp
 
-# 3. Run comprehensive tests with testify
+# 4. Comprehensive testing with coverage validation
 go test -v -race -cover ./internal/mcp/...
+go test -cover ./internal/mcp/... | grep -E "coverage: [0-9]+" | awk '{if ($2 < 90) exit 1}'
 
-# 4. Test MCP server startup with context
+# 5. Context cancellation validation
+timeout 5s go test -run TestMCPContextCancellation ./internal/mcp/...
+
+# 6. Performance validation
+go test -bench=. ./internal/mcp/...
+
+# 7. Test MCP server startup with context
 ./go-invoice-mcp --config mcp-config.json --validate
 
-# 5. Test CLI bridge functionality
-./go-invoice-mcp --test-bridge
+# 8. Test CLI bridge functionality with security
+./go-invoice-mcp --test-bridge --validate-security
 
-# 6. Verify context cancellation works
-timeout 1s ./go-invoice-mcp --slow-operation
+# 9. Verify dependency injection (no global state)
+grep -r "var.*=" internal/mcp/ | grep -v test | grep -v const | wc -l | awk '{if ($1 > 0) exit 1}'
+grep -r "func init()" internal/mcp/ | wc -l | awk '{if ($1 > 0) exit 1}'
 ```
 
-**Success Criteria:**
-- ✅ MCP server builds successfully and starts without errors
-- ✅ Protocol implementation handles MCP messages correctly with context support
-- ✅ CLI bridge executes commands safely with proper validation
-- ✅ Configuration loads from JSON/YAML files with clear error messages
-- ✅ Logging provides comprehensive debugging information
-- ✅ All operations accept context.Context as first parameter
-- ✅ Dependency injection used throughout (no global state)
-- ✅ Error handling follows AGENTS.md excellence patterns
-- ✅ Tests use testify suite with descriptive names
-- ✅ No security vulnerabilities in dependencies
-- ✅ All linting and formatting passes
+**Success Criteria (Measurable .github/AGENTS.md Compliance):**
+- ✅ MCP server builds successfully with zero compilation errors and starts in <500ms
+- ✅ Protocol implementation handles MCP messages with 100% context.Context parameter compliance
+- ✅ CLI bridge executes commands with comprehensive input validation (zero injection vulnerabilities)
+- ✅ Configuration loads with structured error messages including file path and line number
+- ✅ Logging provides comprehensive debugging with operation context and execution duration
+- ✅ 100% of MCP functions accept context.Context as first parameter (verified with grep)
+- ✅ Zero global variables or init functions detected (verified with automated checks)
+- ✅ Error handling uses fmt.Errorf wrapping pattern with operation context in 100% of cases
+- ✅ Tests use testify.suite.Suite pattern with descriptive names (TestComponentOperationCondition format)
+- ✅ Test coverage ≥ 90% for all MCP packages (verified with coverage threshold check)
+- ✅ Zero race conditions detected (verified with -race flag)
+- ✅ Zero security vulnerabilities in dependencies (verified with govulncheck)
+- ✅ Zero secrets detected in code (verified with gitleaks)
+- ✅ Zero linting violations (verified with golangci-lint, go vet, gofumpt, goimports)
+- ✅ MCP server startup time <500ms and tool execution <2s average (verified with benchmarks)
+- ✅ Context cancellation response time <100ms (verified with timeout tests)
 - ✅ Final todo: Update the @plans/plan-02-status.md file with the results of the implementation
 
 ### Phase 2: MCP Tool Definitions and Schema Implementation
@@ -1338,7 +1357,7 @@ go test -cover ./internal/mcp/... | grep -E "coverage: [0-9]+" | awk '{if ($2 < 
 # 4. Run MCP integration tests
 go test -v -race ./test/mcp_integration_test.go
 
-# 5. Run comprehensive linting per AGENTS.md standards
+# 5. Run comprehensive linting per .github/AGENTS.md standards
 golangci-lint run
 go vet ./...
 gofumpt -l .
@@ -1358,7 +1377,7 @@ grep -r "func init()" internal/mcp/
 **Success Criteria:**
 - ✅ Test coverage exceeds 90% using testify suite patterns for MCP components
 - ✅ All critical MCP workflows have comprehensive tests with edge cases
-- ✅ Documentation is clear, complete, and follows AGENTS.md standards
+- ✅ Documentation is clear, complete, and follows .github/AGENTS.md standards
 - ✅ Examples demonstrate key MCP workflows with context handling
 - ✅ Integration tests validate complete Claude Desktop workflows
 - ✅ All tests use testify assertions and table-driven patterns
@@ -1369,7 +1388,7 @@ grep -r "func init()" internal/mcp/
 - ✅ Dependency injection patterns verified in all MCP tests
 - ✅ Security vulnerabilities scan clean (govulncheck)
 - ✅ Secret detection passes (gitleaks)
-- ✅ All linting and formatting per AGENTS.md standards passes
+- ✅ All linting and formatting per .github/AGENTS.md standards passes
 - ✅ Final todo: Update the @plans/plan-02-status.md file with the results of the implementation
 
 ## Configuration Examples
@@ -1461,7 +1480,7 @@ Total estimated time: 14-19 hours across 5 focused sessions
 go-invoice MCP Integration represents a seamless bridge between traditional CLI workflows and modern AI-assisted interfaces. By leveraging the Model Context Protocol, users can now manage their entire invoicing workflow through natural language conversations with Claude Desktop while maintaining all the robustness, security, and features of the existing CLI application.
 
 **Key innovations in this MCP integration:**
-- **AGENTS.md Compliance**: Full alignment with established engineering standards
+- **.github/AGENTS.md Compliance**: Full alignment with established engineering standards
 - **Non-Disruptive Architecture**: MCP server operates independently of existing CLI
 - **Context-First Design**: All MCP operations support cancellation and timeout
 - **Security-First Approach**: Comprehensive command validation and sandboxing

@@ -1,12 +1,16 @@
-# 📚 go-invoice Examples
+# 📚 go-invoice MCP Tools Examples
 
-This directory contains comprehensive examples to help you get started with go-invoice quickly and efficiently. Whether you're a freelancer, consultant, or small business owner, these examples will guide you through common workflows and advanced scenarios.
+This directory contains comprehensive examples for using go-invoice through the MCP (Model Context Protocol) tools system with Claude Desktop. These examples demonstrate how to leverage natural language interactions for efficient invoice management workflows.
 
 ## 📁 Directory Structure
 
 ```
 examples/
-├── README.md                           # This file
+├── README.md                           # This file - MCP tools guidance
+├── mcp-tools/                          # MCP-specific examples and setups
+│   ├── claude-desktop-config.json      # Claude Desktop MCP configuration
+│   ├── tool-usage-examples.md          # Natural language tool examples
+│   └── workflow-automation.md          # Automation pattern examples
 ├── timesheet-standard.csv              # Basic CSV format example
 ├── timesheet-excel.csv                 # Excel export format example  
 ├── timesheet-tabs.tsv                  # Tab-separated format example
@@ -26,44 +30,152 @@ examples/
     └── complete-example.md             # Step-by-step tutorial
 ```
 
-## 🚀 Quick Start Examples
+## 🤖 MCP Tools Integration
 
-### 1. Basic Invoice Creation
+### What is MCP?
 
-```bash
-# Add a client
-go-invoice client add --name "TechCorp" --email "billing@techcorp.com"
+The Model Context Protocol (MCP) enables Claude Desktop to interact directly with go-invoice through a standardized tool interface. This means you can manage invoices, clients, and billing workflows using natural language conversations with Claude.
 
-# Import timesheet and create invoice
-go-invoice import csv examples/timesheet-standard.csv --client "TechCorp"
-go-invoice invoice create --client "TechCorp" --output invoice.html
+### Available Tool Categories
+
+1. **Invoice Management** (7 tools)
+   - Create, update, list, and manage invoices
+   - Add/remove work items from invoices
+   - Natural language invoice operations
+
+2. **Client Management** (5 tools)
+   - Create and manage client information
+   - Update contact details and billing preferences
+   - Search and organize client relationships
+
+3. **Data Import** (3 tools)
+   - Import timesheet CSV files
+   - Validate data before import
+   - Preview import results
+
+4. **Document Generation** (3 tools)
+   - Generate HTML invoices with templates
+   - Create summaries and reports
+   - Export data in various formats
+
+5. **Configuration** (3 tools)
+   - Validate system configuration
+   - Display current settings
+   - Initialize new configurations
+
+## 🚀 Quick Start with MCP Tools
+
+### 1. Setting Up Claude Desktop
+
+First, configure Claude Desktop to use the go-invoice MCP server:
+
+```json
+{
+  "mcpServers": {
+    "go-invoice": {
+      "command": "/path/to/go-invoice-mcp",
+      "args": ["--config", "/path/to/config.json"],
+      "env": {
+        "GO_INVOICE_DATA_DIR": "/path/to/invoice-data"
+      }
+    }
+  }
+}
 ```
 
-### 2. Using Custom Templates
+### 2. Natural Language Invoice Creation
 
-```bash
-# Generate invoice with modern template
-go-invoice invoice generate \
-  --invoice INV-001 \
-  --template examples/templates/modern-invoice.html \
-  --output modern-invoice.html
+**With Claude Desktop (conversational):**
 
-# Generate with minimal template  
-go-invoice invoice generate \
-  --invoice INV-001 \
-  --template examples/templates/minimal-invoice.html \
-  --output minimal-invoice.html
+**You**: "I need to create an invoice for Acme Corp for 40 hours of web development at $85/hour"
+
+**Claude**: I'll create that invoice for you. Let me start by creating Acme Corp as a client if they don't exist yet, then create the invoice.
+
+```json
+{
+  "tool": "client_create",
+  "parameters": {
+    "name": "Acme Corp",
+    "email": "billing@acme.com"
+  }
+}
 ```
 
-### 3. Automated Client Setup
-
-```bash
-# Set up new client with directory structure and sample files
-examples/scripts/setup-client.sh "New Client LLC" "billing@newclient.com" "150.00"
-
-# Run monthly billing for all clients
-examples/scripts/monthly-billing.sh 01 2024
+```json
+{
+  "tool": "invoice_create",
+  "parameters": {
+    "client_name": "Acme Corp",
+    "work_items": [
+      {
+        "description": "Web development",
+        "hours": 40,
+        "rate": 85
+      }
+    ],
+    "due_days": 30
+  }
+}
 ```
+
+Your invoice has been created! The total is $3,400. Would you like me to generate an HTML version?
+
+### 3. CSV Import with Natural Language
+
+**You**: "I have a timesheet CSV file I'd like to import. Can you help me process it and create invoices?"
+
+**Claude**: I'll help you import your timesheet data. Let me first preview the file to understand its structure, then import it.
+
+```json
+{
+  "tool": "import_preview",
+  "parameters": {
+    "file_path": "/path/to/timesheet.csv"
+  }
+}
+```
+
+```json
+{
+  "tool": "import_csv",
+  "parameters": {
+    "file_path": "/path/to/timesheet.csv",
+    "import_mode": "group_by_client",
+    "create_invoices": true
+  }
+}
+```
+
+Perfect! I've imported your timesheet and created invoices for 3 clients. Would you like me to generate HTML documents for all of them?
+
+### 4. Document Generation
+
+**You**: "Generate professional HTML invoices for all my pending invoices"
+
+**Claude**: I'll generate HTML invoices for all your pending invoices using the professional template.
+
+```json
+{
+  "tool": "invoice_list",
+  "parameters": {
+    "status_filter": "pending",
+    "include_details": true
+  }
+}
+```
+
+```json
+{
+  "tool": "generate_html",
+  "parameters": {
+    "batch_invoices": ["INV-001", "INV-002", "INV-003"],
+    "template": "professional",
+    "output_dir": "./client-invoices/"
+  }
+}
+```
+
+Done! I've generated professional HTML invoices for 3 pending invoices and saved them to your client-invoices directory.
 
 ## 📄 CSV Format Examples
 

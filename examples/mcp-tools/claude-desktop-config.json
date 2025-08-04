@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "go-invoice": {
+      "command": "/usr/local/bin/go-invoice-mcp",
+      "args": [
+        "--config", "/path/to/your/go-invoice-config.json",
+        "--data-dir", "/path/to/your/invoice-data",
+        "--log-level", "info"
+      ],
+      "env": {
+        "GO_INVOICE_DATA_DIR": "/path/to/your/invoice-data",
+        "GO_INVOICE_CONFIG_FILE": "/path/to/your/go-invoice-config.json",
+        "GO_INVOICE_TEMPLATES_DIR": "/path/to/your/templates",
+        "GO_INVOICE_LOG_LEVEL": "info"
+      }
+    }
+  },
+  "globalShortcut": "Cmd+Shift+Space"
+}
