@@ -78,12 +78,12 @@ Features:
 ### Claude Code Integration
 
 **Transport**: stdio  
-**Configuration**: `.claude_config.json` (project-level)  
+**Configuration**: `.mcp.json` (project-level)  
 **Use Case**: Project-specific invoice management
 
 Features:
 - Project-scoped invoice management
-- Slash commands (`/mcp__go_invoice__*`)
+- Natural language MCP tool invocation
 - Resource mentions (`@invoice:`, `@client:`, `@timesheet:`)
 - Workspace file watching
 - Development workflow integration
@@ -182,7 +182,7 @@ All errors are logged and returned as structured MCP error responses.
 #### Claude Code (`configs/claude-code/`)
 - `mcp_config.json` - Global Claude Code configuration
 - `project_config.json` - Project template
-- `.claude_config.json.example` - Example project configuration
+- `.mcp.json.example` - Example project MCP configuration
 
 ## Security
 
@@ -318,16 +318,16 @@ Use the provided setup scripts:
 
 ```bash
 # Full setup (both platforms)
-./scripts/setup-claude-integration.sh
+go-invoice config setup-claude
 
 # Claude Desktop only
-./scripts/setup-claude-integration.sh --desktop
+go-invoice config setup-claude --desktop
 
 # Claude Code only  
-./scripts/setup-claude-integration.sh --code
+go-invoice config setup-claude --code
 
-# Project-specific Claude Code setup
-./scripts/setup-claude-code-integration.sh
+# Update existing installation
+go-invoice config setup-claude --update
 ```
 
 ### Manual Deployment
@@ -345,7 +345,7 @@ Use the provided setup scripts:
 
 3. **Configure Platform**
    - Claude Desktop: Update MCP servers configuration
-   - Claude Code: Create project `.claude_config.json`
+   - Claude Code: Create project `.mcp.json` and `.claude/settings.json`
 
 4. **Verify Installation**
    ```bash
@@ -389,7 +389,7 @@ grep "tool_call" ~/.go-invoice/logs/mcp-server.log | cut -d' ' -f5 | sort | uniq
 
 2. **Install MCP Server**
    ```bash
-   ./scripts/setup-claude-integration.sh
+   go-invoice config setup-claude
    ```
 
 3. **Verify Data Integrity**

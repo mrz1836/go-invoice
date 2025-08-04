@@ -16,16 +16,16 @@ This directory contains comprehensive documentation for the Model Context Protoc
 
 ```bash
 # Complete setup for both platforms
-./scripts/setup-claude-integration.sh
+go-invoice config setup-claude
 
 # Claude Desktop only
-./scripts/setup-claude-integration.sh --desktop
+go-invoice config setup-claude --desktop
 
 # Claude Code only
-./scripts/setup-claude-integration.sh --code
+go-invoice config setup-claude --code
 
-# Project-specific Claude Code setup
-./scripts/setup-claude-code-integration.sh
+# Update existing installation
+go-invoice config setup-claude --update
 ```
 
 #### Manual Setup
@@ -64,7 +64,7 @@ Use 40 hours at $150/hour with 8.5% tax.
 
 #### Claude Code Features
 
-- **Slash Commands**: `/invoice`
+- **MCP Tools**: Natural language commands that invoke tools like `invoice_create`, `client_list`, etc.
 - **Resource Mentions**: `@invoice:INV-2025-001`, `@client:"Acme Corp"`
 - **Project Integration**: Per-project configuration and data isolation
 - **Workspace Watching**: Automatic detection of timesheet changes
@@ -90,7 +90,7 @@ configs/
 └── claude-code/
     ├── mcp_config.json            # Global Claude Code configuration
     ├── project_config.json        # Project template
-    └── .claude_config.json.example # Example project config
+    └── .mcp.json.example          # Example project MCP config
 ```
 
 ### Project Structure
@@ -99,7 +99,9 @@ For Claude Code integration, projects follow this structure:
 
 ```
 your-project/
-├── .claude_config.json          # Claude Code configuration
+├── .mcp.json                   # MCP server configuration
+├── .claude/
+│   └── settings.json           # Claude Code project settings
 ├── .go-invoice/
 │   ├── config.json             # Project invoice settings
 │   ├── data/                   # Invoice data storage
@@ -128,10 +130,8 @@ Add 8.5% tax and set payment terms to 30 days.
 
 #### Claude Code
 ```
-/invoice
-
-Create invoice for @client:"TechCorp Solutions" 
-Import hours from @timesheet:./timesheets/q1-hours.csv
+Create an invoice for TechCorp Solutions 
+Import hours from ./timesheets/q1-hours.csv
 Use $175/hour rate with 8.5% tax
 ```
 

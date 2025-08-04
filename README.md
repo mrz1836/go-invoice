@@ -103,12 +103,12 @@ go install github.com/mrz/go-invoice@latest
 # 2. Set up your business configuration
 go-invoice config setup
 
-# 3. Setup Claude integration (choose your platform)
-./scripts/setup-claude-integration.sh
+# 3. Setup Claude integration
+go-invoice config setup-claude
 
 # 4. Start using natural language!
 # In Claude Desktop: "Create an invoice for Acme Corp for 40 hours of development at $125/hour"
-# In Claude Code: /invoice Create invoice for Acme Corp
+# In Claude Code: "Create an invoice for Acme Corp" (just type naturally, no commands needed)
 ```
 
 <details>
@@ -159,15 +159,17 @@ Claude: 📋 Found 3 unpaid invoices:
         • INV-2024-021 - Consulting LLC ($3,200) - Due Feb 10
 ```
 
-### Use Claude Code with Slash Commands
+### Use Claude Code with Natural Language
 ```
-User: /invoice Create invoice for Acme Corp
+User: Create an invoice for Acme Corp for 40 hours at $125/hour
 Claude: ✅ Created invoice INV-2025-001 for Acme Corp
+        📊 Total: $5,000.00 (40 hours × $125.00)
 
-User: Import timesheet.csv into @invoice:INV-2025-001
+User: Import timesheet.csv and add it to @invoice:INV-2025-001
 Claude: ✅ Imported 14 work items into invoice INV-2025-001
+        📊 Updated total: $6,750.00 (54 hours total)
 
-User: /generate @invoice:INV-2025-001
+User: Generate the HTML for @invoice:INV-2025-001
 Claude: ✅ Generated invoice-2025-001.html in current directory
 ```
 
@@ -187,7 +189,7 @@ go-invoice invoice create --client "Acme Corp" --output invoice.html
 **🤖 Natural Language Interface**
 - Manage invoices through conversation with Claude Desktop and Claude Code
 - 21 MCP tools accessible via natural language commands
-- Slash commands and resource mentions (@invoice:, @client:, @timesheet:)
+- Resource mentions in Claude Code (@invoice:, @client:, @timesheet:)
 - Dual transport support (HTTP for Desktop, stdio for Code)
 
 **⚡ Production Performance**
@@ -239,8 +241,8 @@ go-invoice invoice create --client "Acme Corp" --output invoice.html
 <summary><strong>🖥️ Claude Desktop Setup (HTTP Transport)</strong></summary>
 
 ```bash
-# Run the setup script
-./scripts/setup-claude-integration.sh
+# Run the setup command
+go-invoice config setup-claude --desktop
 
 # Or manually add to Claude Desktop config:
 # ~/.config/claude-desktop/mcp_servers.json
@@ -270,16 +272,16 @@ go-invoice invoice create --client "Acme Corp" --output invoice.html
 
 ```bash
 # Setup for current project
-./scripts/setup-claude-code-integration.sh
+go-invoice config setup-claude --code
 
-# Or manually create .claude_config.json:
+# Or manually create .mcp.json:
 {
   "mcpServers": {
     "go-invoice": {
       "command": "/path/to/go-invoice-mcp",
-      "args": ["--transport", "stdio"],
+      "args": ["--stdio"],
       "env": {
-        "DATA_DIR": "./data"
+        "GO_INVOICE_HOME": "${HOME}/.go-invoice"
       }
     }
   }
@@ -287,7 +289,7 @@ go-invoice invoice create --client "Acme Corp" --output invoice.html
 ```
 
 **Features:**
-- Slash commands: `/mcp__go_invoice__*`
+- Natural language interface - just describe what you want
 - Resource mentions: `@invoice:`, `@client:`, `@timesheet:`
 - Project-scope configuration
 - stdio transport for fast local communication
@@ -300,7 +302,7 @@ go-invoice invoice create --client "Acme Corp" --output invoice.html
 | Feature               | Claude Desktop         | Claude Code                      |
 |-----------------------|------------------------|----------------------------------|
 | **Transport**         | HTTP                   | stdio                            |
-| **Interface**         | Natural conversation   | Slash commands + mentions        |
+| **Interface**         | Natural conversation   | Natural language + mentions      |
 | **Setup**             | Global configuration   | Project-specific                 |
 | **Performance**       | < 200ms                | < 100ms                          |
 | **Tools Available**   | All 21 tools           | All 21 tools                     |

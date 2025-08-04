@@ -255,36 +255,6 @@ cat > ~/.config/claude/mcp/go-invoice.json << 'EOF'
           }
         }
       },
-      "slashCommands": {
-        "prefix": "/mcp__go_invoice__",
-        "commands": [
-          {
-            "name": "create_invoice",
-            "description": "Create a new invoice",
-            "aliases": ["new_invoice", "invoice_new"]
-          },
-          {
-            "name": "list_invoices", 
-            "description": "List all invoices with filters",
-            "aliases": ["show_invoices", "invoices"]
-          },
-          {
-            "name": "import_csv",
-            "description": "Import timesheet from CSV",
-            "aliases": ["import_timesheet", "add_hours"]
-          },
-          {
-            "name": "generate_html",
-            "description": "Generate HTML invoice", 
-            "aliases": ["export_invoice", "make_invoice"]
-          },
-          {
-            "name": "show_config",
-            "description": "Display configuration",
-            "aliases": ["config", "settings"]
-          }
-        ]
-      },
       "metadata": {
         "version": "1.0.0",
         "author": "go-invoice",
@@ -341,7 +311,7 @@ Test basic commands:
 @config:show
 ```
 ```
-/mcp__go_invoice__list_invoices
+"List all invoices"
 ```
 ```
 "Show me all my clients"
@@ -406,43 +376,53 @@ Claude Code supports powerful resource reference patterns for seamless integrati
 @config:invoice.currency
 ```
 
-## Step 7: Slash Commands
+## Step 7: Using MCP Tools
 
-Quick shortcuts for common operations:
+Natural language interaction with go-invoice:
 
-### Available Commands
-```bash
-# Invoice Management
-/invoice
-/mcp__go_invoice__list_invoices
-/mcp__go_invoice__show_invoice
-/mcp__go_invoice__update_invoice
+### Available MCP Tools
 
-# Client Management  
-/mcp__go_invoice__create_client
-/mcp__go_invoice__list_clients
-/mcp__go_invoice__show_client
+You can interact with go-invoice using natural language. Claude Code will automatically use the appropriate MCP tool based on your request:
 
-# Data Operations
-/import
-/generate
-/mcp__go_invoice__export_data
+#### Invoice Management
+- **invoice_create** - Create a new invoice
+- **invoice_list** - List all invoices
+- **invoice_show** - Display invoice details
+- **invoice_update** - Update invoice information
+- **invoice_delete** - Delete an invoice
+- **invoice_add_item** - Add items to an invoice
+- **invoice_remove_item** - Remove items from an invoice
 
-# Configuration
-/mcp__go_invoice__show_config
-/mcp__go_invoice__validate_config
-```
+#### Client Management
+- **client_create** - Create a new client
+- **client_list** - List all clients
+- **client_show** - Display client details
+- **client_update** - Update client information
+- **client_delete** - Delete a client
+
+#### Data Operations
+- **import_csv** - Import timesheet from CSV
+- **import_validate** - Validate import data
+- **import_preview** - Preview import results
+- **generate_html** - Generate HTML invoice
+- **generate_summary** - Generate project summary
+- **export_data** - Export invoice data
+
+#### Configuration
+- **config_show** - Display configuration
+- **config_validate** - Validate configuration
+- **config_init** - Initialize configuration
 
 ### Usage Examples
-```bash
+```
 # Quick invoice creation
-/invoice --client "Acme Corp" --hours 40 --rate 85
+"Create an invoice for Acme Corp with 40 hours at $85/hour"
 
 # List recent invoices
-/mcp__go_invoice__list_invoices --status unpaid --limit 10
+"Show me all unpaid invoices with a limit of 10"
 
 # Generate invoice document
-/generate --invoice INV-2025-001 --output ./exports/
+"Generate HTML for invoice INV-2025-001 and save to ./exports/"
 ```
 
 ## Step 8: Development Workflows

@@ -52,6 +52,16 @@ node_modules/
 # go-invoice MCP integration
 .go-invoice/
 *.log
-/.claude_config.json.backup
 /.env.config
-/.claude_config.json
+
+
+# go-invoice MCP integration
+.go-invoice/
+*.log
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Invoice files (uncomment to ignore)
+# invoices/
+# timesheets/

@@ -14,10 +14,10 @@ The go-invoice MCP server provides natural language invoice management capabilit
 
 ## Quick Setup
 
-Run the automated setup script:
+Run the automated setup command:
 
 ```bash
-./scripts/setup-claude-integration.sh --desktop
+go-invoice config setup-claude --desktop
 ```
 
 This will:

@@ -4,7 +4,7 @@ This guide explains how to integrate the go-invoice MCP server with Claude Code 
 
 ## Overview
 
-The go-invoice MCP server provides seamless invoice management within Claude Code through slash commands and resource mentions. Work with invoices, clients, and timesheets directly in your development environment using natural language.
+The go-invoice MCP server provides seamless invoice management within Claude Code through MCP tools and resource mentions. Work with invoices, clients, and timesheets directly in your development environment using natural language.
 
 ## Prerequisites
 
@@ -16,10 +16,10 @@ The go-invoice MCP server provides seamless invoice management within Claude Cod
 
 ### Global Setup
 
-Run the automated setup script:
+Run the automated setup command:
 
 ```bash
-./scripts/setup-claude-integration.sh --code
+go-invoice config setup-claude --code
 ```
 
 ### Project-Specific Setup
@@ -27,7 +27,7 @@ Run the automated setup script:
 Navigate to your project directory and run:
 
 ```bash
-/path/to/go-invoice/scripts/setup-claude-code-integration.sh
+go-invoice config setup-claude --code
 ```
 
 This will:
@@ -74,27 +74,19 @@ Create Claude Code MCP configuration:
 
 ### 3. Project Configuration
 
-Create `.claude_config.json` in your project root:
+Create `.mcp.json` in your project root:
 
 ```json
 {
-  "mcp": {
-    "servers": {
-      "go-invoice": {
-        "command": "./bin/go-invoice-mcp",
-        "args": ["--stdio", "--config", "./.go-invoice/config.json"],
-        "workingDirectory": ".",
-        "env": {
-          "GO_INVOICE_PROJECT": "./",
-          "MCP_TRANSPORT": "stdio"
-        },
-        "projectSettings": {
-          "projectName": "MyProject",
-          "defaultClient": "Acme Corp",
-          "invoicePrefix": "INV",
-          "autoImportPath": "./timesheets",
-          "outputPath": "./invoices"
-        }
+  "mcpServers": {
+    "go-invoice": {
+      "command": "/path/to/go-invoice-mcp",
+      "args": ["--stdio"],
+      "env": {
+        "GO_INVOICE_HOME": "${HOME}/.go-invoice",
+        "GO_INVOICE_PROJECT": "${PWD}",
+        "MCP_TRANSPORT": "stdio",
+        "MCP_LOG_FILE": "${PWD}/.go-invoice/mcp.log"
       }
     }
   }
@@ -107,7 +99,10 @@ The integration creates a standardized project structure:
 
 ```
 your-project/
-├── .claude_config.json          # Claude Code configuration
+├── .mcp.json                   # MCP server configuration
+├── .claude/
+│   ├── settings.json           # Claude Code project settings
+│   └── settings.local.json     # Local overrides (gitignored)
 ├── .go-invoice/
 │   ├── config.json             # Project invoice settings
 │   ├── data/                   # Invoice data storage
@@ -123,31 +118,42 @@ your-project/
     └── invoice.html            # Invoice template
 ```
 
-## Slash Commands
+## Usage
 
-Use these slash commands to interact with go-invoice:
+The go-invoice MCP server provides tools that can be accessed naturally through conversation. Simply describe what you want to do, and Claude Code will use the appropriate tool.
 
-### Invoice Management
+### Available Tools
 
-- `/invoice` - Create a new invoice
-- `/mcp__go_invoice__list_invoices` - List all invoices
-- `/mcp__go_invoice__show_invoice` - Display invoice details
-- `/mcp__go_invoice__update_invoice` - Update invoice information
+#### Invoice Management
+- **invoice_create** - Create a new invoice
+- **invoice_list** - List all invoices
+- **invoice_show** - Display invoice details
+- **invoice_update** - Update invoice information
+- **invoice_delete** - Delete an invoice
+- **invoice_add_item** - Add items to an invoice
+- **invoice_remove_item** - Remove items from an invoice
 
-### Data Import
+#### Client Management
+- **client_create** - Create a new client
+- **client_list** - List all clients
+- **client_show** - Display client details
+- **client_update** - Update client information
+- **client_delete** - Delete a client
 
-- `/import` - Import timesheet from CSV
-- `/mcp__go_invoice__import_excel` - Import from Excel file
+#### Data Import
+- **import_csv** - Import timesheet from CSV file
+- **import_validate** - Validate import data before processing
+- **import_preview** - Preview import results
 
-### Document Generation
+#### Document Generation
+- **generate_html** - Generate HTML invoice
+- **generate_summary** - Generate project summary
+- **export_data** - Export invoice data
 
-- `/generate` - Generate HTML invoice
-- `/mcp__go_invoice__generate_pdf` - Generate PDF invoice
-
-### Configuration
-
-- `/mcp__go_invoice__show_config` - Display current configuration
-- `/mcp__go_invoice__summary` - Show project invoice summary
+#### Configuration
+- **config_show** - Display current configuration
+- **config_validate** - Validate configuration
+- **config_init** - Initialize configuration
 
 ## Resource Mentions
 
@@ -179,17 +185,15 @@ Reference invoice data using @ mentions:
 ### Creating an Invoice
 
 ```
-/invoice
-
-Create an invoice for @client:"TechCorp Solutions" for January 2025.
-Import hours from @timesheet:./timesheets/january.csv
+Create an invoice for TechCorp Solutions for January 2025.
+Import hours from ./timesheets/january.csv
 Use rate $175/hour and include 8.5% tax.
 ```
 
 ### Importing Timesheet Data
 
 ```
-/import @timesheet:./timesheets/weekly-hours.csv
+Import the timesheet from ./timesheets/weekly-hours.csv
 
 Parse this CSV and create separate invoices for each client.
 Set the invoice date to the last day of the timesheet period.
@@ -198,18 +202,14 @@ Set the invoice date to the last day of the timesheet period.
 ### Generating Documents
 
 ```
-/generate @invoice:INV-2025-003
-
-Generate HTML for this invoice and save to ./invoices/sent/
+Generate HTML for invoice INV-2025-003 and save to ./invoices/sent/
 Use the custom template at ./templates/branded-invoice.html
 ```
 
 ### Project Summary
 
 ```
-/mcp__go_invoice__summary
-
-Show me:
+Show me a project summary including:
 - Total invoiced amount this month
 - Outstanding invoices
 - Top 3 clients by revenue
@@ -222,15 +222,15 @@ Show me:
 
 ```
 # Import hours at end of sprint
-/import @timesheet:./sprint-hours.csv
+Import the timesheet from ./sprint-hours.csv
 
 # Create invoice for main client
-/invoice @client:"Primary Client"
+Create an invoice for Primary Client
 Add all development hours from this sprint
 Include code review and documentation time
 
 # Generate and review
-/generate @invoice:latest
+Generate HTML for the latest invoice
 ```
 
 ### Freelance Project Management
@@ -238,16 +238,16 @@ Include code review and documentation time
 ```
 # Setup new project
 Set up invoicing for new project "E-commerce Platform"
-Default client: @client:"RetailCorp"
+Default client: RetailCorp
 Hourly rate: $150
 Invoice monthly on the 1st
 
 # Track work
-Import @timesheet:./weekly-hours.csv every Friday
+Import ./weekly-hours.csv every Friday
 Auto-categorize as "Development", "Meetings", or "Admin"
 
 # Monthly billing
-/invoice @client:"RetailCorp" 
+Create an invoice for RetailCorp
 Include all unbilled hours from this month
 Apply 10% discount for early payment
 ```
@@ -283,23 +283,22 @@ Customize behavior in `.go-invoice/config.json`:
 }
 ```
 
-### Workspace Integration
+### Claude Settings
 
-Configure file watching in `.claude_config.json`:
+Configure project settings in `.claude/settings.json`:
 
 ```json
 {
-  "workspace": {
-    "invoices": {
-      "path": "./invoices",
-      "watch": true,
-      "autoOpen": true
-    },
-    "timesheets": {
-      "path": "./timesheets", 
-      "watch": true,
-      "patterns": ["*.csv", "*.xlsx"]
-    }
+  "permissions": {
+    "allow": [
+      "Bash(go-invoice:*)",
+      "Read",
+      "Write"
+    ]
+  },
+  "env": {
+    "GO_INVOICE_PROJECT_NAME": "MyProject",
+    "GO_INVOICE_PREFIX": "INV"
   }
 }
 ```
@@ -357,31 +356,17 @@ Date,Hours,Description,Project,Rate
 2025-01-17,1.5,"Client meeting",Admin,150
 ```
 
-## Shortcuts and Aliases
+## Natural Language Commands
 
-Define custom shortcuts in `.claude_config.json`:
+You can interact with go-invoice using natural language. Claude Code will automatically use the appropriate MCP tool based on your request:
 
-```json
-{
-  "shortcuts": {
-    "invoice": {
-      "description": "Quick invoice creation",
-      "server": "go-invoice",
-      "tool": "invoice_create"
-    },
-    "bill": {
-      "description": "Generate and send invoice",
-      "server": "go-invoice", 
-      "tool": "generate_html"
-    },
-    "import": {
-      "description": "Import timesheet",
-      "server": "go-invoice",
-      "tool": "import_csv"
-    }
-  }
-}
-```
+- "Create an invoice for Acme Corp" → Uses `invoice_create`
+- "List all invoices from January" → Uses `invoice_list`
+- "Import timesheet.csv" → Uses `import_csv`
+- "Generate HTML for INV-2025-001" → Uses `generate_html`
+- "Show me the configuration" → Uses `config_show`
+
+Simply describe what you want to do, and Claude Code will handle the rest.
 
 ## Logging and Debugging
 
@@ -422,7 +407,8 @@ echo '{"jsonrpc":"2.0","method":"initialize","params":{},"id":1}' | \
 
 2. Check Claude Code configuration:
    ```bash
-   cat .claude_config.json
+   cat .mcp.json
+   cat .claude/settings.json
    ```
 
 3. Restart Claude Code

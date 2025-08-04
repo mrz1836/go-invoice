@@ -354,36 +354,6 @@ For Claude Code (`~/.config/claude/mcp/go-invoice.json`):
           }
         }
       },
-      "slashCommands": {
-        "prefix": "/mcp__go_invoice__",
-        "commands": [
-          {
-            "name": "create_invoice",
-            "description": "Create a new invoice",
-            "aliases": ["new_invoice", "invoice_new"]
-          },
-          {
-            "name": "list_invoices",
-            "description": "List invoices with filters",
-            "aliases": ["show_invoices", "invoices"]
-          },
-          {
-            "name": "import_csv",
-            "description": "Import timesheet from CSV",
-            "aliases": ["import_timesheet", "add_hours"]
-          },
-          {
-            "name": "generate_html",
-            "description": "Generate HTML invoice",
-            "aliases": ["export_invoice", "make_invoice"]
-          },
-          {
-            "name": "show_config",
-            "description": "Display configuration",
-            "aliases": ["config", "settings"]
-          }
-        ]
-      },
       "timeout": 60000,
       "retryLimit": 2,
       "metadata": {
