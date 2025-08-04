@@ -18,7 +18,6 @@ var (
 	ErrParsingFailed    = errors.New("output parsing failed")
 	ErrNoDataFound      = errors.New("no data found in output")
 	ErrUnexpectedFormat = errors.New("unexpected output format")
-	ErrCommandFailed    = errors.New("command execution failed")
 	ErrCommandExitCode  = errors.New("command failed with exit code")
 )
 

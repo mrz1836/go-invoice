@@ -70,9 +70,14 @@ func (h *EnhancedMCPHandler) HandleInitialize(ctx context.Context, req *types.MC
 		},
 	}
 
+	var reqID interface{}
+	if req != nil {
+		reqID = req.ID
+	}
+
 	return &types.MCPResponse{
 		JSONRPC: "2.0",
-		ID:      req.ID,
+		ID:      reqID,
 		Result:  result,
 	}, nil
 }

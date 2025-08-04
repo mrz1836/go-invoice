@@ -28,6 +28,8 @@ var (
 	ErrMissingClientIdentifier    = &BridgeError{Op: "validate", Msg: "one of client_id, client_name, or client_email must be provided"}
 	ErrMissingClientIDOrName      = &BridgeError{Op: "validate", Msg: "client_id or client_name must be provided"}
 	ErrMissingClientNameForCreate = &BridgeError{Op: "validate", Msg: "client_name required when create_new is true"}
+	ErrCommandFailed              = &BridgeError{Op: "execute", Msg: "command execution failed"}
+	ErrCollectionFailed           = &BridgeError{Op: "collect", Msg: "file collection failed"}
 )
 
 // ToolCommand represents the mapping from an MCP tool to CLI command.

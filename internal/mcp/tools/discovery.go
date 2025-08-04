@@ -508,7 +508,7 @@ func (s *ToolDiscoveryService) searchByQuery(_ context.Context, criteria *ToolSe
 					} else {
 						resultCopy := result
 						resultCopy.RelevanceScore += 0.2 // Boost for fuzzy match
-						resultCopy.MatchContext = fmt.Sprintf("Fuzzy match: %s ≈ %s", token, indexToken)
+						resultCopy.MatchContext = fmt.Sprintf("Fuzzy match: %s ~= %s", token, indexToken)
 						resultMap[key] = &resultCopy
 					}
 				}

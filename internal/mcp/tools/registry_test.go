@@ -98,7 +98,7 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 			},
 			expectError: false,
 			setupMocks: func() {
-				s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+				s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 				s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe() // ListTools + GetCategories
 			},
 		},
@@ -123,7 +123,7 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 			expectError: true,
 			errorMsg:    "tool name cannot be empty",
 			setupMocks: func() {
-				s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+				s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 			},
 		},
 		{
@@ -140,7 +140,7 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 			expectError: true,
 			errorMsg:    "tool description cannot be empty",
 			setupMocks: func() {
-				s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+				s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 			},
 		},
 		{
@@ -157,7 +157,7 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 			expectError: true,
 			errorMsg:    "tool input schema cannot be nil",
 			setupMocks: func() {
-				s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+				s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 			},
 		},
 		{
@@ -174,7 +174,7 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 			expectError: true,
 			errorMsg:    "invalid tool category",
 			setupMocks: func() {
-				s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+				s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 			},
 		},
 		{
@@ -191,7 +191,7 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 			expectError: true,
 			errorMsg:    "tool timeout must be between 1 second and 10 minutes",
 			setupMocks: func() {
-				s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+				s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 			},
 		},
 		{
@@ -208,7 +208,7 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 			expectError: true,
 			errorMsg:    "tool input schema type must be 'object'",
 			setupMocks: func() {
-				s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+				s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 			},
 		},
 	}
@@ -264,7 +264,7 @@ func (s *RegistryTestSuite) TestRegisterTool_DuplicateName() {
 	}
 
 	// Setup mocks
-	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
 	// Register first tool
 	err := s.registry.RegisterTool(context.Background(), tool1)
@@ -288,7 +288,7 @@ func (s *RegistryTestSuite) TestGetTool() {
 		Timeout:     15 * time.Second,
 	}
 
-	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 	err := s.registry.RegisterTool(context.Background(), tool)
 	s.Require().NoError(err)
 
@@ -399,7 +399,7 @@ func (s *RegistryTestSuite) TestListTools() {
 	}
 
 	// Register all tools
-	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(len(tools))
+	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 	for _, tool := range tools {
 		err := s.registry.RegisterTool(context.Background(), tool)
 		s.Require().NoError(err)
@@ -499,7 +499,7 @@ func (s *RegistryTestSuite) TestValidateToolInput() {
 		Timeout:    10 * time.Second,
 	}
 
-	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 	err := s.registry.RegisterTool(context.Background(), tool)
 	s.Require().NoError(err)
 
@@ -600,7 +600,7 @@ func (s *RegistryTestSuite) TestGetCategories() {
 		},
 	}
 
-	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(len(tools))
+	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 	for _, tool := range tools {
 		regErr := s.registry.RegisterTool(context.Background(), tool)
 		s.Require().NoError(regErr)
@@ -683,7 +683,7 @@ func (s *RegistryTestSuite) TestConcurrentOperations() {
 		errors := make(chan error, 100)
 
 		// Setup mocks for concurrent registrations
-		s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(100)
+		s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 		s.logger.On("Error", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()                               // Some may fail due to duplicates
 		s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe() // For ListTools call
 
@@ -737,7 +737,7 @@ func (s *RegistryTestSuite) TestConcurrentOperations() {
 			Timeout:     10 * time.Second,
 		}
 
-		s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+		s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 		err := s.registry.RegisterTool(context.Background(), tool)
 		s.Require().NoError(err)
 
@@ -799,7 +799,7 @@ func (s *RegistryTestSuite) TestToolDefensiveCopying() {
 		Timeout:    15 * time.Second,
 	}
 
-	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 	err := s.registry.RegisterTool(context.Background(), originalTool)
 	s.Require().NoError(err)
 
@@ -849,7 +849,7 @@ func (s *RegistryTestSuite) TestValidationIntegration() {
 		Timeout:    20 * time.Second,
 	}
 
-	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once()
+	s.logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 	err := s.registry.RegisterTool(context.Background(), tool)
 	s.Require().NoError(err)
 

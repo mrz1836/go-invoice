@@ -198,9 +198,7 @@ func (e *SecureExecutor) Execute(ctx context.Context, req *ExecutionRequest) (*E
 		)
 	}
 
-	// Collect output files if patterns are specified
-	// TODO: Implement output file collection based on tool expectations
-	// This would be configured per tool in a future enhancement
+	// Output file collection would be implemented when tool expectations are defined
 
 	return response, nil
 }

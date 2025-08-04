@@ -415,6 +415,327 @@ func (suite *CalculatorTestSuite) TestContextCancellation() {
 	suite.Equal(context.Canceled, err)
 }
 
+// TestRoundAmount tests the roundAmount method with different rounding modes
+func (suite *CalculatorTestSuite) TestRoundAmount() {
+	testCases := []struct {
+		name     string
+		amount   float64
+		options  *CalculationOptions
+		expected float64
+	}{
+		{
+			name:     "NilOptions",
+			amount:   123.456,
+			options:  nil,
+			expected: 123.46, // Default 2 decimal places, round mode
+		},
+		{
+			name:   "NegativeDecimalPlaces",
+			amount: 123.456,
+			options: &CalculationOptions{
+				DecimalPlaces: -1,
+				RoundingMode:  "round",
+			},
+			expected: 123.46, // Default 2 decimal places
+		},
+		{
+			name:   "FloorRounding",
+			amount: 123.456,
+			options: &CalculationOptions{
+				DecimalPlaces: 2,
+				RoundingMode:  "floor",
+			},
+			expected: 123.45,
+		},
+		{
+			name:   "CeilRounding",
+			amount: 123.456,
+			options: &CalculationOptions{
+				DecimalPlaces: 2,
+				RoundingMode:  "ceil",
+			},
+			expected: 123.46,
+		},
+		{
+			name:   "DefaultRounding",
+			amount: 123.456,
+			options: &CalculationOptions{
+				DecimalPlaces: 2,
+				RoundingMode:  "round",
+			},
+			expected: 123.46,
+		},
+		{
+			name:   "UnknownRoundingMode",
+			amount: 123.456,
+			options: &CalculationOptions{
+				DecimalPlaces: 2,
+				RoundingMode:  "unknown",
+			},
+			expected: 123.46, // Defaults to round
+		},
+		{
+			name:   "ThreeDecimalPlaces",
+			amount: 123.4567,
+			options: &CalculationOptions{
+				DecimalPlaces: 3,
+				RoundingMode:  "round",
+			},
+			expected: 123.457,
+		},
+		{
+			name:   "ZeroDecimalPlaces",
+			amount: 123.456,
+			options: &CalculationOptions{
+				DecimalPlaces: 0,
+				RoundingMode:  "round",
+			},
+			expected: 123.0,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			result := suite.calculator.roundAmount(tc.amount, tc.options)
+			suite.InDelta(tc.expected, result, 0.001, "Expected %.3f, got %.3f", tc.expected, result)
+		})
+	}
+}
+
+// TestGetCurrencySymbol tests the getCurrencySymbol method
+func (suite *CalculatorTestSuite) TestGetCurrencySymbol() {
+	testCases := []struct {
+		name           string
+		currency       string
+		expectedSymbol string
+	}{
+		{"USD", "USD", "$"},
+		{"EUR", "EUR", "€"},
+		{"GBP", "GBP", "£"},
+		{"CAD", "CAD", "C$"},
+		{"AUD", "AUD", "A$"},
+		{"JPY", "JPY", "¥"},
+		{"CHF", "CHF", "CHF"},
+		{"SEK", "SEK", "kr"},
+		{"NOK", "NOK", "kr"},
+		{"DKK", "DKK", "kr"},
+		{"UnknownCurrency", "XYZ", "XYZ"}, // Should return currency code
+		{"EmptyString", "", ""},           // Should return empty string
+		{"Lowercase", "usd", "usd"},       // Case sensitive, should return currency
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			result := suite.calculator.getCurrencySymbol(tc.currency)
+			suite.Equal(tc.expectedSymbol, result)
+		})
+	}
+}
+
+// TestRecalculateInvoiceErrorCases tests error scenarios for RecalculateInvoice
+func (suite *CalculatorTestSuite) TestRecalculateInvoiceErrorCases() {
+	ctx := context.Background()
+
+	suite.Run("NilInvoice", func() {
+		err := suite.calculator.RecalculateInvoice(ctx, nil, 0.10)
+		suite.Require().Error(err)
+		suite.Contains(err.Error(), "invoice cannot be nil")
+	})
+
+	suite.Run("NegativeTaxRate", func() {
+		invoice := suite.createTestInvoice()
+		// RecalculateInvoice allows negative tax rates but calculateTax returns 0 for taxRate <= 0
+		err := suite.calculator.RecalculateInvoice(ctx, invoice, -0.10)
+		suite.Require().NoError(err)
+		// Verify that negative tax rate is stored but tax amount is 0
+		suite.InDelta(-0.10, invoice.TaxRate, 1e-9)
+		suite.InDelta(0.0, invoice.TaxAmount, 1e-9) // calculateTax returns 0 for negative rates
+	})
+
+	suite.Run("CanceledContext", func() {
+		canceledCtx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		invoice := suite.createTestInvoice()
+		err := suite.calculator.RecalculateInvoice(canceledCtx, invoice, 0.10)
+		suite.Require().Error(err)
+		suite.Equal(context.Canceled, err)
+	})
+
+	suite.Run("InvoiceWithInvalidWorkItems", func() {
+		invoice := suite.createTestInvoice()
+		// Add an invalid work item
+		invoice.WorkItems = append(invoice.WorkItems, models.WorkItem{
+			ID:    "invalid",
+			Hours: -1.0, // Negative hours should cause error
+			Rate:  125.0,
+		})
+
+		err := suite.calculator.RecalculateInvoice(ctx, invoice, 0.10)
+		suite.Require().Error(err)
+		suite.Contains(err.Error(), "failed to calculate work item totals")
+		suite.Contains(err.Error(), "hours cannot be negative")
+	})
+}
+
+// TestCalculateWorkItemTotalsErrorCases tests error scenarios for calculateWorkItemTotals
+func (suite *CalculatorTestSuite) TestCalculateWorkItemTotalsErrorCases() {
+	ctx := context.Background()
+	options := &CalculationOptions{
+		TaxRate:          0.10,
+		Currency:         "USD",
+		DecimalPlaces:    2,
+		RoundingMode:     "round",
+		IncludeBreakdown: false,
+	}
+
+	suite.Run("EmptyWorkItems", func() {
+		subtotal, hours, breakdown, err := suite.calculator.calculateWorkItemTotals(ctx, []models.WorkItem{}, options)
+		suite.Require().NoError(err)
+		suite.InDelta(0.0, subtotal, 0.01)
+		suite.InDelta(0.0, hours, 0.01)
+		suite.Empty(breakdown)
+	})
+
+	suite.Run("WorkItemWithNegativeHours", func() {
+		workItems := []models.WorkItem{
+			{
+				ID:    "invalid",
+				Hours: -1.0,
+				Rate:  125.0,
+			},
+		}
+
+		subtotal, hours, breakdown, err := suite.calculator.calculateWorkItemTotals(ctx, workItems, options)
+		suite.Require().Error(err)
+		suite.Contains(err.Error(), "failed to calculate work item")
+		suite.InDelta(0.0, subtotal, 0.01)
+		suite.InDelta(0.0, hours, 0.01)
+		suite.Nil(breakdown)
+	})
+
+	suite.Run("WorkItemWithNegativeRate", func() {
+		workItems := []models.WorkItem{
+			{
+				ID:    "invalid",
+				Hours: 8.0,
+				Rate:  -125.0,
+			},
+		}
+
+		subtotal, hours, breakdown, err := suite.calculator.calculateWorkItemTotals(ctx, workItems, options)
+		suite.Require().Error(err)
+		suite.Contains(err.Error(), "failed to calculate work item")
+		suite.InDelta(0.0, subtotal, 0.01)
+		suite.InDelta(0.0, hours, 0.01)
+		suite.Nil(breakdown)
+	})
+
+	suite.Run("CanceledContext", func() {
+		canceledCtx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		workItems := []models.WorkItem{
+			{
+				ID:    "valid",
+				Hours: 8.0,
+				Rate:  125.0,
+			},
+		}
+
+		subtotal, hours, breakdown, err := suite.calculator.calculateWorkItemTotals(canceledCtx, workItems, options)
+		suite.Require().Error(err)
+		suite.Equal(context.Canceled, err)
+		suite.InDelta(0.0, subtotal, 0.01)
+		suite.InDelta(0.0, hours, 0.01)
+		suite.Nil(breakdown)
+	})
+
+	suite.Run("WithBreakdownEnabled", func() {
+		optionsWithBreakdown := &CalculationOptions{
+			TaxRate:          0.10,
+			Currency:         "USD",
+			DecimalPlaces:    2,
+			RoundingMode:     "round",
+			IncludeBreakdown: true,
+		}
+
+		workItems := []models.WorkItem{
+			{
+				ID:    "valid1",
+				Hours: 8.0,
+				Rate:  125.0,
+			},
+		}
+
+		subtotal, hours, breakdown, err := suite.calculator.calculateWorkItemTotals(ctx, workItems, optionsWithBreakdown)
+		suite.Require().NoError(err)
+		suite.InDelta(1000.0, subtotal, 0.01)
+		suite.InDelta(8.0, hours, 0.01)
+		suite.Len(breakdown, 1)
+		suite.Equal("valid1", breakdown[0].ID)
+		suite.InDelta(1000.0, breakdown[0].Subtotal, 0.01)
+	})
+}
+
+// TestCalculateTaxEdgeCases tests edge cases for calculateTax method
+func (suite *CalculatorTestSuite) TestCalculateTaxEdgeCases() {
+	testCases := []struct {
+		name     string
+		subtotal float64
+		options  *CalculationOptions
+		expected float64
+	}{
+		{
+			name:     "ZeroSubtotal",
+			subtotal: 0.0,
+			options: &CalculationOptions{
+				TaxRate:       0.10,
+				DecimalPlaces: 2,
+				RoundingMode:  "round",
+			},
+			expected: 0.0,
+		},
+		{
+			name:     "ZeroTaxRate",
+			subtotal: 1000.0,
+			options: &CalculationOptions{
+				TaxRate:       0.0,
+				DecimalPlaces: 2,
+				RoundingMode:  "round",
+			},
+			expected: 0.0,
+		},
+		{
+			name:     "NilOptions",
+			subtotal: 1000.0,
+			options:  nil,
+			expected: 0.0, // Default behavior with nil options
+		},
+		{
+			name:     "VerySmallSubtotal",
+			subtotal: 0.01,
+			options: &CalculationOptions{
+				TaxRate:       0.10,
+				DecimalPlaces: 2,
+				RoundingMode:  "round",
+			},
+			expected: 0.00, // Rounds to 0
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			taxRate := 0.0
+			if tc.options != nil {
+				taxRate = tc.options.TaxRate
+			}
+			result := suite.calculator.calculateTax(tc.subtotal, taxRate, tc.options)
+			suite.InDelta(tc.expected, result, 0.001, "Expected %.3f, got %.3f", tc.expected, result)
+		})
+	}
+}
+
 // Helper methods
 
 func (suite *CalculatorTestSuite) createTestInvoice() *models.Invoice {

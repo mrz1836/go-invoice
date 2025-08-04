@@ -319,8 +319,7 @@ func (h *ToolCallHandler) parseToolOutput(ctx context.Context, _ *tools.MCPTool,
 		return nil, err
 	}
 
-	// TODO: Add OutputSchema support to MCPTool when needed
-	// For now, we'll parse output generically
+	// Parse output generically since OutputSchema is not currently supported
 
 	// Check for error output
 	if resp.ExitCode != 0 {

@@ -262,21 +262,20 @@ func (t *StdioTransport) IsHealthy(_ context.Context) bool {
 
 // HTTPTransport implements HTTP-based transport for Claude Desktop
 type HTTPTransport struct {
-	logger   Logger
-	config   *TransportConfig
-	server   *http.Server
-	handler  http.Handler
-	mu       sync.RWMutex
-	closed   bool
-	ready    bool
-	metrics  *TransportMetrics
-	requests chan *httpRequest
+	logger     Logger
+	config     *TransportConfig
+	server     *http.Server
+	handler    http.Handler
+	mcpHandler types.MCPHandler
+	mu         sync.RWMutex
+	closed     bool
+	ready      bool
+	metrics    *TransportMetrics
+	requests   chan *httpRequest
 }
 
 type httpRequest struct {
-	req      *types.MCPRequest
-	respChan chan *types.MCPResponse
-	errChan  chan error
+	req *types.MCPRequest
 }
 
 // NewHTTPTransport creates a new HTTP transport
@@ -293,10 +292,11 @@ func NewHTTPTransport(logger Logger, config *TransportConfig, handler types.MCPH
 	}
 
 	transport := &HTTPTransport{
-		logger:   logger,
-		config:   config,
-		metrics:  NewTransportMetrics(),
-		requests: make(chan *httpRequest, 100),
+		logger:     logger,
+		config:     config,
+		mcpHandler: handler,
+		metrics:    NewTransportMetrics(),
+		requests:   make(chan *httpRequest, 100),
 	}
 
 	// Create HTTP handler
@@ -447,34 +447,21 @@ func (t *HTTPTransport) handleMCPRequest(w http.ResponseWriter, r *http.Request)
 		"id", req.ID,
 	)
 
-	// Process request through channel
-	httpReq := &httpRequest{
-		req:      &req,
-		respChan: make(chan *types.MCPResponse, 1),
-		errChan:  make(chan error, 1),
+	// Handle request directly through the MCP handler
+	resp, err := t.mcpHandler.HandleRequest(r.Context(), &req)
+	if err != nil {
+		t.logger.Error("request processing error", "error", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
 
-	select {
-	case t.requests <- httpReq:
-		// Wait for response
-		select {
-		case resp := <-httpReq.respChan:
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(resp); err != nil {
-				t.logger.Error("failed to encode response", "error", err)
-				http.Error(w, "Internal server error", http.StatusInternalServerError)
-				return
-			}
-			t.metrics.RecordSend(1)
-		case err := <-httpReq.errChan:
-			t.logger.Error("request processing error", "error", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-		case <-r.Context().Done():
-			http.Error(w, "Request timeout", http.StatusRequestTimeout)
-		}
-	default:
-		http.Error(w, "Server busy", http.StatusServiceUnavailable)
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		t.logger.Error("failed to encode response", "error", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
+	t.metrics.RecordSend(1)
 }
 
 // handleHealthCheck handles health check requests

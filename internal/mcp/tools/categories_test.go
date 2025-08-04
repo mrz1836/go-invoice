@@ -1,6 +1,8 @@
 package tools
 
 import (
+	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -13,10 +15,15 @@ type CategoriesTestSuite struct {
 	suite.Suite
 
 	// Test context managed per test method
+	mockRegistry *MockToolRegistry
+	mockLogger   *MockLogger
+	manager      *CategoryManager
 }
 
 func (s *CategoriesTestSuite) SetupTest() {
-	// Test setup if needed
+	s.mockRegistry = NewMockToolRegistry()
+	s.mockLogger = NewMockLogger()
+	s.manager = NewCategoryManager(s.mockRegistry, s.mockLogger)
 }
 
 func (s *CategoriesTestSuite) TestCategoryConstants() {
@@ -466,6 +473,331 @@ func TestCategoryType_Behaviors(t *testing.T) {
 		assert.Contains(t, categories, CategoryInvoiceManagement)
 		assert.Contains(t, categories, CategoryDataImport)
 		assert.NotContains(t, categories, CategoryReporting)
+	})
+}
+
+// TestNewCategoryManager tests the constructor
+func (s *CategoriesTestSuite) TestNewCategoryManager() {
+	s.Run("ValidConstruction", func() {
+		registry := NewMockToolRegistry()
+		logger := NewMockLogger()
+
+		manager := NewCategoryManager(registry, logger)
+
+		s.NotNil(manager)
+		s.Equal(registry, manager.registry)
+		s.Equal(logger, manager.logger)
+		s.NotNil(manager.categoryMetadata)
+		s.Len(manager.categoryMetadata, 6) // Should have all 6 categories initialized
+	})
+
+	s.Run("NilRegistry", func() {
+		logger := NewMockLogger()
+
+		s.Panics(func() {
+			NewCategoryManager(nil, logger)
+		})
+	})
+
+	s.Run("NilLogger", func() {
+		registry := NewMockToolRegistry()
+
+		s.Panics(func() {
+			NewCategoryManager(registry, nil)
+		})
+	})
+}
+
+// TestGetCategoryMetadata tests metadata retrieval
+func (s *CategoriesTestSuite) TestGetCategoryMetadata() {
+	ctx := context.Background()
+
+	s.Run("ValidCategory", func() {
+		metadata, err := s.manager.GetCategoryMetadata(ctx, CategoryInvoiceManagement)
+
+		s.Require().NoError(err)
+		s.NotNil(metadata)
+		s.Equal("Invoice Management", metadata.Name)
+		s.NotEmpty(metadata.Description)
+		s.NotEmpty(metadata.Keywords)
+		s.NotEmpty(metadata.UseCases)
+		s.Equal(1, metadata.Priority)
+	})
+
+	s.Run("UnknownCategory", func() {
+		metadata, err := s.manager.GetCategoryMetadata(ctx, CategoryType("unknown"))
+
+		s.Require().Error(err)
+		s.Nil(metadata)
+		s.Contains(err.Error(), "unknown category")
+	})
+
+	s.Run("ContextCancellation", func() {
+		cancelCtx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		metadata, err := s.manager.GetCategoryMetadata(cancelCtx, CategoryInvoiceManagement)
+
+		s.Require().Error(err)
+		s.Nil(metadata)
+		s.Equal(context.Canceled, err)
+	})
+
+	s.Run("MetadataDefensiveCopy", func() {
+		metadata, err := s.manager.GetCategoryMetadata(ctx, CategoryInvoiceManagement)
+		s.Require().NoError(err)
+		s.NotNil(metadata)
+
+		// Modify returned metadata
+		originalKeywordCount := len(metadata.Keywords)
+		metadata.Keywords = append(metadata.Keywords, "modified")
+
+		// Get fresh copy and verify original wasn't modified
+		metadata2, err := s.manager.GetCategoryMetadata(ctx, CategoryInvoiceManagement)
+		s.Require().NoError(err)
+		s.Len(metadata2.Keywords, originalKeywordCount)
+	})
+}
+
+// TestDiscoverCategories tests category discovery
+func (s *CategoriesTestSuite) TestDiscoverCategories() {
+	ctx := context.Background()
+
+	s.Run("EmptyFilter", func() {
+		s.mockRegistry.SetListToolsResponse(CategoryInvoiceManagement, []*MCPTool{
+			{Name: "tool1", Description: "desc1", Category: CategoryInvoiceManagement},
+		})
+		s.mockRegistry.SetListToolsResponse(CategoryDataImport, []*MCPTool{
+			{Name: "tool2", Description: "desc2", Category: CategoryDataImport},
+		})
+
+		summaries, err := s.manager.DiscoverCategories(ctx, nil)
+
+		s.Require().NoError(err)
+		s.NotEmpty(summaries)
+		s.LessOrEqual(len(summaries), 10) // Default MaxResults
+	})
+
+	s.Run("KeywordFilter", func() {
+		s.mockRegistry.SetListToolsResponse(CategoryInvoiceManagement, []*MCPTool{
+			{Name: "tool1", Category: CategoryInvoiceManagement},
+		})
+
+		filter := &CategoryDiscoveryFilter{
+			Keywords:   []string{"invoice"},
+			MaxResults: 5,
+		}
+
+		summaries, err := s.manager.DiscoverCategories(ctx, filter)
+
+		s.Require().NoError(err)
+		s.NotEmpty(summaries)
+		// Should include CategoryInvoiceManagement
+		found := false
+		for _, summary := range summaries {
+			if summary.Category == CategoryInvoiceManagement {
+				found = true
+				s.Equal(1, summary.ToolCount)
+				s.NotNil(summary.Metadata)
+				break
+			}
+		}
+		s.True(found, "Should find invoice management category")
+	})
+
+	s.Run("UseCaseFilter", func() {
+		s.mockRegistry.SetListToolsResponse(CategoryInvoiceManagement, []*MCPTool{
+			{Name: "tool1", Category: CategoryInvoiceManagement},
+		})
+
+		filter := &CategoryDiscoveryFilter{
+			UseCases:   []string{"Creating new invoices"},
+			MaxResults: 5,
+		}
+
+		summaries, err := s.manager.DiscoverCategories(ctx, filter)
+
+		s.Require().NoError(err)
+		s.NotEmpty(summaries)
+	})
+
+	s.Run("IncludeEmpty", func() {
+		// Mock empty category
+		s.mockRegistry.SetListToolsResponse(CategoryReporting, []*MCPTool{})
+
+		filter := &CategoryDiscoveryFilter{
+			IncludeEmpty: true,
+			MaxResults:   10,
+		}
+
+		summaries, err := s.manager.DiscoverCategories(ctx, filter)
+
+		s.Require().NoError(err)
+		// Should include categories with 0 tools
+		found := false
+		for _, summary := range summaries {
+			if summary.Category == CategoryReporting && summary.ToolCount == 0 {
+				found = true
+				break
+			}
+		}
+		s.True(found, "Should include empty categories when requested")
+	})
+
+	s.Run("MaxResultsLimit", func() {
+		// Set up multiple categories with tools
+		for _, cat := range []CategoryType{CategoryInvoiceManagement, CategoryDataImport, CategoryDataExport} {
+			s.mockRegistry.SetListToolsResponse(cat, []*MCPTool{
+				{Name: "tool", Category: cat},
+			})
+		}
+
+		filter := &CategoryDiscoveryFilter{
+			MaxResults: 2,
+		}
+
+		summaries, err := s.manager.DiscoverCategories(ctx, filter)
+
+		s.Require().NoError(err)
+		s.LessOrEqual(len(summaries), 2)
+	})
+
+	s.Run("ContextCancellation", func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		summaries, err := s.manager.DiscoverCategories(ctx, nil)
+
+		s.Require().Error(err)
+		s.Nil(summaries)
+		s.Equal(context.Canceled, err)
+	})
+}
+
+// TestGenerateNaturalLanguageDescription tests description generation
+func (s *CategoriesTestSuite) TestGenerateNaturalLanguageDescription() {
+	ctx := context.Background()
+
+	s.Run("WithoutTools", func() {
+		description, err := s.manager.GenerateNaturalLanguageDescription(ctx, CategoryInvoiceManagement, false)
+
+		s.Require().NoError(err)
+		s.NotEmpty(description)
+		s.Contains(description, "Invoice Management")
+		s.Contains(description, "invoice") // Should contain category keywords
+		s.Contains(description, "Common use cases")
+	})
+
+	s.Run("WithTools", func() {
+		s.mockRegistry.SetListToolsResponse(CategoryInvoiceManagement, []*MCPTool{
+			{Name: "create_invoice", Description: "Create new invoice", Category: CategoryInvoiceManagement},
+			{Name: "update_invoice", Description: "Update existing invoice", Category: CategoryInvoiceManagement},
+		})
+
+		description, err := s.manager.GenerateNaturalLanguageDescription(ctx, CategoryInvoiceManagement, true)
+
+		s.Require().NoError(err)
+		s.NotEmpty(description)
+		s.Contains(description, "Available tools")
+		s.Contains(description, "create_invoice")
+		s.Contains(description, "update_invoice")
+	})
+
+	s.Run("WithManyTools", func() {
+		// Create more than 3 tools to test truncation
+		tools := make([]*MCPTool, 5)
+		for i := 0; i < 5; i++ {
+			tools[i] = &MCPTool{
+				Name:        fmt.Sprintf("tool_%d", i),
+				Description: fmt.Sprintf("Tool %d description", i),
+				Category:    CategoryInvoiceManagement,
+			}
+		}
+		s.mockRegistry.SetListToolsResponse(CategoryInvoiceManagement, tools)
+
+		description, err := s.manager.GenerateNaturalLanguageDescription(ctx, CategoryInvoiceManagement, true)
+
+		s.Require().NoError(err)
+		s.Contains(description, "and 2 more tools") // Should show truncation message
+	})
+
+	s.Run("UnknownCategory", func() {
+		description, err := s.manager.GenerateNaturalLanguageDescription(ctx, CategoryType("unknown"), false)
+
+		s.Require().Error(err)
+		s.Empty(description)
+		s.Contains(err.Error(), "unknown category")
+	})
+
+	s.Run("ContextCancellation", func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		description, err := s.manager.GenerateNaturalLanguageDescription(ctx, CategoryInvoiceManagement, false)
+
+		s.Require().Error(err)
+		s.Empty(description)
+		s.Equal(context.Canceled, err)
+	})
+}
+
+// TestGetRecommendedCategories tests category recommendations
+func (s *CategoriesTestSuite) TestGetRecommendedCategories() {
+	ctx := context.Background()
+
+	s.Run("WithQuery", func() {
+		s.mockRegistry.SetListToolsResponse(CategoryInvoiceManagement, []*MCPTool{
+			{Name: "create_invoice", Category: CategoryInvoiceManagement},
+		})
+
+		recommendations, err := s.manager.GetRecommendedCategories(ctx, "create invoice", 3)
+
+		s.Require().NoError(err)
+		s.NotEmpty(recommendations)
+		s.LessOrEqual(len(recommendations), 3)
+
+		// Should prioritize invoice management for "create invoice" query
+		found := false
+		for _, rec := range recommendations {
+			if rec.Category == CategoryInvoiceManagement {
+				found = true
+				s.Greater(rec.RecommendationScore, 0.0)
+				break
+			}
+		}
+		s.True(found, "Should recommend invoice management for invoice query")
+	})
+
+	s.Run("EmptyQuery", func() {
+		for _, cat := range []CategoryType{CategoryInvoiceManagement, CategoryDataImport} {
+			s.mockRegistry.SetListToolsResponse(cat, []*MCPTool{
+				{Name: "tool", Category: cat},
+			})
+		}
+
+		recommendations, err := s.manager.GetRecommendedCategories(ctx, "", 2)
+
+		s.Require().NoError(err)
+		s.NotEmpty(recommendations)
+		s.LessOrEqual(len(recommendations), 2)
+	})
+
+	s.Run("ZeroLimit", func() {
+		recommendations, err := s.manager.GetRecommendedCategories(ctx, "test", 0)
+
+		s.Require().NoError(err)
+		s.LessOrEqual(len(recommendations), 3) // Should default to 3
+	})
+
+	s.Run("ContextCancellation", func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		recommendations, err := s.manager.GetRecommendedCategories(ctx, "test", 3)
+
+		s.Require().Error(err)
+		s.Nil(recommendations)
+		s.Equal(context.Canceled, err)
 	})
 }
 

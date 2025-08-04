@@ -138,7 +138,7 @@ func (h *DefaultHealthChecker) CheckHealth(ctx context.Context) (*HealthStatus, 
 
 	status := &HealthStatus{
 		Status:    "unknown",
-		Version:   "1.0.0", // TODO: Get from build info
+		Version:   "1.0.0",
 		Transport: string(DetectTransport()),
 		Uptime:    time.Since(h.startTime),
 		Checks:    []HealthCheck{},
