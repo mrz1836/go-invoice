@@ -72,9 +72,9 @@
 <br/>
 
 ## 🗂️ Table of Contents
+* [Quick Start](#-quick-start)
 * [Natural Language Interface](#-natural-language-interface)
 * [Features](#-features)
-* [Quick Start](#-quick-start)
 * [Claude Integration](#-claude-integration)
 * [Installation](#-installation)
 * [Configuration](#-configuration)
@@ -88,6 +88,53 @@
 * [Maintainers](#-maintainers)
 * [Contributing](#-contributing)
 * [License](#-license)
+
+<br/>
+
+
+## 🚀 Quick Start
+
+### Natural Language Setup (Recommended)
+
+```bash
+# 1. Install go-invoice
+go install github.com/mrz/go-invoice@latest
+
+# 2. Set up your business configuration
+go-invoice config setup
+
+# 3. Setup Claude integration (choose your platform)
+./scripts/setup-claude-integration.sh
+
+# 4. Start using natural language!
+# In Claude Desktop: "Create an invoice for Acme Corp for 40 hours of development at $125/hour"
+# In Claude Code: /mcp__go_invoice__create_invoice Create invoice for Acme Corp
+```
+
+<details>
+<summary><strong>📋 Traditional CLI Quick Start</strong></summary>
+
+```bash
+# Install go-invoice
+go install github.com/mrz/go-invoice@latest
+
+# Set up your business configuration
+go-invoice config setup
+
+# Add your first client
+go-invoice client add --name "Acme Corp" --email "billing@acme.com"
+
+# Import timesheet data
+go-invoice import csv timesheet.csv --client "Acme Corp"
+
+# Generate an invoice
+go-invoice invoice create --client "Acme Corp" --output invoice.html
+
+# View your invoice in the browser
+open invoice.html
+```
+
+</details>
 
 <br/>
 
@@ -139,7 +186,7 @@ go-invoice invoice create --client "Acme Corp" --output invoice.html
 
 **🤖 Natural Language Interface**
 - Manage invoices through conversation with Claude Desktop and Claude Code
-- 21 MCP tools accessible via natural language commands  
+- 21 MCP tools accessible via natural language commands
 - Slash commands and resource mentions (@invoice:, @client:, @timesheet:)
 - Dual transport support (HTTP for Desktop, stdio for Code)
 
@@ -183,52 +230,6 @@ go-invoice invoice create --client "Acme Corp" --output invoice.html
 - Clean architecture with dependency injection
 - Concurrent-safe operations
 - Extensive error handling and validation
-
-<br/>
-
-## 🚀 Quick Start
-
-### Natural Language Setup (Recommended)
-
-```bash
-# 1. Install go-invoice
-go install github.com/mrz/go-invoice@latest
-
-# 2. Set up your business configuration
-go-invoice config setup
-
-# 3. Setup Claude integration (choose your platform)
-./scripts/setup-claude-integration.sh
-
-# 4. Start using natural language!
-# In Claude Desktop: "Create an invoice for Acme Corp for 40 hours of development at $125/hour"
-# In Claude Code: /mcp__go_invoice__create_invoice Create invoice for Acme Corp
-```
-
-<details>
-<summary><strong>📋 Traditional CLI Quick Start</strong></summary>
-
-```bash
-# Install go-invoice
-go install github.com/mrz/go-invoice@latest
-
-# Set up your business configuration
-go-invoice config setup
-
-# Add your first client
-go-invoice client add --name "Acme Corp" --email "billing@acme.com"
-
-# Import timesheet data
-go-invoice import csv timesheet.csv --client "Acme Corp"
-
-# Generate an invoice
-go-invoice invoice create --client "Acme Corp" --output invoice.html
-
-# View your invoice in the browser
-open invoice.html
-```
-
-</details>
 
 <br/>
 
