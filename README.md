@@ -1,5 +1,5 @@
 # 💸 go-invoice
-> AI-powered invoice management through natural conversation with Claude Desktop and Claude Code. Also works as a traditional CLI.
+> AI-powered invoice management through natural conversation with Claude Desktop and Code.
 
 <table>
   <thead>
@@ -84,11 +84,11 @@
 * [🎯 Claude Integration](#-claude-integration)
 * [📦 Installation](#-installation)
 * [⚙️ Configuration](#-configuration)
-* [🖥️ Traditional CLI Usage](#️-traditional-cli-usage)
+* [🖥️ Traditional CLI Usage](#-traditional-cli-usage)
 * [📊 CSV Import](#-csv-import)
 * [🎨 Templates](#-templates)
 * [⚡ Performance](#-performance)
-* [🛠️ Development](#️-development)
+* [🛠️ Development](#-development)
 * [🧪 Testing](#-testing)
 * [🤖 AI Compliance](#-ai-compliance)
 * [Maintainers](#-maintainers)
@@ -302,15 +302,15 @@ open invoice.html
 <details>
 <summary><strong>🛠️ Platform Comparison</strong></summary>
 
-| Feature | Claude Desktop | Claude Code |
-|---------|---------------|-------------|
-| **Transport** | HTTP | stdio |
-| **Interface** | Natural conversation | Slash commands + mentions |
-| **Setup** | Global configuration | Project-specific |
-| **Performance** | < 200ms | < 100ms |
-| **Tools Available** | All 21 tools | All 21 tools |
-| **Resource Mentions** | Not supported | @invoice:, @client:, @timesheet: |
-| **Best For** | Business conversations | Development workflows |
+| Feature               | Claude Desktop         | Claude Code                      |
+|-----------------------|------------------------|----------------------------------|
+| **Transport**         | HTTP                   | stdio                            |
+| **Interface**         | Natural conversation   | Slash commands + mentions        |
+| **Setup**             | Global configuration   | Project-specific                 |
+| **Performance**       | < 200ms                | < 100ms                          |
+| **Tools Available**   | All 21 tools           | All 21 tools                     |
+| **Resource Mentions** | Not supported          | @invoice:, @client:, @timesheet: |
+| **Best For**          | Business conversations | Development workflows            |
 
 </details>
 
@@ -1123,7 +1123,7 @@ go-invoice includes comprehensive AI assistant guidelines and native Claude inte
 - **[CLAUDE.md](.github/CLAUDE.md)** — Guidelines for AI assistant integration
 - **[.cursorrules](.cursorrules)** — Machine-readable policies for Cursor and similar tools
 - **[sweep.yaml](.github/sweep.yaml)** — Configuration for Sweep AI code review
-- **[docs/mcp/](docs/mcp/)** — Complete MCP integration documentation for Claude Desktop and Claude Code
+- **[docs/mcp/](docs/mcp)** — Complete MCP integration documentation for Claude Desktop and Claude Code
 
 ### Native Claude Integration Features
 - **MCP Protocol Compliance**: Full MCP 2024-11-05 specification support
