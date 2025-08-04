@@ -47,12 +47,6 @@
         <a href="docs/mcp/">
           <img src="https://img.shields.io/badge/MCP-compatible-8A2BE2?style=flat&logo=anthropic&logoColor=white" alt="MCP Compatible">
         </a><br/>
-        <a href="docs/mcp/claude-desktop-setup.md">
-          <img src="https://img.shields.io/badge/Claude%20Desktop-ready-FF6B6B?style=flat&logo=anthropic&logoColor=white" alt="Claude Desktop">
-        </a><br/>
-        <a href="docs/mcp/claude-code-setup.md">
-          <img src="https://img.shields.io/badge/Claude%20Code-ready-4ECDC4?style=flat&logo=anthropic&logoColor=white" alt="Claude Code">
-        </a><br/>
         <a href=".github/AGENTS.md">
           <img src="https://img.shields.io/badge/AGENTS.md-found-40b814?style=flat&logo=openai" alt="AI Agent Rules">
         </a><br/>
