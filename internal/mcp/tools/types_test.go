@@ -481,19 +481,15 @@ func (s *TypesTestSuite) TestClientInfo_Structure() {
 
 func (s *TypesTestSuite) TestContextCancellation() {
 	// Test context cancellation handling in type operations
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 
-	// Wait for context to timeout
-	time.Sleep(2 * time.Millisecond)
+	// Wait for context to be done - this is race-safe
+	<-ctx.Done()
 
-	select {
-	case <-ctx.Done():
-		s.Require().Error(ctx.Err(), "Context should be canceled")
-		s.Contains(ctx.Err().Error(), "deadline exceeded", "Should be timeout error")
-	default:
-		s.Fail("Context should be canceled")
-	}
+	// Verify the context was canceled with the expected error
+	s.Require().Error(ctx.Err(), "Context should be canceled")
+	s.Contains(ctx.Err().Error(), "deadline exceeded", "Should be timeout error")
 }
 
 func (s *TypesTestSuite) TestConcurrentAccess() {
