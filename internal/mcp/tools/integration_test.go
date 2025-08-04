@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -16,41 +14,41 @@ import (
 // the discovery, validation, and initialization systems work together correctly.
 type ToolIntegrationTestSuite struct {
 	suite.Suite
-	ctx        context.Context
+
 	logger     *IntegrationTestLogger
 	components *ToolSystemComponents
 }
 
 // SetupTest initializes the test environment for each test.
 func (suite *ToolIntegrationTestSuite) SetupTest() {
-	suite.ctx = context.Background()
 	suite.logger = NewIntegrationTestLogger()
 }
 
 // TestCompleteToolSystemInitialization validates the entire tool system can be initialized.
 func (suite *ToolIntegrationTestSuite) TestCompleteToolSystemInitialization() {
 	// Initialize the complete tool system
-	components, err := InitializeToolSystem(suite.ctx, suite.logger)
-	require.NoError(suite.T(), err, "Tool system initialization should succeed")
-	require.NotNil(suite.T(), components, "Components should not be nil")
+	ctx := context.Background()
+	components, err := InitializeToolSystem(ctx, suite.logger)
+	suite.Require().NoError(err, "Tool system initialization should succeed")
+	suite.Require().NotNil(components, "Components should not be nil")
 
 	suite.components = components
 
 	// Validate registry is populated
-	assert.NotNil(suite.T(), components.Registry, "Registry should not be nil")
-	assert.NotNil(suite.T(), components.Validator, "Validator should not be nil")
-	assert.NotNil(suite.T(), components.DiscoveryService, "Discovery service should not be nil")
-	assert.NotNil(suite.T(), components.Metrics, "Metrics should not be nil")
+	suite.NotNil(components.Registry, "Registry should not be nil")
+	suite.NotNil(components.Validator, "Validator should not be nil")
+	suite.NotNil(components.DiscoveryService, "Discovery service should not be nil")
+	suite.NotNil(components.Metrics, "Metrics should not be nil")
 
 	// Validate tool count
-	allTools, err := components.Registry.ListTools(suite.ctx, "")
-	require.NoError(suite.T(), err, "Listing all tools should succeed")
-	assert.Len(suite.T(), allTools, 21, "Should have exactly 21 tools registered")
+	allTools, err := components.Registry.ListTools(ctx, "")
+	suite.Require().NoError(err, "Listing all tools should succeed")
+	suite.Len(allTools, 21, "Should have exactly 21 tools registered")
 
 	// Validate category count
-	categories, err := components.Registry.GetCategories(suite.ctx)
-	require.NoError(suite.T(), err, "Getting categories should succeed")
-	assert.Len(suite.T(), categories, 5, "Should have exactly 5 categories")
+	categories, err := components.Registry.GetCategories(ctx)
+	suite.Require().NoError(err, "Getting categories should succeed")
+	suite.Len(categories, 5, "Should have exactly 5 categories")
 
 	// Validate expected categories are present
 	expectedCategories := map[CategoryType]bool{
@@ -66,7 +64,7 @@ func (suite *ToolIntegrationTestSuite) TestCompleteToolSystemInitialization() {
 	}
 
 	for category, found := range expectedCategories {
-		assert.True(suite.T(), found, "Category %s should be present", category)
+		suite.True(found, "Category %s should be present", category)
 	}
 }
 
@@ -83,21 +81,23 @@ func (suite *ToolIntegrationTestSuite) TestToolDiscoveryIntegration() {
 		SortOrder:         "desc",
 	}
 
-	results, err := suite.components.DiscoveryService.SearchTools(suite.ctx, searchCriteria)
-	require.NoError(suite.T(), err, "Search should succeed")
-	assert.Greater(suite.T(), len(results), 0, "Search for 'invoice' should return results")
+	ctx := context.Background()
+	results, err := suite.components.DiscoveryService.SearchTools(ctx, searchCriteria)
+	suite.Require().NoError(err, "Search should succeed")
+	suite.NotEmpty(results, "Search for 'invoice' should return results")
 
 	// Validate search results have relevance scores
 	for _, result := range results {
-		assert.NotNil(suite.T(), result.Tool, "Search result should have a tool")
-		assert.GreaterOrEqual(suite.T(), result.RelevanceScore, 0.0, "Relevance score should be non-negative")
-		assert.NotEmpty(suite.T(), result.MatchContext, "Match context should be provided")
+		suite.NotNil(result.Tool, "Search result should have a tool")
+		suite.GreaterOrEqual(result.RelevanceScore, 0.0, "Relevance score should be non-negative")
+		suite.NotEmpty(result.MatchContext, "Match context should be provided")
 	}
 }
 
 // TestCategoryBasedDiscovery validates category-based tool discovery.
 func (suite *ToolIntegrationTestSuite) TestCategoryBasedDiscovery() {
 	suite.setupComponents()
+	ctx := context.Background()
 
 	// Test discovery for each category
 	categories := []CategoryType{
@@ -117,24 +117,25 @@ func (suite *ToolIntegrationTestSuite) TestCategoryBasedDiscovery() {
 	}
 
 	for _, category := range categories {
-		result, err := suite.components.DiscoveryService.DiscoverToolsByCategory(suite.ctx, category)
-		require.NoError(suite.T(), err, "Category discovery should succeed for %s", category)
+		result, err := suite.components.DiscoveryService.DiscoverToolsByCategory(ctx, category)
+		suite.Require().NoError(err, "Category discovery should succeed for %s", category)
 
 		expectedCount := expectedToolCounts[category]
-		assert.Equal(suite.T(), expectedCount, result.ToolCount, "Category %s should have %d tools", category, expectedCount)
-		assert.Len(suite.T(), result.Tools, expectedCount, "Tools slice should match tool count")
-		assert.Equal(suite.T(), category, result.Category, "Category should match requested category")
-		assert.Greater(suite.T(), len(result.RelatedCategories), 0, "Should have related categories")
+		suite.Equal(expectedCount, result.ToolCount, "Category %s should have %d tools", category, expectedCount)
+		suite.Len(result.Tools, expectedCount, "Tools slice should match tool count")
+		suite.Equal(category, result.Category, "Category should match requested category")
+		suite.NotEmpty(result.RelatedCategories, "Should have related categories")
 	}
 }
 
 // TestToolValidationIntegration validates that tool validation works for all tools.
 func (suite *ToolIntegrationTestSuite) TestToolValidationIntegration() {
 	suite.setupComponents()
+	ctx := context.Background()
 
 	// Get all tools
-	allTools, err := suite.components.Registry.ListTools(suite.ctx, "")
-	require.NoError(suite.T(), err, "Listing tools should succeed")
+	allTools, err := suite.components.Registry.ListTools(ctx, "")
+	suite.Require().NoError(err, "Listing tools should succeed")
 
 	// Test validation with empty input (should fail for tools with required fields)
 	emptyInput := map[string]interface{}{}
@@ -143,16 +144,16 @@ func (suite *ToolIntegrationTestSuite) TestToolValidationIntegration() {
 	validationErrors := 0
 	for _, tool := range allTools {
 		validationAttempts++
-		err := suite.components.Registry.ValidateToolInput(suite.ctx, tool.Name, emptyInput)
+		err := suite.components.Registry.ValidateToolInput(ctx, tool.Name, emptyInput)
 		if err != nil {
 			validationErrors++
 			// Validation errors should be descriptive
-			assert.NotEmpty(suite.T(), err.Error(), "Validation error should not be empty")
+			suite.NotEmpty(err.Error(), "Validation error should not be empty")
 		}
 	}
 
 	// We should have attempted to validate all tools
-	assert.Equal(suite.T(), 21, validationAttempts, "Should validate all 21 tools")
+	suite.Equal(21, validationAttempts, "Should validate all 21 tools")
 
 	// Some tools might have validation errors with empty input
 	suite.T().Logf("Validation attempts: %d, Validation errors: %d", validationAttempts, validationErrors)
@@ -161,6 +162,7 @@ func (suite *ToolIntegrationTestSuite) TestToolValidationIntegration() {
 // TestSpecificToolRetrieval validates that specific tools can be retrieved correctly.
 func (suite *ToolIntegrationTestSuite) TestSpecificToolRetrieval() {
 	suite.setupComponents()
+	ctx := context.Background()
 
 	// Test retrieving specific well-known tools
 	expectedTools := []string{
@@ -173,26 +175,27 @@ func (suite *ToolIntegrationTestSuite) TestSpecificToolRetrieval() {
 	}
 
 	for _, toolName := range expectedTools {
-		tool, err := suite.components.Registry.GetTool(suite.ctx, toolName)
-		require.NoError(suite.T(), err, "Tool %s should be retrievable", toolName)
-		assert.Equal(suite.T(), toolName, tool.Name, "Tool name should match")
-		assert.NotEmpty(suite.T(), tool.Description, "Tool should have description")
-		assert.NotNil(suite.T(), tool.InputSchema, "Tool should have input schema")
-		assert.NotEmpty(suite.T(), tool.CLICommand, "Tool should have CLI command")
-		assert.Greater(suite.T(), tool.Timeout, time.Duration(0), "Tool should have positive timeout")
+		tool, err := suite.components.Registry.GetTool(ctx, toolName)
+		suite.Require().NoError(err, "Tool %s should be retrievable", toolName)
+		suite.Equal(toolName, tool.Name, "Tool name should match")
+		suite.NotEmpty(tool.Description, "Tool should have description")
+		suite.NotNil(tool.InputSchema, "Tool should have input schema")
+		suite.NotEmpty(tool.CLICommand, "Tool should have CLI command")
+		suite.Greater(tool.Timeout, time.Duration(0), "Tool should have positive timeout")
 	}
 }
 
 // TestRegistrationMetrics validates that registry metrics are correct.
 func (suite *ToolIntegrationTestSuite) TestRegistrationMetrics() {
 	suite.setupComponents()
+	ctx := context.Background()
 
-	metrics, err := suite.components.Registry.GetRegistrationMetrics(suite.ctx)
-	require.NoError(suite.T(), err, "Getting metrics should succeed")
+	metrics, err := suite.components.Registry.GetRegistrationMetrics(ctx)
+	suite.Require().NoError(err, "Getting metrics should succeed")
 
-	assert.Equal(suite.T(), 21, metrics.TotalTools, "Should have 21 total tools")
-	assert.Equal(suite.T(), 5, metrics.TotalCategories, "Should have 5 total categories")
-	assert.NotZero(suite.T(), metrics.Uptime, "Should have non-zero uptime")
+	suite.Equal(21, metrics.TotalTools, "Should have 21 total tools")
+	suite.Equal(5, metrics.TotalCategories, "Should have 5 total categories")
+	suite.NotZero(metrics.Uptime, "Should have non-zero uptime")
 
 	// Validate tool distribution
 	expectedDistribution := map[CategoryType]int{
@@ -205,7 +208,7 @@ func (suite *ToolIntegrationTestSuite) TestRegistrationMetrics() {
 
 	for category, expectedCount := range expectedDistribution {
 		actualCount := metrics.ToolsByCategory[category]
-		assert.Equal(suite.T(), expectedCount, actualCount, "Category %s should have %d tools", category, expectedCount)
+		suite.Equal(expectedCount, actualCount, "Category %s should have %d tools", category, expectedCount)
 	}
 }
 
@@ -213,23 +216,24 @@ func (suite *ToolIntegrationTestSuite) TestRegistrationMetrics() {
 func (suite *ToolIntegrationTestSuite) TestContextCancellation() {
 	suite.setupComponents()
 
-	// Create a cancelled context
-	cancelledCtx, cancel := context.WithCancel(context.Background())
+	// Create a canceled context
+	canceledCtx, cancel := context.WithCancel(context.Background())
 	cancel()
 
 	// Test that operations respect cancellation
-	_, err := suite.components.Registry.ListTools(cancelledCtx, "")
-	assert.Equal(suite.T(), context.Canceled, err, "Should return context.Canceled")
+	_, err := suite.components.Registry.ListTools(canceledCtx, "")
+	suite.Equal(context.Canceled, err, "Should return context.Canceled")
 
-	_, err = suite.components.DiscoveryService.SearchTools(cancelledCtx, &ToolSearchCriteria{})
-	assert.Equal(suite.T(), context.Canceled, err, "Should return context.Canceled")
+	_, err = suite.components.DiscoveryService.SearchTools(canceledCtx, &ToolSearchCriteria{})
+	suite.Equal(context.Canceled, err, "Should return context.Canceled")
 }
 
 // setupComponents initializes the components if not already done.
 func (suite *ToolIntegrationTestSuite) setupComponents() {
 	if suite.components == nil {
-		components, err := InitializeToolSystem(suite.ctx, suite.logger)
-		require.NoError(suite.T(), err, "Tool system initialization should succeed")
+		ctx := context.Background()
+		components, err := InitializeToolSystem(ctx, suite.logger)
+		suite.Require().NoError(err, "Tool system initialization should succeed")
 		suite.components = components
 	}
 }

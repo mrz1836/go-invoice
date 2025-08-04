@@ -376,17 +376,6 @@ func ImportPreviewSchema() map[string]interface{} {
 				"description": "Client name for the preview (used when previewing new invoice creation).",
 				"examples":    []string{"Preview Client Inc", "Acme Corporation"},
 			},
-			"client_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Exact client ID for the preview (alternative to client_name).",
-				"examples":    []string{"client_123", "preview-client"},
-			},
-			"client_email": map[string]interface{}{
-				"type":        "string",
-				"format":      "email",
-				"description": "Client email address to identify the client (alternative to client_name or client_id).",
-				"examples":    []string{"preview@client.com", "contact@acme.com"},
-			},
 			"invoice_id": map[string]interface{}{
 				"type":        "string",
 				"description": "Existing invoice ID to preview appending to.",
@@ -476,11 +465,6 @@ func ImportPreviewSchema() map[string]interface{} {
 				"type":        "boolean",
 				"default":     false,
 				"description": "Show only high-level summary without detailed item listing.",
-			},
-			"show_statistics": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Include statistical analysis of the data (averages, patterns, etc.).",
 			},
 			"sample_preview": map[string]interface{}{
 				"type":        "boolean",

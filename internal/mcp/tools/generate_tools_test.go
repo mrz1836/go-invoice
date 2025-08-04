@@ -15,11 +15,12 @@ import (
 // GenerateToolsTestSuite provides comprehensive tests for generation tool definitions
 type GenerateToolsTestSuite struct {
 	suite.Suite
-	ctx context.Context
+
+	// No context stored in struct - pass through method parameters instead
 }
 
 func (s *GenerateToolsTestSuite) SetupTest() {
-	s.ctx = context.Background()
+	// Context created as needed in individual test methods
 }
 
 func (s *GenerateToolsTestSuite) TestCreateGenerateTools() {
@@ -293,6 +294,7 @@ func (s *GenerateToolsTestSuite) TestReportGenerationTool() {
 }
 
 func (s *GenerateToolsTestSuite) TestRegisterGenerateTools() {
+	ctx := context.Background()
 	// Create mock registry
 	validator := new(MockInputValidator)
 	logger := new(MockLogger)
@@ -303,24 +305,24 @@ func (s *GenerateToolsTestSuite) TestRegisterGenerateTools() {
 	logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(len(generateTools))
 
 	// Test registration
-	err := RegisterDocumentGenerationTools(s.ctx, registry)
+	err := RegisterDocumentGenerationTools(ctx, registry)
 	if err != nil {
 		s.T().Skipf("RegisterGenerateTools not implemented or failed: %v", err)
 		return
 	}
 
-	s.NoError(err, "Should register generate tools successfully")
+	s.Require().NoError(err, "Should register generate tools successfully")
 
 	// Verify tools were registered - check both possible categories
-	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
-	exportTools, err := registry.ListTools(s.ctx, CategoryDataExport)
-	s.NoError(err)
+	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+	exportTools, err := registry.ListTools(ctx, CategoryDataExport)
+	s.Require().NoError(err)
 
-	reportTools, err := registry.ListTools(s.ctx, CategoryReporting)
-	s.NoError(err)
+	reportTools, err := registry.ListTools(ctx, CategoryReporting)
+	s.Require().NoError(err)
 
 	totalGenerateTools := len(exportTools) + len(reportTools)
-	s.Greater(totalGenerateTools, 0, "Should have registered generation tools")
+	s.Positive(totalGenerateTools, "Should have registered generation tools")
 
 	// Verify each registered tool
 	allTools := append(exportTools, reportTools...)
@@ -434,7 +436,7 @@ func (s *GenerateToolsTestSuite) TestGenerateToolsIntegration() {
 			}
 		}
 
-		s.Greater(formatsCovered, 0, "Should have examples covering common output formats")
+		s.Positive(formatsCovered, "Should have examples covering common output formats")
 	})
 
 	s.Run("ExamplesCoverTemplating", func() {
@@ -469,7 +471,7 @@ func (s *GenerateToolsTestSuite) TestGenerateToolsEdgeCases() {
 		// This tests the function behavior itself
 		tools := CreateDocumentGenerationTools()
 		s.NotNil(tools, "Should never return nil")
-		// Note: It's acceptable for tools to be empty if not implemented yet
+		// It's acceptable for tools to be empty if not implemented yet
 	})
 
 	s.Run("OutputPathHandling", func() {

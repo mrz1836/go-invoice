@@ -18,8 +18,15 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
+)
+
+// Registry validation errors (additional to those in init.go)
+var (
+	ErrMissingCategory   = errors.New("missing expected category")
+	ErrCategoryToolCount = errors.New("category has incorrect tool count")
 )
 
 // CompleteToolRegistry provides the unified registry with all 21 tools pre-registered.
@@ -89,10 +96,10 @@ func NewCompleteToolRegistry(ctx context.Context, validator InputValidator, logg
 	}
 
 	if validator == nil {
-		return nil, fmt.Errorf("validator cannot be nil")
+		return nil, ErrValidatorNil
 	}
 	if logger == nil {
-		return nil, fmt.Errorf("logger cannot be nil")
+		return nil, ErrLoggerNil
 	}
 
 	logger.Info("initializing complete tool registry",
@@ -230,7 +237,7 @@ func (r *CompleteToolRegistry) validateRegistration(ctx context.Context) error {
 
 	r.toolCount = len(allTools)
 	if r.toolCount != 21 {
-		return fmt.Errorf("expected 21 tools, got %d", r.toolCount)
+		return fmt.Errorf("%w: expected 21, got %d", ErrInvalidToolCount, r.toolCount)
 	}
 
 	// Get categories for validation
@@ -241,7 +248,7 @@ func (r *CompleteToolRegistry) validateRegistration(ctx context.Context) error {
 
 	r.categoryCount = len(categories)
 	if r.categoryCount != 5 {
-		return fmt.Errorf("expected 5 categories, got %d", r.categoryCount)
+		return fmt.Errorf("%w: expected 5, got %d", ErrInvalidCategoryCount, r.categoryCount)
 	}
 
 	// Validate expected categories are present
@@ -259,7 +266,7 @@ func (r *CompleteToolRegistry) validateRegistration(ctx context.Context) error {
 
 	for category, found := range expectedCategories {
 		if !found {
-			return fmt.Errorf("missing expected category: %s", category)
+			return fmt.Errorf("%w: %s", ErrMissingCategory, category)
 		}
 	}
 
@@ -288,7 +295,7 @@ func (r *CompleteToolRegistry) validateRegistration(ctx context.Context) error {
 	for category, expectedCount := range expectedCounts {
 		actualCount := categoryToolCounts[category]
 		if actualCount != expectedCount {
-			return fmt.Errorf("category %s: expected %d tools, got %d", category, expectedCount, actualCount)
+			return fmt.Errorf("%w: category %s expected %d, got %d", ErrCategoryToolCount, category, expectedCount, actualCount)
 		}
 	}
 
@@ -365,7 +372,7 @@ type RegistrationMetrics struct {
 	ToolsByCategory    map[CategoryType]int `json:"toolsByCategory"`
 }
 
-// Note: Registration functions are implemented in their respective tool files:
+// Comment: Registration functions are implemented in their respective tool files:
 // - RegisterInvoiceManagementTools in invoice_tools.go
 // - RegisterClientManagementTools in client_tools.go
 // - RegisterDataImportTools in import_tools.go

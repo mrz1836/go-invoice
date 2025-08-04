@@ -349,12 +349,12 @@ func (s *ConfigToolsTestSuite) TestRegisterConfigTools() {
 		return
 	}
 
-	s.NoError(err, "Should register config tools successfully")
+	s.Require().NoError(err, "Should register config tools successfully")
 
 	// Verify tools were registered
-	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 	registeredTools, err := registry.ListTools(ctx, CategoryConfiguration)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotEmpty(registeredTools, "Should have registered configuration tools")
 
 	// Verify each registered tool
@@ -411,7 +411,7 @@ func (s *ConfigToolsTestSuite) TestConfigToolsIntegration() {
 			}
 		}
 
-		s.Greater(operationsCovered, 0, "Should cover at least one config operation")
+		s.Positive(operationsCovered, "Should cover at least one config operation")
 	})
 
 	s.Run("ConsistentNamingConvention", func() {
@@ -476,7 +476,7 @@ func (s *ConfigToolsTestSuite) TestConfigToolsIntegration() {
 			}
 		}
 
-		s.Greater(settingsCovered, 0, "Should have examples covering common settings")
+		s.Positive(settingsCovered, "Should have examples covering common settings")
 	})
 
 	s.Run("ExamplesCoverErrorScenarios", func() {
@@ -511,7 +511,7 @@ func (s *ConfigToolsTestSuite) TestConfigToolsEdgeCases() {
 		// This tests the function behavior itself
 		tools := CreateConfigTools()
 		s.NotNil(tools, "Should never return nil")
-		// Note: It's acceptable for tools to be empty if not implemented yet
+		// It's acceptable for tools to be empty if not implemented yet
 	})
 
 	s.Run("ConfigPathValidation", func() {

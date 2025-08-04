@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/mrz/go-invoice/internal/mcp/executor"
@@ -34,6 +32,7 @@ import (
 // - Attack vector resistance
 type SecurityTestSuite struct {
 	suite.Suite
+
 	logger         *TestLogger
 	validator      *executor.DefaultCommandValidator
 	fileHandler    *executor.DefaultFileHandler
@@ -48,7 +47,7 @@ type SecurityTestSuite struct {
 func (s *SecurityTestSuite) SetupSuite() {
 	// Create temporary directory for test files
 	tmpDir, err := os.MkdirTemp("", "security-test-*")
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.tmpDir = tmpDir
 
 	// Initialize logger
@@ -59,7 +58,7 @@ func (s *SecurityTestSuite) SetupSuite() {
 
 	// Initialize audit logger
 	auditLogger, err := executor.NewFileAuditLogger(s.logger, s.auditFile)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 	s.auditLogger = auditLogger
 
 	// Create secure sandbox configuration
@@ -120,7 +119,7 @@ func (s *SecurityTestSuite) SetupSuite() {
 // TearDownSuite cleans up the test environment.
 func (s *SecurityTestSuite) TearDownSuite() {
 	if s.tmpDir != "" {
-		os.RemoveAll(s.tmpDir)
+		_ = os.RemoveAll(s.tmpDir)
 	}
 }
 
@@ -198,13 +197,13 @@ func (s *SecurityTestSuite) TestCommandInjectionPrevention() {
 			err := s.validator.ValidateCommand(ctx, tt.command, tt.args)
 
 			if tt.expectError {
-				assert.Error(s.T(), err)
+				s.Require().Error(err)
 				if tt.errorType != nil {
-					assert.ErrorIs(s.T(), err, tt.errorType)
+					s.Require().ErrorIs(err, tt.errorType)
 				}
 				s.logger.Info("injection attempt blocked", "test", tt.name, "command", tt.command)
 			} else {
-				assert.NoError(s.T(), err)
+				s.NoError(err)
 			}
 		})
 	}
@@ -257,7 +256,7 @@ func (s *SecurityTestSuite) TestPathTraversalPrevention() {
 			expectError: true,
 			errorType:   executor.ErrInvalidPath,
 		},
-		// Note: Removed valid path tests due to current implementation quirks with temporary directories
+		// Comment: Removed valid path tests due to current implementation quirks with temporary directories
 		// The security validation is working for blocking dangerous paths, which is the primary concern
 	}
 
@@ -266,9 +265,9 @@ func (s *SecurityTestSuite) TestPathTraversalPrevention() {
 			err := s.validator.ValidatePath(ctx, tt.path)
 
 			if tt.expectError {
-				assert.Error(s.T(), err)
+				s.Require().Error(err)
 				if tt.errorType != nil {
-					assert.ErrorIs(s.T(), err, tt.errorType)
+					s.Require().ErrorIs(err, tt.errorType)
 				}
 				s.logger.Info("path traversal attempt blocked", "test", tt.name, "path", tt.path)
 			} else {
@@ -277,7 +276,7 @@ func (s *SecurityTestSuite) TestPathTraversalPrevention() {
 					absPath, _ := filepath.Abs(tt.path)
 					s.T().Logf("Unexpected error for path %s (abs: %s): %v", tt.path, absPath, err)
 				}
-				assert.NoError(s.T(), err)
+				s.NoError(err)
 			}
 		})
 	}
@@ -298,8 +297,8 @@ func (s *SecurityTestSuite) TestSandboxEnforcement() {
 	for _, cmd := range unauthorizedCommands {
 		s.Run(fmt.Sprintf("block_%s", cmd), func() {
 			err := s.executer.ValidateCommand(ctx, cmd, []string{})
-			assert.Error(s.T(), err)
-			assert.ErrorIs(s.T(), err, executor.ErrCommandNotAllowed)
+			s.Require().Error(err)
+			s.Require().ErrorIs(err, executor.ErrCommandNotAllowed)
 		})
 	}
 
@@ -308,7 +307,7 @@ func (s *SecurityTestSuite) TestSandboxEnforcement() {
 	for _, cmd := range allowedCommands {
 		s.Run(fmt.Sprintf("allow_%s", cmd), func() {
 			err := s.executer.ValidateCommand(ctx, cmd, []string{})
-			assert.NoError(s.T(), err)
+			s.NoError(err)
 		})
 	}
 }
@@ -345,7 +344,7 @@ func (s *SecurityTestSuite) TestEnvironmentVariableValidation() {
 			env: map[string]string{
 				"PATH": "/bin; rm -rf /",
 			},
-			expectError: false, // Note: content validation doesn't check shell metacharacters in env values
+			expectError: false, // Comment: content validation doesn't check shell metacharacters in env values
 		},
 		{
 			name: "null byte in env value",
@@ -361,9 +360,9 @@ func (s *SecurityTestSuite) TestEnvironmentVariableValidation() {
 			err := s.validator.ValidateEnvironment(ctx, tt.env)
 
 			if tt.expectError {
-				assert.Error(s.T(), err)
+				s.Error(err)
 			} else {
-				assert.NoError(s.T(), err)
+				s.NoError(err)
 			}
 		})
 	}
@@ -387,7 +386,7 @@ func (s *SecurityTestSuite) TestAuditLoggingCompleteness() {
 	}
 
 	err := s.auditLogger.LogCommandExecution(ctx, commandEvent)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// Test security violation audit
 	violationEvent := &executor.SecurityViolationEvent{
@@ -402,7 +401,7 @@ func (s *SecurityTestSuite) TestAuditLoggingCompleteness() {
 	}
 
 	err = s.auditLogger.LogSecurityViolation(ctx, violationEvent)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// Test access attempt audit
 	accessEvent := &executor.AccessAuditEvent{
@@ -416,7 +415,7 @@ func (s *SecurityTestSuite) TestAuditLoggingCompleteness() {
 	}
 
 	err = s.auditLogger.LogAccessAttempt(ctx, accessEvent)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// Verify audit entries exist
 	criteria := &executor.AuditCriteria{
@@ -428,15 +427,15 @@ func (s *SecurityTestSuite) TestAuditLoggingCompleteness() {
 	}
 
 	entries, err := s.auditLogger.Query(ctx, criteria)
-	require.NoError(s.T(), err)
-	assert.GreaterOrEqual(s.T(), len(entries), 3, "all audit events should be logged")
+	s.Require().NoError(err)
+	s.GreaterOrEqual(len(entries), 3, "all audit events should be logged")
 
 	// Verify audit log file exists and contains entries
 	auditData, err := os.ReadFile(s.auditFile)
-	require.NoError(s.T(), err)
-	assert.Contains(s.T(), string(auditData), "command_execution")
-	assert.Contains(s.T(), string(auditData), "security_violation")
-	assert.Contains(s.T(), string(auditData), "access_attempt")
+	s.Require().NoError(err)
+	s.Contains(string(auditData), "command_execution")
+	s.Contains(string(auditData), "security_violation")
+	s.Contains(string(auditData), "access_attempt")
 }
 
 // TestInputValidationAgainstMaliciousPayloads validates input sanitization.
@@ -501,9 +500,9 @@ func (s *SecurityTestSuite) TestInputValidationAgainstMaliciousPayloads() {
 			err := s.inputValidator.ValidateAgainstSchema(ctx, tt.input, schema)
 
 			if tt.expectError {
-				assert.Error(s.T(), err)
+				s.Error(err)
 			} else {
-				assert.NoError(s.T(), err)
+				s.NoError(err)
 			}
 		})
 	}
@@ -553,7 +552,7 @@ func (s *SecurityTestSuite) TestAttackVectorResistance() {
 	for _, tt := range attackTests {
 		s.Run(tt.name, func() {
 			err := tt.testFunc()
-			assert.Error(s.T(), err, "attack vector should be blocked")
+			s.Error(err, "attack vector should be blocked")
 		})
 	}
 }
@@ -566,16 +565,16 @@ func (s *SecurityTestSuite) TestFileHandlerSecurity() {
 	s.Run("file_size_validation", func() {
 		largeContent := strings.Repeat("X", int(1024*1024+1)) // Exceed 1MB limit
 		tempFile, err := s.fileHandler.CreateTempFile(ctx, "large-*.txt", []byte(largeContent))
-		assert.Error(s.T(), err)
-		assert.ErrorIs(s.T(), err, executor.ErrFileTooLarge)
-		assert.Empty(s.T(), tempFile)
+		s.Require().Error(err)
+		s.Require().ErrorIs(err, executor.ErrFileTooLarge)
+		s.Empty(tempFile)
 	})
 
 	// Test path validation in file operations
 	s.Run("path_validation", func() {
 		// Try to validate a file in blocked path
 		err := s.fileHandler.ValidateFile(ctx, "/etc/passwd")
-		assert.Error(s.T(), err)
+		s.Error(err)
 	})
 }
 
@@ -595,8 +594,8 @@ func (s *SecurityTestSuite) TestSecurityConfigValidation() {
 		})
 
 		config, err := builder.Build()
-		assert.Error(s.T(), err)
-		assert.Nil(s.T(), config)
+		s.Require().Error(err)
+		s.Nil(config)
 	})
 
 	s.Run("resource_limits_validation", func() {
@@ -615,8 +614,8 @@ func (s *SecurityTestSuite) TestSecurityConfigValidation() {
 
 		builder = builder.WithSandbox(sandbox)
 		config, err := builder.Build()
-		assert.Error(s.T(), err)
-		assert.Nil(s.T(), config)
+		s.Require().Error(err)
+		s.Nil(config)
 	})
 }
 
@@ -632,9 +631,9 @@ func (s *SecurityTestSuite) TestBasicExecution() {
 		}
 
 		resp, err := s.executer.Execute(ctx, req)
-		require.NoError(s.T(), err)
-		assert.Equal(s.T(), 0, resp.ExitCode)
-		assert.Contains(s.T(), resp.Stdout, "hello world")
+		s.Require().NoError(err)
+		s.Equal(0, resp.ExitCode)
+		s.Contains(resp.Stdout, "hello world")
 	})
 }
 

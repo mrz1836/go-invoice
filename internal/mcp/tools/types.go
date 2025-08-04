@@ -130,7 +130,7 @@ type ToolRegistry interface {
 	//
 	// Returns:
 	// - *MCPTool: The requested tool definition if found
-	// - error: Error if tool not found or context cancelled
+	// - error: Error if tool not found or context canceled
 	//
 	// Notes:
 	// - Returns ErrToolNotFound if tool doesn't exist
@@ -145,7 +145,7 @@ type ToolRegistry interface {
 	//
 	// Returns:
 	// - []*MCPTool: List of tools in the specified category
-	// - error: Error if category invalid or context cancelled
+	// - error: Error if category invalid or context canceled
 	//
 	// Notes:
 	// - Empty category returns all registered tools
@@ -191,7 +191,7 @@ type ToolRegistry interface {
 	//
 	// Returns:
 	// - []CategoryType: List of all available categories
-	// - error: Error if context cancelled
+	// - error: Error if context canceled
 	//
 	// Notes:
 	// - Results include only categories with registered tools

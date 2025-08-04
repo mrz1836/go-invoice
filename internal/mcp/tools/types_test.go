@@ -13,11 +13,10 @@ import (
 // TypesTestSuite provides comprehensive tests for core types and interfaces
 type TypesTestSuite struct {
 	suite.Suite
-	ctx context.Context
 }
 
 func (s *TypesTestSuite) SetupTest() {
-	s.ctx = context.Background()
+	// No setup required
 }
 
 func (s *TypesTestSuite) TestMCPTool_Structure() {
@@ -212,7 +211,7 @@ func (s *TypesTestSuite) TestCategoryType_Constants() {
 		categorySet[category] = true
 	}
 
-	s.Equal(6, len(expectedCategories), "Should have exactly 6 categories")
+	s.Len(expectedCategories, 6, "Should have exactly 6 categories")
 }
 
 func (s *TypesTestSuite) TestValidationError_Interface() {
@@ -267,7 +266,7 @@ func (s *TypesTestSuite) TestValidationError_Interface() {
 
 			// Test error interface compliance
 			var err error = &tt.validationErr
-			s.NotNil(err, "ValidationError should implement error interface")
+			s.Require().Error(err, "ValidationError should implement error interface")
 			s.Equal(tt.expectedMsg, err.Error(), "Error interface should return same message")
 		})
 	}
@@ -320,7 +319,7 @@ func (s *TypesTestSuite) TestToolNotFoundError_Interface() {
 
 			// Test error interface compliance
 			var err error = &tt.toolErr
-			s.NotNil(err, "ToolNotFoundError should implement error interface")
+			s.Require().Error(err, "ToolNotFoundError should implement error interface")
 			s.Equal(tt.expectedMsg, err.Error(), "Error interface should return same message")
 		})
 	}
@@ -482,7 +481,7 @@ func (s *TypesTestSuite) TestClientInfo_Structure() {
 
 func (s *TypesTestSuite) TestContextCancellation() {
 	// Test context cancellation handling in type operations
-	ctx, cancel := context.WithTimeout(s.ctx, 1*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
 
 	// Wait for context to timeout
@@ -490,10 +489,10 @@ func (s *TypesTestSuite) TestContextCancellation() {
 
 	select {
 	case <-ctx.Done():
-		s.Error(ctx.Err(), "Context should be cancelled")
+		s.Require().Error(ctx.Err(), "Context should be canceled")
 		s.Contains(ctx.Err().Error(), "deadline exceeded", "Should be timeout error")
 	default:
-		s.Fail("Context should be cancelled")
+		s.Fail("Context should be canceled")
 	}
 }
 
@@ -724,10 +723,10 @@ func TestToolNotFoundError_EdgeCases(t *testing.T) {
 
 // Race condition tests
 func TestTypes_RaceConditions(t *testing.T) {
-	t.Run("ConcurrentErrorCreation", func(t *testing.T) {
+	t.Run("ConcurrentErrorCreation", func(_ *testing.T) {
 		done := make(chan bool, 100)
 		for i := 0; i < 100; i++ {
-			go func(id int) {
+			go func(_ int) {
 				defer func() { done <- true }()
 				err := &ValidationError{
 					Field:   "field",
@@ -743,7 +742,7 @@ func TestTypes_RaceConditions(t *testing.T) {
 		}
 	})
 
-	t.Run("ConcurrentToolAccess", func(t *testing.T) {
+	t.Run("ConcurrentToolAccess", func(_ *testing.T) {
 		tool := &MCPTool{
 			Name:        "concurrent",
 			Description: "Test",

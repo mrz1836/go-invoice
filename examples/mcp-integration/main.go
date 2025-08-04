@@ -3,6 +3,8 @@
 // This example demonstrates the unified tool registry and validation system that integrates
 // all 21 tools from phases 2.2-2.4 into a comprehensive MCP integration. It shows how to
 // initialize the system, discover tools, and validate inputs.
+//
+//nolint:forbidigo // This is an example file that intentionally uses fmt.Print* for demonstration output
 package main
 
 import (
@@ -51,8 +53,8 @@ func ExampleUsage() {
 
 	fmt.Printf("✓ Found %d categories:\n", len(categories))
 	for _, category := range categories {
-		toolsInCategory, err := components.Registry.ListTools(ctx, category)
-		if err != nil {
+		toolsInCategory, listErr := components.Registry.ListTools(ctx, category)
+		if listErr != nil {
 			continue
 		}
 		fmt.Printf("  - %s: %d tools\n", category, len(toolsInCategory))
@@ -81,7 +83,7 @@ func ExampleUsage() {
 		fmt.Printf("  - %s (relevance: %.2f): %s\n",
 			result.Tool.Name,
 			result.RelevanceScore,
-			result.Tool.Description[:min(80, len(result.Tool.Description))])
+			result.Tool.Description[:minInt(80, len(result.Tool.Description))])
 	}
 	fmt.Println()
 
@@ -95,7 +97,7 @@ func ExampleUsage() {
 
 	fmt.Printf("✓ Invoice Management category has %d tools:\n", categoryResult.ToolCount)
 	for _, tool := range categoryResult.Tools {
-		fmt.Printf("  - %s: %s\n", tool.Name, tool.Description[:min(60, len(tool.Description))])
+		fmt.Printf("  - %s: %s\n", tool.Name, tool.Description[:minInt(60, len(tool.Description))])
 	}
 	fmt.Println()
 
@@ -112,7 +114,7 @@ func ExampleUsage() {
 	emptyInput := map[string]interface{}{}
 	err = components.Registry.ValidateToolInput(ctx, "invoice_create", emptyInput)
 	if err != nil {
-		fmt.Printf("✓ Validation correctly rejected empty input: %s\n", err.Error()[:min(80, len(err.Error()))])
+		fmt.Printf("✓ Validation correctly rejected empty input: %s\n", err.Error()[:minInt(80, len(err.Error()))])
 	} else {
 		fmt.Printf("✓ Validation passed for empty input (no required fields)\n")
 	}
@@ -194,7 +196,7 @@ func ExampleUsage() {
 
 // Helper functions
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}

@@ -392,6 +392,19 @@ func (v *DefaultInputValidator) validateField(ctx context.Context, fieldName str
 		return err
 	}
 
+	// Handle nested object validation
+	if expectedType, exists := schemaMap["type"]; exists {
+		if typeStr, ok := expectedType.(string); ok && typeStr == "object" {
+			// Value must be a map for object validation
+			if valueMap, ok := value.(map[string]interface{}); ok {
+				// Recursively validate the nested object
+				if err := v.ValidateAgainstSchema(ctx, valueMap, schemaMap); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -565,12 +578,12 @@ func (v *DefaultInputValidator) registerBuiltinFormatValidators() {
 func (v *DefaultInputValidator) validateDateFormat(ctx context.Context, value interface{}) error {
 	strValue, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("expected string value for date format")
+		return v.BuildValidationError(ctx, "", "expected string value for date format", []string{"provide a string value in YYYY-MM-DD format"})
 	}
 
 	_, err := time.Parse("2006-01-02", strValue)
 	if err != nil {
-		return fmt.Errorf("invalid date format, expected YYYY-MM-DD")
+		return v.BuildValidationError(ctx, "", "invalid date format, expected YYYY-MM-DD", []string{"use format YYYY-MM-DD (e.g., 2023-12-25)"})
 	}
 
 	return nil
@@ -580,12 +593,12 @@ func (v *DefaultInputValidator) validateDateFormat(ctx context.Context, value in
 func (v *DefaultInputValidator) validateDateTimeFormat(ctx context.Context, value interface{}) error {
 	strValue, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("expected string value for date-time format")
+		return v.BuildValidationError(ctx, "", "expected string value for date-time format", []string{"provide a string value in RFC3339 format"})
 	}
 
 	_, err := time.Parse(time.RFC3339, strValue)
 	if err != nil {
-		return fmt.Errorf("invalid date-time format, expected RFC3339 format")
+		return v.BuildValidationError(ctx, "", "invalid date-time format, expected RFC3339 format", []string{"use RFC3339 format (e.g., 2023-12-25T10:30:00Z)"})
 	}
 
 	return nil
@@ -595,12 +608,12 @@ func (v *DefaultInputValidator) validateDateTimeFormat(ctx context.Context, valu
 func (v *DefaultInputValidator) validateEmailFormat(ctx context.Context, value interface{}) error {
 	strValue, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("expected string value for email format")
+		return v.BuildValidationError(ctx, "", "expected string value for email format", []string{"provide a string value containing a valid email address"})
 	}
 
 	_, err := mail.ParseAddress(strValue)
 	if err != nil {
-		return fmt.Errorf("invalid email format")
+		return v.BuildValidationError(ctx, "", "invalid email format", []string{"use valid email format (e.g., user@example.com)"})
 	}
 
 	return nil
@@ -610,12 +623,12 @@ func (v *DefaultInputValidator) validateEmailFormat(ctx context.Context, value i
 func (v *DefaultInputValidator) validateUUIDFormat(ctx context.Context, value interface{}) error {
 	strValue, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("expected string value for UUID format")
+		return v.BuildValidationError(ctx, "", "expected string value for UUID format", []string{"provide a string value containing a valid UUID"})
 	}
 
 	uuidRegex := regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 	if !uuidRegex.MatchString(strValue) {
-		return fmt.Errorf("invalid UUID format")
+		return v.BuildValidationError(ctx, "", "invalid UUID format", []string{"use standard UUID format (e.g., 550e8400-e29b-41d4-a716-446655440000)"})
 	}
 
 	return nil
@@ -625,12 +638,12 @@ func (v *DefaultInputValidator) validateUUIDFormat(ctx context.Context, value in
 func (v *DefaultInputValidator) validateURIFormat(ctx context.Context, value interface{}) error {
 	strValue, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("expected string value for URI format")
+		return v.BuildValidationError(ctx, "", "expected string value for URI format", []string{"provide a string value containing a valid URI"})
 	}
 
 	// Basic URI validation - should start with scheme
 	if !strings.Contains(strValue, "://") {
-		return fmt.Errorf("invalid URI format, missing scheme")
+		return v.BuildValidationError(ctx, "", "invalid URI format, missing scheme", []string{"include scheme in URI (e.g., https://example.com)"})
 	}
 
 	return nil

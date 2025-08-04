@@ -343,10 +343,10 @@ func (s *PerformanceTestSuite) benchmarkSingleTool(b *testing.B, tool *tools.MCP
 
 			// Validate response time targets
 			if s.isSimpleOperation(tool) {
-				assert.True(b, duration < SimpleOperationTarget,
+				assert.Less(b, duration, SimpleOperationTarget,
 					"Simple operation %s took %v, expected < %v", tool.Name, duration, SimpleOperationTarget)
 			} else {
-				assert.True(b, duration < ComplexOperationTarget,
+				assert.Less(b, duration, ComplexOperationTarget,
 					"Complex operation %s took %v, expected < %v", tool.Name, duration, ComplexOperationTarget)
 			}
 		}
@@ -410,12 +410,15 @@ func (s *PerformanceTestSuite) benchmarkHTTPTransport(b *testing.B, request *typ
 		require.NoError(b, err)
 
 		start := time.Now()
-		resp, err := client.Post(s.httpServer.URL+"/mcp", "application/json", strings.NewReader(string(jsonData)))
+		req, err := http.NewRequestWithContext(context.Background(), "POST", s.httpServer.URL+"/mcp", strings.NewReader(string(jsonData)))
+		require.NoError(b, err)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := client.Do(req)
 		require.NoError(b, err)
 
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(b, err)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		duration := time.Since(start)
 
@@ -507,7 +510,7 @@ func (s *PerformanceTestSuite) benchmarkTimeoutEnforcement(b *testing.B) {
 		cancel()
 
 		// Should timeout or complete within reasonable time
-		assert.True(b, duration < 100*time.Millisecond, "Timeout enforcement took too long: %v", duration)
+		assert.Less(b, duration, 100*time.Millisecond, "Timeout enforcement took too long: %v", duration)
 
 		if err != nil {
 			assert.Contains(b, err.Error(), "context deadline exceeded")
@@ -531,7 +534,7 @@ func (s *PerformanceTestSuite) benchmarkResourceConstraints(b *testing.B) {
 		duration := time.Since(start)
 
 		// Should handle gracefully within time limits
-		assert.True(b, duration < ComplexOperationTarget, "Resource constraint handling took too long: %v", duration)
+		assert.Less(b, duration, ComplexOperationTarget, "Resource constraint handling took too long: %v", duration)
 
 		if err == nil {
 			require.NotNil(b, response)
@@ -577,16 +580,16 @@ func (s *PerformanceTestSuite) benchmarkScalabilityPattern(b *testing.B, pattern
 
 	switch pattern {
 	case "burst":
-		s.benchmarkBurstLoad(b, ctx, request)
+		s.benchmarkBurstLoad(ctx, b, request)
 	case "sustained":
-		s.benchmarkSustainedLoad(b, ctx, request)
+		s.benchmarkSustainedLoad(ctx, b, request)
 	case "ramp_up":
-		s.benchmarkRampUpLoad(b, ctx, request)
+		s.benchmarkRampUpLoad(ctx, b, request)
 	}
 }
 
 // benchmarkBurstLoad tests performance under sudden load spikes
-func (s *PerformanceTestSuite) benchmarkBurstLoad(b *testing.B, ctx context.Context, request *types.MCPRequest) {
+func (s *PerformanceTestSuite) benchmarkBurstLoad(ctx context.Context, b *testing.B, request *types.MCPRequest) {
 	burstSize := 50
 
 	b.ResetTimer()
@@ -598,10 +601,7 @@ func (s *PerformanceTestSuite) benchmarkBurstLoad(b *testing.B, ctx context.Cont
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				response, err := s.server.HandleRequest(ctx, request)
-				if err == nil && response != nil {
-					// Success
-				}
+				_, _ = s.server.HandleRequest(ctx, request)
 			}()
 		}
 		wg.Wait()
@@ -612,7 +612,7 @@ func (s *PerformanceTestSuite) benchmarkBurstLoad(b *testing.B, ctx context.Cont
 }
 
 // benchmarkSustainedLoad tests performance under sustained load
-func (s *PerformanceTestSuite) benchmarkSustainedLoad(b *testing.B, ctx context.Context, request *types.MCPRequest) {
+func (s *PerformanceTestSuite) benchmarkSustainedLoad(ctx context.Context, b *testing.B, request *types.MCPRequest) {
 	requestsPerSecond := ThroughputTarget
 	interval := time.Second / time.Duration(requestsPerSecond)
 
@@ -635,7 +635,7 @@ func (s *PerformanceTestSuite) benchmarkSustainedLoad(b *testing.B, ctx context.
 }
 
 // benchmarkRampUpLoad tests performance under gradually increasing load
-func (s *PerformanceTestSuite) benchmarkRampUpLoad(b *testing.B, ctx context.Context, request *types.MCPRequest) {
+func (s *PerformanceTestSuite) benchmarkRampUpLoad(ctx context.Context, b *testing.B, request *types.MCPRequest) {
 	maxConcurrency := 20
 	rampSteps := 5
 
@@ -650,10 +650,7 @@ func (s *PerformanceTestSuite) benchmarkRampUpLoad(b *testing.B, ctx context.Con
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					response, err := s.server.HandleRequest(ctx, request)
-					if err == nil && response != nil {
-						// Success
-					}
+					_, _ = s.server.HandleRequest(ctx, request)
 				}()
 			}
 			wg.Wait()
@@ -778,16 +775,16 @@ func (s *PerformanceTestSuite) isSimpleOperation(tool *tools.MCPTool) bool {
 
 // printPerformanceReport prints a summary of performance test results
 func (s *PerformanceTestSuite) printPerformanceReport() {
-	fmt.Println("\n=== MCP Server Performance Test Report ===")
+	fmt.Println("\n=== MCP Server Performance Test Report ===") //nolint:forbidigo // Test report output
 
 	s.responseTimer.PrintReport()
 	s.resourceMonitor.PrintReport()
 
-	fmt.Println("\n=== Performance Targets ===")
-	fmt.Printf("Simple operations target: %v\n", SimpleOperationTarget)
-	fmt.Printf("Complex operations target: %v\n", ComplexOperationTarget)
-	fmt.Printf("Concurrent requests target: %d\n", ConcurrentRequestsTarget)
-	fmt.Printf("Throughput target: %d ops/sec\n", ThroughputTarget)
+	fmt.Println("\n=== Performance Targets ===")                             //nolint:forbidigo // Test report output
+	fmt.Printf("Simple operations target: %v\n", SimpleOperationTarget)      //nolint:forbidigo // Test report output
+	fmt.Printf("Complex operations target: %v\n", ComplexOperationTarget)    //nolint:forbidigo // Test report output
+	fmt.Printf("Concurrent requests target: %d\n", ConcurrentRequestsTarget) //nolint:forbidigo // Test report output
+	fmt.Printf("Throughput target: %d ops/sec\n", ThroughputTarget)          //nolint:forbidigo // Test report output
 }
 
 // Test suite runner
@@ -835,34 +832,34 @@ func (rt *ResponseTimeTracker) PrintReport() {
 	rt.mu.RLock()
 	defer rt.mu.RUnlock()
 
-	fmt.Println("\n=== Response Time Analysis ===")
+	fmt.Println("\n=== Response Time Analysis ===") //nolint:forbidigo // Test report output
 	for operation, durations := range rt.times {
 		if len(durations) == 0 {
 			continue
 		}
 
 		var total time.Duration
-		var min, max time.Duration = durations[0], durations[0]
+		minDuration, maxDuration := durations[0], durations[0]
 
 		for _, d := range durations {
 			total += d
-			if d < min {
-				min = d
+			if d < minDuration {
+				minDuration = d
 			}
-			if d > max {
-				max = d
+			if d > maxDuration {
+				maxDuration = d
 			}
 		}
 
 		avg := total / time.Duration(len(durations))
 
-		fmt.Printf("Operation: %s\n", operation)
-		fmt.Printf("  Samples: %d\n", len(durations))
-		fmt.Printf("  Average: %v\n", avg)
-		fmt.Printf("  Min: %v\n", min)
-		fmt.Printf("  Max: %v\n", max)
-		fmt.Printf("  Total: %v\n", total)
-		fmt.Println()
+		fmt.Printf("Operation: %s\n", operation)      //nolint:forbidigo // Test report output
+		fmt.Printf("  Samples: %d\n", len(durations)) //nolint:forbidigo // Test report output
+		fmt.Printf("  Average: %v\n", avg)            //nolint:forbidigo // Test report output
+		fmt.Printf("  Min: %v\n", minDuration)        //nolint:forbidigo // Test report output
+		fmt.Printf("  Max: %v\n", maxDuration)        //nolint:forbidigo // Test report output
+		fmt.Printf("  Total: %v\n", total)            //nolint:forbidigo // Test report output
+		fmt.Println()                                 //nolint:forbidigo // Test report output
 	}
 }
 
@@ -894,12 +891,12 @@ func (rm *ResourceMonitor) PrintReport() {
 		rm.Stop()
 	}
 
-	fmt.Println("\n=== Resource Usage Analysis ===")
-	fmt.Printf("Memory allocated: %d bytes\n", rm.stopMem.TotalAlloc-rm.startMem.TotalAlloc)
-	fmt.Printf("Memory allocations: %d\n", rm.stopMem.Mallocs-rm.startMem.Mallocs)
-	fmt.Printf("Memory frees: %d\n", rm.stopMem.Frees-rm.startMem.Frees)
-	fmt.Printf("GC runs: %d\n", rm.stopMem.NumGC-rm.startMem.NumGC)
-	fmt.Printf("Goroutines: %d\n", runtime.NumGoroutine())
+	fmt.Println("\n=== Resource Usage Analysis ===")                                         //nolint:forbidigo // Test report output
+	fmt.Printf("Memory allocated: %d bytes\n", rm.stopMem.TotalAlloc-rm.startMem.TotalAlloc) //nolint:forbidigo // Test report output
+	fmt.Printf("Memory allocations: %d\n", rm.stopMem.Mallocs-rm.startMem.Mallocs)           //nolint:forbidigo // Test report output
+	fmt.Printf("Memory frees: %d\n", rm.stopMem.Frees-rm.startMem.Frees)                     //nolint:forbidigo // Test report output
+	fmt.Printf("GC runs: %d\n", rm.stopMem.NumGC-rm.startMem.NumGC)                          //nolint:forbidigo // Test report output
+	fmt.Printf("Goroutines: %d\n", runtime.NumGoroutine())                                   //nolint:forbidigo // Test report output
 }
 
 // TestDataGenerator generates test data for performance tests

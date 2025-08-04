@@ -11,12 +11,11 @@ import (
 // InvoiceToolsTestSuite provides test suite for invoice management tools
 type InvoiceToolsTestSuite struct {
 	suite.Suite
-	ctx context.Context
 }
 
 // SetupTest initializes each test
 func (suite *InvoiceToolsTestSuite) SetupTest() {
-	suite.ctx = context.Background()
+	// No setup needed now that context is passed to individual tests
 }
 
 // TestCreateInvoiceManagementTools tests that all invoice tools are created properly
@@ -111,21 +110,22 @@ func (suite *InvoiceToolsTestSuite) TestRegisterInvoiceManagementTools() {
 	registry := NewDefaultToolRegistry(validator, &TestLogger{})
 
 	// Register invoice tools
-	err := RegisterInvoiceManagementTools(suite.ctx, registry)
-	suite.NoError(err, "Should be able to register invoice management tools")
+	ctx := context.Background()
+	err := RegisterInvoiceManagementTools(ctx, registry)
+	suite.Require().NoError(err, "Should be able to register invoice management tools")
 
 	// Verify tools are registered
 	tools := CreateInvoiceManagementTools()
 	for _, expectedTool := range tools {
-		registeredTool, err := registry.GetTool(suite.ctx, expectedTool.Name)
-		suite.NoError(err, "Should be able to get registered tool %s", expectedTool.Name)
+		registeredTool, getErr := registry.GetTool(ctx, expectedTool.Name)
+		suite.Require().NoError(getErr, "Should be able to get registered tool %s", expectedTool.Name)
 		suite.Equal(expectedTool.Name, registeredTool.Name, "Registered tool name should match")
 		suite.Equal(expectedTool.Category, registeredTool.Category, "Registered tool category should match")
 	}
 
 	// Verify tools are in correct category
-	categoryTools, err := registry.ListTools(suite.ctx, CategoryInvoiceManagement)
-	suite.NoError(err, "Should be able to list tools by category")
+	categoryTools, err := registry.ListTools(ctx, CategoryInvoiceManagement)
+	suite.Require().NoError(err, "Should be able to list tools by category")
 	suite.Len(categoryTools, 7, "Should have 7 tools in invoice management category")
 }
 
@@ -134,23 +134,23 @@ func (suite *InvoiceToolsTestSuite) TestRegisterInvoiceManagementToolsContextCan
 	validator := NewDefaultInputValidator(&TestLogger{})
 	registry := NewDefaultToolRegistry(validator, &TestLogger{})
 
-	// Create cancelled context
-	ctx, cancel := context.WithCancel(suite.ctx)
+	// Create canceled context
+	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
 	// Should fail with context cancellation
 	err := RegisterInvoiceManagementTools(ctx, registry)
-	suite.Error(err, "Should fail with cancelled context")
+	suite.Require().Error(err, "Should fail with canceled context")
 	suite.Equal(context.Canceled, err, "Error should be context.Canceled")
 }
 
 // TestLogger provides a test implementation of the Logger interface
 type TestLogger struct{}
 
-func (l *TestLogger) Debug(msg string, keysAndValues ...interface{}) {}
-func (l *TestLogger) Info(msg string, keysAndValues ...interface{})  {}
-func (l *TestLogger) Warn(msg string, keysAndValues ...interface{})  {}
-func (l *TestLogger) Error(msg string, keysAndValues ...interface{}) {}
+func (l *TestLogger) Debug(_ string, _ ...interface{}) {}
+func (l *TestLogger) Info(_ string, _ ...interface{})  {}
+func (l *TestLogger) Warn(_ string, _ ...interface{})  {}
+func (l *TestLogger) Error(_ string, _ ...interface{}) {}
 
 // TestInvoiceToolsTestSuite runs the test suite
 func TestInvoiceToolsTestSuite(t *testing.T) {

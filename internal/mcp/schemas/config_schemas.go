@@ -284,6 +284,11 @@ func ConfigInitSchema() map[string]interface{} {
 				"description": "Path where the configuration file should be created.",
 				"examples":    []string{"./config.yaml", "/etc/go-invoice/config.yaml"},
 			},
+			"config_file": map[string]interface{}{
+				"type":        "string",
+				"description": "Configuration file path (alias for config_path).",
+				"examples":    []string{"./config.yaml", "/etc/go-invoice/config.yaml"},
+			},
 			"import_from": map[string]interface{}{
 				"type":        "string",
 				"description": "Import configuration from existing file (for migration).",

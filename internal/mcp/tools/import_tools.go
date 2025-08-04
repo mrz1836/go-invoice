@@ -210,6 +210,17 @@ func createImportValidateTool() *MCPTool {
 				ExpectedOutput: "Validation with anomaly detection and historical pattern comparison",
 				UseCase:        "Advanced quality control with pattern recognition and anomaly detection",
 			},
+			{
+				Description: "Validate malformed CSV file to identify format errors",
+				Input: map[string]interface{}{
+					"file_path":     "/path/to/corrupt-timesheet.csv",
+					"has_header":    true,
+					"strict_mode":   true,
+					"error_details": true,
+				},
+				ExpectedOutput: "Detailed error report identifying malformed data, invalid fields, and corrupt entries with suggestions for correction",
+				UseCase:        "Error detection and troubleshooting for problematic import files",
+			},
 		},
 		Category:   CategoryDataImport,
 		CLICommand: "go-invoice",

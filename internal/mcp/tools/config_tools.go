@@ -204,6 +204,17 @@ func createConfigValidateTool() *MCPTool {
 				ExpectedOutput: "Detailed HTML validation report with metrics and recommendations",
 				UseCase:        "Documentation and audit trail for configuration compliance",
 			},
+			{
+				Description: "Validate and repair invalid configuration file",
+				Input: map[string]interface{}{
+					"auto_fix_safe":       true,
+					"backup_before_fix":   true,
+					"include_suggestions": true,
+					"output_format":       "detailed",
+				},
+				ExpectedOutput: "Validation report identifying invalid configuration entries with automatic fixes for malformed settings",
+				UseCase:        "Recovery from corrupt or missing configuration data",
+			},
 		},
 		Category:   CategoryConfiguration,
 		CLICommand: "go-invoice",

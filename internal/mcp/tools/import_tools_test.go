@@ -15,11 +15,12 @@ import (
 // ImportToolsTestSuite provides comprehensive tests for import tool definitions
 type ImportToolsTestSuite struct {
 	suite.Suite
-	ctx context.Context
+
+	// No context stored in struct - pass through method parameters instead
 }
 
 func (s *ImportToolsTestSuite) SetupTest() {
-	s.ctx = context.Background()
+	// Context created as needed in individual test methods
 }
 
 func (s *ImportToolsTestSuite) TestCreateDataImportTools() {
@@ -283,6 +284,7 @@ func (s *ImportToolsTestSuite) TestImportValidationTool() {
 }
 
 func (s *ImportToolsTestSuite) TestRegisterDataImportTools() {
+	ctx := context.Background()
 	// Create mock registry
 	validator := new(MockInputValidator)
 	logger := new(MockLogger)
@@ -293,18 +295,18 @@ func (s *ImportToolsTestSuite) TestRegisterDataImportTools() {
 	logger.On("Info", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(len(importTools))
 
 	// Test registration
-	err := RegisterDataImportTools(s.ctx, registry)
+	err := RegisterDataImportTools(ctx, registry)
 	if err != nil {
 		s.T().Skipf("RegisterDataImportTools not implemented or failed: %v", err)
 		return
 	}
 
-	s.NoError(err, "Should register import tools successfully")
+	s.Require().NoError(err, "Should register import tools successfully")
 
 	// Verify tools were registered
-	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
-	registeredTools, err := registry.ListTools(s.ctx, CategoryDataImport)
-	s.NoError(err)
+	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+	registeredTools, err := registry.ListTools(ctx, CategoryDataImport)
+	s.Require().NoError(err)
 	s.NotEmpty(registeredTools, "Should have registered data import tools")
 
 	// Verify each registered tool
@@ -416,7 +418,7 @@ func (s *ImportToolsTestSuite) TestImportToolsIntegration() {
 			}
 		}
 
-		s.Greater(formatsCovered, 0, "Should have examples covering common file formats")
+		s.Positive(formatsCovered, "Should have examples covering common file formats")
 	})
 
 	s.Run("ExamplesCoverErrorHandling", func() {
@@ -451,7 +453,7 @@ func (s *ImportToolsTestSuite) TestImportToolsEdgeCases() {
 		// This tests the function behavior itself
 		tools := CreateDataImportTools()
 		s.NotNil(tools, "Should never return nil")
-		// Note: It's acceptable for tools to be empty if not implemented yet
+		// It's acceptable for tools to be empty if not implemented yet
 	})
 
 	s.Run("FilePathValidation", func() {

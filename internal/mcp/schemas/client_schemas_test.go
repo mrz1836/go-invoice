@@ -381,7 +381,7 @@ func (s *ClientSchemasTestSuite) TestSchemaEdgeCases() {
 		// Deep comparison would be complex, but basic structure should match
 		props1, _ := schema1["properties"].(map[string]interface{})
 		props2, _ := schema2["properties"].(map[string]interface{})
-		s.Equal(len(props1), len(props2), "Schema properties count should be consistent")
+		s.Len(props1, len(props2), "Schema properties count should be consistent")
 	})
 }
 

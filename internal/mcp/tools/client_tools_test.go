@@ -216,7 +216,7 @@ func (s *ClientToolsTestSuite) TestClientShowTool() {
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have at least one identification method
-			identifierFields := []string{"client_id", "client_name", "email"}
+			identifierFields := []string{"client_id", "client_name", "client_email"}
 			hasIdentifier := false
 			for _, field := range identifierFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -238,7 +238,7 @@ func (s *ClientToolsTestSuite) TestClientShowTool() {
 
 			// Verify examples use valid identifier fields
 			hasValidIdentifier := false
-			identifierFields := []string{"client_id", "client_name", "email"}
+			identifierFields := []string{"client_id", "client_name", "client_email"}
 			for _, field := range identifierFields {
 				if _, hasField := example.Input[field]; hasField {
 					hasValidIdentifier = true
@@ -285,7 +285,7 @@ func (s *ClientToolsTestSuite) TestClientUpdateTool() {
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have identifier and updatable fields
-			identifierFields := []string{"client_id", "client_name", "email"}
+			identifierFields := []string{"client_id", "client_name", "client_email"}
 			hasIdentifier := false
 			for _, field := range identifierFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -324,7 +324,7 @@ func (s *ClientToolsTestSuite) TestClientUpdateTool() {
 					updateFieldCount++
 				}
 			}
-			s.Greater(updateFieldCount, 0, "Example should update at least one field")
+			s.Positive(updateFieldCount, "Example should update at least one field")
 		}
 	})
 }
@@ -362,7 +362,7 @@ func (s *ClientToolsTestSuite) TestClientDeleteTool() {
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have identifier field
-			identifierFields := []string{"client_id", "client_name", "email"}
+			identifierFields := []string{"client_id", "client_name", "client_email"}
 			hasIdentifier := false
 			for _, field := range identifierFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -424,12 +424,12 @@ func (s *ClientToolsTestSuite) TestRegisterClientManagementTools() {
 		return
 	}
 
-	s.NoError(err, "Should register client tools successfully")
+	s.Require().NoError(err, "Should register client tools successfully")
 
 	// Verify tools were registered
-	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 	registeredTools, err := registry.ListTools(ctx, CategoryClientManagement)
-	s.NoError(err)
+	s.Require().NoError(err)
 	s.NotEmpty(registeredTools, "Should have registered client management tools")
 
 	// Verify each registered tool
@@ -534,7 +534,7 @@ func (s *ClientToolsTestSuite) TestClientToolsEdgeCases() {
 		// This tests the function behavior itself
 		tools := CreateClientManagementTools()
 		s.NotNil(tools, "Should never return nil")
-		// Note: It's acceptable for tools to be empty if not implemented yet
+		// It's acceptable for tools to be empty if not implemented yet
 	})
 
 	s.Run("ToolSchemaValidation", func() {

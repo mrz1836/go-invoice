@@ -61,7 +61,7 @@ func (s *CategoriesTestSuite) TestCategoryConstants() {
 			categorySet[categoryStr] = true
 		}
 
-		s.Equal(6, len(categorySet), "Should have exactly 6 unique categories")
+		s.Len(categorySet, 6, "Should have exactly 6 unique categories")
 	})
 
 	s.Run("CategoryNamingConventions", func() {
@@ -137,7 +137,7 @@ func (s *CategoriesTestSuite) TestCategoryGrouping() {
 			"business_reporting":   CategoryReporting,
 		}
 
-		s.Equal(6, len(functionalAreas), "Should cover 6 major functional areas")
+		s.Len(functionalAreas, 6, "Should cover 6 major functional areas")
 
 		for area, category := range functionalAreas {
 			s.NotEmpty(string(category), "Functional area %s should have non-empty category", area)
@@ -163,7 +163,7 @@ func (s *CategoriesTestSuite) TestCategoryUsagePatterns() {
 			categoryMap[category] = i
 		}
 
-		s.Equal(6, len(categoryMap), "All categories should be stored as unique keys")
+		s.Len(categoryMap, 6, "All categories should be stored as unique keys")
 
 		for i, category := range categories {
 			value, exists := categoryMap[category]
@@ -174,7 +174,8 @@ func (s *CategoriesTestSuite) TestCategoryUsagePatterns() {
 
 	s.Run("CategoryComparison", func() {
 		// Test category comparison operations
-		s.Equal(CategoryInvoiceManagement, CategoryInvoiceManagement, "Same categories should be equal")
+		// Test category comparison operations - comparing with different category instead
+		s.Equal(CategoryInvoiceManagement, CategoryType("invoice_management"), "Category should equal its string equivalent")
 		s.NotEqual(CategoryInvoiceManagement, CategoryDataImport, "Different categories should not be equal")
 
 		// Test string comparison
@@ -307,7 +308,7 @@ func (s *CategoriesTestSuite) TestCategoryMetadata() {
 		}
 
 		for category, expectedCount := range expectedToolCounts {
-			s.Greater(expectedCount, 0, "Category %s should have at least one tool", category)
+			s.Positive(expectedCount, "Category %s should have at least one tool", category)
 			s.LessOrEqual(expectedCount, 10, "Category %s should not have too many tools", category)
 		}
 	})
@@ -317,7 +318,7 @@ func (s *CategoriesTestSuite) TestCategoryEvolution() {
 	s.Run("CategoryExtensibility", func() {
 		// Test that the category system can be extended
 		currentCategoryCount := 6
-		s.Equal(currentCategoryCount, len(s.getAllValidCategories()), "Should have expected number of categories")
+		s.Len(s.getAllValidCategories(), currentCategoryCount, "Should have expected number of categories")
 
 		// Future categories that might be added
 		potentialFutureCategories := []string{
@@ -350,7 +351,7 @@ func (s *CategoriesTestSuite) TestCategoryEvolution() {
 		}
 
 		for legacyStr, expectedCategory := range legacyMappings {
-			s.Equal(legacyStr, string(expectedCategory), "Legacy category string should match")
+			s.Equal(string(expectedCategory), legacyStr, "Legacy category string should match")
 			s.Equal(expectedCategory, CategoryType(legacyStr), "Legacy string should convert to category")
 		}
 	})
@@ -399,7 +400,7 @@ func (s *CategoriesTestSuite) isValidCategoryFormat(category CategoryType) bool 
 
 	// Only alphanumeric characters and underscores allowed
 	for _, char := range categoryStr {
-		if !((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '_') {
+		if (char < 'a' || char > 'z') && (char < '0' || char > '9') && char != '_' {
 			return false
 		}
 	}
@@ -432,7 +433,8 @@ func TestCategoryType_Behaviors(t *testing.T) {
 	})
 
 	t.Run("CategoryComparison", func(t *testing.T) {
-		assert.Equal(t, CategoryInvoiceManagement, CategoryInvoiceManagement)
+		// Test comparison with different but equivalent values
+		assert.Equal(t, CategoryInvoiceManagement, CategoryType("invoice_management"))
 		assert.NotEqual(t, CategoryInvoiceManagement, CategoryDataImport)
 
 		// Test with type conversion
@@ -450,7 +452,7 @@ func TestCategoryType_Behaviors(t *testing.T) {
 		assert.Equal(t, "Invoice tools", categoryMap[CategoryInvoiceManagement])
 		assert.Equal(t, "Import tools", categoryMap[CategoryDataImport])
 		assert.Equal(t, "Export tools", categoryMap[CategoryDataExport])
-		assert.Equal(t, "", categoryMap[CategoryConfiguration]) // Not in map
+		assert.Empty(t, categoryMap[CategoryConfiguration]) // Not in map
 	})
 
 	t.Run("CategoryInSlice", func(t *testing.T) {
@@ -471,18 +473,18 @@ func TestCategoryValidation_EdgeCases(t *testing.T) {
 	t.Run("EmptyCategory", func(t *testing.T) {
 		empty := CategoryType("")
 		assert.Empty(t, string(empty))
-		assert.Equal(t, "", string(empty))
+		assert.Empty(t, string(empty))
 	})
 
 	t.Run("WhitespaceCategory", func(t *testing.T) {
 		whitespace := CategoryType("   ")
 		assert.Equal(t, "   ", string(whitespace))
-		assert.NotEqual(t, "", string(whitespace))
+		assert.NotEmpty(t, string(whitespace))
 	})
 
 	t.Run("UnicodeCategory", func(t *testing.T) {
-		unicode := CategoryType("配置_管理")
-		assert.Equal(t, "配置_管理", string(unicode))
+		unicode := CategoryType("配置_管理")          //nolint:gosmopolitan // Intentional Unicode test data
+		assert.Equal(t, "配置_管理", string(unicode)) //nolint:gosmopolitan // Intentional Unicode test data
 		assert.NotEmpty(t, string(unicode))
 	})
 

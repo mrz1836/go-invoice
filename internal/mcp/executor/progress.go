@@ -2,12 +2,20 @@ package executor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+)
+
+// Progress errors
+var (
+	ErrOperationCanceled      = errors.New("operation canceled")
+	ErrOperationAlreadyExists = errors.New("operation already exists")
+	ErrOperationNotFound      = errors.New("operation not found")
 )
 
 // ProgressTracker manages progress tracking for command execution.
@@ -66,8 +74,8 @@ type Operation struct {
 	// callbacks are progress update callbacks
 	callbacks []ProgressFunc
 
-	// cancelled indicates if the operation was cancelled
-	cancelled atomic.Bool
+	// canceled indicates if the operation was canceled
+	canceled atomic.Bool
 
 	// completed indicates if the operation is complete
 	completed atomic.Bool
@@ -77,7 +85,6 @@ type Operation struct {
 type DefaultProgressTracker struct {
 	logger     Logger
 	operations sync.Map // map[string]*Operation
-	mu         sync.RWMutex
 }
 
 // NewDefaultProgressTracker creates a new progress tracker.
@@ -101,7 +108,7 @@ func (t *DefaultProgressTracker) StartOperation(ctx context.Context, operationID
 
 	// Check if operation already exists
 	if _, exists := t.operations.Load(operationID); exists {
-		return nil, fmt.Errorf("operation %s already exists", operationID)
+		return nil, fmt.Errorf("%w: %s", ErrOperationAlreadyExists, operationID)
 	}
 
 	// Create new operation
@@ -141,7 +148,7 @@ func (t *DefaultProgressTracker) GetOperation(ctx context.Context, operationID s
 
 	value, exists := t.operations.Load(operationID)
 	if !exists {
-		return nil, fmt.Errorf("operation %s not found", operationID)
+		return nil, fmt.Errorf("%w: %s", ErrOperationNotFound, operationID)
 	}
 
 	return value.(*Operation), nil
@@ -156,7 +163,7 @@ func (t *DefaultProgressTracker) ListOperations(ctx context.Context) ([]*Operati
 	}
 
 	var operations []*Operation
-	t.operations.Range(func(key, value interface{}) bool {
+	t.operations.Range(func(_, value interface{}) bool {
 		op := value.(*Operation)
 		if !op.completed.Load() {
 			operations = append(operations, op)
@@ -325,13 +332,13 @@ func (op *Operation) Complete(err error) {
 
 // Cancel cancels the operation.
 func (op *Operation) Cancel() {
-	op.cancelled.Store(true)
-	op.Complete(fmt.Errorf("operation cancelled"))
+	op.canceled.Store(true)
+	op.Complete(ErrOperationCanceled)
 }
 
-// IsCancelled checks if the operation was cancelled.
-func (op *Operation) IsCancelled() bool {
-	return op.cancelled.Load()
+// IsCanceled checks if the operation was canceled.
+func (op *Operation) IsCanceled() bool {
+	return op.canceled.Load()
 }
 
 // IsComplete checks if the operation is complete.

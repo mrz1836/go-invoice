@@ -14,6 +14,8 @@ var (
 	ErrInvalidCharacter = errors.New("invalid character in input")
 	ErrCommandInjection = errors.New("potential command injection detected")
 	ErrEnvNotAllowed    = errors.New("environment variable not allowed")
+	ErrArgumentTooLong  = errors.New("argument too long")
+	ErrDangerousPattern = errors.New("dangerous pattern detected")
 )
 
 // DefaultCommandValidator implements CommandValidator with security checks.
@@ -222,7 +224,7 @@ func (v *DefaultCommandValidator) validateArgument(arg string) error {
 
 	// Check length
 	if len(arg) > 4096 {
-		return fmt.Errorf("argument too long: %d bytes", len(arg))
+		return fmt.Errorf("%w: %d bytes", ErrArgumentTooLong, len(arg))
 	}
 
 	return nil
@@ -250,7 +252,7 @@ func (v *DefaultCommandValidator) checkDangerousPatterns(fullCommand string) err
 	lowerCommand := strings.ToLower(fullCommand)
 	for _, pattern := range dangerousPatterns {
 		if strings.Contains(lowerCommand, strings.ToLower(pattern)) {
-			return fmt.Errorf("dangerous pattern detected: %s", pattern)
+			return fmt.Errorf("%w: %s", ErrDangerousPattern, pattern)
 		}
 	}
 

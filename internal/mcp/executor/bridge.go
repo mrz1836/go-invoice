@@ -2,18 +2,32 @@ package executor
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 )
 
+// BridgeError represents tool bridge errors.
+type BridgeError struct {
+	Op  string
+	Msg string
+}
+
+func (e *BridgeError) Error() string {
+	return fmt.Sprintf("bridge %s: %s", e.Op, e.Msg)
+}
+
 // Bridge errors
 var (
-	ErrToolNotFound       = errors.New("tool not found")
-	ErrInvalidToolInput   = errors.New("invalid tool input")
-	ErrMissingRequired    = errors.New("missing required parameter")
-	ErrCommandBuildFailed = errors.New("failed to build command")
+	ErrToolNotFound               = &BridgeError{Op: "lookup", Msg: "tool not found"}
+	ErrInvalidToolInput           = &BridgeError{Op: "validate", Msg: "invalid tool input"}
+	ErrMissingRequired            = &BridgeError{Op: "validate", Msg: "missing required parameter"}
+	ErrCommandBuildFailed         = &BridgeError{Op: "build", Msg: "failed to build command"}
+	ErrMissingUpdateFields        = &BridgeError{Op: "validate", Msg: "at least one field to update must be provided"}
+	ErrMissingItemIdentifier      = &BridgeError{Op: "validate", Msg: "either item_id or item_index must be provided"}
+	ErrMissingClientIdentifier    = &BridgeError{Op: "validate", Msg: "one of client_id, client_name, or client_email must be provided"}
+	ErrMissingClientIDOrName      = &BridgeError{Op: "validate", Msg: "client_id or client_name must be provided"}
+	ErrMissingClientNameForCreate = &BridgeError{Op: "validate", Msg: "client_name required when create_new is true"}
 )
 
 // ToolCommand represents the mapping from an MCP tool to CLI command.
@@ -100,7 +114,7 @@ func (b *CLIBridge) ExecuteToolCommand(ctx context.Context, toolName string, inp
 	// Build command arguments
 	args, err := toolCmd.BuildArgs(input)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrCommandBuildFailed, err)
+		return nil, fmt.Errorf("%w: %w", ErrCommandBuildFailed, err)
 	}
 
 	// Combine subcommands and args
@@ -116,8 +130,8 @@ func (b *CLIBridge) ExecuteToolCommand(ctx context.Context, toolName string, inp
 
 	// Handle file operations if needed
 	if toolCmd.RequiresFiles {
-		if err := b.prepareFilesForCommand(ctx, req, input); err != nil {
-			return nil, fmt.Errorf("file preparation failed: %w", err)
+		if prepareErr := b.prepareFilesForCommand(ctx, req, input); prepareErr != nil {
+			return nil, fmt.Errorf("file preparation failed: %w", prepareErr)
 		}
 	}
 
@@ -445,7 +459,7 @@ func (b *CLIBridge) buildInvoiceUpdateArgs(input map[string]interface{}) ([]stri
 	}
 
 	if !hasUpdate {
-		return nil, fmt.Errorf("at least one field to update must be provided")
+		return nil, ErrMissingUpdateFields
 	}
 
 	return args, nil
@@ -524,7 +538,7 @@ func (b *CLIBridge) buildInvoiceRemoveItemArgs(input map[string]interface{}) ([]
 	} else if itemIndex, ok := getIntValue(input["item_index"]); ok {
 		args = append(args, "--index", fmt.Sprintf("%d", itemIndex))
 	} else {
-		return nil, fmt.Errorf("either item_id or item_index must be provided")
+		return nil, ErrMissingItemIdentifier
 	}
 
 	return args, nil
@@ -587,7 +601,7 @@ func (b *CLIBridge) buildClientShowArgs(input map[string]interface{}) ([]string,
 	} else if clientEmail, ok := input["client_email"].(string); ok && clientEmail != "" {
 		args = append(args, clientEmail, "--json")
 	} else {
-		return nil, fmt.Errorf("one of client_id, client_name, or client_email must be provided")
+		return nil, ErrMissingClientIdentifier
 	}
 
 	return args, nil
@@ -602,7 +616,7 @@ func (b *CLIBridge) buildClientUpdateArgs(input map[string]interface{}) ([]strin
 	} else if clientName, ok := input["client_name"].(string); ok && clientName != "" {
 		args = append(args, clientName)
 	} else {
-		return nil, fmt.Errorf("client_id or client_name must be provided")
+		return nil, ErrMissingClientIDOrName
 	}
 
 	// At least one update field required
@@ -633,7 +647,7 @@ func (b *CLIBridge) buildClientUpdateArgs(input map[string]interface{}) ([]strin
 	}
 
 	if !hasUpdate {
-		return nil, fmt.Errorf("at least one field to update must be provided")
+		return nil, ErrMissingUpdateFields
 	}
 
 	return args, nil
@@ -648,7 +662,7 @@ func (b *CLIBridge) buildClientDeleteArgs(input map[string]interface{}) ([]strin
 	} else if clientName, ok := input["client_name"].(string); ok && clientName != "" {
 		args = append(args, clientName)
 	} else {
-		return nil, fmt.Errorf("client_id or client_name must be provided")
+		return nil, ErrMissingClientIDOrName
 	}
 
 	// Optional: force
@@ -677,7 +691,7 @@ func (b *CLIBridge) buildImportCSVArgs(input map[string]interface{}) ([]string, 
 		if clientName, ok := input["client_name"].(string); ok && clientName != "" {
 			args = append(args, "--new-invoice", "--client", clientName)
 		} else {
-			return nil, fmt.Errorf("client_name required when create_new is true")
+			return nil, ErrMissingClientNameForCreate
 		}
 	}
 

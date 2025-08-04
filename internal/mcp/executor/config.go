@@ -14,10 +14,18 @@ import (
 
 // Configuration errors
 var (
-	ErrInvalidConfig   = errors.New("invalid configuration")
-	ErrConfigNotFound  = errors.New("configuration not found")
-	ErrPolicyViolation = errors.New("security policy violation")
-	ErrAuditLogFailed  = errors.New("audit log failed")
+	ErrInvalidConfig           = errors.New("invalid configuration")
+	ErrConfigNotFound          = errors.New("configuration not found")
+	ErrPolicyViolation         = errors.New("security policy violation")
+	ErrAuditLogFailed          = errors.New("audit log failed")
+	ErrNoAllowedCommands       = errors.New("no allowed commands specified")
+	ErrInvalidMaxExecutionTime = errors.New("invalid max execution time")
+	ErrInvalidMaxOutputSize    = errors.New("invalid max output size")
+	ErrInvalidMaxFileSize      = errors.New("invalid max file size")
+	ErrInvalidCPULimit         = errors.New("invalid CPU limit")
+	ErrInvalidMemoryLimit      = errors.New("invalid memory limit")
+	ErrInvalidMaxConcurrentOps = errors.New("invalid max concurrent operations")
+	ErrInvalidCommandTimeout   = errors.New("invalid command timeout")
 )
 
 // SecurityConfig manages security configuration and policies.
@@ -142,8 +150,8 @@ func (b *SecurityConfigBuilder) WithCommandTimeout(timeout time.Duration) *Secur
 }
 
 // WithMaxConcurrentOps sets the maximum concurrent operations.
-func (b *SecurityConfigBuilder) WithMaxConcurrentOps(max int) *SecurityConfigBuilder {
-	b.config.MaxConcurrentOps = max
+func (b *SecurityConfigBuilder) WithMaxConcurrentOps(maxOps int) *SecurityConfigBuilder {
+	b.config.MaxConcurrentOps = maxOps
 	return b
 }
 
@@ -162,7 +170,7 @@ func (b *SecurityConfigBuilder) AddAllowedPath(path string) *SecurityConfigBuild
 // Build validates and returns the configuration.
 func (b *SecurityConfigBuilder) Build() (*SecurityConfig, error) {
 	if err := b.validate(); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidConfig, err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidConfig, err)
 	}
 	return b.config, nil
 }
@@ -173,38 +181,38 @@ func (b *SecurityConfigBuilder) validate() error {
 
 	// Validate sandbox
 	if len(cfg.Sandbox.AllowedCommands) == 0 {
-		return errors.New("no allowed commands specified")
+		return ErrNoAllowedCommands
 	}
 
 	if cfg.Sandbox.MaxExecutionTime <= 0 {
-		return errors.New("invalid max execution time")
+		return ErrInvalidMaxExecutionTime
 	}
 
 	if cfg.Sandbox.MaxOutputSize <= 0 {
-		return errors.New("invalid max output size")
+		return ErrInvalidMaxOutputSize
 	}
 
 	if cfg.Sandbox.MaxFileSize <= 0 {
-		return errors.New("invalid max file size")
+		return ErrInvalidMaxFileSize
 	}
 
 	// Validate resource limits
 	if cfg.Sandbox.ResourceLimits != nil {
 		if cfg.Sandbox.ResourceLimits.MaxCPUPercent <= 0 || cfg.Sandbox.ResourceLimits.MaxCPUPercent > 100 {
-			return errors.New("invalid CPU limit")
+			return ErrInvalidCPULimit
 		}
 		if cfg.Sandbox.ResourceLimits.MaxMemoryMB <= 0 {
-			return errors.New("invalid memory limit")
+			return ErrInvalidMemoryLimit
 		}
 	}
 
 	// Validate general settings
 	if cfg.MaxConcurrentOps <= 0 {
-		return errors.New("invalid max concurrent operations")
+		return ErrInvalidMaxConcurrentOps
 	}
 
 	if cfg.CommandTimeout <= 0 {
-		return errors.New("invalid command timeout")
+		return ErrInvalidCommandTimeout
 	}
 
 	return nil
@@ -325,7 +333,7 @@ func (a *FileAuditLogger) LogAccessAttempt(ctx context.Context, event *AccessAud
 }
 
 // Query retrieves audit logs based on criteria.
-func (a *FileAuditLogger) Query(ctx context.Context, criteria *AuditCriteria) ([]*AuditEntry, error) {
+func (a *FileAuditLogger) Query(_ context.Context, criteria *AuditCriteria) ([]*AuditEntry, error) {
 	// For simplicity, this reads the entire file
 	// In production, use a proper database or indexed storage
 	a.mu.Lock()
@@ -338,7 +346,9 @@ func (a *FileAuditLogger) Query(ctx context.Context, criteria *AuditCriteria) ([
 		}
 		return nil, fmt.Errorf("failed to open audit log: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	var entries []*AuditEntry
 	decoder := json.NewDecoder(file)
@@ -363,7 +373,7 @@ func (a *FileAuditLogger) Query(ctx context.Context, criteria *AuditCriteria) ([
 }
 
 // writeEntry writes an audit entry to the log file.
-func (a *FileAuditLogger) writeEntry(ctx context.Context, eventType string, event interface{}) error {
+func (a *FileAuditLogger) writeEntry(_ context.Context, eventType string, event interface{}) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -377,14 +387,16 @@ func (a *FileAuditLogger) writeEntry(ctx context.Context, eventType string, even
 	// Open file in append mode
 	file, err := os.OpenFile(a.filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
-		return fmt.Errorf("%w: failed to open audit log: %v", ErrAuditLogFailed, err)
+		return fmt.Errorf("%w: failed to open audit log: %w", ErrAuditLogFailed, err)
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	// Write JSON entry with newline
 	encoder := json.NewEncoder(file)
 	if err := encoder.Encode(entry); err != nil {
-		return fmt.Errorf("%w: failed to write audit entry: %v", ErrAuditLogFailed, err)
+		return fmt.Errorf("%w: failed to write audit entry: %w", ErrAuditLogFailed, err)
 	}
 
 	return nil
@@ -416,7 +428,11 @@ func (a *FileAuditLogger) matchesCriteria(entry *AuditEntry, criteria *AuditCrit
 
 	// Additional filters based on event type
 	// This is simplified; in production, properly unmarshal and check
-	eventJSON, _ := json.Marshal(entry.Event)
+	eventJSON, err := json.Marshal(entry.Event)
+	if err != nil {
+		// Log error but continue processing
+		return true // Include entry if we can't marshal for comparison
+	}
 	eventStr := string(eventJSON)
 
 	if criteria.UserID != "" && !contains(eventStr, criteria.UserID) {

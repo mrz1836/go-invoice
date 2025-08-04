@@ -176,11 +176,6 @@ func GenerateSummarySchema() map[string]interface{} {
 				"description": "Filter summary to specific client (for client-type summaries).",
 				"examples":    []string{"Acme Corp", "Tech Solutions Inc"},
 			},
-			"client_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Filter summary to specific client ID.",
-				"examples":    []string{"client_123", "acme-corp"},
-			},
 			"include_charts": map[string]interface{}{
 				"type":        "boolean",
 				"default":     false,
@@ -196,21 +191,6 @@ func GenerateSummarySchema() map[string]interface{} {
 				"default":     false,
 				"description": "Include trend analysis and comparisons with previous periods.",
 			},
-			"aging_buckets": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Include aging analysis for overdue summaries (30, 60, 90+ days).",
-			},
-			"priority_ranking": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Include priority ranking for collections or client summaries.",
-			},
-			"include_contacts": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Include client contact information in the summary.",
-			},
 			"tax_categories": map[string]interface{}{
 				"type":        "boolean",
 				"default":     false,
@@ -221,22 +201,7 @@ func GenerateSummarySchema() map[string]interface{} {
 				"default":     false,
 				"description": "Include payment method analysis.",
 			},
-			"quarterly_breakdown": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Include quarterly breakdown (for yearly summaries).",
-			},
-			"real_time": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Generate real-time summary with current data.",
-			},
-			"key_metrics": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Include key performance indicators and metrics.",
-			},
-			"output_format": map[string]interface{}{
+			"format": map[string]interface{}{
 				"type":        "string",
 				"enum":        []string{"html", "pdf", "csv", "excel", "json"},
 				"default":     "html",
@@ -285,11 +250,6 @@ func ExportDataSchema() map[string]interface{} {
 				"description": "Filter by client name (partial matches supported).",
 				"examples":    []string{"Acme Corp", "Tech Solutions"},
 			},
-			"client_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Filter by specific client ID.",
-				"examples":    []string{"client_123", "acme-corp"},
-			},
 			"from_date": map[string]interface{}{
 				"type":        "string",
 				"format":      "date",
@@ -312,11 +272,6 @@ func ExportDataSchema() map[string]interface{} {
 				"default":     false,
 				"description": "Include work items/line items in the export (for invoice exports).",
 			},
-			"include_contacts": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Include contact information (for client exports).",
-			},
 			"include_stats": map[string]interface{}{
 				"type":        "boolean",
 				"default":     false,
@@ -332,27 +287,17 @@ func ExportDataSchema() map[string]interface{} {
 				"default":     true,
 				"description": "Include hourly rates and pricing information.",
 			},
-			"include_metadata": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Include metadata like creation dates, modification history.",
-			},
 			"group_by": map[string]interface{}{
 				"type":        "string",
 				"enum":        []string{"client", "project", "date", "status", "none"},
 				"default":     "none",
 				"description": "Group exported data by specified criteria.",
 			},
-			"output_format": map[string]interface{}{
+			"format": map[string]interface{}{
 				"type":        "string",
 				"enum":        []string{"csv", "json", "xml", "excel", "yaml"},
 				"default":     "csv",
 				"description": "Format for the exported data.",
-			},
-			"compress": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Compress the exported data (creates .gz file).",
 			},
 			"limit": map[string]interface{}{
 				"type":        "number",

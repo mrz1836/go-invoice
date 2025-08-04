@@ -14,13 +14,23 @@ import (
 	"time"
 )
 
+// Error represents command execution errors.
+type Error struct {
+	Op  string
+	Msg string
+}
+
+func (e *Error) Error() string {
+	return fmt.Sprintf("executor %s: %s", e.Op, e.Msg)
+}
+
 // Common errors
 var (
-	ErrCommandNotAllowed = errors.New("command not allowed")
-	ErrInvalidPath       = errors.New("invalid path")
-	ErrTimeout           = errors.New("command execution timeout")
-	ErrOutputTooLarge    = errors.New("output exceeds maximum size")
-	ErrInvalidWorkDir    = errors.New("invalid working directory")
+	ErrCommandNotAllowed = &Error{Op: "validate", Msg: "command not allowed"}
+	ErrInvalidPath       = &Error{Op: "validate", Msg: "invalid path"}
+	ErrTimeout           = &Error{Op: "execute", Msg: "command execution timeout"}
+	ErrOutputTooLarge    = &Error{Op: "execute", Msg: "output exceeds maximum size"}
+	ErrInvalidWorkDir    = &Error{Op: "validate", Msg: "invalid working directory"}
 )
 
 // SecureExecutor implements the CommandExecutor interface with security features.
@@ -104,8 +114,8 @@ func (e *SecureExecutor) Execute(ctx context.Context, req *ExecutionRequest) (*E
 		defer cleanup()
 	} else if req.WorkingDir != "" {
 		// Validate provided working directory
-		if err := e.validator.ValidatePath(execCtx, req.WorkingDir); err != nil {
-			return nil, fmt.Errorf("%w: %s", ErrInvalidWorkDir, err)
+		if validateErr := e.validator.ValidatePath(execCtx, req.WorkingDir); validateErr != nil {
+			return nil, fmt.Errorf("%w: %w", ErrInvalidWorkDir, validateErr)
 		}
 		workDir = req.WorkingDir
 	} else {
@@ -114,11 +124,14 @@ func (e *SecureExecutor) Execute(ctx context.Context, req *ExecutionRequest) (*E
 		if err != nil {
 			return nil, fmt.Errorf("failed to create temp dir: %w", err)
 		}
-		defer os.RemoveAll(workDir)
+		defer func() {
+			// Best effort cleanup of temp directory
+			_ = os.RemoveAll(workDir)
+		}()
 	}
 
 	// Build and execute the command
-	cmd := exec.CommandContext(execCtx, req.Command, req.Args...)
+	cmd := exec.CommandContext(execCtx, req.Command, req.Args...) //nolint:gosec // Command execution is the intended functionality
 	cmd.Dir = workDir
 	cmd.Env = e.buildEnvironment(req.Environment)
 
@@ -163,7 +176,8 @@ func (e *SecureExecutor) Execute(ctx context.Context, req *ExecutionRequest) (*E
 
 	// Handle execution error
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
 			response.ExitCode = exitErr.ExitCode()
 		} else if errors.Is(err, context.DeadlineExceeded) {
 			response.ExitCode = -1
@@ -185,10 +199,8 @@ func (e *SecureExecutor) Execute(ctx context.Context, req *ExecutionRequest) (*E
 	}
 
 	// Collect output files if patterns are specified
-	if response.ExitCode == 0 {
-		// TODO: Implement output file collection based on tool expectations
-		// This would be configured per tool in a future enhancement
-	}
+	// TODO: Implement output file collection based on tool expectations
+	// This would be configured per tool in a future enhancement
 
 	return response, nil
 }
@@ -310,18 +322,4 @@ func (e *SecureExecutor) reportProgress(ctx context.Context, callback ProgressFu
 			callback(update)
 		}
 	}
-}
-
-// getExitCode extracts the exit code from an error.
-func getExitCode(err error) int {
-	if err == nil {
-		return 0
-	}
-
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
-		return exitErr.ExitCode()
-	}
-
-	return -1
 }

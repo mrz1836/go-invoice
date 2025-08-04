@@ -27,7 +27,6 @@ import (
 // Error definitions for discovery service
 var (
 	ErrRegistryNil       = errors.New("registry cannot be nil")
-	ErrLoggerNil         = errors.New("logger cannot be nil")
 	ErrSearchCriteriaNil = errors.New("search criteria cannot be nil")
 )
 
@@ -458,7 +457,7 @@ func (s *ToolDiscoveryService) calculateBaseRelevance(tool *MCPTool) float64 {
 }
 
 // searchByCategory performs category-based tool search.
-func (s *ToolDiscoveryService) searchByCategory(ctx context.Context, criteria *ToolSearchCriteria) []ToolSearchResult {
+func (s *ToolDiscoveryService) searchByCategory(_ context.Context, criteria *ToolSearchCriteria) []ToolSearchResult {
 	var results []ToolSearchResult
 
 	for _, category := range criteria.Categories {
@@ -480,7 +479,7 @@ func (s *ToolDiscoveryService) searchByCategory(ctx context.Context, criteria *T
 }
 
 // searchByQuery performs text-based tool search with fuzzy matching.
-func (s *ToolDiscoveryService) searchByQuery(ctx context.Context, criteria *ToolSearchCriteria) []ToolSearchResult {
+func (s *ToolDiscoveryService) searchByQuery(_ context.Context, criteria *ToolSearchCriteria) []ToolSearchResult {
 	queryTokens := s.tokenize(criteria.Query)
 	resultMap := make(map[string]*ToolSearchResult)
 
@@ -517,7 +516,7 @@ func (s *ToolDiscoveryService) searchByQuery(ctx context.Context, criteria *Tool
 		}
 	}
 
-	var results []ToolSearchResult
+	results := make([]ToolSearchResult, 0, len(resultMap))
 	for _, result := range resultMap {
 		results = append(results, *result)
 	}
@@ -544,7 +543,7 @@ func (s *ToolDiscoveryService) getAllToolsAsResults(ctx context.Context) []ToolS
 		return []ToolSearchResult{}
 	}
 
-	var results []ToolSearchResult
+	results := make([]ToolSearchResult, 0, len(allTools))
 	for _, tool := range allTools {
 		result := ToolSearchResult{
 			Tool:           tool,
@@ -560,7 +559,7 @@ func (s *ToolDiscoveryService) getAllToolsAsResults(ctx context.Context) []ToolS
 
 // filterResults applies post-search filtering to results.
 func (s *ToolDiscoveryService) filterResults(results []ToolSearchResult, criteria *ToolSearchCriteria) []ToolSearchResult {
-	var filtered []ToolSearchResult
+	filtered := make([]ToolSearchResult, 0, len(results))
 
 	for _, result := range results {
 		// Apply relevance score filter
@@ -679,7 +678,7 @@ func (s *ToolDiscoveryService) findRelatedCategories(category CategoryType) []Ca
 	return related
 }
 
-func (s *ToolDiscoveryService) getRecommendedToolsForCategory(category CategoryType, tools []*MCPTool) []*MCPTool {
+func (s *ToolDiscoveryService) getRecommendedToolsForCategory(_ CategoryType, tools []*MCPTool) []*MCPTool {
 	// Simple implementation - return first few tools
 	limit := min(3, len(tools))
 	return tools[:limit]
@@ -725,11 +724,11 @@ func (s *ToolDiscoveryService) generateRecommendations(workflow string, limit in
 		})
 	}
 
-	return recommendations[:min(limit, len(recommendations))]
+	return recommendations[:minInt(limit, len(recommendations))]
 }
 
-// min returns the minimum of two integers.
-func min(a, b int) int {
+// minInt returns the minimum of two integers.
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}

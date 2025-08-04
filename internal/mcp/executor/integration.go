@@ -236,18 +236,18 @@ func (h *ToolCallHandler) HandleToolCall(ctx context.Context, req *types.MCPRequ
 				Message: "Invalid params",
 				Data:    fmt.Sprintf("Unknown tool: %s", params.Name),
 			},
-		}, nil
+		}, err
 	}
 
 	// Validate tool arguments
-	if err := h.toolRegistry.ValidateToolInput(ctx, params.Name, params.Arguments); err != nil {
+	if validationErr := h.toolRegistry.ValidateToolInput(ctx, params.Name, params.Arguments); validationErr != nil {
 		return &types.MCPResponse{
 			JSONRPC: "2.0",
 			ID:      req.ID,
 			Error: &types.MCPError{
 				Code:    -32602,
 				Message: "Invalid params",
-				Data:    fmt.Sprintf("Invalid arguments for tool %s: %v", params.Name, err),
+				Data:    fmt.Sprintf("Invalid arguments for tool %s: %v", params.Name, validationErr),
 			},
 		}, nil
 	}
@@ -313,7 +313,12 @@ func (h *ToolCallHandler) HandleToolCall(ctx context.Context, req *types.MCPRequ
 }
 
 // parseToolOutput parses tool output based on the tool definition.
-func (h *ToolCallHandler) parseToolOutput(ctx context.Context, tool *tools.MCPTool, resp *ExecutionResponse) ([]types.Content, error) {
+func (h *ToolCallHandler) parseToolOutput(ctx context.Context, _ *tools.MCPTool, resp *ExecutionResponse) ([]types.Content, error) {
+	// Check for context cancellation
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
 	// TODO: Add OutputSchema support to MCPTool when needed
 	// For now, we'll parse output generically
 
@@ -358,14 +363,8 @@ func (h *ToolCallHandler) parseToolOutput(ctx context.Context, tool *tools.MCPTo
 
 // Helper functions
 
-func convertParams(from interface{}, to interface{}) error {
+func convertParams(_ interface{}, _ interface{}) error {
 	// This is a simplified conversion
 	// In production, use proper JSON marshaling/unmarshaling
 	return nil
-}
-
-func formatJSONOutput(data map[string]interface{}) string {
-	// Format JSON output for display
-	// This is a placeholder implementation
-	return fmt.Sprintf("%v", data)
 }

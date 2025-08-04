@@ -163,7 +163,7 @@ func NewCategoryManager(registry ToolRegistry, logger Logger) *CategoryManager {
 //
 // Returns:
 // - *CategoryMetadata: Detailed category metadata, or nil if category unknown
-// - error: Error if context cancelled or category invalid
+// - error: Error if context canceled or category invalid
 //
 // Side Effects:
 // - Logs category metadata requests for analytics
@@ -182,7 +182,7 @@ func (cm *CategoryManager) GetCategoryMetadata(ctx context.Context, category Cat
 	metadata, exists := cm.categoryMetadata[category]
 	if !exists {
 		cm.logger.Debug("category metadata not found", "category", category)
-		return nil, nil
+		return nil, fmt.Errorf("category %s: %w", category, ErrUnknownCategory)
 	}
 
 	cm.logger.Debug("category metadata retrieved", "category", category, "name", metadata.Name)
@@ -220,7 +220,7 @@ func (cm *CategoryManager) GetCategoryMetadata(ctx context.Context, category Cat
 //
 // Returns:
 // - []*CategorySummary: Matching categories with summary information
-// - error: Error if discovery fails or context cancelled
+// - error: Error if discovery fails or context canceled
 //
 // Side Effects:
 // - Logs category discovery operations for analytics
@@ -252,7 +252,7 @@ func (cm *CategoryManager) DiscoverCategories(ctx context.Context, filter *Categ
 		"useCases", filter.UseCases,
 		"maxResults", filter.MaxResults)
 
-	var summaries []*CategorySummary
+	summaries := make([]*CategorySummary, 0, len(cm.categoryMetadata))
 
 	for category, metadata := range cm.categoryMetadata {
 		// Check if category matches filter criteria
@@ -310,7 +310,7 @@ func (cm *CategoryManager) DiscoverCategories(ctx context.Context, filter *Categ
 //
 // Returns:
 // - string: Natural language description of the category
-// - error: Error if generation fails or context cancelled
+// - error: Error if generation fails or context canceled
 //
 // Side Effects:
 // - Logs description generation for analytics
@@ -411,7 +411,7 @@ func (cm *CategoryManager) GenerateNaturalLanguageDescription(ctx context.Contex
 //
 // Returns:
 // - []*CategorySummary: Recommended categories ordered by relevance
-// - error: Error if recommendation fails or context cancelled
+// - error: Error if recommendation fails or context canceled
 //
 // Side Effects:
 // - Logs recommendation requests for analytics and improvement
@@ -571,7 +571,7 @@ func (cm *CategoryManager) initializeCategoryMetadata() {
 //
 // This internal method evaluates whether a category meets the specified
 // filter criteria for discovery operations.
-func (cm *CategoryManager) matchesFilter(ctx context.Context, category CategoryType, metadata *CategoryMetadata, filter *CategoryDiscoveryFilter) bool {
+func (cm *CategoryManager) matchesFilter(_ context.Context, _ CategoryType, metadata *CategoryMetadata, filter *CategoryDiscoveryFilter) bool {
 	// Check keyword matching
 	if len(filter.Keywords) > 0 {
 		if !cm.matchesKeywords(metadata, filter.Keywords) {

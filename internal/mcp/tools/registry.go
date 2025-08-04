@@ -2,10 +2,27 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 	"sync"
+)
+
+// Static errors for err113 linter compliance
+var (
+	ErrToolNil               = errors.New("tool cannot be nil")
+	ErrToolAlreadyRegistered = errors.New("tool already registered")
+	ErrToolNameEmpty         = errors.New("tool name cannot be empty")
+	ErrToolDescriptionEmpty  = errors.New("tool description cannot be empty")
+	ErrToolInputSchemaNil    = errors.New("tool input schema cannot be nil")
+	ErrToolCLICommandEmpty   = errors.New("tool CLI command cannot be empty")
+	ErrToolVersionEmpty      = errors.New("tool version cannot be empty")
+	ErrToolCategoryInvalid   = errors.New("invalid tool category")
+	ErrToolTimeoutInvalid    = errors.New("tool timeout must be between 1 second and 10 minutes")
+	ErrToolSchemaTypeInvalid = errors.New("tool input schema type must be 'object'")
+	ErrValidatorNil          = errors.New("validator cannot be nil")
+	ErrLoggerNil             = errors.New("logger cannot be nil")
 )
 
 // DefaultToolRegistry provides a concrete implementation of the ToolRegistry interface.
@@ -105,7 +122,7 @@ func NewDefaultToolRegistry(validator InputValidator, logger Logger) *DefaultToo
 //
 // Returns:
 // - *MCPTool: The requested tool definition if found
-// - error: ToolNotFoundError if tool doesn't exist, or context error if cancelled
+// - error: ToolNotFoundError if tool doesn't exist, or context error if canceled
 //
 // Side Effects:
 // - Logs tool lookup operations for debugging and audit trails
@@ -152,7 +169,7 @@ func (r *DefaultToolRegistry) GetTool(ctx context.Context, name string) (*MCPToo
 //
 // Returns:
 // - []*MCPTool: List of tools in the specified category, sorted by name
-// - error: Error if category invalid or context cancelled
+// - error: Error if category invalid or context canceled
 //
 // Side Effects:
 // - Logs tool discovery operations for debugging and analytics
@@ -295,7 +312,7 @@ func (r *DefaultToolRegistry) RegisterTool(ctx context.Context, tool *MCPTool) e
 	}
 
 	if tool == nil {
-		return fmt.Errorf("tool cannot be nil")
+		return ErrToolNil
 	}
 
 	// Validate tool definition
@@ -311,7 +328,7 @@ func (r *DefaultToolRegistry) RegisterTool(ctx context.Context, tool *MCPTool) e
 
 	// Check for duplicate tool names
 	if _, exists := r.tools[tool.Name]; exists {
-		return fmt.Errorf("tool already registered: %s", tool.Name)
+		return fmt.Errorf("%w: %s", ErrToolAlreadyRegistered, tool.Name)
 	}
 
 	// Create defensive copy to prevent external modification
@@ -352,7 +369,7 @@ func (r *DefaultToolRegistry) RegisterTool(ctx context.Context, tool *MCPTool) e
 //
 // Returns:
 // - []CategoryType: List of all available categories, sorted alphabetically
-// - error: Error if context cancelled
+// - error: Error if context canceled
 //
 // Side Effects:
 // - Logs category discovery operations for analytics
@@ -406,39 +423,39 @@ func (r *DefaultToolRegistry) GetCategories(ctx context.Context) ([]CategoryType
 // - Validates timeout values are reasonable
 func (r *DefaultToolRegistry) validateToolDefinition(tool *MCPTool) error {
 	if tool.Name == "" {
-		return fmt.Errorf("tool name cannot be empty")
+		return ErrToolNameEmpty
 	}
 
 	if tool.Description == "" {
-		return fmt.Errorf("tool description cannot be empty")
+		return ErrToolDescriptionEmpty
 	}
 
 	if tool.InputSchema == nil {
-		return fmt.Errorf("tool input schema cannot be nil")
+		return ErrToolInputSchemaNil
 	}
 
 	if tool.CLICommand == "" {
-		return fmt.Errorf("tool CLI command cannot be empty")
+		return ErrToolCLICommandEmpty
 	}
 
 	if tool.Version == "" {
-		return fmt.Errorf("tool version cannot be empty")
+		return ErrToolVersionEmpty
 	}
 
 	// Validate category is known
 	if !r.isValidCategory(tool.Category) {
-		return fmt.Errorf("invalid tool category: %s", tool.Category)
+		return fmt.Errorf("%w: %s", ErrToolCategoryInvalid, tool.Category)
 	}
 
 	// Validate timeout is reasonable (between 1 second and 10 minutes)
 	if tool.Timeout < 1000000000 || tool.Timeout > 600000000000 { // 1s to 10m in nanoseconds
-		return fmt.Errorf("tool timeout must be between 1 second and 10 minutes, got: %v", tool.Timeout)
+		return fmt.Errorf("%w, got: %v", ErrToolTimeoutInvalid, tool.Timeout)
 	}
 
 	// Validate input schema structure
 	if schemaType, exists := tool.InputSchema["type"]; exists {
 		if schemaType != "object" {
-			return fmt.Errorf("tool input schema type must be 'object', got: %v", schemaType)
+			return fmt.Errorf("%w, got: %v", ErrToolSchemaTypeInvalid, schemaType)
 		}
 	}
 

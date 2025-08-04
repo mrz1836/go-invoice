@@ -3,7 +3,6 @@ package mcp
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,12 +12,24 @@ import (
 	"time"
 )
 
+// HealthError represents health check errors.
+type HealthError struct {
+	Op  string
+	Msg string
+}
+
+func (e *HealthError) Error() string {
+	return fmt.Sprintf("health %s: %s", e.Op, e.Msg)
+}
+
 // Health check errors
 var (
-	ErrHealthCheckFailed    = errors.New("health check failed")
-	ErrCLINotAvailable      = errors.New("CLI not available")
-	ErrStorageNotAccessible = errors.New("storage not accessible")
-	ErrUnhealthyState       = errors.New("service in unhealthy state")
+	ErrHealthCheckFailed       = &HealthError{Op: "check", Msg: "health check failed"}
+	ErrCLINotAvailable         = &HealthError{Op: "validate", Msg: "CLI not available"}
+	ErrStorageNotAccessible    = &HealthError{Op: "validate", Msg: "storage not accessible"}
+	ErrUnhealthyState          = &HealthError{Op: "status", Msg: "service in unhealthy state"}
+	ErrMonitoringAlreadyActive = &HealthError{Op: "start", Msg: "health monitoring already active"}
+	ErrMonitoringNotActive     = &HealthError{Op: "stop", Msg: "health monitoring not active"}
 )
 
 // HealthStatus represents the overall health status
@@ -280,7 +291,7 @@ func (h *DefaultHealthChecker) checkCLIAvailability(ctx context.Context) HealthC
 }
 
 // checkStorageHealth checks if storage is accessible
-func (h *DefaultHealthChecker) checkStorageHealth(ctx context.Context) HealthCheck {
+func (h *DefaultHealthChecker) checkStorageHealth(_ context.Context) HealthCheck {
 	check := HealthCheck{
 		Name:        "Storage Health",
 		Status:      "unhealthy",
@@ -297,8 +308,8 @@ func (h *DefaultHealthChecker) checkStorageHealth(ctx context.Context) HealthChe
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Try to create it
-			if err := os.MkdirAll(h.storagePath, 0o755); err != nil {
-				check.Message = fmt.Sprintf("Cannot create storage directory: %v", err)
+			if mkdirErr := os.MkdirAll(h.storagePath, 0o750); mkdirErr != nil {
+				check.Message = fmt.Sprintf("Cannot create storage directory: %v", mkdirErr)
 				return check
 			}
 			check.Status = "warning"
@@ -317,13 +328,13 @@ func (h *DefaultHealthChecker) checkStorageHealth(ctx context.Context) HealthChe
 
 	// Check write permissions by creating a test file
 	testFile := filepath.Join(h.storagePath, ".health-check")
-	if err := os.WriteFile(testFile, []byte("test"), 0o644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil {
 		check.Message = fmt.Sprintf("Storage not writable: %v", err)
 		return check
 	}
 
 	// Clean up test file
-	os.Remove(testFile)
+	_ = os.Remove(testFile)
 
 	// Check available space (simplified check)
 	check.Status = "healthy"
@@ -360,7 +371,7 @@ func (h *DefaultHealthChecker) StartHealthMonitoring(ctx context.Context, interv
 	defer h.mu.Unlock()
 
 	if h.monitoring {
-		return fmt.Errorf("health monitoring already active")
+		return ErrMonitoringAlreadyActive
 	}
 
 	// Create cancellable context
@@ -376,7 +387,7 @@ func (h *DefaultHealthChecker) StartHealthMonitoring(ctx context.Context, interv
 		h.logger.Info("health monitoring started", "interval", interval)
 
 		// Initial check
-		h.CheckHealth(monitorCtx)
+		_, _ = h.CheckHealth(monitorCtx)
 
 		for {
 			select {
@@ -384,7 +395,7 @@ func (h *DefaultHealthChecker) StartHealthMonitoring(ctx context.Context, interv
 				h.logger.Info("health monitoring stopped")
 				return
 			case <-ticker.C:
-				h.CheckHealth(monitorCtx)
+				_, _ = h.CheckHealth(monitorCtx)
 			}
 		}
 	}()
@@ -393,12 +404,12 @@ func (h *DefaultHealthChecker) StartHealthMonitoring(ctx context.Context, interv
 }
 
 // StopHealthMonitoring stops the monitoring loop
-func (h *DefaultHealthChecker) StopHealthMonitoring(ctx context.Context) error {
+func (h *DefaultHealthChecker) StopHealthMonitoring(_ context.Context) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
 	if !h.monitoring {
-		return fmt.Errorf("health monitoring not active")
+		return ErrMonitoringNotActive
 	}
 
 	if h.monitorCancel != nil {

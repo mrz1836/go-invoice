@@ -9,48 +9,19 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// MockLogger provides a mock implementation of the Logger interface for testing
-type MockLogger struct {
-	mock.Mock
-}
-
-func (m *MockLogger) Debug(msg string, keysAndValues ...interface{}) {
-	args := []interface{}{msg}
-	args = append(args, keysAndValues...)
-	m.Called(args...)
-}
-
-func (m *MockLogger) Info(msg string, keysAndValues ...interface{}) {
-	// Create arguments slice with message and all key-value pairs
-	args := []interface{}{msg}
-	args = append(args, keysAndValues...)
-	m.Called(args...)
-}
-
-func (m *MockLogger) Warn(msg string, keysAndValues ...interface{}) {
-	args := []interface{}{msg}
-	args = append(args, keysAndValues...)
-	m.Called(args...)
-}
-
-func (m *MockLogger) Error(msg string, keysAndValues ...interface{}) {
-	args := []interface{}{msg}
-	args = append(args, keysAndValues...)
-	m.Called(args...)
-}
-
 // ValidationTestSuite provides comprehensive tests for the input validation system
 type ValidationTestSuite struct {
 	suite.Suite
+
 	validator *DefaultInputValidator
 	logger    *MockLogger
-	ctx       context.Context
+	// No context stored in struct - pass through method parameters instead
 }
 
 func (s *ValidationTestSuite) SetupTest() {
 	s.logger = new(MockLogger)
 	s.validator = NewDefaultInputValidator(s.logger)
-	s.ctx = context.Background()
+	// Context created as needed in individual test methods
 }
 
 func (s *ValidationTestSuite) TearDownTest() {
@@ -178,12 +149,13 @@ func (s *ValidationTestSuite) TestValidateAgainstSchema_BasicValidation() {
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			// Setup logger expectations
-			s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+			s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
-			err := s.validator.ValidateAgainstSchema(s.ctx, tt.input, tt.schema)
+			ctx := context.Background()
+			err := s.validator.ValidateAgainstSchema(ctx, tt.input, tt.schema)
 
 			if tt.expectError {
-				s.Error(err, "Should return validation error")
+				s.Require().Error(err, "Should return validation error")
 				if tt.errorMsg != "" {
 					s.Contains(err.Error(), tt.errorMsg, "Error message should contain expected text")
 				}
@@ -195,6 +167,7 @@ func (s *ValidationTestSuite) TestValidateAgainstSchema_BasicValidation() {
 }
 
 func (s *ValidationTestSuite) TestValidateRequired() {
+	ctx := context.Background()
 	tests := []struct {
 		name           string
 		input          map[string]interface{}
@@ -282,12 +255,12 @@ func (s *ValidationTestSuite) TestValidateRequired() {
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			// Setup logger expectations
-			s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+			s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
-			err := s.validator.ValidateRequired(s.ctx, tt.input, tt.requiredFields)
+			err := s.validator.ValidateRequired(ctx, tt.input, tt.requiredFields)
 
 			if tt.expectError {
-				s.Error(err, "Should return validation error")
+				s.Require().Error(err, "Should return validation error")
 				if tt.errorMsg != "" {
 					s.Contains(err.Error(), tt.errorMsg, "Error message should contain expected text")
 				}
@@ -299,6 +272,7 @@ func (s *ValidationTestSuite) TestValidateRequired() {
 }
 
 func (s *ValidationTestSuite) TestValidateFormat() {
+	ctx := context.Background()
 	tests := []struct {
 		name        string
 		fieldName   string
@@ -402,13 +376,13 @@ func (s *ValidationTestSuite) TestValidateFormat() {
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			// Setup logger expectations
-			s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
-			s.logger.On("Warn", mock.Anything, mock.Anything).Maybe()
+			s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+			s.logger.On("Warn", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
-			err := s.validator.ValidateFormat(s.ctx, tt.fieldName, tt.value, tt.format)
+			err := s.validator.ValidateFormat(ctx, tt.fieldName, tt.value, tt.format)
 
 			if tt.expectError {
-				s.Error(err, "Should return validation error")
+				s.Require().Error(err, "Should return validation error")
 				if tt.errorMsg != "" {
 					s.Contains(err.Error(), tt.errorMsg, "Error message should contain expected text")
 				}
@@ -420,6 +394,7 @@ func (s *ValidationTestSuite) TestValidateFormat() {
 }
 
 func (s *ValidationTestSuite) TestValidateField() {
+	ctx := context.Background()
 	tests := []struct {
 		name        string
 		fieldName   string
@@ -564,12 +539,12 @@ func (s *ValidationTestSuite) TestValidateField() {
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			// Setup logger expectations
-			s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+			s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
-			err := s.validator.validateField(s.ctx, tt.fieldName, tt.value, tt.fieldSchema)
+			err := s.validator.validateField(ctx, tt.fieldName, tt.value, tt.fieldSchema)
 
 			if tt.expectError {
-				s.Error(err, "Should return validation error")
+				s.Require().Error(err, "Should return validation error")
 				if tt.errorMsg != "" {
 					s.Contains(err.Error(), tt.errorMsg, "Error message should contain expected text")
 				}
@@ -581,6 +556,7 @@ func (s *ValidationTestSuite) TestValidateField() {
 }
 
 func (s *ValidationTestSuite) TestBuildValidationError() {
+	ctx := context.Background()
 	tests := []struct {
 		name        string
 		fieldPath   string
@@ -628,12 +604,12 @@ func (s *ValidationTestSuite) TestBuildValidationError() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			err := s.validator.BuildValidationError(s.ctx, tt.fieldPath, tt.message, tt.suggestions)
+			err := s.validator.BuildValidationError(ctx, tt.fieldPath, tt.message, tt.suggestions)
 
-			s.Error(err, "Should return an error")
+			s.Require().Error(err, "Should return an error")
 
-			validationErr, ok := err.(*ValidationError)
-			s.True(ok, "Should return ValidationError type")
+			var validationErr *ValidationError
+			s.Require().ErrorAs(err, &validationErr, "Should return ValidationError type")
 			s.Equal(tt.expectedErr.Field, validationErr.Field)
 			s.Equal(tt.expectedErr.Message, validationErr.Message)
 			s.Equal(tt.expectedErr.Code, validationErr.Code)
@@ -643,6 +619,7 @@ func (s *ValidationTestSuite) TestBuildValidationError() {
 }
 
 func (s *ValidationTestSuite) TestContextCancellation() {
+	ctx := context.Background()
 	tests := []struct {
 		name     string
 		testFunc func(context.Context) error
@@ -675,17 +652,18 @@ func (s *ValidationTestSuite) TestContextCancellation() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			ctx, cancel := context.WithCancel(s.ctx)
+			cancelCtx, cancel := context.WithCancel(ctx)
 			cancel() // Cancel immediately
 
-			err := tt.testFunc(ctx)
-			s.Error(err, "Should return context cancellation error")
+			err := tt.testFunc(cancelCtx)
+			s.Require().Error(err, "Should return context cancellation error")
 			s.Equal(context.Canceled, err, "Should be context.Canceled error")
 		})
 	}
 }
 
 func (s *ValidationTestSuite) TestConcurrentValidation() {
+	ctx := context.Background()
 	schema := map[string]interface{}{
 		"type": "object",
 		"properties": map[string]interface{}{
@@ -697,18 +675,18 @@ func (s *ValidationTestSuite) TestConcurrentValidation() {
 	}
 
 	// Setup logger expectations for concurrent access
-	s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+	s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
 	done := make(chan bool, 100)
 	for i := 0; i < 100; i++ {
-		go func(id int) {
+		go func(_ int) {
 			defer func() { done <- true }()
 
 			input := map[string]interface{}{
 				"name": "concurrent_test",
 			}
 
-			err := s.validator.ValidateAgainstSchema(s.ctx, input, schema)
+			err := s.validator.ValidateAgainstSchema(ctx, input, schema)
 			s.NoError(err, "Concurrent validation should succeed")
 		}(i)
 	}
@@ -720,6 +698,7 @@ func (s *ValidationTestSuite) TestConcurrentValidation() {
 }
 
 func (s *ValidationTestSuite) TestFormatValidatorEdgeCases() {
+	ctx := context.Background()
 	tests := []struct {
 		name        string
 		format      string
@@ -772,9 +751,9 @@ func (s *ValidationTestSuite) TestFormatValidatorEdgeCases() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+			s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
-			err := s.validator.ValidateFormat(s.ctx, "test_field", tt.value, tt.format)
+			err := s.validator.ValidateFormat(ctx, "test_field", tt.value, tt.format)
 
 			if tt.expectError {
 				s.Error(err, "Should return validation error for %s format with value %v", tt.format, tt.value)
@@ -786,6 +765,7 @@ func (s *ValidationTestSuite) TestFormatValidatorEdgeCases() {
 }
 
 func (s *ValidationTestSuite) TestComplexSchemaValidation() {
+	ctx := context.Background()
 	complexSchema := map[string]interface{}{
 		"type": "object",
 		"properties": map[string]interface{}{
@@ -882,9 +862,9 @@ func (s *ValidationTestSuite) TestComplexSchemaValidation() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+			s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
-			err := s.validator.ValidateAgainstSchema(s.ctx, tt.input, complexSchema)
+			err := s.validator.ValidateAgainstSchema(ctx, tt.input, complexSchema)
 
 			if tt.expectError {
 				s.Error(err, tt.description)
@@ -903,7 +883,7 @@ func TestValidationTestSuite(t *testing.T) {
 // Benchmark tests for performance validation
 func BenchmarkDefaultInputValidator_ValidateAgainstSchema(b *testing.B) {
 	logger := new(MockLogger)
-	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
 	validator := NewDefaultInputValidator(logger)
 	ctx := context.Background()
@@ -940,7 +920,7 @@ func BenchmarkDefaultInputValidator_ValidateAgainstSchema(b *testing.B) {
 
 func BenchmarkDefaultInputValidator_ValidateFormat(b *testing.B) {
 	logger := new(MockLogger)
-	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
 	validator := NewDefaultInputValidator(logger)
 	ctx := context.Background()
@@ -954,8 +934,8 @@ func BenchmarkDefaultInputValidator_ValidateFormat(b *testing.B) {
 // Unit tests for specific edge cases
 func TestDefaultInputValidator_EdgeCases(t *testing.T) {
 	logger := new(MockLogger)
-	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
-	logger.On("Warn", mock.Anything, mock.Anything).Maybe()
+	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+	logger.On("Warn", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
 	validator := NewDefaultInputValidator(logger)
 	ctx := context.Background()
@@ -999,7 +979,7 @@ func TestDefaultInputValidator_EdgeCases(t *testing.T) {
 
 func TestFormatValidators_EdgeCases(t *testing.T) {
 	logger := new(MockLogger)
-	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
 	validator := NewDefaultInputValidator(logger)
 	ctx := context.Background()
@@ -1038,7 +1018,7 @@ func TestFormatValidators_EdgeCases(t *testing.T) {
 // Race condition tests
 func TestValidation_RaceConditions(t *testing.T) {
 	logger := new(MockLogger)
-	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
+	logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 
 	validator := NewDefaultInputValidator(logger)
 	ctx := context.Background()
@@ -1046,7 +1026,7 @@ func TestValidation_RaceConditions(t *testing.T) {
 	t.Run("ConcurrentFormatValidation", func(t *testing.T) {
 		done := make(chan bool, 100)
 		for i := 0; i < 100; i++ {
-			go func(id int) {
+			go func(_ int) {
 				defer func() { done <- true }()
 				err := validator.ValidateFormat(ctx, "email", "test@example.com", "email")
 				assert.NoError(t, err)
@@ -1070,7 +1050,7 @@ func TestValidation_RaceConditions(t *testing.T) {
 
 		done := make(chan bool, 50)
 		for i := 0; i < 50; i++ {
-			go func(id int) {
+			go func(_ int) {
 				defer func() { done <- true }()
 				input := map[string]interface{}{
 					"name": "concurrent_test",

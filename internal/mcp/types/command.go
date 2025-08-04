@@ -1,3 +1,6 @@
+// Package types provides specialized data structures for MCP command execution.
+// The package name "types" is appropriate here as it contains type definitions
+// for command request/response structures used throughout the MCP protocol.
 package types
 
 import (

@@ -13,20 +13,30 @@ import (
 	"strings"
 )
 
+// FileError represents file handling errors.
+type FileError struct {
+	Op  string
+	Msg string
+}
+
+func (e *FileError) Error() string {
+	return fmt.Sprintf("file operation %s: %s", e.Op, e.Msg)
+}
+
 // File handling errors
 var (
-	ErrFileTooLarge    = errors.New("file exceeds maximum size")
-	ErrInvalidFileType = errors.New("invalid file type")
-	ErrFileNotFound    = errors.New("file not found")
-	ErrWorkspaceCreate = errors.New("failed to create workspace")
+	ErrFileTooLarge    = &FileError{Op: "validate", Msg: "file exceeds maximum size"}
+	ErrInvalidFileType = &FileError{Op: "validate", Msg: "invalid file type"}
+	ErrFileNotFound    = &FileError{Op: "read", Msg: "file not found"}
+	ErrWorkspaceCreate = &FileError{Op: "create", Msg: "failed to create workspace"}
+	ErrNotRegularFile  = &FileError{Op: "validate", Msg: "not a regular file"}
 )
 
 // DefaultFileHandler implements FileHandler with security features.
 type DefaultFileHandler struct {
-	logger       Logger
-	validator    CommandValidator
-	sandbox      SandboxConfig
-	workspaceDir string
+	logger    Logger
+	validator CommandValidator
+	sandbox   SandboxConfig
 }
 
 // NewDefaultFileHandler creates a new file handler.
@@ -56,12 +66,12 @@ func (f *DefaultFileHandler) PrepareWorkspace(ctx context.Context, files []FileR
 	// Create temporary workspace directory
 	workDir, err = os.MkdirTemp("", "mcp-workspace-*")
 	if err != nil {
-		return "", nil, fmt.Errorf("%w: %v", ErrWorkspaceCreate, err)
+		return "", nil, fmt.Errorf("%w: %w", ErrWorkspaceCreate, err)
 	}
 
 	// Set restrictive permissions
-	if err := os.Chmod(workDir, 0o700); err != nil {
-		os.RemoveAll(workDir)
+	if err := os.Chmod(workDir, 0o600); err != nil {
+		_ = os.RemoveAll(workDir)
 		return "", nil, fmt.Errorf("failed to set workspace permissions: %w", err)
 	}
 
@@ -177,7 +187,7 @@ func (f *DefaultFileHandler) ValidateFile(ctx context.Context, path string) erro
 
 	// Check if it's a regular file
 	if !info.Mode().IsRegular() {
-		return fmt.Errorf("not a regular file: %s", path)
+		return fmt.Errorf("%w: %s", ErrNotRegularFile, path)
 	}
 
 	// Check file size
@@ -206,17 +216,19 @@ func (f *DefaultFileHandler) CreateTempFile(ctx context.Context, pattern string,
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer tmpFile.Close()
+	defer func() {
+		_ = tmpFile.Close()
+	}()
 
 	// Set restrictive permissions
 	if err := tmpFile.Chmod(0o600); err != nil {
-		os.Remove(tmpFile.Name())
+		_ = os.Remove(tmpFile.Name())
 		return "", fmt.Errorf("failed to set file permissions: %w", err)
 	}
 
 	// Write content
 	if _, err := tmpFile.Write(content); err != nil {
-		os.Remove(tmpFile.Name())
+		_ = os.Remove(tmpFile.Name())
 		return "", fmt.Errorf("failed to write content: %w", err)
 	}
 
@@ -243,23 +255,27 @@ func (f *DefaultFileHandler) copyFileToWorkspace(ctx context.Context, file FileR
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
-	defer src.Close()
+	defer func() {
+		_ = src.Close()
+	}()
 
 	// Create destination file
-	dst, err := os.Create(destPath)
+	dst, err := os.Create(destPath) //nolint:gosec // Path is validated by caller
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}
-	defer dst.Close()
+	defer func() {
+		_ = dst.Close()
+	}()
 
 	// Set restrictive permissions
-	if err := dst.Chmod(0o600); err != nil {
-		return fmt.Errorf("failed to set file permissions: %w", err)
+	if chmodErr := dst.Chmod(0o600); chmodErr != nil {
+		return fmt.Errorf("failed to set file permissions: %w", chmodErr)
 	}
 
 	// Copy with size limit
 	written, err := io.CopyN(dst, src, f.sandbox.MaxFileSize+1)
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("failed to copy file: %w", err)
 	}
 	if written > f.sandbox.MaxFileSize {
@@ -309,12 +325,14 @@ func (f *DefaultFileHandler) createFileReference(ctx context.Context, path strin
 }
 
 // calculateChecksum calculates SHA256 checksum of a file.
-func (f *DefaultFileHandler) calculateChecksum(ctx context.Context, path string) (string, error) {
-	file, err := os.Open(path)
+func (f *DefaultFileHandler) calculateChecksum(_ context.Context, path string) (string, error) {
+	file, err := os.Open(path) //nolint:gosec // Path is validated by caller
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {

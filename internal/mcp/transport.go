@@ -17,12 +17,23 @@ import (
 	"github.com/mrz/go-invoice/internal/mcp/types"
 )
 
+// TransportError represents transport-related errors.
+type TransportError struct {
+	Op  string
+	Msg string
+}
+
+func (e *TransportError) Error() string {
+	return fmt.Sprintf("transport %s: %s", e.Op, e.Msg)
+}
+
 // Transport errors
 var (
-	ErrTransportNotInitialized = errors.New("transport not initialized")
-	ErrInvalidTransportType    = errors.New("invalid transport type")
-	ErrTransportClosed         = errors.New("transport closed")
-	ErrMessageTooLarge         = errors.New("message exceeds size limit")
+	ErrTransportNotInitialized = &TransportError{Op: "init", Msg: "transport not initialized"}
+	ErrInvalidTransportType    = &TransportError{Op: "validate", Msg: "invalid transport type"}
+	ErrTransportClosed         = &TransportError{Op: "send", Msg: "transport closed"}
+	ErrMessageTooLarge         = &TransportError{Op: "validate", Msg: "message exceeds size limit"}
+	ErrHandlerRequired         = &TransportError{Op: "create", Msg: "handler required for HTTP transport"}
 )
 
 // Use TransportType and constants from types package
@@ -112,7 +123,7 @@ func (t *StdioTransport) Type() types.TransportType {
 }
 
 // Start initializes the stdio transport
-func (t *StdioTransport) Start(ctx context.Context) error {
+func (t *StdioTransport) Start(_ context.Context) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -135,7 +146,7 @@ func (t *StdioTransport) Start(ctx context.Context) error {
 }
 
 // Stop gracefully shuts down the stdio transport
-func (t *StdioTransport) Stop(ctx context.Context) error {
+func (t *StdioTransport) Stop(_ context.Context) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -191,7 +202,7 @@ func (t *StdioTransport) Receive(ctx context.Context) (*types.MCPRequest, error)
 		return nil, ctx.Err()
 	case r := <-resultCh:
 		if r.err != nil {
-			if r.err == io.EOF {
+			if errors.Is(r.err, io.EOF) {
 				return nil, ErrTransportClosed
 			}
 			return nil, fmt.Errorf("failed to decode request: %w", r.err)
@@ -242,7 +253,7 @@ func (t *StdioTransport) Send(ctx context.Context, response *types.MCPResponse) 
 }
 
 // IsHealthy checks if the stdio transport is healthy
-func (t *StdioTransport) IsHealthy(ctx context.Context) bool {
+func (t *StdioTransport) IsHealthy(_ context.Context) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -275,7 +286,7 @@ func NewHTTPTransport(logger Logger, config *TransportConfig, handler types.MCPH
 	}
 	if config == nil {
 		config = DefaultTransportConfig()
-		config.Type = TransportHTTP
+		config.Type = types.TransportHTTP
 	}
 	if handler == nil {
 		panic("handler is required for HTTP transport")
@@ -326,7 +337,7 @@ func (t *HTTPTransport) Start(ctx context.Context) error {
 	// Start server in background
 	go func() {
 		t.logger.Info("starting HTTP transport", "addr", addr)
-		if err := t.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := t.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			t.logger.Error("HTTP server error", "error", err)
 		}
 	}()
@@ -391,14 +402,14 @@ func (t *HTTPTransport) Receive(ctx context.Context) (*types.MCPRequest, error) 
 }
 
 // Send sends a response for the current HTTP request
-func (t *HTTPTransport) Send(ctx context.Context, response *types.MCPResponse) error {
+func (t *HTTPTransport) Send(_ context.Context, _ *types.MCPResponse) error {
 	// For HTTP transport, responses are sent directly in the handler
 	// This method is here for interface compliance
 	return nil
 }
 
 // IsHealthy checks if the HTTP transport is healthy
-func (t *HTTPTransport) IsHealthy(ctx context.Context) bool {
+func (t *HTTPTransport) IsHealthy(_ context.Context) bool {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
@@ -439,7 +450,7 @@ func (t *HTTPTransport) handleMCPRequest(w http.ResponseWriter, r *http.Request)
 	// Process request through channel
 	httpReq := &httpRequest{
 		req:      &req,
-		respChan: make(chan *MCPResponse, 1),
+		respChan: make(chan *types.MCPResponse, 1),
 		errChan:  make(chan error, 1),
 	}
 
@@ -490,7 +501,10 @@ func (t *HTTPTransport) handleHealthCheck(w http.ResponseWriter, r *http.Request
 	if !healthy {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
-	json.NewEncoder(w).Encode(status)
+	if err := json.NewEncoder(w).Encode(status); err != nil {
+		t.logger.Error("failed to encode health status response", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 // TransportFactory creates transports based on configuration
@@ -513,7 +527,7 @@ func (f *TransportFactory) CreateTransport(config *TransportConfig, handler type
 		return NewStdioTransport(f.logger, config), nil
 	case types.TransportHTTP:
 		if handler == nil {
-			return nil, fmt.Errorf("handler required for HTTP transport")
+			return nil, ErrHandlerRequired
 		}
 		return NewHTTPTransport(f.logger, config, handler), nil
 	default:

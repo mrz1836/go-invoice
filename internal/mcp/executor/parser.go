@@ -18,6 +18,8 @@ var (
 	ErrParsingFailed    = errors.New("output parsing failed")
 	ErrNoDataFound      = errors.New("no data found in output")
 	ErrUnexpectedFormat = errors.New("unexpected output format")
+	ErrCommandFailed    = errors.New("command execution failed")
+	ErrCommandExitCode  = errors.New("command failed with exit code")
 )
 
 // DefaultOutputParser implements OutputParser with support for multiple formats.
@@ -60,12 +62,12 @@ func (p *DefaultOutputParser) ParseJSON(ctx context.Context, output string) (map
 				"error", err,
 				"outputLen", len(output),
 			)
-			return nil, fmt.Errorf("%w: %v", ErrInvalidJSON, err)
+			return nil, fmt.Errorf("%w: %w", ErrInvalidJSON, err)
 		}
 
 		// Retry with extracted JSON
 		if err := json.Unmarshal([]byte(jsonData), &result); err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrInvalidJSON, err)
+			return nil, fmt.Errorf("%w: %w", ErrInvalidJSON, err)
 		}
 	}
 
@@ -215,14 +217,14 @@ func (p *DefaultOutputParser) ExtractError(ctx context.Context, stdout, stderr s
 	// Check stderr first
 	for _, ep := range errorPatterns {
 		if matches := ep.pattern.FindStringSubmatch(stderr); len(matches) > 1 {
-			return fmt.Errorf(ep.format, strings.TrimSpace(matches[1]))
+			return fmt.Errorf("%w: %s", ErrCommandFailed, strings.TrimSpace(matches[1]))
 		}
 	}
 
 	// Then check stdout
 	for _, ep := range errorPatterns {
 		if matches := ep.pattern.FindStringSubmatch(stdout); len(matches) > 1 {
-			return fmt.Errorf(ep.format, strings.TrimSpace(matches[1]))
+			return fmt.Errorf("%w: %s", ErrCommandFailed, strings.TrimSpace(matches[1]))
 		}
 	}
 
@@ -232,13 +234,13 @@ func (p *DefaultOutputParser) ExtractError(ctx context.Context, stdout, stderr s
 		lines := strings.Split(strings.TrimSpace(stderr), "\n")
 		for _, line := range lines {
 			if line = strings.TrimSpace(line); line != "" {
-				return fmt.Errorf("command failed: %s", line)
+				return fmt.Errorf("%w: %s", ErrCommandFailed, line)
 			}
 		}
 	}
 
 	// Default error message
-	return fmt.Errorf("command failed with exit code %d", exitCode)
+	return fmt.Errorf("%w: %d", ErrCommandExitCode, exitCode)
 }
 
 // extractJSON attempts to extract JSON from mixed output.
@@ -504,7 +506,7 @@ func (p *DefaultOutputParser) detectColumnBoundaries(header, separator string) (
 	return headers, bounds
 }
 
-func (p *DefaultOutputParser) parseQuotedFields(line string, expectedCount int) []string {
+func (p *DefaultOutputParser) parseQuotedFields(line string, _ int) []string {
 	// Simple quoted field parser for space-separated values with quotes
 	var fields []string
 	var current strings.Builder

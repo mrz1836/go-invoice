@@ -1,7 +1,9 @@
+// Package main provides the MCP server executable for go-invoice.
 package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -15,8 +17,11 @@ import (
 
 var (
 	version = "1.0.0"
-	commit  = "dev"
-	date    = "unknown"
+	commit  = "dev"     //nolint:gochecknoglobals // build-time variable set via ldflags
+	date    = "unknown" //nolint:gochecknoglobals // build-time variable set via ldflags
+
+	// ErrServerUnhealthy represents a server health check failure
+	ErrServerUnhealthy = errors.New("server is unhealthy")
 )
 
 func main() {
@@ -31,9 +36,9 @@ func main() {
 
 	// Show version information
 	if *versionFlag {
-		fmt.Printf("go-invoice-mcp %s\n", version)
-		fmt.Printf("Commit: %s\n", commit)
-		fmt.Printf("Built: %s\n", date)
+		log.Printf("go-invoice-mcp %s", version)
+		log.Printf("Commit: %s", commit)
+		log.Printf("Built: %s", date)
 		return
 	}
 
@@ -61,7 +66,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Health check failed: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Println("Health check passed")
+		log.Println("Health check passed")
 		return
 	}
 
@@ -126,7 +131,7 @@ func performHealthCheck(config *mcp.Config, logger mcp.Logger) error {
 	}
 
 	if status.Status != "healthy" {
-		return fmt.Errorf("server is unhealthy: %s", status.LastError)
+		return fmt.Errorf("%w: %s", ErrServerUnhealthy, status.LastError)
 	}
 
 	return nil

@@ -61,7 +61,7 @@ func CreateClientManagementTools() []*MCPTool {
 func createClientCreateTool() *MCPTool {
 	return &MCPTool{
 		Name:        "client_create",
-		Description: "Create a new client with contact information and business details. Validates email uniqueness and contact information completeness.",
+		Description: "Create and register a new client with contact information and business details. This tool will create comprehensive client records and validate email uniqueness and contact information completeness.",
 		InputSchema: schemas.ClientCreateSchema(),
 		Examples: []MCPToolExample{
 			{
@@ -300,10 +300,11 @@ func createClientUpdateTool() *MCPTool {
 				UseCase:        "Managing client business changes and corporate restructuring",
 			},
 			{
-				Description: "Add missing tax ID for compliance reporting",
+				Description: "Add missing tax ID for client compliance reporting",
 				Input: map[string]interface{}{
 					"client_email": "contact@smallbiz.com",
 					"tax_id":       "EIN-12-3456789",
+					"email":        "compliance@smallbiz.com",
 				},
 				ExpectedOutput: "Tax ID added to client profile for compliance and invoicing requirements",
 				UseCase:        "Compliance management and tax reporting preparation",
@@ -375,7 +376,7 @@ func createClientDeleteTool() *MCPTool {
 					"force":        true,
 				},
 				ExpectedOutput: "Immediate permanent deletion without confirmation prompts",
-				UseCase:        "Automated cleanup scripts and bulk data management",
+				UseCase:        "Automated client cleanup scripts and bulk data management",
 			},
 			{
 				Description: "Attempt to delete client with active invoices (will be prevented)",
