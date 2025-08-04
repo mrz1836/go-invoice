@@ -108,7 +108,7 @@ go-invoice config setup
 
 # 4. Start using natural language!
 # In Claude Desktop: "Create an invoice for Acme Corp for 40 hours of development at $125/hour"
-# In Claude Code: /mcp__go_invoice__create_invoice Create invoice for Acme Corp
+# In Claude Code: /invoice Create invoice for Acme Corp
 ```
 
 <details>
@@ -161,13 +161,13 @@ Claude: 📋 Found 3 unpaid invoices:
 
 ### Use Claude Code with Slash Commands
 ```
-User: /mcp__go_invoice__create_invoice Create invoice for Acme Corp
+User: /invoice Create invoice for Acme Corp
 Claude: ✅ Created invoice INV-2025-001 for Acme Corp
 
 User: Import timesheet.csv into @invoice:INV-2025-001
 Claude: ✅ Imported 14 work items into invoice INV-2025-001
 
-User: /mcp__go_invoice__generate_html @invoice:INV-2025-001
+User: /generate @invoice:INV-2025-001
 Claude: ✅ Generated invoice-2025-001.html in current directory
 ```
 

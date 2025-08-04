@@ -48,3 +48,10 @@ node_modules/
 /go-invoice-mcp
 /bin/go-invoice
 /bin/mcp-server
+
+# go-invoice MCP integration
+.go-invoice/
+*.log
+/.claude_config.json.backup
+/.env.config
+/.claude_config.json

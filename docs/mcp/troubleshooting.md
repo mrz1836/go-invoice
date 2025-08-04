@@ -323,7 +323,7 @@ claude mcp --server go-invoice --test-resource "@invoice:list"
 ```
 
 #### Problem: Slash Commands Not Available
-Slash commands like `/mcp__go_invoice__create_invoice` don't work.
+Slash commands like `/invoice` don't work.
 
 **Solution:**
 ```bash

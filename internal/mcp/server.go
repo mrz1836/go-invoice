@@ -42,6 +42,16 @@ func NewServer(logger Logger, bridge CLIBridge, config *Config) Server {
 	}
 }
 
+// NewServerWithHandler creates a new MCP server with a custom handler
+func NewServerWithHandler(logger Logger, handler MCPHandler, config *Config) Server {
+	return &DefaultServer{
+		logger:   logger,
+		handler:  handler,
+		config:   config,
+		shutdown: make(chan struct{}),
+	}
+}
+
 // Start starts the MCP server with the specified transport
 func (s *DefaultServer) Start(ctx context.Context, transport TransportType) error {
 	select {

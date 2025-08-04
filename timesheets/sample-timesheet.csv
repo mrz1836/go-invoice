@@ -1,0 +1,6 @@
+Date,Hours,Description,Project,Tags
+2025-01-15,2.5,"Initial project setup and configuration",Setup,setup;config
+2025-01-16,4.0,"Implement authentication system",Development,auth;backend
+2025-01-17,3.5,"Create user dashboard UI",Development,frontend;ui
+2025-01-18,2.0,"Write unit tests for auth module",Testing,testing;backend
+2025-01-19,1.5,"Code review and documentation",Review,review;docs

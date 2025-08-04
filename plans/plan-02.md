@@ -1021,10 +1021,10 @@ if [ $? -eq 0 ]; then
     echo "3. Test with: /mcp__go_invoice__show_config"
     echo ""
     echo "Available slash commands:"
-    echo "  /mcp__go_invoice__create_invoice"
+    echo "  /invoice"
     echo "  /mcp__go_invoice__list_invoices"
-    echo "  /mcp__go_invoice__import_csv"
-    echo "  /mcp__go_invoice__generate_html"
+    echo "  /import"
+    echo "  /generate"
 else
     echo "❌ MCP server test failed. Check configuration and try again."
     exit 1

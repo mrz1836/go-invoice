@@ -64,7 +64,7 @@ Use 40 hours at $150/hour with 8.5% tax.
 
 #### Claude Code Features
 
-- **Slash Commands**: `/mcp__go_invoice__create_invoice`
+- **Slash Commands**: `/invoice`
 - **Resource Mentions**: `@invoice:INV-2025-001`, `@client:"Acme Corp"`
 - **Project Integration**: Per-project configuration and data isolation
 - **Workspace Watching**: Automatic detection of timesheet changes
@@ -128,7 +128,7 @@ Add 8.5% tax and set payment terms to 30 days.
 
 #### Claude Code
 ```
-/mcp__go_invoice__create_invoice
+/invoice
 
 Create invoice for @client:"TechCorp Solutions" 
 Import hours from @timesheet:./timesheets/q1-hours.csv

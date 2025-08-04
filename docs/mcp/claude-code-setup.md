@@ -413,7 +413,7 @@ Quick shortcuts for common operations:
 ### Available Commands
 ```bash
 # Invoice Management
-/mcp__go_invoice__create_invoice
+/invoice
 /mcp__go_invoice__list_invoices
 /mcp__go_invoice__show_invoice
 /mcp__go_invoice__update_invoice
@@ -424,8 +424,8 @@ Quick shortcuts for common operations:
 /mcp__go_invoice__show_client
 
 # Data Operations
-/mcp__go_invoice__import_csv
-/mcp__go_invoice__generate_html
+/import
+/generate
 /mcp__go_invoice__export_data
 
 # Configuration
@@ -436,13 +436,13 @@ Quick shortcuts for common operations:
 ### Usage Examples
 ```bash
 # Quick invoice creation
-/mcp__go_invoice__create_invoice --client "Acme Corp" --hours 40 --rate 85
+/invoice --client "Acme Corp" --hours 40 --rate 85
 
 # List recent invoices
 /mcp__go_invoice__list_invoices --status unpaid --limit 10
 
 # Generate invoice document
-/mcp__go_invoice__generate_html --invoice INV-2025-001 --output ./exports/
+/generate --invoice INV-2025-001 --output ./exports/
 ```
 
 ## Step 8: Development Workflows

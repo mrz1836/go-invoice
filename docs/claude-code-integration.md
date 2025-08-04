@@ -129,19 +129,19 @@ Use these slash commands to interact with go-invoice:
 
 ### Invoice Management
 
-- `/mcp__go_invoice__create_invoice` - Create a new invoice
+- `/invoice` - Create a new invoice
 - `/mcp__go_invoice__list_invoices` - List all invoices
 - `/mcp__go_invoice__show_invoice` - Display invoice details
 - `/mcp__go_invoice__update_invoice` - Update invoice information
 
 ### Data Import
 
-- `/mcp__go_invoice__import_csv` - Import timesheet from CSV
+- `/import` - Import timesheet from CSV
 - `/mcp__go_invoice__import_excel` - Import from Excel file
 
 ### Document Generation
 
-- `/mcp__go_invoice__generate_html` - Generate HTML invoice
+- `/generate` - Generate HTML invoice
 - `/mcp__go_invoice__generate_pdf` - Generate PDF invoice
 
 ### Configuration
@@ -179,7 +179,7 @@ Reference invoice data using @ mentions:
 ### Creating an Invoice
 
 ```
-/mcp__go_invoice__create_invoice
+/invoice
 
 Create an invoice for @client:"TechCorp Solutions" for January 2025.
 Import hours from @timesheet:./timesheets/january.csv
@@ -189,7 +189,7 @@ Use rate $175/hour and include 8.5% tax.
 ### Importing Timesheet Data
 
 ```
-/mcp__go_invoice__import_csv @timesheet:./timesheets/weekly-hours.csv
+/import @timesheet:./timesheets/weekly-hours.csv
 
 Parse this CSV and create separate invoices for each client.
 Set the invoice date to the last day of the timesheet period.
@@ -198,7 +198,7 @@ Set the invoice date to the last day of the timesheet period.
 ### Generating Documents
 
 ```
-/mcp__go_invoice__generate_html @invoice:INV-2025-003
+/generate @invoice:INV-2025-003
 
 Generate HTML for this invoice and save to ./invoices/sent/
 Use the custom template at ./templates/branded-invoice.html
@@ -222,15 +222,15 @@ Show me:
 
 ```
 # Import hours at end of sprint
-/mcp__go_invoice__import_csv @timesheet:./sprint-hours.csv
+/import @timesheet:./sprint-hours.csv
 
 # Create invoice for main client
-/mcp__go_invoice__create_invoice @client:"Primary Client"
+/invoice @client:"Primary Client"
 Add all development hours from this sprint
 Include code review and documentation time
 
 # Generate and review
-/mcp__go_invoice__generate_html @invoice:latest
+/generate @invoice:latest
 ```
 
 ### Freelance Project Management
@@ -247,7 +247,7 @@ Import @timesheet:./weekly-hours.csv every Friday
 Auto-categorize as "Development", "Meetings", or "Admin"
 
 # Monthly billing
-/mcp__go_invoice__create_invoice @client:"RetailCorp" 
+/invoice @client:"RetailCorp" 
 Include all unbilled hours from this month
 Apply 10% discount for early payment
 ```

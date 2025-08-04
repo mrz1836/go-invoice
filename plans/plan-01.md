@@ -958,11 +958,11 @@ Claude Code exposes go-invoice functionality through slash commands:
 
 ```bash
 # Invoice management commands
-/mcp__go_invoice__create_invoice
+/invoice
 /mcp__go_invoice__list_invoices  
 /mcp__go_invoice__show_invoice
-/mcp__go_invoice__import_csv
-/mcp__go_invoice__generate_html
+/import
+/generate
 
 # Configuration commands
 /mcp__go_invoice__show_config
@@ -990,7 +990,7 @@ Access invoice data directly using "@" mention patterns:
 
 **Creating and Managing Invoices:**
 ```
-User: /mcp__go_invoice__create_invoice Create an invoice for Acme Corp
+User: /invoice Create an invoice for Acme Corp
 
 Claude: I'll create a new invoice for Acme Corp using the go-invoice MCP tool.
 

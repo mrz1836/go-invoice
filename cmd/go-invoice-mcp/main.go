@@ -36,16 +36,17 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
-	// Create logger with dependency injection
+	// Create production handler with all tools registered
+	handler, err := mcp.CreateProductionHandler(config)
+	if err != nil {
+		log.Fatalf("Failed to create production handler: %v", err)
+	}
+
+	// Create logger for server
 	logger := mcp.NewLogger(config.LogLevel)
 
-	// Create CLI bridge with dependency injection
-	validator := mcp.NewCommandValidator(config.Security.AllowedCommands)
-	fileHandler := mcp.NewFileHandler(config.Security.WorkingDir)
-	bridge := mcp.NewCLIBridge(logger, validator, fileHandler, config.CLI)
-
-	// Create MCP server with dependency injection
-	server := mcp.NewServer(logger, bridge, config)
+	// Create MCP server with production handler
+	server := mcp.NewServerWithHandler(logger, handler, config)
 
 	logger.Info("Starting MCP server", "transport", transport, "version", "1.0.0")
 

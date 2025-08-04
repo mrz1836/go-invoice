@@ -592,13 +592,13 @@ Claude: [Uses generate_invoice tool] ✅ Generated invoice-2025-001.html
 
 **Claude Code (stdio Transport + Slash Commands):**
 ```
-User: /mcp__go_invoice__create_invoice Create invoice for Acme Corp
+User: /invoice Create invoice for Acme Corp
 Claude: [Executes via stdio] ✅ Created invoice INV-2025-001 for Acme Corp
 
 User: Import hours from timesheet into @invoice:INV-2025-001
 Claude: [Uses import_csv with resource mention] ✅ Imported 14 work items
 
-User: /mcp__go_invoice__generate_html Generate @invoice:INV-2025-001  
+User: /generate Generate @invoice:INV-2025-001  
 Claude: [Generates HTML] ✅ Generated invoice-2025-001.html
 ```
 
