@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -108,6 +109,7 @@ func parseLogLevel(level string) LogLevel {
 
 // TestLogger is a logger implementation for testing that captures log messages
 type TestLogger struct {
+	mu       sync.RWMutex
 	messages []LogMessage
 }
 
@@ -155,6 +157,8 @@ func (t *TestLogger) capture(level, msg string, keysAndValues ...interface{}) {
 		}
 	}
 
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.messages = append(t.messages, LogMessage{
 		Level:   level,
 		Message: msg,
@@ -164,16 +168,24 @@ func (t *TestLogger) capture(level, msg string, keysAndValues ...interface{}) {
 
 // GetMessages returns all captured messages
 func (t *TestLogger) GetMessages() []LogMessage {
-	return t.messages
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	messages := make([]LogMessage, len(t.messages))
+	copy(messages, t.messages)
+	return messages
 }
 
 // Clear clears all captured messages
 func (t *TestLogger) Clear() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.messages = t.messages[:0]
 }
 
 // HasMessage checks if a message with the given level and text exists
 func (t *TestLogger) HasMessage(level, message string) bool {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	for _, msg := range t.messages {
 		if msg.Level == level && msg.Message == message {
 			return true
@@ -184,6 +196,8 @@ func (t *TestLogger) HasMessage(level, message string) bool {
 
 // HasMessageWithKV checks if a message exists with specific key-value pairs
 func (t *TestLogger) HasMessageWithKV(level, message string, key string, value interface{}) bool {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	for _, msg := range t.messages {
 		if msg.Level == level && msg.Message == message {
 			if v, exists := msg.KVPairs[key]; exists && v == value {
