@@ -50,9 +50,9 @@
         <a href=".github/AGENTS.md">
           <img src="https://img.shields.io/badge/AGENTS.md-found-40b814?style=flat&logo=openai" alt="AI Agent Rules">
         </a><br/>
-        <a href="https://magefile.org/">
-          <img src="https://img.shields.io/badge/mage-powered-brightgreen?style=flat&logo=probot&logoColor=white" alt="Mage Powered">
-        </a>
+        <a href="Makefile" target="_blank">
+          <img src="https://img.shields.io/badge/Makefile-supported-brightgreen?style=flat&logo=probot&logoColor=white" alt="Makefile Supported">
+        </a><br/>
       </td>
       <td valign="top" align="left">
         <a href="https://github.com/mrz1836/go-invoice/graphs/contributors">
