@@ -22,7 +22,7 @@ var (
 )
 
 // JSONStorage provides file-based JSON storage with concurrent safety
-type JSONStorage struct { //nolint:revive // Keeping existing exported type name for API compatibility
+type JSONStorage struct {
 	basePath    string
 	invoicesDir string
 	clientsDir  string

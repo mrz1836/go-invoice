@@ -53,11 +53,11 @@ type (
 // These are provided for backward compatibility and should not be used in new code.
 type (
 	// MCPRequest is deprecated. Use Request instead.
-	MCPRequest = Request //nolint:revive // deprecated type alias for backward compatibility
+	MCPRequest = Request
 	// MCPResponse is deprecated. Use Response instead.
-	MCPResponse = Response //nolint:revive // deprecated type alias for backward compatibility
+	MCPResponse = Response
 	// MCPError is deprecated. Use Error instead.
-	MCPError = Error //nolint:revive // deprecated type alias for backward compatibility
+	MCPError = Error
 )
 
 // Re-export constants from the types package

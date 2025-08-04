@@ -114,7 +114,12 @@
 				"constructor-after-struct": true
 			},
 			"revive": {
-				"config": ".revive.toml"
+        "rules": [
+          {
+            "name": "var-naming",
+            "disabled": true
+          }
+        ]
 			},
 			"dogsled": {
 				"max-blank-identifiers": 2

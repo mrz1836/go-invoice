@@ -10,8 +10,6 @@ import (
 )
 
 // MCPHandler defines the interface for handling MCP requests (consumer-driven)
-//
-//nolint:revive // MCPHandler is intentionally prefixed to distinguish from generic handlers
 type MCPHandler interface {
 	HandleInitialize(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error)
 	HandlePing(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error)

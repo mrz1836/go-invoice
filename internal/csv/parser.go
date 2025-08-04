@@ -53,7 +53,7 @@ type IDGenerator interface {
 }
 
 // CSVParser implements TimesheetParser with context-first design
-type CSVParser struct { //nolint:revive // Keeping existing exported type name for API compatibility
+type CSVParser struct {
 	validator   CSVValidator
 	logger      Logger
 	idGenerator IDGenerator

@@ -45,7 +45,7 @@ type FormatInfo struct {
 
 // CSVValidator defines validation interface for CSV parsing
 // Consumer-driven interface defined at point of use
-type CSVValidator interface { //nolint:revive // Keeping existing exported type name for API compatibility
+type CSVValidator interface {
 	ValidateWorkItem(ctx context.Context, item *models.WorkItem) error
 	ValidateRow(ctx context.Context, row []string, lineNum int) error
 	ValidateBatch(ctx context.Context, items []models.WorkItem) error

@@ -1,4 +1,4 @@
-package types //nolint:revive // types package contains core MCP protocol type definitions
+package types
 
 import (
 	"context"

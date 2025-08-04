@@ -84,7 +84,7 @@ func NewCorruptedError(resource, id, message string) CorruptedError {
 }
 
 // StorageUnavailableError indicates that the storage system is unavailable
-type StorageUnavailableError struct { //nolint:revive // Keeping existing exported type name for API compatibility
+type StorageUnavailableError struct {
 	Message string
 	Cause   error
 }
@@ -181,7 +181,7 @@ func IsPermission(err error) bool {
 }
 
 // StorageStats represents storage statistics and health information
-type StorageStats struct { //nolint:revive // Keeping existing exported type name for API compatibility
+type StorageStats struct {
 	TotalInvoices      int64               `json:"total_invoices"`
 	TotalClients       int64               `json:"total_clients"`
 	DiskUsageBytes     int64               `json:"disk_usage_bytes"`
