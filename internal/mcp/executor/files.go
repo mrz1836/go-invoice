@@ -177,7 +177,9 @@ func (f *DefaultFileHandler) ValidateFile(ctx context.Context, path string) erro
 	}
 
 	// Check if file exists
-	info, err := os.Stat(path)
+	// Clean the path to prevent traversal
+	cleanPath := filepath.Clean(path)
+	info, err := os.Stat(cleanPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return ErrFileNotFound
@@ -250,8 +252,15 @@ func (f *DefaultFileHandler) copyFileToWorkspace(ctx context.Context, file FileR
 	// Create destination path
 	destPath := filepath.Join(workDir, filepath.Base(file.Path))
 
+	// Validate destination path
+	if err := f.validator.ValidatePath(ctx, destPath); err != nil {
+		return fmt.Errorf("invalid destination path: %w", err)
+	}
+
 	// Open source file
-	src, err := os.Open(file.Path)
+	// Clean the path to prevent traversal
+	cleanSrcPath := filepath.Clean(file.Path)
+	src, err := os.Open(cleanSrcPath)
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
@@ -260,7 +269,9 @@ func (f *DefaultFileHandler) copyFileToWorkspace(ctx context.Context, file FileR
 	}()
 
 	// Create destination file
-	dst, err := os.Create(destPath) //nolint:gosec // Path is validated by caller
+	// Clean the path to prevent traversal
+	cleanDestPath := filepath.Clean(destPath)
+	dst, err := os.Create(cleanDestPath)
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}
@@ -326,7 +337,9 @@ func (f *DefaultFileHandler) createFileReference(ctx context.Context, path strin
 
 // calculateChecksum calculates SHA256 checksum of a file.
 func (f *DefaultFileHandler) calculateChecksum(_ context.Context, path string) (string, error) {
-	file, err := os.Open(path) //nolint:gosec // Path is validated by caller
+	// Clean the path to prevent traversal
+	cleanPath := filepath.Clean(path)
+	file, err := os.Open(cleanPath)
 	if err != nil {
 		return "", err
 	}
