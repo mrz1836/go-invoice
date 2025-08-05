@@ -33,6 +33,9 @@ var (
 	ErrPathOutsideAllowed       = &FileError{Op: "validate", Msg: "file path is outside allowed directories"}
 	ErrSrcPathOutsideAllowed    = &FileError{Op: "validate", Msg: "source file path is outside allowed directories"}
 	ErrDestPathOutsideWorkspace = &FileError{Op: "validate", Msg: "destination file path is outside of the workspace directory"}
+	ErrPathEmpty                = &FileError{Op: "validate", Msg: "path cannot be empty"}
+	ErrPathNotAbsolute          = &FileError{Op: "validate", Msg: "path must be absolute"}
+	ErrPathContainsNullBytes    = &FileError{Op: "validate", Msg: "path contains null bytes"}
 )
 
 // DefaultFileHandler implements FileHandler with security features.
@@ -40,6 +43,32 @@ type DefaultFileHandler struct {
 	logger    Logger
 	validator CommandValidator
 	sandbox   SandboxConfig
+}
+
+// validatePathForFileOperation performs explicit path validation for CodeQL compliance.
+// This function ensures that the given path is safe to use with file operations.
+func validatePathForFileOperation(path string) error {
+	// Ensure path is not empty
+	if path == "" {
+		return ErrPathEmpty
+	}
+
+	// Ensure path is absolute
+	if !filepath.IsAbs(path) {
+		return ErrPathNotAbsolute
+	}
+
+	// Check for null bytes which can cause security issues
+	if strings.Contains(path, "\x00") {
+		return ErrPathContainsNullBytes
+	}
+
+	// Additional validation to ensure the path doesn't contain dangerous patterns
+	if strings.Contains(path, "..") {
+		return ErrPathTraversal
+	}
+
+	return nil
 }
 
 // sanitizePath validates and sanitizes a file path to prevent path traversal attacks.
@@ -224,6 +253,12 @@ func (f *DefaultFileHandler) ValidateFile(ctx context.Context, path string) erro
 
 	// SECURITY: Use the sanitized path for all file operations
 	// This satisfies CodeQL's requirement for validated paths
+
+	// CodeQL fix: Explicit validation check before file operation
+	if valErr := validatePathForFileOperation(sanitizedPath); valErr != nil {
+		return fmt.Errorf("path validation failed: %w", valErr)
+	}
+
 	info, err := os.Stat(sanitizedPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -311,6 +346,12 @@ func (f *DefaultFileHandler) copyFileToWorkspace(ctx context.Context, file FileR
 
 	// SECURITY: Use the sanitized source path for file operations
 	// This satisfies CodeQL's requirement for validated paths
+
+	// CodeQL fix: Explicit validation check before file operation
+	if valErr := validatePathForFileOperation(sanitizedSrcPath); valErr != nil {
+		return fmt.Errorf("source path validation failed: %w", valErr)
+	}
+
 	src, err := os.Open(sanitizedSrcPath) // #nosec G304 -- path is sanitized and validated above
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
@@ -341,6 +382,11 @@ func (f *DefaultFileHandler) copyFileToWorkspace(ctx context.Context, file FileR
 	// SECURITY: Use the validated absolute destination path
 	// This path has been verified to be within the workspace directory
 	sanitizedDestPath := absDestPath
+
+	// CodeQL fix: Explicit path validation check before file operation
+	if valErr := validatePathForFileOperation(sanitizedDestPath); valErr != nil {
+		return fmt.Errorf("destination path validation failed: %w", valErr)
+	}
 
 	dst, err := os.Create(sanitizedDestPath) // #nosec G304 -- path is sanitized and validated above
 	if err != nil {
