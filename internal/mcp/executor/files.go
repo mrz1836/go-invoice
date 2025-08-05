@@ -25,11 +25,14 @@ func (e *FileError) Error() string {
 
 // File handling errors
 var (
-	ErrFileTooLarge    = &FileError{Op: "validate", Msg: "file exceeds maximum size"}
-	ErrInvalidFileType = &FileError{Op: "validate", Msg: "invalid file type"}
-	ErrFileNotFound    = &FileError{Op: "read", Msg: "file not found"}
-	ErrWorkspaceCreate = &FileError{Op: "create", Msg: "failed to create workspace"}
-	ErrNotRegularFile  = &FileError{Op: "validate", Msg: "not a regular file"}
+	ErrFileTooLarge             = &FileError{Op: "validate", Msg: "file exceeds maximum size"}
+	ErrInvalidFileType          = &FileError{Op: "validate", Msg: "invalid file type"}
+	ErrFileNotFound             = &FileError{Op: "read", Msg: "file not found"}
+	ErrWorkspaceCreate          = &FileError{Op: "create", Msg: "failed to create workspace"}
+	ErrNotRegularFile           = &FileError{Op: "validate", Msg: "not a regular file"}
+	ErrPathOutsideAllowed       = &FileError{Op: "validate", Msg: "file path is outside allowed directories"}
+	ErrSrcPathOutsideAllowed    = &FileError{Op: "validate", Msg: "source file path is outside allowed directories"}
+	ErrDestPathOutsideWorkspace = &FileError{Op: "validate", Msg: "destination file path is outside of the workspace directory"}
 )
 
 // DefaultFileHandler implements FileHandler with security features.
@@ -179,6 +182,32 @@ func (f *DefaultFileHandler) ValidateFile(ctx context.Context, path string) erro
 	// Check if file exists
 	// Clean the path to prevent traversal
 	cleanPath := filepath.Clean(path)
+
+	// Ensure the file is within allowed paths if configured
+	if len(f.sandbox.AllowedPaths) > 0 {
+		absPath, err := filepath.Abs(cleanPath)
+		if err != nil {
+			return fmt.Errorf("failed to resolve file path: %w", err)
+		}
+
+		// Check if path is within any allowed path
+		pathAllowed := false
+		for _, allowedPath := range f.sandbox.AllowedPaths {
+			absAllowedPath, err := filepath.Abs(allowedPath)
+			if err != nil {
+				continue
+			}
+			if strings.HasPrefix(absPath, absAllowedPath+string(os.PathSeparator)) || absPath == absAllowedPath {
+				pathAllowed = true
+				break
+			}
+		}
+
+		if !pathAllowed {
+			return ErrPathOutsideAllowed
+		}
+	}
+
 	info, err := os.Stat(cleanPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -260,6 +289,32 @@ func (f *DefaultFileHandler) copyFileToWorkspace(ctx context.Context, file FileR
 	// Open source file
 	// Clean the path to prevent traversal
 	cleanSrcPath := filepath.Clean(file.Path)
+
+	// Ensure the source file is within allowed paths if configured
+	if len(f.sandbox.AllowedPaths) > 0 {
+		absSrcPath, err := filepath.Abs(cleanSrcPath)
+		if err != nil {
+			return fmt.Errorf("failed to resolve source file path: %w", err)
+		}
+
+		// Check if path is within any allowed path
+		pathAllowed := false
+		for _, allowedPath := range f.sandbox.AllowedPaths {
+			absAllowedPath, err := filepath.Abs(allowedPath)
+			if err != nil {
+				continue
+			}
+			if strings.HasPrefix(absSrcPath, absAllowedPath+string(os.PathSeparator)) || absSrcPath == absAllowedPath {
+				pathAllowed = true
+				break
+			}
+		}
+
+		if !pathAllowed {
+			return ErrSrcPathOutsideAllowed
+		}
+	}
+
 	src, err := os.Open(cleanSrcPath)
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
@@ -271,6 +326,20 @@ func (f *DefaultFileHandler) copyFileToWorkspace(ctx context.Context, file FileR
 	// Create destination file
 	// Clean the path to prevent traversal
 	cleanDestPath := filepath.Clean(destPath)
+
+	// Ensure the destination file is within the workspace directory
+	absWorkDir, err := filepath.Abs(workDir)
+	if err != nil {
+		return fmt.Errorf("failed to resolve workspace directory: %w", err)
+	}
+	absDestPath, err := filepath.Abs(cleanDestPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve destination file path: %w", err)
+	}
+	if !strings.HasPrefix(absDestPath, absWorkDir+string(os.PathSeparator)) && absDestPath != absWorkDir {
+		return ErrDestPathOutsideWorkspace
+	}
+
 	dst, err := os.Create(cleanDestPath)
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
