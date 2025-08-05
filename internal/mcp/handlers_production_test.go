@@ -22,7 +22,7 @@ var (
 	errValidationError         = errors.New("validation error")
 )
 
-type HandlersV2TestSuite struct {
+type HandlersProductionTestSuite struct {
 	suite.Suite
 
 	logger       *TestLogger
@@ -32,11 +32,11 @@ type HandlersV2TestSuite struct {
 	handler      MCPHandler
 }
 
-func TestHandlersV2Suite(t *testing.T) {
-	suite.Run(t, new(HandlersV2TestSuite))
+func TestHandlersProductionSuite(t *testing.T) {
+	suite.Run(t, new(HandlersProductionTestSuite))
 }
 
-func (s *HandlersV2TestSuite) SetupTest() {
+func (s *HandlersProductionTestSuite) SetupTest() {
 	s.logger = NewTestLogger()
 	s.mockRegistry = newMockToolRegistry()
 	s.mockHandler = newMockToolCallHandler()
@@ -67,19 +67,19 @@ func (s *HandlersV2TestSuite) SetupTest() {
 	s.handler = nil
 }
 
-func (s *HandlersV2TestSuite) TearDownTest() {
+func (s *HandlersProductionTestSuite) TearDownTest() {
 	// Cleanup test resources if needed
 }
 
 // Test Constructor Validation
-func (s *HandlersV2TestSuite) TestNewEnhancedMCPHandlerValidation() {
+func (s *HandlersProductionTestSuite) TestNewProductionMCPHandlerValidation() {
 	s.T().Skip("Skipping constructor validation tests due to type complexity - integration test needed")
 }
 
 // Test HandleInitialize - Unit test for individual handler method
-func (s *HandlersV2TestSuite) TestHandleInitialize() {
+func (s *HandlersProductionTestSuite) TestHandleInitialize() {
 	// Create a simple handler for testing
-	handler := &EnhancedMCPHandler{
+	handler := &ProductionMCPHandler{
 		logger: s.logger,
 		config: s.config,
 	}
@@ -170,8 +170,8 @@ func (s *HandlersV2TestSuite) TestHandleInitialize() {
 }
 
 // Test HandlePing
-func (s *HandlersV2TestSuite) TestHandlePing() {
-	handler := &EnhancedMCPHandler{
+func (s *HandlersProductionTestSuite) TestHandlePing() {
+	handler := &ProductionMCPHandler{
 		logger: s.logger,
 		config: s.config,
 	}
@@ -253,7 +253,7 @@ func (s *HandlersV2TestSuite) TestHandlePing() {
 }
 
 // Test HandleToolsList
-func (s *HandlersV2TestSuite) TestHandleToolsList() {
+func (s *HandlersProductionTestSuite) TestHandleToolsList() {
 	s.T().Skip("Skipping HandleToolsList test - requires full registry integration")
 	tests := []struct {
 		name           string
@@ -394,7 +394,7 @@ func (s *HandlersV2TestSuite) TestHandleToolsList() {
 }
 
 // Test HandleToolCall
-func (s *HandlersV2TestSuite) TestHandleToolCall() {
+func (s *HandlersProductionTestSuite) TestHandleToolCall() {
 	s.T().Skip("Skipping HandleToolCall test - requires full executor integration")
 	tests := []struct {
 		name            string
@@ -583,7 +583,7 @@ func (s *HandlersV2TestSuite) TestHandleToolCall() {
 }
 
 // Test Concurrent Access
-func (s *HandlersV2TestSuite) TestConcurrentAccess() {
+func (s *HandlersProductionTestSuite) TestConcurrentAccess() {
 	s.T().Skip("Skipping concurrent access test - requires full integration")
 	const numGoroutines = 10
 	const numOperationsPerGoroutine = 5
@@ -664,7 +664,7 @@ func (s *HandlersV2TestSuite) TestConcurrentAccess() {
 }
 
 // Test Input Validation
-func (s *HandlersV2TestSuite) TestInputValidation() {
+func (s *HandlersProductionTestSuite) TestInputValidation() {
 	s.T().Skip("Skipping input validation test - requires handler integration")
 	tests := []struct {
 		name          string
@@ -738,13 +738,13 @@ func (s *HandlersV2TestSuite) TestInputValidation() {
 }
 
 // Test CreateProductionHandler
-func (s *HandlersV2TestSuite) TestCreateProductionHandler() {
+func (s *HandlersProductionTestSuite) TestCreateProductionHandler() {
 	// Skip this test since it requires real dependencies
 	s.T().Skip("CreateProductionHandler requires real dependencies - integration test")
 }
 
 // Performance and Stress Tests
-func (s *HandlersV2TestSuite) TestPerformanceUnderLoad() {
+func (s *HandlersProductionTestSuite) TestPerformanceUnderLoad() {
 	s.T().Skip("Skipping performance test - requires full integration")
 	const numRequests = 100
 	const concurrency = 10
@@ -937,23 +937,23 @@ func (m *mockInputValidator) ValidateRequired(_ context.Context, _ map[string]in
 }
 
 // Benchmark Tests
-func BenchmarkEnhancedHandleInitialize(b *testing.B) {
+func BenchmarkProductionHandleInitialize(b *testing.B) {
 	// Skip benchmark due to type complexity
 	b.Skip("Skipping benchmark due to integration complexity")
 }
 
-func BenchmarkEnhancedHandleToolsList(b *testing.B) {
+func BenchmarkProductionHandleToolsList(b *testing.B) {
 	// Skip benchmark due to type complexity
 	b.Skip("Skipping benchmark due to integration complexity")
 }
 
-func BenchmarkEnhancedHandleToolCall(b *testing.B) {
+func BenchmarkProductionHandleToolCall(b *testing.B) {
 	// Skip benchmark due to type complexity
 	b.Skip("Skipping benchmark due to integration complexity")
 }
 
 // Additional edge case tests
-func (s *HandlersV2TestSuite) TestEdgeCases() {
+func (s *HandlersProductionTestSuite) TestEdgeCases() {
 	s.T().Skip("Skipping edge case tests - requires handler integration")
 	s.Run("LargePayloadHandling", func() {
 		// Test with large tool arguments

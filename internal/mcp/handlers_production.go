@@ -9,16 +9,16 @@ import (
 	"github.com/mrz/go-invoice/internal/mcp/types"
 )
 
-// EnhancedMCPHandler implements MCPHandler with Phase 3 executor integration.
-type EnhancedMCPHandler struct {
+// ProductionMCPHandler implements MCPHandler with Phase 3 executor integration.
+type ProductionMCPHandler struct {
 	logger          Logger
 	toolRegistry    *tools.DefaultToolRegistry
 	toolCallHandler *executor.ToolCallHandler
 	config          *Config
 }
 
-// NewEnhancedMCPHandler creates a new MCP handler with full Phase 3 integration.
-func NewEnhancedMCPHandler(
+// NewProductionMCPHandler creates a new MCP handler with full Phase 3 integration.
+func NewProductionMCPHandler(
 	logger Logger,
 	toolRegistry *tools.DefaultToolRegistry,
 	toolCallHandler *executor.ToolCallHandler,
@@ -37,7 +37,7 @@ func NewEnhancedMCPHandler(
 		panic("config is required")
 	}
 
-	return &EnhancedMCPHandler{
+	return &ProductionMCPHandler{
 		logger:          logger,
 		toolRegistry:    toolRegistry,
 		toolCallHandler: toolCallHandler,
@@ -46,7 +46,7 @@ func NewEnhancedMCPHandler(
 }
 
 // HandleInitialize handles the MCP initialize request.
-func (h *EnhancedMCPHandler) HandleInitialize(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
+func (h *ProductionMCPHandler) HandleInitialize(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -83,7 +83,7 @@ func (h *EnhancedMCPHandler) HandleInitialize(ctx context.Context, req *types.MC
 }
 
 // HandlePing handles the MCP ping request.
-func (h *EnhancedMCPHandler) HandlePing(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
+func (h *ProductionMCPHandler) HandlePing(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -100,7 +100,7 @@ func (h *EnhancedMCPHandler) HandlePing(ctx context.Context, req *types.MCPReque
 }
 
 // HandleToolsList handles the tools/list request using the tool registry.
-func (h *EnhancedMCPHandler) HandleToolsList(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
+func (h *ProductionMCPHandler) HandleToolsList(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -141,8 +141,8 @@ func (h *EnhancedMCPHandler) HandleToolsList(ctx context.Context, req *types.MCP
 	}, nil
 }
 
-// HandleToolCall handles the tools/call request using the enhanced executor.
-func (h *EnhancedMCPHandler) HandleToolCall(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
+// HandleToolCall handles the tools/call request using the executor.
+func (h *ProductionMCPHandler) HandleToolCall(ctx context.Context, req *types.MCPRequest) (*types.MCPResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -235,8 +235,8 @@ func CreateProductionHandler(config *Config) (MCPHandler, error) {
 		tracker,
 	)
 
-	// Create enhanced handler
-	handler := NewEnhancedMCPHandler(
+	// Create handler
+	handler := NewProductionMCPHandler(
 		logger,
 		toolRegistry,
 		toolCallHandler,

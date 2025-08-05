@@ -133,7 +133,7 @@ func (r *TemplateRenderer) RenderInvoice(ctx context.Context, invoice *models.In
 	return content, nil
 }
 
-// RenderData renders any data to HTML using the specified template (supports enhanced data structures)
+// RenderData renders any data to HTML using the specified template (supports data structures)
 func (r *TemplateRenderer) RenderData(ctx context.Context, data interface{}, templateName string) (string, error) {
 	select {
 	case <-ctx.Done():

@@ -71,7 +71,7 @@ The generated HTML is optimized for printing and includes:
 
 Template Options:
 - default: Clean, professional template (default)
-- professional: Enhanced template with additional styling
+- professional: Professional template with additional styling
 - minimal: Simple, minimal template
 
 Examples:
@@ -198,11 +198,11 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 		return validateErr
 	}
 
-	// Create enhanced data structure for template
-	enhancedData := a.createEnhancedInvoiceData(invoice, config)
+	// Create data structure for template
+	invoiceData := a.createInvoiceData(invoice, config)
 
-	// Generate HTML content using template engine directly to support enhanced data
-	html, err := a.renderEnhancedInvoice(ctx, renderService, enhancedData, options.TemplateName)
+	// Generate HTML content using template engine directly to support data
+	html, err := a.renderInvoice(ctx, renderService, invoiceData, options.TemplateName)
 	if err != nil {
 		return fmt.Errorf("failed to render invoice: %w", err)
 	}
@@ -538,7 +538,7 @@ func (a *App) loadBuiltInTemplates(ctx context.Context, engine render.TemplateEn
 	return nil
 }
 
-func (a *App) createEnhancedInvoiceData(invoice *models.Invoice, config *config.Config) *EnhancedInvoiceData {
+func (a *App) createInvoiceData(invoice *models.Invoice, config *config.Config) *InvoiceData {
 	bankDetailsStr := ""
 	if config.Business.BankDetails.Name != "" || config.Business.BankDetails.AccountNumber != "" {
 		bankDetailsStr = fmt.Sprintf("%s - %s", config.Business.BankDetails.Name, config.Business.BankDetails.AccountNumber)
@@ -550,9 +550,9 @@ func (a *App) createEnhancedInvoiceData(invoice *models.Invoice, config *config.
 		totalHours += item.Hours
 	}
 
-	return &EnhancedInvoiceData{
+	return &InvoiceData{
 		Invoice: *invoice,
-		Business: EnhancedBusinessInfo{
+		Business: BusinessInfo{
 			Name:         config.Business.Name,
 			Address:      config.Business.Address,
 			Phone:        config.Business.Phone,
@@ -562,7 +562,7 @@ func (a *App) createEnhancedInvoiceData(invoice *models.Invoice, config *config.
 			PaymentTerms: config.Business.PaymentTerms,
 			BankDetails:  bankDetailsStr,
 		},
-		Config: EnhancedConfigInfo{
+		Config: ConfigInfo{
 			Currency:       config.Invoice.Currency,
 			CurrencySymbol: getCurrencySymbol(config.Invoice.Currency),
 			DateFormat:     "January 2, 2006", // Default format
@@ -572,13 +572,13 @@ func (a *App) createEnhancedInvoiceData(invoice *models.Invoice, config *config.
 	}
 }
 
-func (a *App) renderEnhancedInvoice(ctx context.Context, renderService render.InvoiceRenderer, data *EnhancedInvoiceData, templateName string) (string, error) {
+func (a *App) renderInvoice(ctx context.Context, renderService render.InvoiceRenderer, data *InvoiceData, templateName string) (string, error) {
 	// Use type assertion to access the RenderData method
 	if templateRenderer, ok := renderService.(*render.TemplateRenderer); ok {
 		return templateRenderer.RenderData(ctx, data, templateName)
 	}
 
-	// Fallback: convert enhanced data back to invoice (losing business info)
+	// Fallback: convert data back to invoice (losing business info)
 	return renderService.RenderInvoice(ctx, &data.Invoice, templateName)
 }
 
@@ -747,17 +747,17 @@ type GeneratePreviewOptions struct {
 	SampleData   bool
 }
 
-// Enhanced data structures for templates
+// Data structures for templates
 
-type EnhancedInvoiceData struct {
+type InvoiceData struct {
 	models.Invoice
 
-	Business   EnhancedBusinessInfo `json:"business"`
-	Config     EnhancedConfigInfo   `json:"config"`
-	TotalHours float64              `json:"total_hours"`
+	Business   BusinessInfo `json:"business"`
+	Config     ConfigInfo   `json:"config"`
+	TotalHours float64      `json:"total_hours"`
 }
 
-type EnhancedBusinessInfo struct {
+type BusinessInfo struct {
 	Name         string `json:"name"`
 	Address      string `json:"address"`
 	Phone        string `json:"phone"`
@@ -768,7 +768,7 @@ type EnhancedBusinessInfo struct {
 	BankDetails  string `json:"bank_details"`
 }
 
-type EnhancedConfigInfo struct {
+type ConfigInfo struct {
 	Currency       string `json:"currency"`
 	CurrencySymbol string `json:"currency_symbol"`
 	DateFormat     string `json:"date_format"`
