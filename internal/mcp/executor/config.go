@@ -95,6 +95,9 @@ func DefaultSecurityConfig() *SecurityConfig {
 				"TMP",
 				"LANG",
 				"LC_ALL",
+				"GO_INVOICE_CONFIG_PATH",
+				"GO_INVOICE_CLI_PATH",
+				"GO_INVOICE_HOME",
 			},
 			EnableNetworkIsolation: true,
 			ResourceLimits: &ResourceLimits{

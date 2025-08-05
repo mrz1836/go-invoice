@@ -58,4 +58,9 @@ var (
 	// Render errors
 	ErrTemplateNotFound     = fmt.Errorf("template not found")
 	ErrTemplateCannotReload = fmt.Errorf("template cannot be reloaded (no source path)")
+
+	// CLI client command errors
+	ErrMultipleClientsFound     = fmt.Errorf("multiple clients found, please be more specific")
+	ErrCannotActivateDeactivate = fmt.Errorf("cannot both activate and deactivate client")
+	ErrNoUpdatesSpecified       = fmt.Errorf("no updates specified")
 )

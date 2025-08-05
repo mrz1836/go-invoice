@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -120,8 +121,21 @@ func (b *CLIBridge) ExecuteToolCommand(ctx context.Context, toolName string, inp
 		return nil, fmt.Errorf("%w: %w", ErrCommandBuildFailed, err)
 	}
 
-	// Combine subcommands and args
-	fullArgs := append(toolCmd.SubCommands, args...)
+	// For go-invoice, config must come before subcommands as it's a global flag
+	var fullArgs []string
+
+	// Check if args start with --config (from getConfigArgs)
+	if len(args) >= 2 && args[0] == "--config" {
+		// Place config args before subcommands
+		fullArgs = append(fullArgs, args[0], args[1])
+		fullArgs = append(fullArgs, toolCmd.SubCommands...)
+		if len(args) > 2 {
+			fullArgs = append(fullArgs, args[2:]...)
+		}
+	} else {
+		// Default behavior
+		fullArgs = append(toolCmd.SubCommands, args...)
+	}
 
 	// Prepare execution request
 	req := &ExecutionRequest{
@@ -378,6 +392,14 @@ func (b *CLIBridge) registerToolCommands() {
 // Helper functions to build command arguments for each tool
 // These map the MCP tool input parameters to CLI arguments
 
+// getConfigArgs returns the config path arguments for MCP commands
+func (b *CLIBridge) getConfigArgs() []string {
+	// Always use the absolute config path for MCP
+	homeDir, _ := os.UserHomeDir()
+	configPath := filepath.Join(homeDir, ".go-invoice", ".env.config")
+	return []string{"--config", configPath}
+}
+
 func (b *CLIBridge) buildInvoiceCreateArgs(input map[string]interface{}) ([]string, error) {
 	var args []string
 
@@ -403,12 +425,7 @@ func (b *CLIBridge) buildInvoiceCreateArgs(input map[string]interface{}) ([]stri
 }
 
 func (b *CLIBridge) buildInvoiceListArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
-
-	// Add config path if set in environment
-	if configPath := os.Getenv("GO_INVOICE_CONFIG_PATH"); configPath != "" {
-		args = append(args, "--config", configPath)
-	}
+	args := b.getConfigArgs()
 
 	args = append(args, "--output", "json") // Always output JSON for MCP
 
@@ -448,10 +465,9 @@ func (b *CLIBridge) buildInvoiceShowArgs(input map[string]interface{}) ([]string
 
 	args = append(args, identifier, "--output", "json")
 
-	// Add config path if available from environment
-	if configPath := os.Getenv("GO_INVOICE_CONFIG_PATH"); configPath != "" {
-		args = append(args, "--config", configPath)
-	}
+	// Add config path
+	configArgs := b.getConfigArgs()
+	args = append(args, configArgs...)
 
 	return args, nil
 }
@@ -568,7 +584,7 @@ func (b *CLIBridge) buildInvoiceRemoveItemArgs(input map[string]interface{}) ([]
 }
 
 func (b *CLIBridge) buildClientCreateArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
 	// Required: name
 	name, ok := input["name"].(string)
@@ -595,7 +611,8 @@ func (b *CLIBridge) buildClientCreateArgs(input map[string]interface{}) ([]strin
 }
 
 func (b *CLIBridge) buildClientListArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
+
 	args = append(args, "--output", "json") // Always output JSON for MCP
 
 	// Optional filters
@@ -606,7 +623,10 @@ func (b *CLIBridge) buildClientListArgs(input map[string]interface{}) ([]string,
 			args = append(args, "--inactive")
 		}
 	}
-	if search, ok := input["search"].(string); ok && search != "" {
+	// Check for name_search (MCP parameter) or search
+	if search, ok := input["name_search"].(string); ok && search != "" {
+		args = append(args, "--search", search)
+	} else if search, ok := input["search"].(string); ok && search != "" {
 		args = append(args, "--search", search)
 	}
 
@@ -614,7 +634,7 @@ func (b *CLIBridge) buildClientListArgs(input map[string]interface{}) ([]string,
 }
 
 func (b *CLIBridge) buildClientShowArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
 	// Required: client identifier (name, email, or id)
 	if clientID, ok := input["client_id"].(string); ok && clientID != "" {
@@ -631,7 +651,7 @@ func (b *CLIBridge) buildClientShowArgs(input map[string]interface{}) ([]string,
 }
 
 func (b *CLIBridge) buildClientUpdateArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
 	// Required: client identifier
 	if clientID, ok := input["client_id"].(string); ok && clientID != "" {
@@ -677,7 +697,7 @@ func (b *CLIBridge) buildClientUpdateArgs(input map[string]interface{}) ([]strin
 }
 
 func (b *CLIBridge) buildClientDeleteArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
 	// Required: client identifier
 	if clientID, ok := input["client_id"].(string); ok && clientID != "" {
