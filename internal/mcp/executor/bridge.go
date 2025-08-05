@@ -32,6 +32,7 @@ var (
 	ErrMissingClientNameForCreate = &BridgeError{Op: "validate", Msg: "client_name required when create_new is true"}
 	ErrCommandFailed              = &BridgeError{Op: "execute", Msg: "command execution failed"}
 	ErrCollectionFailed           = &BridgeError{Op: "collect", Msg: "file collection failed"}
+	ErrBatchNotSupported          = &BridgeError{Op: "validate", Msg: "batch invoice generation is not supported by the CLI - please generate invoices individually"}
 )
 
 // ToolCommand represents the mapping from an MCP tool to CLI command.
@@ -350,7 +351,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["generate_html"] = &ToolCommand{
 		Tool:           "generate_html",
 		Command:        b.cliPath,
-		SubCommands:    []string{"generate"},
+		SubCommands:    []string{"generate", "invoice"},
 		BuildArgs:      b.buildGenerateHTMLArgs,
 		OutputPatterns: []string{"invoice-*.html", "*.html"},
 		Timeout:        20 * time.Second,
@@ -1047,31 +1048,51 @@ func (b *CLIBridge) buildImportPreviewArgs(input map[string]interface{}) ([]stri
 }
 
 func (b *CLIBridge) buildGenerateHTMLArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
-	// Optional: specific invoice IDs or all
-	if invoiceIDs, ok := input["invoice_ids"].([]interface{}); ok && len(invoiceIDs) > 0 {
-		for _, id := range invoiceIDs {
-			if idStr, ok := id.(string); ok {
-				args = append(args, idStr)
-			}
-		}
-	} else if invoiceID, ok := input["invoice_id"].(string); ok && invoiceID != "" {
-		args = append(args, invoiceID)
-	} else {
-		// Generate all invoices
-		args = append(args, "--all")
+	// Required: invoice identifier (invoice_id or invoice_number)
+	invoiceID, hasID := input["invoice_id"].(string)
+	invoiceNumber, hasNumber := input["invoice_number"].(string)
+
+	if (!hasID || invoiceID == "") && (!hasNumber || invoiceNumber == "") {
+		return nil, fmt.Errorf("%w: either invoice_id or invoice_number is required", ErrMissingRequired)
 	}
+
+	// Prefer invoice_id if both are provided
+	identifier := invoiceID
+	if identifier == "" {
+		identifier = invoiceNumber
+	}
+
+	// Add invoice identifier as positional argument (this will be added after config args)
+	args = append(args, identifier)
 
 	// Optional: template
 	if template, ok := input["template"].(string); ok && template != "" {
 		args = append(args, "--template", template)
 	}
 
-	// Optional: output directory
-	if outputDir, ok := input["output_dir"].(string); ok && outputDir != "" {
-		args = append(args, "--output", outputDir)
+	// Optional: output path
+	if outputPath, ok := input["output_path"].(string); ok && outputPath != "" {
+		args = append(args, "--output", outputPath)
 	}
+
+	// Handle batch_invoices if provided (not supported by CLI, but we should handle gracefully)
+	if batchInvoices, ok := input["batch_invoices"].([]interface{}); ok && len(batchInvoices) > 0 {
+		return nil, ErrBatchNotSupported
+	}
+
+	// Skip unsupported MCP schema parameters that don't have CLI equivalents
+	// These parameters are part of the MCP schema but not implemented in the CLI:
+	// - company_name, custom_css, footer_text, include_logo, include_notes
+	// - web_preview, return_html (these conflict with file-based output)
+	_ = input["company_name"]
+	_ = input["custom_css"]
+	_ = input["footer_text"]
+	_ = input["include_logo"]
+	_ = input["include_notes"]
+	_ = input["web_preview"]
+	_ = input["return_html"]
 
 	return args, nil
 }
