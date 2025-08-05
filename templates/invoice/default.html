@@ -452,7 +452,7 @@
                         <td class="label">Subtotal:</td>
                         <td class="amount">{{formatCurrency .Subtotal "USD"}}</td>
                     </tr>
-                    {{if gt .TaxRate 0}}
+                    {{if gt .TaxRate 0.0}}
                     <tr>
                         <td class="label">Tax ({{multiply .TaxRate 100 | formatFloat 1}}%):</td>
                         <td class="amount">{{formatCurrency .TaxAmount "USD"}}</td>

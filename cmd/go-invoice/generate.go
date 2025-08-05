@@ -198,8 +198,11 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 		return validateErr
 	}
 
-	// Generate HTML content
-	html, err := renderService.RenderInvoice(ctx, invoice, options.TemplateName)
+	// Create enhanced data structure for template
+	enhancedData := a.createEnhancedInvoiceData(invoice, config)
+
+	// Generate HTML content using template engine directly to support enhanced data
+	html, err := a.renderEnhancedInvoice(ctx, renderService, enhancedData, options.TemplateName)
 	if err != nil {
 		return fmt.Errorf("failed to render invoice: %w", err)
 	}
@@ -535,6 +538,67 @@ func (a *App) loadBuiltInTemplates(ctx context.Context, engine render.TemplateEn
 	return nil
 }
 
+func (a *App) createEnhancedInvoiceData(invoice *models.Invoice, config *config.Config) *EnhancedInvoiceData {
+	bankDetailsStr := ""
+	if config.Business.BankDetails.Name != "" || config.Business.BankDetails.AccountNumber != "" {
+		bankDetailsStr = fmt.Sprintf("%s - %s", config.Business.BankDetails.Name, config.Business.BankDetails.AccountNumber)
+	}
+
+	// Calculate total hours
+	totalHours := 0.0
+	for _, item := range invoice.WorkItems {
+		totalHours += item.Hours
+	}
+
+	return &EnhancedInvoiceData{
+		Invoice: *invoice,
+		Business: EnhancedBusinessInfo{
+			Name:         config.Business.Name,
+			Address:      config.Business.Address,
+			Phone:        config.Business.Phone,
+			Email:        config.Business.Email,
+			Website:      config.Business.Website,
+			TaxID:        config.Business.TaxID,
+			PaymentTerms: config.Business.PaymentTerms,
+			BankDetails:  bankDetailsStr,
+		},
+		Config: EnhancedConfigInfo{
+			Currency:       config.Invoice.Currency,
+			CurrencySymbol: getCurrencySymbol(config.Invoice.Currency),
+			DateFormat:     "January 2, 2006", // Default format
+			DecimalPlaces:  2,
+		},
+		TotalHours: totalHours,
+	}
+}
+
+func (a *App) renderEnhancedInvoice(ctx context.Context, renderService render.InvoiceRenderer, data *EnhancedInvoiceData, templateName string) (string, error) {
+	// Use type assertion to access the RenderData method
+	if templateRenderer, ok := renderService.(*render.TemplateRenderer); ok {
+		return templateRenderer.RenderData(ctx, data, templateName)
+	}
+
+	// Fallback: convert enhanced data back to invoice (losing business info)
+	return renderService.RenderInvoice(ctx, &data.Invoice, templateName)
+}
+
+func getCurrencySymbol(currency string) string {
+	switch currency {
+	case "USD":
+		return "$"
+	case "EUR":
+		return "€"
+	case "GBP":
+		return "£"
+	case "CAD":
+		return "C$"
+	case "AUD":
+		return "A$"
+	default:
+		return currency
+	}
+}
+
 func (a *App) createSampleInvoice(_ *config.Config) *models.Invoice {
 	// Create sample client
 	client := models.Client{
@@ -688,8 +752,9 @@ type GeneratePreviewOptions struct {
 type EnhancedInvoiceData struct {
 	models.Invoice
 
-	Business EnhancedBusinessInfo `json:"business"`
-	Config   EnhancedConfigInfo   `json:"config"`
+	Business   EnhancedBusinessInfo `json:"business"`
+	Config     EnhancedConfigInfo   `json:"config"`
+	TotalHours float64              `json:"total_hours"`
 }
 
 type EnhancedBusinessInfo struct {

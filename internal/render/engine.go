@@ -133,6 +133,53 @@ func (r *TemplateRenderer) RenderInvoice(ctx context.Context, invoice *models.In
 	return content, nil
 }
 
+// RenderData renders any data to HTML using the specified template (supports enhanced data structures)
+func (r *TemplateRenderer) RenderData(ctx context.Context, data interface{}, templateName string) (string, error) {
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	default:
+	}
+
+	if templateName == "" {
+		templateName = r.options.DefaultTemplate
+	}
+
+	start := time.Now()
+	r.logger.Debug("starting data rendering", "template", templateName)
+
+	// Create render context with timeout
+	renderCtx, cancel := context.WithTimeout(ctx, r.options.MaxRenderTime)
+	defer cancel()
+
+	// Get or load template
+	tmpl, err := r.getTemplate(renderCtx, templateName)
+	if err != nil {
+		return "", fmt.Errorf("failed to get template %s: %w", templateName, err)
+	}
+
+	// Validate data if security is enabled
+	if r.options.EnableSecurity {
+		if validationErr := r.validator.ValidateData(renderCtx, tmpl, data); validationErr != nil {
+			return "", fmt.Errorf("data validation failed for template %s: %w", templateName, validationErr)
+		}
+	}
+
+	// Render template
+	content, err := tmpl.ExecuteToString(renderCtx, data)
+	if err != nil {
+		return "", fmt.Errorf("template execution failed for template %s: %w", templateName, err)
+	}
+
+	renderTime := time.Since(start)
+	r.logger.Info("data rendered successfully",
+		"template", templateName,
+		"size", len(content),
+		"render_time_ms", renderTime.Milliseconds())
+
+	return content, nil
+}
+
 // RenderInvoiceToWriter renders an invoice to HTML and writes it to the provided writer
 func (r *TemplateRenderer) RenderInvoiceToWriter(ctx context.Context, invoice *models.Invoice, templateName string, writer io.Writer) error {
 	select {
@@ -418,8 +465,23 @@ func (e *HTMLTemplateEngine) getTemplateFunctions() template.FuncMap {
 		"multiply": func(a, b float64) float64 {
 			return a * b
 		},
-		"formatFloat": func(f float64, precision int) string {
-			return fmt.Sprintf("%.*f", precision, f)
+		"formatFloat": func(f float64, precision interface{}) string {
+			var p int
+			switch v := precision.(type) {
+			case int:
+				p = v
+			case float64:
+				p = int(v)
+			default:
+				p = 2 // default precision
+			}
+			return fmt.Sprintf("%.*f", p, f)
+		},
+		"default": func(defaultValue, value interface{}) interface{} {
+			if value == nil || value == "" {
+				return defaultValue
+			}
+			return value
 		},
 	}
 }

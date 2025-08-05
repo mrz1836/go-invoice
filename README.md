@@ -98,12 +98,13 @@
 
 ```bash
 # 1. Install go-invoice
-go install github.com/mrz/go-invoice@latest
+go install github.com/mrz1836/go-invoice@latest
 
-# 2. Set up your business configuration
+# 2. Initialize storage and set up your business configuration
+go-invoice init
 go-invoice config setup
 
-# 3. Setup Claude integration
+# 3. Setup Claude integration  
 go-invoice config setup-claude
 
 # 4. Start using natural language!
@@ -116,19 +117,20 @@ go-invoice config setup-claude
 
 ```bash
 # Install go-invoice
-go install github.com/mrz/go-invoice@latest
+go install github.com/mrz1836/go-invoice@latest
 
-# Set up your business configuration
+# Initialize storage and set up your business configuration
+go-invoice init
 go-invoice config setup
 
 # Add your first client
-go-invoice client add --name "Acme Corp" --email "billing@acme.com"
+go-invoice client create --name "Acme Corp" --email "billing@acme.com"
 
-# Import timesheet data
-go-invoice import csv timesheet.csv --client "Acme Corp"
+# Import timesheet data and create invoice
+go-invoice import create timesheet.csv --client-name "Acme Corp"
 
-# Generate an invoice
-go-invoice invoice create --client "Acme Corp" --output invoice.html
+# Generate HTML from the invoice
+go-invoice generate invoice <invoice-id> --output invoice.html
 
 # View your invoice in the browser
 open invoice.html
@@ -360,7 +362,7 @@ For detailed troubleshooting, see our [comprehensive troubleshooting guide](docs
 
 ```bash
 # Clone the repository
-git clone https://github.com/mrz/go-invoice.git
+git clone https://github.com/mrz1836/go-invoice.git
 cd go-invoice
 
 # Build the application
@@ -373,7 +375,7 @@ make install
 ### Install via Go
 
 ```bash
-go install github.com/mrz/go-invoice@latest
+go install github.com/mrz1836/go-invoice@latest
 ```
 
 ### Verify Installation
@@ -453,7 +455,7 @@ AUTO_BACKUP=true
 
 ```bash
 # Add a new client
-go-invoice client add \
+go-invoice client create \
   --name "Acme Corporation" \
   --email "billing@acme.com" \
   --address "456 Client Ave, Client City, CC 67890" \
@@ -463,13 +465,13 @@ go-invoice client add \
 go-invoice client list
 
 # View client details
-go-invoice client show --name "Acme Corporation"
+go-invoice client show --client-name "Acme Corporation"
 
 # Update client information
-go-invoice client update --name "Acme Corporation" --email "newbilling@acme.com"
+go-invoice client update --client-name "Acme Corporation" --email "newbilling@acme.com"
 
 # Deactivate a client (soft delete)
-go-invoice client deactivate --name "Acme Corporation"
+go-invoice client delete --client-name "Acme Corporation" --soft-delete
 ```
 
 </details>
@@ -480,13 +482,12 @@ go-invoice client deactivate --name "Acme Corporation"
 ```bash
 # Create a new invoice
 go-invoice invoice create \
-  --client "Acme Corporation" \
-  --description "Monthly development services" \
-  --output invoice-001.html
+  --client-name "Acme Corporation" \
+  --description "Monthly development services"
 
 # Add work items manually
-go-invoice invoice add-work \
-  --invoice INV-1001 \
+go-invoice invoice add-item \
+  --invoice-id INV-1001 \
   --description "Frontend development" \
   --hours 8 \
   --rate 125.00 \
@@ -499,11 +500,11 @@ go-invoice invoice list
 go-invoice invoice list --status sent
 
 # Update invoice status
-go-invoice invoice send --invoice INV-1001
-go-invoice invoice mark-paid --invoice INV-1001
+go-invoice invoice update --invoice-id INV-1001 --status sent
+go-invoice invoice update --invoice-id INV-1001 --status paid
 
 # Generate HTML output
-go-invoice invoice generate --invoice INV-1001 --output invoice-1001.html
+go-invoice generate invoice INV-1001 --output invoice-1001.html
 ```
 
 </details>
@@ -545,26 +546,22 @@ date,description,hours,rate
 ### Import Commands
 
 ```bash
-# Import CSV timesheet
-go-invoice import csv timesheet.csv \
-  --client "Acme Corporation" \
-  --validate
+# Import CSV timesheet and create new invoice
+go-invoice import create timesheet.csv \
+  --client-name "Acme Corporation"
 
-# Import with custom date format
-go-invoice import csv timesheet.csv \
-  --client "Acme Corporation" \
-  --date-format "01/02/2006"
+# Import CSV data into existing invoice
+go-invoice import append timesheet.csv \
+  --invoice-id INV-1001
 
-# Preview import without saving
-go-invoice import csv timesheet.csv \
-  --client "Acme Corporation" \
-  --dry-run
+# Validate CSV format before importing
+go-invoice import validate timesheet.csv
 
-# Import and create invoice immediately
-go-invoice import csv timesheet.csv \
-  --client "Acme Corporation" \
-  --create-invoice \
-  --output invoice.html
+# Import with custom configuration
+go-invoice import create timesheet.csv \
+  --client-name "Acme Corporation" \
+  --default-rate 125.00 \
+  --description "Monthly development work"
 ```
 
 ### Supported Date Formats
@@ -656,11 +653,20 @@ Create custom invoice templates using Go's `text/template` syntax:
 ### Using Custom Templates
 
 ```bash
-# Generate invoice with custom template
-go-invoice invoice generate \
-  --invoice INV-1001 \
-  --template custom-template.html \
+# Generate invoice with default template
+go-invoice generate invoice INV-1001 \
   --output invoice.html
+
+# Generate invoice with specific template
+go-invoice generate invoice INV-1001 \
+  --template professional \
+  --output invoice.html
+
+# Preview invoice generation without saving
+go-invoice generate preview INV-1001
+
+# List available templates
+go-invoice generate templates
 ```
 
 </details>
@@ -983,27 +989,25 @@ export CURRENCY="USD"
 export VAT_RATE="0.08"
 
 # 2. Add a client
-go-invoice client add \
+go-invoice client create \
   --name "TechCorp Solutions" \
   --email "accounting@techcorp.com" \
   --address "789 Tech Blvd, Innovation City, IC 54321"
 
-# 3. Import time tracking data
-go-invoice import csv january-timesheet.csv \
-  --client "TechCorp Solutions" \
-  --validate
+# 3. Import time tracking data and create invoice
+go-invoice import create january-timesheet.csv \
+  --client-name "TechCorp Solutions" \
+  --description "January 2024 Development Services"
 
-# 4. Create and generate invoice
-go-invoice invoice create \
-  --client "TechCorp Solutions" \
-  --description "January 2024 Development Services" \
+# 4. Generate HTML invoice (get invoice ID from previous step)
+go-invoice generate invoice <invoice-id> \
   --output january-invoice.html
 
-# 5. Send the invoice (updates status)
-go-invoice invoice send --invoice INV-1001
+# 5. Update invoice status to sent
+go-invoice invoice update --invoice-id <invoice-id> --status sent
 
 # 6. Later, mark as paid
-go-invoice invoice mark-paid --invoice INV-1001
+go-invoice invoice update --invoice-id <invoice-id> --status paid
 ```
 
 ### Automation Example
@@ -1017,18 +1021,14 @@ MONTH=$(date +%B-%Y)
 TIMESHEET="timesheets/${MONTH}-timesheet.csv"
 INVOICE_FILE="invoices/${MONTH}-invoice.html"
 
-# Import timesheet
-go-invoice import csv "$TIMESHEET" --client "$CLIENT"
+# Import timesheet and create invoice
+INVOICE_ID=$(go-invoice import create "$TIMESHEET" --client-name "$CLIENT" --description "$MONTH Development Services" --output json | jq -r '.id')
 
-# Create invoice
-go-invoice invoice create \
-  --client "$CLIENT" \
-  --description "$MONTH Development Services" \
-  --output "$INVOICE_FILE"
+# Generate HTML invoice
+go-invoice generate invoice "$INVOICE_ID" --output "$INVOICE_FILE"
 
-# Send invoice
-INVOICE_ID=$(go-invoice invoice list --client "$CLIENT" --status draft --format json | jq -r '.[0].id')
-go-invoice invoice send --invoice "$INVOICE_ID"
+# Update invoice status to sent
+go-invoice invoice update --invoice-id "$INVOICE_ID" --status sent
 
 echo "Invoice $INVOICE_ID created and sent for $CLIENT"
 ```
@@ -1053,19 +1053,22 @@ go-invoice config setup
 **CSV import fails**
 ```bash
 # Validate CSV format first
-go-invoice import csv timesheet.csv --validate --dry-run
+go-invoice import validate timesheet.csv
 
-# Check supported date formats
-go-invoice help import
+# Check supported import commands
+go-invoice import --help
 ```
 
 **Template rendering issues**
 ```bash
 # Test with default template
-go-invoice invoice generate --invoice INV-1001 --output test.html
+go-invoice generate invoice INV-1001 --output test.html
 
-# Validate custom template syntax
-go-invoice template validate custom-template.html
+# List available templates
+go-invoice generate templates
+
+# Preview generation without saving
+go-invoice generate preview INV-1001
 ```
 
 ### Debug Mode
@@ -1073,8 +1076,11 @@ go-invoice template validate custom-template.html
 Enable verbose logging for troubleshooting:
 
 ```bash
-export DEBUG=true
-go-invoice invoice create --client "Test Client" --verbose
+# Enable debug logging
+go-invoice --debug invoice create --client-name "Test Client"
+
+# Or check specific command help
+go-invoice [command] --help
 ```
 
 <br/>
@@ -1167,7 +1173,7 @@ All kinds of contributions are welcome! :raised_hands:
 
 <div align="center">
 
-**[⭐ Star this repo](https://github.com/mrz/go-invoice)** if you find it helpful!
+**[⭐ Star this repo](https://github.com/mrz1836/go-invoice)** if you find it helpful!
 
 Made with ❤️ by developers, for developers.
 
