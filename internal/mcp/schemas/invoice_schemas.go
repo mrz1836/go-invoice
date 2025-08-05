@@ -122,6 +122,17 @@ func InvoiceCreateSchema() map[string]interface{} {
 			},
 		},
 		"additionalProperties": false,
+		"anyOf": []map[string]interface{}{
+			{
+				"required": []string{"client_name"},
+			},
+			{
+				"required": []string{"client_id"},
+			},
+			{
+				"required": []string{"client_email"},
+			},
+		},
 	}
 }
 
@@ -234,6 +245,14 @@ func InvoiceShowSchema() map[string]interface{} {
 			},
 		},
 		"additionalProperties": false,
+		"anyOf": []map[string]interface{}{
+			{
+				"required": []string{"invoice_id"},
+			},
+			{
+				"required": []string{"invoice_number"},
+			},
+		},
 	}
 }
 
@@ -277,6 +296,31 @@ func InvoiceUpdateSchema() map[string]interface{} {
 			},
 		},
 		"additionalProperties": false,
+		"allOf": []map[string]interface{}{
+			{
+				"anyOf": []map[string]interface{}{
+					{
+						"required": []string{"invoice_id"},
+					},
+					{
+						"required": []string{"invoice_number"},
+					},
+				},
+			},
+			{
+				"anyOf": []map[string]interface{}{
+					{
+						"required": []string{"status"},
+					},
+					{
+						"required": []string{"due_date"},
+					},
+					{
+						"required": []string{"description"},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -427,6 +471,31 @@ func InvoiceRemoveItemSchema() map[string]interface{} {
 			},
 		},
 		"additionalProperties": false,
+		"allOf": []map[string]interface{}{
+			{
+				"anyOf": []map[string]interface{}{
+					{
+						"required": []string{"invoice_id"},
+					},
+					{
+						"required": []string{"invoice_number"},
+					},
+				},
+			},
+			{
+				"anyOf": []map[string]interface{}{
+					{
+						"required": []string{"work_item_id"},
+					},
+					{
+						"required": []string{"work_item_description"},
+					},
+					{
+						"required": []string{"work_item_date"},
+					},
+				},
+			},
+		},
 	}
 }
 

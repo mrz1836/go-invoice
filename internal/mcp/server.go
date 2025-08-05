@@ -268,7 +268,11 @@ func (s *DefaultServer) HandleRequest(ctx context.Context, req *MCPRequest) (*MC
 	case "notifications/initialized":
 		// Handle initialized notification (no response needed for notifications)
 		s.logger.Debug("Received initialized notification")
-		return nil, nil
+		// For notifications, we return a valid empty response, not nil
+		return &MCPResponse{
+			JSONRPC: "2.0",
+			Result:  map[string]interface{}{},
+		}, nil
 	case "ping":
 		return s.handler.HandlePing(ctx, req)
 	case "tools/list":

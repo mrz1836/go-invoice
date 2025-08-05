@@ -180,7 +180,7 @@ func (a *App) runSetupClaude(ctx context.Context, setupDesktop, setupCode, isUpd
 	}
 
 	// Print summary
-	a.printClaudeSetupSummary(setupDesktop, setupCode, projectRoot, goInvoiceHome)
+	a.printClaudeSetupSummary(ctx, setupDesktop, setupCode, projectRoot, goInvoiceHome)
 
 	return nil
 }
@@ -254,7 +254,7 @@ func (a *App) setupClaudeDirectories(goInvoiceHome string) error {
 	}
 
 	// Fix permissions if directory already exists
-	if err := os.Chmod(goInvoiceHome, 0o700); err != nil {
+	if err := os.Chmod(goInvoiceHome, 0o700); err != nil { //nolint:gosec // G302 - Directory needs execute permission
 		a.logger.Printf("⚠️  Could not set permissions on %s: %v\n", goInvoiceHome, err)
 	}
 
@@ -486,7 +486,11 @@ func (a *App) setupClaudeCode(ctx context.Context, prompter *cli.Prompter, proje
 			a.logger.Println("📋 Backed up old configuration")
 		}
 		// Remove old file after migration
-		defer os.Remove(".claude_config.json")
+		defer func() {
+			if err := os.Remove(".claude_config.json"); err != nil {
+				a.logger.Printf("Warning: failed to remove old config file: %v", err)
+			}
+		}()
 	}
 
 	// Ask about scope preference
@@ -502,8 +506,8 @@ func (a *App) setupClaudeCode(ctx context.Context, prompter *cli.Prompter, proje
 	}
 
 	// Create Claude settings directory
-	if err := os.MkdirAll(".claude", 0o750); err != nil {
-		return fmt.Errorf("failed to create .claude directory: %w", err)
+	if mkdirErr := os.MkdirAll(".claude", 0o750); mkdirErr != nil {
+		return fmt.Errorf("failed to create .claude directory: %w", mkdirErr)
 	}
 
 	// Get project information for go-invoice config
@@ -515,11 +519,11 @@ func (a *App) setupClaudeCode(ctx context.Context, prompter *cli.Prompter, proje
 	a.logger.Println("📋 Project Configuration")
 	a.logger.Println("----------------------")
 
-	if name, err := prompter.PromptString(ctx, "Project name", projectName); err == nil && name != "" {
+	if name, nameErr := prompter.PromptString(ctx, "Project name", projectName); nameErr == nil && name != "" {
 		projectName = name
 	}
 
-	if prefix, err := prompter.PromptString(ctx, "Invoice prefix", invoicePrefix); err == nil && prefix != "" {
+	if prefix, prefixErr := prompter.PromptString(ctx, "Invoice prefix", invoicePrefix); prefixErr == nil && prefix != "" {
 		invoicePrefix = prefix
 	}
 
@@ -560,16 +564,16 @@ func (a *App) setupClaudeCode(ctx context.Context, prompter *cli.Prompter, proje
 
 	// First, try to remove existing server (ignore errors if it doesn't exist)
 	removeCmd := exec.CommandContext(ctx, "claude", "mcp", "remove", "go-invoice")
-	removeCmd.Run() // Ignore output and errors
+	_ = removeCmd.Run() // Explicitly ignore output and errors
 
 	// Execute the command
-	cmd := exec.CommandContext(ctx, "claude", args...)
+	cmd := exec.CommandContext(ctx, "claude", args...) // #nosec G204 - args are controlled by our code
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
+	if runErr := cmd.Run(); runErr != nil {
 		// If command fails, provide manual instructions as fallback
-		a.logger.Printf("⚠️  Could not automatically register MCP server: %v\n", err)
+		a.logger.Printf("⚠️  Could not automatically register MCP server: %v\n", runErr)
 		a.logger.Println("")
 		a.logger.Println("📋 To manually add go-invoice MCP server, run:")
 		a.logger.Printf("   claude mcp remove go-invoice  # Remove existing if any\n")
@@ -584,7 +588,7 @@ func (a *App) setupClaudeCode(ctx context.Context, prompter *cli.Prompter, proje
 			a.logger.Printf("     -e GO_INVOICE_PROJECT=\"%s\" \\\n", currentDir)
 			a.logger.Printf("     -e MCP_LOG_FILE=\"%s/mcp-claude-code.log\"\n", goInvoiceHomeDir)
 		}
-		return fmt.Errorf("failed to register MCP server: %w", err)
+		return fmt.Errorf("failed to register MCP server: %w", runErr)
 	}
 
 	a.logger.Printf("✅ Successfully registered go-invoice MCP server with %s scope\n", scope)
@@ -607,13 +611,13 @@ func (a *App) setupClaudeCode(ctx context.Context, prompter *cli.Prompter, proje
 		}
 
 		// Write .mcp.json
-		configData, err := json.MarshalIndent(mcpConfig, "", "  ")
-		if err != nil {
-			return fmt.Errorf("failed to marshal MCP configuration: %w", err)
+		configData, marshalErr := json.MarshalIndent(mcpConfig, "", "  ")
+		if marshalErr != nil {
+			return fmt.Errorf("failed to marshal MCP configuration: %w", marshalErr)
 		}
 
-		if err := os.WriteFile(".mcp.json", configData, 0o600); err != nil {
-			return fmt.Errorf("failed to write .mcp.json: %w", err)
+		if writeErr := os.WriteFile(".mcp.json", configData, 0o600); writeErr != nil {
+			return fmt.Errorf("failed to write .mcp.json: %w", writeErr)
 		}
 		a.logger.Println("✅ Created .mcp.json for project-scoped MCP server (backward compatibility)")
 	}
@@ -812,7 +816,7 @@ func (a *App) createSampleFiles() error {
 }
 
 // testMCPServer tests the MCP server functionality
-func (a *App) testMCPServer(ctx context.Context, projectRoot string) error {
+func (a *App) testMCPServer(_ context.Context, projectRoot string) error {
 	mcpPath := filepath.Join(projectRoot, "bin", "go-invoice-mcp")
 
 	// Check if binary exists and is executable
@@ -834,7 +838,7 @@ func (a *App) testMCPServer(ctx context.Context, projectRoot string) error {
 }
 
 // printClaudeSetupSummary prints the setup summary
-func (a *App) printClaudeSetupSummary(desktop, code bool, projectRoot, goInvoiceHome string) {
+func (a *App) printClaudeSetupSummary(ctx context.Context, desktop, code bool, projectRoot, goInvoiceHome string) {
 	a.logger.Println("")
 	a.logger.Println("===================================")
 	a.logger.Println("Setup Summary")
@@ -859,7 +863,7 @@ func (a *App) printClaudeSetupSummary(desktop, code bool, projectRoot, goInvoice
 			}
 		} else {
 			// Fallback to claude mcp list for user-scoped servers
-			cmd := exec.Command("claude", "mcp", "list")
+			cmd := exec.CommandContext(ctx, "claude", "mcp", "list")
 			output, err := cmd.Output()
 			if err == nil && strings.Contains(string(output), "go-invoice") {
 				a.logger.Println("✅ go-invoice MCP server is registered with Claude")

@@ -2,12 +2,19 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/mrz/go-invoice/internal/models"
 	"github.com/mrz/go-invoice/internal/storage"
+)
+
+// Static errors to avoid dynamic error creation
+var (
+	ErrInvoiceNumberEmpty    = errors.New("invoice number cannot be empty")
+	ErrInvoiceNumberNotFound = errors.New("invoice not found")
 )
 
 // Logger interface for service operations
@@ -154,7 +161,7 @@ func (s *InvoiceService) GetInvoiceByNumber(ctx context.Context, number string) 
 	}
 
 	if strings.TrimSpace(number) == "" {
-		return nil, fmt.Errorf("invoice number cannot be empty")
+		return nil, ErrInvoiceNumberEmpty
 	}
 
 	// Use list functionality to find invoice by number
@@ -170,7 +177,7 @@ func (s *InvoiceService) GetInvoiceByNumber(ctx context.Context, number string) 
 		}
 	}
 
-	return nil, fmt.Errorf("invoice with number '%s' not found", number)
+	return nil, fmt.Errorf("%w: %s", ErrInvoiceNumberNotFound, number)
 }
 
 // UpdateInvoice updates an existing invoice
