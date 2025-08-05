@@ -93,11 +93,7 @@
                 "description": "Optional work items to add to the invoice"
               }
             },
-            "anyOf": [
-              {"required": ["client_name"]},
-              {"required": ["client_email"]},
-              {"required": ["client_id"]}
-            ]
+            "required": []
           },
           "examples": [
             {
@@ -225,10 +221,7 @@
                 "description": "Output format for invoice details"
               }
             },
-            "anyOf": [
-              {"required": ["invoice_number"]},
-              {"required": ["invoice_id"]}
-            ]
+            "required": []
           },
           "examples": [
             {
@@ -277,10 +270,7 @@
                 "description": "New invoice description"
               }
             },
-            "anyOf": [
-              {"required": ["invoice_number"]},
-              {"required": ["invoice_id"]}
-            ]
+            "required": []
           },
           "examples": [
             {
@@ -324,10 +314,7 @@
                 "description": "Skip confirmation prompts (use with extreme caution)"
               }
             },
-            "anyOf": [
-              {"required": ["invoice_number"]},
-              {"required": ["invoice_id"]}
-            ]
+            "required": []
           },
           "examples": [
             {
@@ -390,10 +377,7 @@
                 "description": "Work items to add to the invoice"
               }
             },
-            "anyOf": [
-              {"required": ["invoice_number", "work_items"]},
-              {"required": ["invoice_id", "work_items"]}
-            ]
+            "required": []
           },
           "examples": [
             {
@@ -457,10 +441,7 @@
                 "description": "Skip confirmation prompt"
               }
             },
-            "anyOf": [
-              {"required": ["invoice_number"]},
-              {"required": ["invoice_id"]}
-            ]
+            "required": []
           },
           "examples": [
             {

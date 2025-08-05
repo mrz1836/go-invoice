@@ -608,10 +608,14 @@ func (a *App) runInvoiceDelete(cmd *cobra.Command, args []string) error {
 	idGen := services.NewUUIDGenerator()
 	invoiceService := services.NewInvoiceService(invoiceStorage, clientStorage, a.logger, idGen)
 
-	// Get invoice to verify it exists and check status
+	// Get invoice to verify it exists and check status - try by ID first, then by number
 	invoice, err := invoiceService.GetInvoice(ctx, models.InvoiceID(invoiceID))
 	if err != nil {
-		return fmt.Errorf("failed to get invoice: %w", err)
+		// If not found by ID, try by number
+		invoice, err = invoiceService.GetInvoiceByNumber(ctx, invoiceID)
+		if err != nil {
+			return fmt.Errorf("failed to get invoice: %w: invoice with ID '%s' not found", models.ErrInvoiceNotFound, invoiceID)
+		}
 	}
 
 	// Check if invoice can be deleted
@@ -647,6 +651,11 @@ func (a *App) runInvoiceDelete(cmd *cobra.Command, args []string) error {
 
 		var response string
 		if _, scanErr := fmt.Scanln(&response); scanErr != nil {
+			// Handle non-interactive environments gracefully
+			if strings.Contains(scanErr.Error(), "EOF") {
+				a.logger.Printf("Non-interactive environment detected. Use --force to bypass confirmation.\n")
+				return fmt.Errorf("%w: use --force flag to delete without confirmation", models.ErrConfirmationRequired)
+			}
 			a.logger.Printf("Error reading input: %v\n", scanErr)
 			return fmt.Errorf("failed to read user input: %w", scanErr)
 		}

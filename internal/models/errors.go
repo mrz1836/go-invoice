@@ -39,6 +39,8 @@ var (
 	ErrClientNotFound                   = fmt.Errorf("client not found")
 	ErrClientInactive                   = fmt.Errorf("client is inactive")
 	ErrInvoiceIDEmpty                   = fmt.Errorf("invoice ID cannot be empty")
+	ErrInvoiceNotFound                  = fmt.Errorf("invoice not found")
+	ErrConfirmationRequired             = fmt.Errorf("confirmation required")
 	ErrCannotDeletePaidInvoice          = fmt.Errorf("cannot delete paid invoice")
 	ErrCannotAddWorkItemToNonDraft      = fmt.Errorf("can only add work items to draft invoices")
 	ErrCannotRemoveWorkItemFromNonDraft = fmt.Errorf("can only remove work items from draft invoices")

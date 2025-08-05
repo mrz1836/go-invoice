@@ -249,10 +249,14 @@ func (s *InvoiceService) DeleteInvoice(ctx context.Context, id models.InvoiceID)
 
 	s.logger.Info("deleting invoice", "id", id)
 
-	// Check if invoice exists and can be deleted
+	// Check if invoice exists and can be deleted - try by ID first, then by number
 	invoice, err := s.invoiceStorage.GetInvoice(ctx, id)
 	if err != nil {
-		return fmt.Errorf("failed to retrieve invoice for deletion: %w", err)
+		// If not found by ID, try by number
+		invoice, err = s.GetInvoiceByNumber(ctx, string(id))
+		if err != nil {
+			return fmt.Errorf("failed to retrieve invoice for deletion: %w: invoice with ID '%s' not found", models.ErrInvoiceNotFound, id)
+		}
 	}
 
 	// Business rule: don't delete paid invoices
@@ -260,8 +264,8 @@ func (s *InvoiceService) DeleteInvoice(ctx context.Context, id models.InvoiceID)
 		return fmt.Errorf("%w: %s", models.ErrCannotDeletePaidInvoice, invoice.Number)
 	}
 
-	// Delete invoice
-	if err := s.invoiceStorage.DeleteInvoice(ctx, id); err != nil {
+	// Delete invoice using the actual invoice ID (in case we found it by number)
+	if err := s.invoiceStorage.DeleteInvoice(ctx, invoice.ID); err != nil {
 		return fmt.Errorf("failed to delete invoice: %w", err)
 	}
 

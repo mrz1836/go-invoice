@@ -582,16 +582,18 @@ func (b *CLIBridge) buildInvoiceDeleteArgs(input map[string]interface{}) ([]stri
 	if identifier == "" {
 		identifier = invoiceNumber
 	}
+
+	// Add the identifier as positional argument first
 	args = append(args, identifier)
 
-	// Optional: force
-	if force, ok := input["force"].(bool); ok && force {
-		args = append(args, "--force")
-	}
-
-	// Optional: hard_delete
+	// Optional: hard_delete (order matters - CLI expects it before --force)
 	if hardDelete, ok := input["hard_delete"].(bool); ok && hardDelete {
 		args = append(args, "--hard")
+	}
+
+	// Optional: force (should come after other flags)
+	if force, ok := input["force"].(bool); ok && force {
+		args = append(args, "--force")
 	}
 
 	return args, nil

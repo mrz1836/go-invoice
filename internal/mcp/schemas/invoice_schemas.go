@@ -27,6 +27,17 @@ import (
 func InvoiceCreateSchema() map[string]interface{} {
 	return map[string]interface{}{
 		"type": "object",
+		"anyOf": []map[string]interface{}{
+			{
+				"required": []string{"client_name"},
+			},
+			{
+				"required": []string{"client_id"},
+			},
+			{
+				"required": []string{"client_email"},
+			},
+		},
 		"properties": map[string]interface{}{
 			"client_name": map[string]interface{}{
 				"type":        "string",
@@ -121,17 +132,7 @@ func InvoiceCreateSchema() map[string]interface{} {
 				},
 			},
 		},
-		"anyOf": []map[string]interface{}{
-			{
-				"required": []string{"client_name"},
-			},
-			{
-				"required": []string{"client_id"},
-			},
-			{
-				"required": []string{"client_email"},
-			},
-		},
+		"required":             []string{}, // At least one client identifier is required but handled in validation logic
 		"additionalProperties": false,
 	}
 }
@@ -214,6 +215,14 @@ func InvoiceListSchema() map[string]interface{} {
 func InvoiceShowSchema() map[string]interface{} {
 	return map[string]interface{}{
 		"type": "object",
+		"anyOf": []map[string]interface{}{
+			{
+				"required": []string{"invoice_id"},
+			},
+			{
+				"required": []string{"invoice_number"},
+			},
+		},
 		"properties": map[string]interface{}{
 			"invoice_id": map[string]interface{}{
 				"type":        "string",
@@ -244,14 +253,7 @@ func InvoiceShowSchema() map[string]interface{} {
 				"description": "Include full client information in the output.",
 			},
 		},
-		"anyOf": []map[string]interface{}{
-			{
-				"required": []string{"invoice_id"},
-			},
-			{
-				"required": []string{"invoice_number"},
-			},
-		},
+		"required":             []string{}, // At least one invoice identifier is required but handled in validation logic
 		"additionalProperties": false,
 	}
 }
@@ -263,6 +265,31 @@ func InvoiceShowSchema() map[string]interface{} {
 func InvoiceUpdateSchema() map[string]interface{} {
 	return map[string]interface{}{
 		"type": "object",
+		"allOf": []map[string]interface{}{
+			{
+				"anyOf": []map[string]interface{}{
+					{
+						"required": []string{"invoice_id"},
+					},
+					{
+						"required": []string{"invoice_number"},
+					},
+				},
+			},
+			{
+				"anyOf": []map[string]interface{}{
+					{
+						"required": []string{"status"},
+					},
+					{
+						"required": []string{"due_date"},
+					},
+					{
+						"required": []string{"description"},
+					},
+				},
+			},
+		},
 		"properties": map[string]interface{}{
 			"invoice_id": map[string]interface{}{
 				"type":        "string",
@@ -295,31 +322,7 @@ func InvoiceUpdateSchema() map[string]interface{} {
 				"examples":    []string{"Updated: January 2025 consulting services", "Q1 2025 development work"},
 			},
 		},
-		"allOf": []map[string]interface{}{
-			{
-				"anyOf": []map[string]interface{}{
-					{
-						"required": []string{"invoice_id"},
-					},
-					{
-						"required": []string{"invoice_number"},
-					},
-				},
-			},
-			{
-				"anyOf": []map[string]interface{}{
-					{
-						"required": []string{"status"},
-					},
-					{
-						"required": []string{"due_date"},
-					},
-					{
-						"required": []string{"description"},
-					},
-				},
-			},
-		},
+		"required":             []string{}, // Invoice ID and at least one update field required but handled in validation logic
 		"additionalProperties": false,
 	}
 }
@@ -417,6 +420,7 @@ func InvoiceAddItemSchema() map[string]interface{} {
 				},
 			},
 		},
+		"required":             []string{}, // Invoice ID and work items required but handled in validation logic
 		"additionalProperties": false,
 	}
 }
@@ -428,6 +432,31 @@ func InvoiceAddItemSchema() map[string]interface{} {
 func InvoiceRemoveItemSchema() map[string]interface{} {
 	return map[string]interface{}{
 		"type": "object",
+		"allOf": []map[string]interface{}{
+			{
+				"anyOf": []map[string]interface{}{
+					{
+						"required": []string{"invoice_id"},
+					},
+					{
+						"required": []string{"invoice_number"},
+					},
+				},
+			},
+			{
+				"anyOf": []map[string]interface{}{
+					{
+						"required": []string{"work_item_id"},
+					},
+					{
+						"required": []string{"work_item_description"},
+					},
+					{
+						"required": []string{"work_item_date"},
+					},
+				},
+			},
+		},
 		"properties": map[string]interface{}{
 			"invoice_id": map[string]interface{}{
 				"type":        "string",
@@ -470,31 +499,7 @@ func InvoiceRemoveItemSchema() map[string]interface{} {
 				"description": "Confirm removal without additional prompts.",
 			},
 		},
-		"allOf": []map[string]interface{}{
-			{
-				"anyOf": []map[string]interface{}{
-					{
-						"required": []string{"invoice_id"},
-					},
-					{
-						"required": []string{"invoice_number"},
-					},
-				},
-			},
-			{
-				"anyOf": []map[string]interface{}{
-					{
-						"required": []string{"work_item_id"},
-					},
-					{
-						"required": []string{"work_item_description"},
-					},
-					{
-						"required": []string{"work_item_date"},
-					},
-				},
-			},
-		},
+		"required":             []string{}, // Invoice ID and work item identifier required but handled in validation logic
 		"additionalProperties": false,
 	}
 }
