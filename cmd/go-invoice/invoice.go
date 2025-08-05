@@ -326,10 +326,14 @@ func (a *App) runInvoiceShow(cmd *cobra.Command, args []string) error {
 	invoiceService := services.NewInvoiceService(invoiceStorage, clientStorage, a.logger, idGen)
 	clientService := services.NewClientService(clientStorage, invoiceStorage, a.logger, idGen)
 
-	// Get invoice
+	// Get invoice - try by ID first, then by number
 	invoice, err := invoiceService.GetInvoice(ctx, models.InvoiceID(invoiceID))
 	if err != nil {
-		return fmt.Errorf("failed to get invoice: %w", err)
+		// If not found by ID, try by number
+		invoice, err = invoiceService.GetInvoiceByNumber(ctx, invoiceID)
+		if err != nil {
+			return fmt.Errorf("failed to get invoice: %w", err)
+		}
 	}
 
 	// Get client

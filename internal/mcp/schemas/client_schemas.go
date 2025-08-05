@@ -206,11 +206,6 @@ func ClientShowSchema() map[string]interface{} {
 				"description": "Maximum number of recent invoices to include.",
 			},
 		},
-		"anyOf": []map[string]interface{}{
-			{"required": []interface{}{"client_id"}},
-			{"required": []interface{}{"client_name"}},
-			{"required": []interface{}{"client_email"}},
-		},
 		"additionalProperties": false,
 	}
 }
@@ -286,34 +281,6 @@ func ClientUpdateSchema() map[string]interface{} {
 				"description": "Deactivate the client (soft delete). Cannot be used with activate.",
 			},
 		},
-		"allOf": []map[string]interface{}{
-			{
-				"anyOf": []map[string]interface{}{
-					{"required": []interface{}{"client_id"}},
-					{"required": []interface{}{"client_name"}},
-					{"required": []interface{}{"client_email"}},
-				},
-			},
-			{
-				"anyOf": []map[string]interface{}{
-					{"required": []interface{}{"name"}},
-					{"required": []interface{}{"email"}},
-					{"required": []interface{}{"phone"}},
-					{"required": []interface{}{"address"}},
-					{"required": []interface{}{"tax_id"}},
-					{"required": []interface{}{"activate"}},
-					{"required": []interface{}{"deactivate"}},
-				},
-			},
-			{
-				"not": map[string]interface{}{
-					"allOf": []map[string]interface{}{
-						{"required": []interface{}{"activate"}},
-						{"required": []interface{}{"deactivate"}},
-					},
-				},
-			},
-		},
 		"additionalProperties": false,
 	}
 }
@@ -368,23 +335,6 @@ func ClientDeleteSchema() map[string]interface{} {
 				"type":        "boolean",
 				"default":     false,
 				"description": "Also delete associated invoices (only available with hard_delete and force).",
-			},
-		},
-		"allOf": []map[string]interface{}{
-			{
-				"anyOf": []map[string]interface{}{
-					{"required": []interface{}{"client_id"}},
-					{"required": []interface{}{"client_name"}},
-					{"required": []interface{}{"client_email"}},
-				},
-			},
-			{
-				"not": map[string]interface{}{
-					"allOf": []map[string]interface{}{
-						{"required": []interface{}{"soft_delete"}},
-						{"required": []interface{}{"hard_delete"}},
-					},
-				},
 			},
 		},
 		"additionalProperties": false,

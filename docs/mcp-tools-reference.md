@@ -6,13 +6,13 @@ This comprehensive reference documents all 21 MCP tools available for Claude Des
 
 ### Tool Categories
 
-| Category | Tools | Description |
-|----------|-------|-------------|
+| Category                                  | Tools   | Description                         |
+|-------------------------------------------|---------|-------------------------------------|
 | [Invoice Management](#invoice-management) | 7 tools | Create, update, and manage invoices |
-| [Data Import](#data-import) | 3 tools | Import timesheet and external data |
-| [Data Export](#data-export) | 3 tools | Generate and export documents |
-| [Client Management](#client-management) | 5 tools | Manage client information |
-| [Configuration](#configuration) | 3 tools | System setup and validation |
+| [Data Import](#data-import)               | 3 tools | Import timesheet and external data  |
+| [Data Export](#data-export)               | 3 tools | Generate and export documents       |
+| [Client Management](#client-management)   | 5 tools | Manage client information           |
+| [Configuration](#configuration)           | 3 tools | System setup and validation         |
 
 ### Most Common Tools
 

@@ -3,6 +3,7 @@ package executor
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 )
@@ -403,7 +404,13 @@ func (b *CLIBridge) buildInvoiceCreateArgs(input map[string]interface{}) ([]stri
 
 func (b *CLIBridge) buildInvoiceListArgs(input map[string]interface{}) ([]string, error) {
 	var args []string
-	args = append(args, "--json") // Always output JSON for MCP
+
+	// Add config path if set in environment
+	if configPath := os.Getenv("GO_INVOICE_CONFIG_PATH"); configPath != "" {
+		args = append(args, "--config", configPath)
+	}
+
+	args = append(args, "--output", "json") // Always output JSON for MCP
 
 	// Optional filters
 	if status, ok := input["status"].(string); ok && status != "" {
@@ -425,12 +432,26 @@ func (b *CLIBridge) buildInvoiceListArgs(input map[string]interface{}) ([]string
 func (b *CLIBridge) buildInvoiceShowArgs(input map[string]interface{}) ([]string, error) {
 	var args []string
 
-	// Required: invoice_id
-	invoiceID, ok := input["invoice_id"].(string)
-	if !ok || invoiceID == "" {
-		return nil, fmt.Errorf("%w: invoice_id", ErrMissingRequired)
+	// Either invoice_id or invoice_number is required
+	invoiceID, hasID := input["invoice_id"].(string)
+	invoiceNumber, hasNumber := input["invoice_number"].(string)
+
+	if (!hasID || invoiceID == "") && (!hasNumber || invoiceNumber == "") {
+		return nil, fmt.Errorf("%w: either invoice_id or invoice_number is required", ErrMissingRequired)
 	}
-	args = append(args, invoiceID, "--json")
+
+	// Prefer invoice_id if both are provided
+	identifier := invoiceID
+	if identifier == "" {
+		identifier = invoiceNumber
+	}
+
+	args = append(args, identifier, "--output", "json")
+
+	// Add config path if available from environment
+	if configPath := os.Getenv("GO_INVOICE_CONFIG_PATH"); configPath != "" {
+		args = append(args, "--config", configPath)
+	}
 
 	return args, nil
 }
@@ -575,7 +596,7 @@ func (b *CLIBridge) buildClientCreateArgs(input map[string]interface{}) ([]strin
 
 func (b *CLIBridge) buildClientListArgs(input map[string]interface{}) ([]string, error) {
 	var args []string
-	args = append(args, "--json") // Always output JSON for MCP
+	args = append(args, "--output", "json") // Always output JSON for MCP
 
 	// Optional filters
 	if active, ok := input["active"].(bool); ok {
@@ -597,11 +618,11 @@ func (b *CLIBridge) buildClientShowArgs(input map[string]interface{}) ([]string,
 
 	// Required: client identifier (name, email, or id)
 	if clientID, ok := input["client_id"].(string); ok && clientID != "" {
-		args = append(args, clientID, "--json")
+		args = append(args, clientID, "--output", "json")
 	} else if clientName, ok := input["client_name"].(string); ok && clientName != "" {
-		args = append(args, clientName, "--json")
+		args = append(args, clientName, "--output", "json")
 	} else if clientEmail, ok := input["client_email"].(string); ok && clientEmail != "" {
-		args = append(args, clientEmail, "--json")
+		args = append(args, clientEmail, "--output", "json")
 	} else {
 		return nil, ErrMissingClientIdentifier
 	}
@@ -736,7 +757,7 @@ func (b *CLIBridge) buildImportPreviewArgs(input map[string]interface{}) ([]stri
 	if !ok || filePath == "" {
 		return nil, fmt.Errorf("%w: file_path", ErrMissingRequired)
 	}
-	args = append(args, filePath, "--json")
+	args = append(args, filePath, "--output", "json")
 
 	// Optional: limit rows
 	if limit, ok := getIntValue(input["limit"]); ok {
@@ -778,7 +799,7 @@ func (b *CLIBridge) buildGenerateHTMLArgs(input map[string]interface{}) ([]strin
 
 func (b *CLIBridge) buildGenerateSummaryArgs(input map[string]interface{}) ([]string, error) {
 	var args []string
-	args = append(args, "--json") // Output JSON for MCP
+	args = append(args, "--output", "json") // Output JSON for MCP
 
 	// Required: summary_type
 	summaryType, ok := input["summary_type"].(string)
@@ -849,7 +870,7 @@ func (b *CLIBridge) buildExportDataArgs(input map[string]interface{}) ([]string,
 
 func (b *CLIBridge) buildConfigShowArgs(input map[string]interface{}) ([]string, error) {
 	var args []string
-	args = append(args, "--json") // Always output JSON for MCP
+	args = append(args, "--output", "json") // Always output JSON for MCP
 
 	// Optional: section
 	if section, ok := input["section"].(string); ok && section != "" {

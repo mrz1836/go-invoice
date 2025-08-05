@@ -171,37 +171,6 @@ func ImportCSVSchema() map[string]interface{} {
 				"description": "Skip work items that appear to be duplicates when appending to existing invoice.",
 			},
 		},
-		"allOf": []map[string]interface{}{
-			{"required": []string{"file_path"}},
-			{
-				"if": map[string]interface{}{
-					"properties": map[string]interface{}{
-						"import_mode": map[string]interface{}{
-							"const": "new_invoice",
-						},
-					},
-				},
-				"then": map[string]interface{}{
-					"anyOf": []map[string]interface{}{
-						{"required": []string{"client_name"}},
-						{"required": []string{"client_id"}},
-						{"required": []string{"client_email"}},
-					},
-				},
-			},
-			{
-				"if": map[string]interface{}{
-					"properties": map[string]interface{}{
-						"import_mode": map[string]interface{}{
-							"const": "append_invoice",
-						},
-					},
-				},
-				"then": map[string]interface{}{
-					"required": []string{"invoice_id"},
-				},
-			},
-		},
 		"additionalProperties": false,
 	}
 }
@@ -492,37 +461,6 @@ func ImportPreviewSchema() map[string]interface{} {
 				"type":        "boolean",
 				"default":     false,
 				"description": "Perform comprehensive data quality analysis in preview.",
-			},
-		},
-		"allOf": []map[string]interface{}{
-			{"required": []string{"file_path"}},
-			{
-				"if": map[string]interface{}{
-					"properties": map[string]interface{}{
-						"import_mode": map[string]interface{}{
-							"const": "new_invoice",
-						},
-					},
-				},
-				"then": map[string]interface{}{
-					"anyOf": []map[string]interface{}{
-						{"required": []string{"client_name"}},
-						{"required": []string{"client_id"}},
-						{"required": []string{"client_email"}},
-					},
-				},
-			},
-			{
-				"if": map[string]interface{}{
-					"properties": map[string]interface{}{
-						"import_mode": map[string]interface{}{
-							"const": "append_invoice",
-						},
-					},
-				},
-				"then": map[string]interface{}{
-					"required": []string{"invoice_id"},
-				},
 			},
 		},
 		"additionalProperties": false,

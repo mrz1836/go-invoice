@@ -493,10 +493,10 @@ func (a *App) setupClaudeCode(ctx context.Context, prompter *cli.Prompter, proje
 	a.logger.Println("")
 	a.logger.Println("📋 MCP Server Scope")
 	a.logger.Println("------------------")
-	a.logger.Println("Project scope: Shared with your team via .mcp.json (recommended)")
-	a.logger.Println("User scope: Personal, available across all projects")
+	a.logger.Println("User scope: Personal, available across all projects (recommended)")
+	a.logger.Println("Project scope: Shared with your team via .mcp.json")
 
-	useProjectScope, err := prompter.PromptBool(ctx, "Use project scope (team-shared)?", true)
+	useProjectScope, err := prompter.PromptBool(ctx, "Use project scope (team-shared)?", false)
 	if err != nil {
 		return err
 	}
@@ -526,18 +526,81 @@ func (a *App) setupClaudeCode(ctx context.Context, prompter *cli.Prompter, proje
 	// Create MCP server configuration
 	mcpBinPath := filepath.Join(projectRoot, "bin", "go-invoice-mcp")
 
+	// Determine scope for claude mcp add command
+	scope := "user"
 	if useProjectScope {
-		// Create .mcp.json for project scope
+		scope = "project"
+	}
+
+	// Execute claude mcp add command with environment variables
+	a.logger.Println("📋 Registering go-invoice MCP server with Claude...")
+
+	// Build the command with all arguments
+	homeDir := os.Getenv("HOME")
+	goInvoiceHomeDir := filepath.Join(homeDir, ".go-invoice")
+
+	args := []string{
+		"mcp", "add", "go-invoice", mcpBinPath,
+		"-s", scope,
+		"-t", "stdio",
+		"-e", fmt.Sprintf("GO_INVOICE_HOME=%s", goInvoiceHomeDir),
+		"-e", "MCP_TRANSPORT=stdio",
+	}
+
+	// Add environment variables based on scope
+	if useProjectScope {
+		args = append(args, "-e", "GO_INVOICE_PROJECT=${PWD}")
+		args = append(args, "-e", "MCP_LOG_FILE=${PWD}/.go-invoice/mcp.log")
+	} else {
+		// For user scope, use absolute paths instead of ${PWD}
+		currentDir, _ := os.Getwd()
+		args = append(args, "-e", fmt.Sprintf("GO_INVOICE_PROJECT=%s", currentDir))
+		args = append(args, "-e", fmt.Sprintf("MCP_LOG_FILE=%s/mcp-claude-code.log", goInvoiceHomeDir))
+	}
+
+	// First, try to remove existing server (ignore errors if it doesn't exist)
+	removeCmd := exec.CommandContext(ctx, "claude", "mcp", "remove", "go-invoice")
+	removeCmd.Run() // Ignore output and errors
+
+	// Execute the command
+	cmd := exec.CommandContext(ctx, "claude", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		// If command fails, provide manual instructions as fallback
+		a.logger.Printf("⚠️  Could not automatically register MCP server: %v\n", err)
+		a.logger.Println("")
+		a.logger.Println("📋 To manually add go-invoice MCP server, run:")
+		a.logger.Printf("   claude mcp remove go-invoice  # Remove existing if any\n")
+		a.logger.Printf("   claude mcp add go-invoice %s -s %s -t stdio \\\n", mcpBinPath, scope)
+		a.logger.Printf("     -e GO_INVOICE_HOME=\"%s\" \\\n", goInvoiceHomeDir)
+		a.logger.Println("     -e MCP_TRANSPORT=\"stdio\" \\")
+		if useProjectScope {
+			a.logger.Println("     -e GO_INVOICE_PROJECT=\"${PWD}\" \\")
+			a.logger.Println("     -e MCP_LOG_FILE=\"${PWD}/.go-invoice/mcp.log\"")
+		} else {
+			currentDir, _ := os.Getwd()
+			a.logger.Printf("     -e GO_INVOICE_PROJECT=\"%s\" \\\n", currentDir)
+			a.logger.Printf("     -e MCP_LOG_FILE=\"%s/mcp-claude-code.log\"\n", goInvoiceHomeDir)
+		}
+		return fmt.Errorf("failed to register MCP server: %w", err)
+	}
+
+	a.logger.Printf("✅ Successfully registered go-invoice MCP server with %s scope\n", scope)
+
+	if useProjectScope {
+		// Also create .mcp.json using the working configuration template
 		mcpConfig := MCPConfig{
 			MCPServers: map[string]MCPServerConfig{
 				"go-invoice": {
-					Command: mcpBinPath,
+					Command: "/Users/mrz/projects/go-invoice/bin/go-invoice-mcp",
 					Args:    []string{"--stdio"},
 					Env: map[string]string{
 						"GO_INVOICE_HOME":    "${HOME}/.go-invoice",
 						"GO_INVOICE_PROJECT": "${PWD}",
-						"MCP_TRANSPORT":      "stdio",
 						"MCP_LOG_FILE":       "${PWD}/.go-invoice/mcp.log",
+						"MCP_TRANSPORT":      "stdio",
 					},
 				},
 			},
@@ -552,13 +615,7 @@ func (a *App) setupClaudeCode(ctx context.Context, prompter *cli.Prompter, proje
 		if err := os.WriteFile(".mcp.json", configData, 0o600); err != nil {
 			return fmt.Errorf("failed to write .mcp.json: %w", err)
 		}
-		a.logger.Println("✅ Created .mcp.json for project-scoped MCP server")
-	} else {
-		// For user scope, instruct to use CLI
-		a.logger.Println("")
-		a.logger.Println("📋 To add go-invoice as a user-scoped MCP server, run:")
-		a.logger.Printf("   claude mcp add go-invoice --scope user %s --stdio\n", mcpBinPath)
-		a.logger.Println("")
+		a.logger.Println("✅ Created .mcp.json for project-scoped MCP server (backward compatibility)")
 	}
 
 	// Create Claude settings
@@ -603,7 +660,8 @@ func (a *App) setupClaudeCode(ctx context.Context, prompter *cli.Prompter, proje
 		a.logger.Println("ℹ️  Open this project in Claude Code to start using go-invoice MCP integration")
 		a.logger.Println("ℹ️  Team members will automatically get the MCP server when they open the project")
 	} else {
-		a.logger.Println("ℹ️  Run the command above to add go-invoice to your user MCP servers")
+		a.logger.Println("ℹ️  Restart Claude Code to load the go-invoice MCP server")
+		a.logger.Println("ℹ️  The MCP server will be available across all your Claude Code projects")
 	}
 
 	return nil
@@ -785,6 +843,32 @@ func (a *App) printClaudeSetupSummary(desktop, code bool, projectRoot, goInvoice
 	a.logger.Printf("📁 MCP Server Binary: %s\n", filepath.Join(projectRoot, "bin", "go-invoice-mcp"))
 	a.logger.Printf("📁 Configuration: %s\n", filepath.Join(goInvoiceHome, "config"))
 	a.logger.Printf("📁 Logs: %s\n", filepath.Join(goInvoiceHome, "logs"))
+
+	// Verify MCP server registration
+	if code {
+		a.logger.Println("")
+		a.logger.Println("🔍 Verifying MCP server registration...")
+
+		// Check .mcp.json file for project-scoped servers
+		if _, err := os.Stat(".mcp.json"); err == nil {
+			content, err := os.ReadFile(".mcp.json")
+			if err == nil && strings.Contains(string(content), "go-invoice") {
+				a.logger.Println("✅ go-invoice MCP server is registered in .mcp.json")
+			} else {
+				a.logger.Println("⚠️  Could not find go-invoice in .mcp.json")
+			}
+		} else {
+			// Fallback to claude mcp list for user-scoped servers
+			cmd := exec.Command("claude", "mcp", "list")
+			output, err := cmd.Output()
+			if err == nil && strings.Contains(string(output), "go-invoice") {
+				a.logger.Println("✅ go-invoice MCP server is registered with Claude")
+			} else {
+				a.logger.Println("⚠️  Could not verify MCP server registration")
+				a.logger.Println("   Run 'claude mcp list' to check manually")
+			}
+		}
+	}
 
 	if desktop {
 		a.logger.Println("")

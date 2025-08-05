@@ -358,47 +358,6 @@ func (a *App) buildConfigShowCommand() *cobra.Command {
 	}
 }
 
-// buildInvoiceCommand creates the invoice command with all subcommands
-func (a *App) buildInvoiceCommand() *cobra.Command {
-	return a.buildInvoiceCommandImpl()
-}
-
-// buildImportCommand creates the import command for CSV import functionality
-func (a *App) buildImportCommand() *cobra.Command {
-	// Placeholder - this would be implemented in import.go
-	return &cobra.Command{
-		Use:   "import",
-		Short: "Import work items from CSV",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("import command not yet implemented")
-		},
-	}
-}
-
-// buildGenerateCommand creates the generate command for invoice generation
-func (a *App) buildGenerateCommand() *cobra.Command {
-	// Placeholder - this would be implemented in generate.go
-	return &cobra.Command{
-		Use:   "generate",
-		Short: "Generate invoice documents",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("generate command not yet implemented")
-		},
-	}
-}
-
-// buildConfigSetupClaudeCommand creates the config setup-claude subcommand
-func (a *App) buildConfigSetupClaudeCommand() *cobra.Command {
-	return &cobra.Command{
-		Use:   "setup-claude",
-		Short: "Set up Claude integration",
-		Long:  "Configure go-invoice for integration with Claude AI assistant",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("claude setup command not yet implemented")
-		},
-	}
-}
-
 // buildInitCommand creates the init command for storage initialization
 func (a *App) buildInitCommand() *cobra.Command {
 	return &cobra.Command{

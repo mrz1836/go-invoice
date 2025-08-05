@@ -145,6 +145,34 @@ func (s *InvoiceService) GetInvoice(ctx context.Context, id models.InvoiceID) (*
 	return invoice, nil
 }
 
+// GetInvoiceByNumber retrieves an invoice by its number
+func (s *InvoiceService) GetInvoiceByNumber(ctx context.Context, number string) (*models.Invoice, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	if strings.TrimSpace(number) == "" {
+		return nil, fmt.Errorf("invoice number cannot be empty")
+	}
+
+	// Use list functionality to find invoice by number
+	filter := models.InvoiceFilter{}
+	result, err := s.invoiceStorage.ListInvoices(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search for invoice: %w", err)
+	}
+
+	for _, invoice := range result.Invoices {
+		if invoice.Number == number {
+			return invoice, nil
+		}
+	}
+
+	return nil, fmt.Errorf("invoice with number '%s' not found", number)
+}
+
 // UpdateInvoice updates an existing invoice
 func (s *InvoiceService) UpdateInvoice(ctx context.Context, req models.UpdateInvoiceRequest) (*models.Invoice, error) {
 	select {

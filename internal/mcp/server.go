@@ -1,7 +1,6 @@
 package mcp
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -162,8 +161,8 @@ func (s *DefaultServer) startHTTPTransport(ctx context.Context) error {
 
 // handleStdioRequests handles MCP requests over stdio
 func (s *DefaultServer) handleStdioRequests(ctx context.Context) {
-	reader := bufio.NewReader(os.Stdin)
-	writer := os.Stdout
+	decoder := json.NewDecoder(os.Stdin)
+	encoder := json.NewEncoder(os.Stdout)
 
 	for {
 		select {
@@ -174,21 +173,14 @@ func (s *DefaultServer) handleStdioRequests(ctx context.Context) {
 		default:
 		}
 
-		// Read request line
-		line, err := reader.ReadBytes('\n')
-		if err != nil {
-			if errors.Is(err, io.EOF) {
+		// Parse and handle request using JSON decoder
+		var req MCPRequest
+		if parseErr := decoder.Decode(&req); parseErr != nil {
+			if errors.Is(parseErr, io.EOF) {
 				s.logger.Debug("Stdin closed, shutting down")
 				return
 			}
-			s.logger.Error("Failed to read from stdin", "error", err)
-			continue
-		}
-
-		// Parse and handle request
-		var req MCPRequest
-		if parseErr := json.Unmarshal(line, &req); parseErr != nil {
-			s.logger.Error("Failed to parse MCP request", "error", parseErr, "line", string(line))
+			s.logger.Error("Failed to parse MCP request", "error", parseErr)
 			continue
 		}
 
@@ -206,21 +198,12 @@ func (s *DefaultServer) handleStdioRequests(ctx context.Context) {
 			}
 		}
 
-		// Send response
-		responseBytes, err := json.Marshal(response)
-		if err != nil {
-			s.logger.Error("Failed to marshal response", "error", err)
-			continue
-		}
-
-		if _, err := writer.Write(responseBytes); err != nil {
-			s.logger.Error("Failed to write response", "error", err)
-			continue
-		}
-
-		if _, err := writer.WriteString("\n"); err != nil {
-			s.logger.Error("Failed to write newline", "error", err)
-			continue
+		// Send response using JSON encoder (skip if nil for notifications)
+		if response != nil {
+			if err := encoder.Encode(response); err != nil {
+				s.logger.Error("Failed to encode response", "error", err)
+				return
+			}
 		}
 	}
 }
@@ -282,6 +265,10 @@ func (s *DefaultServer) HandleRequest(ctx context.Context, req *MCPRequest) (*MC
 	switch req.Method {
 	case "initialize":
 		return s.handler.HandleInitialize(ctx, req)
+	case "notifications/initialized":
+		// Handle initialized notification (no response needed for notifications)
+		s.logger.Debug("Received initialized notification")
+		return nil, nil
 	case "ping":
 		return s.handler.HandlePing(ctx, req)
 	case "tools/list":

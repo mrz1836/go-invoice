@@ -2,6 +2,7 @@ package executor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -362,8 +363,16 @@ func (h *ToolCallHandler) parseToolOutput(ctx context.Context, _ *tools.MCPTool,
 
 // Helper functions
 
-func convertParams(_ interface{}, _ interface{}) error {
-	// This is a simplified conversion
-	// In production, use proper JSON marshaling/unmarshaling
+func convertParams(from interface{}, to interface{}) error {
+	// Convert using JSON marshaling/unmarshaling for proper type conversion
+	data, err := json.Marshal(from)
+	if err != nil {
+		return fmt.Errorf("failed to marshal params: %w", err)
+	}
+
+	if err := json.Unmarshal(data, to); err != nil {
+		return fmt.Errorf("failed to unmarshal params: %w", err)
+	}
+
 	return nil
 }

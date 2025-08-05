@@ -105,23 +105,6 @@ func GenerateHTMLSchema() map[string]interface{} {
 				"description": "Return HTML content in response instead of saving to file.",
 			},
 		},
-		"allOf": []map[string]interface{}{
-			{
-				"anyOf": []map[string]interface{}{
-					{"required": []string{"invoice_id"}},
-					{"required": []string{"invoice_number"}},
-					{"required": []string{"batch_invoices"}},
-				},
-			},
-			{
-				"anyOf": []map[string]interface{}{
-					{"required": []string{"output_path"}},
-					{"required": []string{"output_dir"}},
-					{"properties": map[string]interface{}{"return_html": map[string]interface{}{"const": true}}},
-					{"properties": map[string]interface{}{"web_preview": map[string]interface{}{"const": true}}},
-				},
-			},
-		},
 		"additionalProperties": false,
 	}
 }
@@ -218,10 +201,6 @@ func GenerateSummarySchema() map[string]interface{} {
 				"description": "Return summary data in response instead of saving to file.",
 			},
 		},
-		"anyOf": []map[string]interface{}{
-			{"required": []string{"output_path"}},
-			{"properties": map[string]interface{}{"return_data": map[string]interface{}{"const": true}}},
-		},
 		"additionalProperties": false,
 	}
 }
@@ -316,10 +295,6 @@ func ExportDataSchema() map[string]interface{} {
 				"default":     false,
 				"description": "Return exported data in response instead of saving to file.",
 			},
-		},
-		"anyOf": []map[string]interface{}{
-			{"required": []string{"output_path"}},
-			{"properties": map[string]interface{}{"return_data": map[string]interface{}{"const": true}}},
 		},
 		"additionalProperties": false,
 	}

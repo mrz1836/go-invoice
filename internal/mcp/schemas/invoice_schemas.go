@@ -121,11 +121,6 @@ func InvoiceCreateSchema() map[string]interface{} {
 				},
 			},
 		},
-		"anyOf": []map[string]interface{}{
-			{"required": []string{"client_name"}},
-			{"required": []string{"client_id"}},
-			{"required": []string{"client_email"}},
-		},
 		"additionalProperties": false,
 	}
 }
@@ -238,10 +233,6 @@ func InvoiceShowSchema() map[string]interface{} {
 				"description": "Include full client information in the output.",
 			},
 		},
-		"anyOf": []map[string]interface{}{
-			{"required": []string{"invoice_id"}},
-			{"required": []string{"invoice_number"}},
-		},
 		"additionalProperties": false,
 	}
 }
@@ -285,21 +276,6 @@ func InvoiceUpdateSchema() map[string]interface{} {
 				"examples":    []string{"Updated: January 2025 consulting services", "Q1 2025 development work"},
 			},
 		},
-		"allOf": []map[string]interface{}{
-			{
-				"anyOf": []map[string]interface{}{
-					{"required": []string{"invoice_id"}},
-					{"required": []string{"invoice_number"}},
-				},
-			},
-			{
-				"anyOf": []map[string]interface{}{
-					{"required": []string{"status"}},
-					{"required": []string{"due_date"}},
-					{"required": []string{"description"}},
-				},
-			},
-		},
 		"additionalProperties": false,
 	}
 }
@@ -334,10 +310,6 @@ func InvoiceDeleteSchema() map[string]interface{} {
 				"default":     false,
 				"description": "Skip confirmation prompt (use with caution).",
 			},
-		},
-		"anyOf": []map[string]interface{}{
-			{"required": []string{"invoice_id"}},
-			{"required": []string{"invoice_number"}},
 		},
 		"additionalProperties": false,
 	}
@@ -401,10 +373,6 @@ func InvoiceAddItemSchema() map[string]interface{} {
 				},
 			},
 		},
-		"anyOf": []map[string]interface{}{
-			{"required": []string{"invoice_id", "work_items"}},
-			{"required": []string{"invoice_number", "work_items"}},
-		},
 		"additionalProperties": false,
 	}
 }
@@ -456,21 +424,6 @@ func InvoiceRemoveItemSchema() map[string]interface{} {
 				"type":        "boolean",
 				"default":     false,
 				"description": "Confirm removal without additional prompts.",
-			},
-		},
-		"allOf": []map[string]interface{}{
-			{
-				"anyOf": []map[string]interface{}{
-					{"required": []string{"invoice_id"}},
-					{"required": []string{"invoice_number"}},
-				},
-			},
-			{
-				"anyOf": []map[string]interface{}{
-					{"required": []string{"work_item_id"}},
-					{"required": []string{"work_item_description"}},
-					{"required": []string{"work_item_date"}},
-				},
 			},
 		},
 		"additionalProperties": false,
