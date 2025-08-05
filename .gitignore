@@ -65,3 +65,5 @@ node_modules/
 # Invoice files (uncomment to ignore)
 # invoices/
 # timesheets/
+/.mcp.json.backup
+/.mcp.json
