@@ -28,10 +28,10 @@ func TestInvoiceCreateSchema(t *testing.T) {
 	assert.Contains(t, properties, "description")
 	assert.Contains(t, properties, "work_items")
 
-	// Verify anyOf requirements for client identification
-	anyOfConstraints, ok := schema["anyOf"].([]map[string]interface{})
-	require.True(t, ok, "anyOf should be present")
-	assert.Len(t, anyOfConstraints, 3, "Should have 3 client identification options")
+	// Verify that client identification fields are optional in schema (validation logic handles requirements)
+	required, ok := schema["required"].([]string)
+	require.True(t, ok, "required should be a string slice")
+	assert.Empty(t, required, "No fields should be required at schema level (validation logic handles client identification requirement)")
 }
 
 // TestInvoiceListSchema tests the invoice listing schema
@@ -81,10 +81,10 @@ func TestInvoiceShowSchema(t *testing.T) {
 	assert.Contains(t, properties, "show_work_items")
 	assert.Contains(t, properties, "show_client_details")
 
-	// Verify anyOf requirements for invoice identification
-	anyOfConstraints, ok := schema["anyOf"].([]map[string]interface{})
-	require.True(t, ok, "anyOf should be present")
-	assert.Len(t, anyOfConstraints, 2, "Should have 2 invoice identification options")
+	// Verify that fields are optional in schema (validation logic handles requirements)
+	required, ok := schema["required"].([]string)
+	require.True(t, ok, "required should be a string slice")
+	assert.Empty(t, required, "No fields should be required at schema level (validation logic handles invoice identification requirement)")
 }
 
 // TestInvoiceUpdateSchema tests the invoice update schema
@@ -104,10 +104,10 @@ func TestInvoiceUpdateSchema(t *testing.T) {
 	assert.Contains(t, properties, "due_date")
 	assert.Contains(t, properties, "description")
 
-	// Verify allOf constraints for identification and updates
-	allOfConstraints, ok := schema["allOf"].([]map[string]interface{})
-	require.True(t, ok, "allOf should be present")
-	assert.Len(t, allOfConstraints, 2, "Should have identification and update constraints")
+	// Verify that fields are optional in schema (validation logic handles requirements)
+	required, ok := schema["required"].([]string)
+	require.True(t, ok, "required should be a string slice")
+	assert.Empty(t, required, "No fields should be required at schema level (validation logic handles identification and update field requirements)")
 }
 
 // TestInvoiceDeleteSchema tests the invoice deletion schema
@@ -189,10 +189,10 @@ func TestInvoiceRemoveItemSchema(t *testing.T) {
 	assert.Contains(t, properties, "remove_all_matching")
 	assert.Contains(t, properties, "confirm")
 
-	// Verify allOf constraints
-	allOfConstraints, ok := schema["allOf"].([]map[string]interface{})
-	require.True(t, ok, "allOf should be present")
-	assert.Len(t, allOfConstraints, 2, "Should have invoice and work item identification constraints")
+	// Verify that fields are optional in schema (validation logic handles requirements)
+	required, ok := schema["required"].([]string)
+	require.True(t, ok, "required should be a string slice")
+	assert.Empty(t, required, "No fields should be required at schema level (validation logic handles invoice and work item identification requirements)")
 }
 
 // TestGetAllInvoiceSchemas tests schema retrieval function
