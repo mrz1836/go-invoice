@@ -32,7 +32,8 @@ type DefaultLogger struct {
 // NewLogger creates a new logger with the specified level
 func NewLogger(level string) Logger {
 	logLevel := parseLogLevel(level)
-	logger := log.New(os.Stderr, "", log.LstdFlags)
+	// Use 0 flags to avoid duplicate timestamps
+	logger := log.New(os.Stderr, "", 0)
 
 	return &DefaultLogger{
 		level:  logLevel,

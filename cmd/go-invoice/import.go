@@ -50,6 +50,8 @@ func (a *App) buildImportCreateCommand() *cobra.Command {
 		clientID      string
 		invoiceNumber string
 		description   string
+		invoiceDate   string
+		dueDate       string
 		dryRun        bool
 		interactive   bool
 		format        string
@@ -84,6 +86,8 @@ Example:
 				ClientID:      clientID,
 				InvoiceNumber: invoiceNumber,
 				Description:   description,
+				InvoiceDate:   invoiceDate,
+				DueDate:       dueDate,
 				DryRun:        dryRun,
 				Interactive:   interactive,
 				Format:        format,
@@ -94,6 +98,8 @@ Example:
 	cmd.Flags().StringVar(&clientID, "client", "", "Client ID for the new invoice (required)")
 	cmd.Flags().StringVar(&invoiceNumber, "number", "", "Invoice number (auto-generated if not provided)")
 	cmd.Flags().StringVar(&description, "description", "", "Invoice description")
+	cmd.Flags().StringVar(&invoiceDate, "date", "", "Invoice date (YYYY-MM-DD, default: today)")
+	cmd.Flags().StringVar(&dueDate, "due-date", "", "Due date (YYYY-MM-DD, default: 30 days from invoice date)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Validate only, don't create invoice")
 	cmd.Flags().BoolVar(&interactive, "interactive", false, "Interactive mode for resolving ambiguous data")
 	cmd.Flags().StringVar(&format, "format", "", "Force specific CSV format (standard, excel, tab)")
@@ -210,9 +216,28 @@ func (a *App) executeImportCreate(ctx context.Context, csvFile, configPath strin
 		}
 	}()
 
+	// Parse dates or use defaults
+	invoiceDate := time.Now()
+	if options.InvoiceDate != "" {
+		invoiceDate, err = time.Parse("2006-01-02", options.InvoiceDate)
+		if err != nil {
+			return fmt.Errorf("invalid invoice date format (use YYYY-MM-DD): %w", err)
+		}
+	}
+
+	dueDate := invoiceDate.AddDate(0, 0, 30) // Default: 30 days from invoice date
+	if options.DueDate != "" {
+		dueDate, err = time.Parse("2006-01-02", options.DueDate)
+		if err != nil {
+			return fmt.Errorf("invalid due date format (use YYYY-MM-DD): %w", err)
+		}
+	}
+
 	// Prepare import request
 	req := services.ImportToNewInvoiceRequest{
 		ClientID:     models.ClientID(options.ClientID),
+		InvoiceDate:  invoiceDate,
+		DueDate:      dueDate,
 		ParseOptions: a.createParseOptions(options.Format),
 		DryRun:       options.DryRun,
 	}
@@ -260,9 +285,22 @@ func (a *App) executeImportAppend(ctx context.Context, csvFile, configPath strin
 		}
 	}()
 
-	// Prepare import request
+	// Get invoice by ID or number
+	invoiceService := a.createInvoiceService(config.Storage.DataDir)
+
+	// Try to get invoice by ID first, then by number
+	invoice, err := invoiceService.GetInvoice(ctx, models.InvoiceID(options.InvoiceID))
+	if err != nil {
+		// If not found by ID, try by number
+		invoice, err = invoiceService.GetInvoiceByNumber(ctx, options.InvoiceID)
+		if err != nil {
+			return fmt.Errorf("failed to find invoice '%s': %w", options.InvoiceID, err)
+		}
+	}
+
+	// Prepare import request using the resolved invoice ID
 	req := services.AppendToInvoiceRequest{
-		InvoiceID:    options.InvoiceID,
+		InvoiceID:    string(invoice.ID),
 		ParseOptions: a.createParseOptions(options.Format),
 		DryRun:       options.DryRun,
 	}
@@ -452,6 +490,8 @@ type ImportCreateOptions struct {
 	ClientID      string
 	InvoiceNumber string
 	Description   string
+	InvoiceDate   string
+	DueDate       string
 	DryRun        bool
 	Interactive   bool
 	Format        string

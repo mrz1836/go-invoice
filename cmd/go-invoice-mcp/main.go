@@ -14,6 +14,21 @@ import (
 )
 
 func main() {
+	// Configure standard log to not include timestamps (MCP logger handles this)
+	log.SetFlags(0)
+
+	// Check for version flag first
+	for _, arg := range os.Args {
+		if arg == "--version" || arg == "-v" {
+			log.Println("go-invoice-mcp version 2.0.0")
+			os.Exit(0)
+		}
+		if arg == "--help" || arg == "-h" {
+			printHelp()
+			os.Exit(0)
+		}
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -48,13 +63,17 @@ func main() {
 	// Create MCP server with production handler
 	server := mcp.NewServerWithHandler(logger, handler, config)
 
-	logger.Info("Starting MCP server", "transport", transport, "version", "1.0.0")
+	logger.Info("Starting MCP server", "transport", transport, "version", "2.0.0")
+	logger.Info("Configuration loaded", "logLevel", config.LogLevel, "cliPath", config.CLI.Path)
+	logger.Info("Environment", "GO_INVOICE_HOME", os.Getenv("GO_INVOICE_HOME"), "MCP_LOG_LEVEL", os.Getenv("MCP_LOG_LEVEL"), "MCP_LOG_FILE", os.Getenv("MCP_LOG_FILE"))
 
 	// Start server based on transport type
+	logger.Info("Starting server with transport", "transport", transport)
 	if err := server.Start(ctx, transport); err != nil {
 		logger.Error("Failed to start MCP server", "error", err)
 		os.Exit(1)
 	}
+	logger.Info("Server started successfully")
 
 	// Wait for context cancellation
 	<-ctx.Done()
@@ -94,4 +113,24 @@ func detectTransport() mcp.TransportType {
 
 	// Default to stdio for Claude Code compatibility
 	return mcp.TransportStdio
+}
+
+// printHelp displays usage information
+func printHelp() {
+	log.Println("go-invoice-mcp - MCP server for go-invoice CLI integration")
+	log.Println()
+	log.Println("Usage: go-invoice-mcp [options]")
+	log.Println()
+	log.Println("Options:")
+	log.Println("  --stdio      Use stdio transport (default)")
+	log.Println("  --http       Use HTTP transport")
+	log.Println("  --config     Path to MCP configuration file")
+	log.Println("  --version    Show version information")
+	log.Println("  --help       Show this help message")
+	log.Println()
+	log.Println("Environment variables:")
+	log.Println("  MCP_TRANSPORT     Transport type (stdio or http)")
+	log.Println("  MCP_LOG_LEVEL     Log level (debug, info, warn, error)")
+	log.Println("  MCP_LOG_FILE      Path to log file")
+	log.Println("  GO_INVOICE_HOME   Path to go-invoice home directory")
 }

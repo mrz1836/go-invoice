@@ -318,6 +318,34 @@ func (i *Invoice) AddWorkItem(ctx context.Context, item WorkItem) error {
 	return nil
 }
 
+// AddWorkItemWithoutVersionIncrement adds a work item without incrementing version
+// This is used for bulk operations where version will be handled by storage
+func (i *Invoice) AddWorkItemWithoutVersionIncrement(ctx context.Context, item WorkItem) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Validate the work item
+	if err := item.Validate(ctx); err != nil {
+		return fmt.Errorf("invalid work item: %w", err)
+	}
+
+	// Add the item
+	i.WorkItems = append(i.WorkItems, item)
+
+	// Recalculate totals
+	if err := i.RecalculateTotals(ctx); err != nil {
+		return fmt.Errorf("failed to recalculate totals after adding work item: %w", err)
+	}
+
+	// Update timestamp but NOT version (for bulk operations)
+	i.UpdatedAt = time.Now()
+
+	return nil
+}
+
 // RemoveWorkItem removes a work item by ID and recalculates totals
 func (i *Invoice) RemoveWorkItem(ctx context.Context, itemID string) error {
 	select {

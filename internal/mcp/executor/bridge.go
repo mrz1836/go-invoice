@@ -121,6 +121,19 @@ func (b *CLIBridge) ExecuteToolCommand(ctx context.Context, toolName string, inp
 		return nil, fmt.Errorf("%w: %w", ErrCommandBuildFailed, err)
 	}
 
+	// For go-invoice imports, we need to handle dynamic subcommands
+	var finalSubCommands []string
+	if toolName == "import_csv" {
+		// Determine subcommand based on import mode
+		if importMode, ok := input["import_mode"].(string); ok && importMode == "append_invoice" {
+			finalSubCommands = []string{"import", "append"}
+		} else {
+			finalSubCommands = []string{"import", "create"}
+		}
+	} else {
+		finalSubCommands = toolCmd.SubCommands
+	}
+
 	// For go-invoice, config must come before subcommands as it's a global flag
 	var fullArgs []string
 
@@ -128,13 +141,13 @@ func (b *CLIBridge) ExecuteToolCommand(ctx context.Context, toolName string, inp
 	if len(args) >= 2 && args[0] == "--config" {
 		// Place config args before subcommands
 		fullArgs = append(fullArgs, args[0], args[1])
-		fullArgs = append(fullArgs, toolCmd.SubCommands...)
+		fullArgs = append(fullArgs, finalSubCommands...)
 		if len(args) > 2 {
 			fullArgs = append(fullArgs, args[2:]...)
 		}
 	} else {
 		// Default behavior
-		fullArgs = append(toolCmd.SubCommands, args...)
+		fullArgs = append(finalSubCommands, args...)
 	}
 
 	// Prepare execution request
@@ -308,7 +321,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["import_csv"] = &ToolCommand{
 		Tool:          "import_csv",
 		Command:       b.cliPath,
-		SubCommands:   []string{"import"},
+		SubCommands:   []string{"import"}, // Will add subcommand dynamically based on mode
 		BuildArgs:     b.buildImportCSVArgs,
 		RequiresFiles: true,
 		Timeout:       30 * time.Second,
@@ -317,7 +330,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["import_validate"] = &ToolCommand{
 		Tool:          "import_validate",
 		Command:       b.cliPath,
-		SubCommands:   []string{"import", "--validate"},
+		SubCommands:   []string{"import", "validate"},
 		BuildArgs:     b.buildImportValidateArgs,
 		RequiresFiles: true,
 		Timeout:       10 * time.Second,
@@ -326,10 +339,10 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["import_preview"] = &ToolCommand{
 		Tool:          "import_preview",
 		Command:       b.cliPath,
-		SubCommands:   []string{"import", "--preview"},
+		SubCommands:   []string{"import", "validate"},
 		BuildArgs:     b.buildImportPreviewArgs,
 		RequiresFiles: true,
-		ExpectJSON:    true,
+		ExpectJSON:    false, // validate command doesn't output JSON by default
 		Timeout:       10 * time.Second,
 	}
 
@@ -401,24 +414,65 @@ func (b *CLIBridge) getConfigArgs() []string {
 }
 
 func (b *CLIBridge) buildInvoiceCreateArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
-	// Required: client_name
-	clientName, ok := input["client_name"].(string)
-	if !ok || clientName == "" {
-		return nil, fmt.Errorf("%w: client_name", ErrMissingRequired)
+	// Handle different client identifier options
+	if clientID, ok := input["client_id"].(string); ok && clientID != "" {
+		args = append(args, "--client-id", clientID)
+	} else if clientName, ok := input["client_name"].(string); ok && clientName != "" {
+		args = append(args, "--client", clientName)
+	} else if clientEmail, ok := input["client_email"].(string); ok && clientEmail != "" {
+		args = append(args, "--client-email", clientEmail)
+	} else {
+		return nil, fmt.Errorf("%w: one of client_id, client_name, or client_email is required", ErrMissingRequired)
 	}
-	args = append(args, "--client", clientName)
 
 	// Optional parameters
-	if projectName, ok := input["project_name"].(string); ok && projectName != "" {
-		args = append(args, "--project", projectName)
+	if description, ok := input["description"].(string); ok && description != "" {
+		args = append(args, "--description", description)
+	}
+	if invoiceDate, ok := input["invoice_date"].(string); ok && invoiceDate != "" {
+		args = append(args, "--date", invoiceDate)
 	}
 	if dueDate, ok := input["due_date"].(string); ok && dueDate != "" {
 		args = append(args, "--due", dueDate)
 	}
-	if interactive, ok := input["interactive"].(bool); ok && interactive {
-		args = append(args, "--interactive")
+
+	// Handle work_items if provided
+	if workItems, ok := input["work_items"].([]interface{}); ok && len(workItems) > 0 {
+		// Add work items directly during creation
+		for _, item := range workItems {
+			if workItem, ok := item.(map[string]interface{}); ok {
+				if description, ok := workItem["description"].(string); ok && description != "" {
+					args = append(args, "--add-item-description", description)
+				}
+				if hours, ok := getFloatValue(workItem["hours"]); ok {
+					args = append(args, "--add-item-hours", fmt.Sprintf("%.2f", hours))
+				}
+				if rate, ok := getFloatValue(workItem["rate"]); ok {
+					args = append(args, "--add-item-rate", fmt.Sprintf("%.2f", rate))
+				}
+				if date, ok := workItem["date"].(string); ok && date != "" {
+					args = append(args, "--add-item-date", date)
+				}
+			}
+		}
+	}
+
+	// Handle create_client_if_missing
+	if createClient, ok := input["create_client_if_missing"].(bool); ok && createClient {
+		args = append(args, "--create-client")
+
+		// Add new client details if provided
+		if email, ok := input["new_client_email"].(string); ok && email != "" {
+			args = append(args, "--new-client-email", email)
+		}
+		if phone, ok := input["new_client_phone"].(string); ok && phone != "" {
+			args = append(args, "--new-client-phone", phone)
+		}
+		if address, ok := input["new_client_address"].(string); ok && address != "" {
+			args = append(args, "--new-client-address", address)
+		}
 	}
 
 	return args, nil
@@ -473,14 +527,22 @@ func (b *CLIBridge) buildInvoiceShowArgs(input map[string]interface{}) ([]string
 }
 
 func (b *CLIBridge) buildInvoiceUpdateArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
-	// Required: invoice_id
-	invoiceID, ok := input["invoice_id"].(string)
-	if !ok || invoiceID == "" {
-		return nil, fmt.Errorf("%w: invoice_id", ErrMissingRequired)
+	// Required: invoice_id or invoice_number
+	invoiceID, hasID := input["invoice_id"].(string)
+	invoiceNumber, hasNumber := input["invoice_number"].(string)
+
+	if (!hasID || invoiceID == "") && (!hasNumber || invoiceNumber == "") {
+		return nil, fmt.Errorf("%w: either invoice_id or invoice_number is required", ErrMissingRequired)
 	}
-	args = append(args, invoiceID)
+
+	// Prefer invoice_id if both are provided
+	identifier := invoiceID
+	if identifier == "" {
+		identifier = invoiceNumber
+	}
+	args = append(args, identifier)
 
 	// At least one update field required
 	hasUpdate := false
@@ -492,8 +554,8 @@ func (b *CLIBridge) buildInvoiceUpdateArgs(input map[string]interface{}) ([]stri
 		args = append(args, "--due", dueDate)
 		hasUpdate = true
 	}
-	if notes, ok := input["notes"].(string); ok && notes != "" {
-		args = append(args, "--notes", notes)
+	if description, ok := input["description"].(string); ok && description != "" {
+		args = append(args, "--description", description)
 		hasUpdate = true
 	}
 
@@ -505,79 +567,169 @@ func (b *CLIBridge) buildInvoiceUpdateArgs(input map[string]interface{}) ([]stri
 }
 
 func (b *CLIBridge) buildInvoiceDeleteArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
-	// Required: invoice_id
-	invoiceID, ok := input["invoice_id"].(string)
-	if !ok || invoiceID == "" {
-		return nil, fmt.Errorf("%w: invoice_id", ErrMissingRequired)
+	// Required: invoice_id or invoice_number
+	invoiceID, hasID := input["invoice_id"].(string)
+	invoiceNumber, hasNumber := input["invoice_number"].(string)
+
+	if (!hasID || invoiceID == "") && (!hasNumber || invoiceNumber == "") {
+		return nil, fmt.Errorf("%w: either invoice_id or invoice_number is required", ErrMissingRequired)
 	}
-	args = append(args, invoiceID)
+
+	// Prefer invoice_id if both are provided
+	identifier := invoiceID
+	if identifier == "" {
+		identifier = invoiceNumber
+	}
+	args = append(args, identifier)
 
 	// Optional: force
 	if force, ok := input["force"].(bool); ok && force {
 		args = append(args, "--force")
 	}
 
+	// Optional: hard_delete
+	if hardDelete, ok := input["hard_delete"].(bool); ok && hardDelete {
+		args = append(args, "--hard")
+	}
+
 	return args, nil
 }
 
 func (b *CLIBridge) buildInvoiceAddItemArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
-	// Required: invoice_id
-	invoiceID, ok := input["invoice_id"].(string)
-	if !ok || invoiceID == "" {
-		return nil, fmt.Errorf("%w: invoice_id", ErrMissingRequired)
+	// Required: invoice_id or invoice_number
+	invoiceID, hasID := input["invoice_id"].(string)
+	invoiceNumber, hasNumber := input["invoice_number"].(string)
+
+	if (!hasID || invoiceID == "") && (!hasNumber || invoiceNumber == "") {
+		return nil, fmt.Errorf("%w: either invoice_id or invoice_number is required", ErrMissingRequired)
 	}
-	args = append(args, invoiceID)
 
-	// Required: description
-	description, ok := input["description"].(string)
-	if !ok || description == "" {
-		return nil, fmt.Errorf("%w: description", ErrMissingRequired)
+	// Prefer invoice_id if both are provided
+	identifier := invoiceID
+	if identifier == "" {
+		identifier = invoiceNumber
 	}
-	args = append(args, "--description", description)
+	args = append(args, identifier)
 
-	// Required: hours
-	hours, ok := getFloatValue(input["hours"])
-	if !ok {
-		return nil, fmt.Errorf("%w: hours", ErrMissingRequired)
-	}
-	args = append(args, "--hours", fmt.Sprintf("%.2f", hours))
+	// Check if we have work_items array (MCP schema format)
+	if workItems, ok := input["work_items"].([]interface{}); ok && len(workItems) > 0 {
+		// Handle array of work items
+		for _, item := range workItems {
+			if workItem, ok := item.(map[string]interface{}); ok {
+				// Add each work item
+				if description, ok := workItem["description"].(string); ok && description != "" {
+					args = append(args, "--description", description)
+				}
 
-	// Required: rate
-	rate, ok := getFloatValue(input["rate"])
-	if !ok {
-		return nil, fmt.Errorf("%w: rate", ErrMissingRequired)
-	}
-	args = append(args, "--rate", fmt.Sprintf("%.2f", rate))
+				if hours, ok := getFloatValue(workItem["hours"]); ok {
+					args = append(args, "--hours", fmt.Sprintf("%.2f", hours))
+				}
 
-	// Optional: date
-	if date, ok := input["date"].(string); ok && date != "" {
-		args = append(args, "--date", date)
+				if rate, ok := getFloatValue(workItem["rate"]); ok {
+					args = append(args, "--rate", fmt.Sprintf("%.2f", rate))
+				}
+
+				if date, ok := workItem["date"].(string); ok && date != "" {
+					args = append(args, "--date", date)
+				}
+
+				// This assumes the CLI can handle multiple work items with repeated flags
+				// If not, we may need to adjust the CLI or use a different approach
+			}
+		}
+	} else {
+		// Fallback to individual parameters for backwards compatibility
+		description, hasDesc := input["description"].(string)
+		hours, hasHours := getFloatValue(input["hours"])
+		rate, hasRate := getFloatValue(input["rate"])
+
+		if !hasDesc || description == "" {
+			return nil, fmt.Errorf("%w: description or work_items", ErrMissingRequired)
+		}
+		if !hasHours {
+			return nil, fmt.Errorf("%w: hours or work_items", ErrMissingRequired)
+		}
+		if !hasRate {
+			return nil, fmt.Errorf("%w: rate or work_items", ErrMissingRequired)
+		}
+
+		args = append(args, "--description", description)
+		args = append(args, "--hours", fmt.Sprintf("%.2f", hours))
+		args = append(args, "--rate", fmt.Sprintf("%.2f", rate))
+
+		// Optional: date
+		if date, ok := input["date"].(string); ok && date != "" {
+			args = append(args, "--date", date)
+		}
 	}
 
 	return args, nil
 }
 
 func (b *CLIBridge) buildInvoiceRemoveItemArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
-	// Required: invoice_id
-	invoiceID, ok := input["invoice_id"].(string)
-	if !ok || invoiceID == "" {
-		return nil, fmt.Errorf("%w: invoice_id", ErrMissingRequired)
+	// Required: invoice_id or invoice_number
+	invoiceID, hasID := input["invoice_id"].(string)
+	invoiceNumber, hasNumber := input["invoice_number"].(string)
+
+	if (!hasID || invoiceID == "") && (!hasNumber || invoiceNumber == "") {
+		return nil, fmt.Errorf("%w: either invoice_id or invoice_number is required", ErrMissingRequired)
 	}
-	args = append(args, invoiceID)
 
-	// Required: item_id or item_index
-	if itemID, ok := input["item_id"].(string); ok && itemID != "" {
+	// Prefer invoice_id if both are provided
+	identifier := invoiceID
+	if identifier == "" {
+		identifier = invoiceNumber
+	}
+	args = append(args, identifier)
+
+	// Determine removal criteria - work_item_id, work_item_description, work_item_date, or legacy item_id/item_index
+	hasRemovalCriteria := false
+
+	if workItemID, ok := input["work_item_id"].(string); ok && workItemID != "" {
+		args = append(args, "--item-id", workItemID)
+		hasRemovalCriteria = true
+	} else if itemID, ok := input["item_id"].(string); ok && itemID != "" {
+		// Legacy support
 		args = append(args, "--item-id", itemID)
-	} else if itemIndex, ok := getIntValue(input["item_index"]); ok {
-		args = append(args, "--index", fmt.Sprintf("%d", itemIndex))
-	} else {
-		return nil, ErrMissingItemIdentifier
+		hasRemovalCriteria = true
+	}
+
+	if workItemDesc, ok := input["work_item_description"].(string); ok && workItemDesc != "" {
+		args = append(args, "--description", workItemDesc)
+		hasRemovalCriteria = true
+	}
+
+	if workItemDate, ok := input["work_item_date"].(string); ok && workItemDate != "" {
+		args = append(args, "--date", workItemDate)
+		hasRemovalCriteria = true
+	}
+
+	// Legacy index support
+	if !hasRemovalCriteria {
+		if itemIndex, ok := getIntValue(input["item_index"]); ok {
+			args = append(args, "--index", fmt.Sprintf("%d", itemIndex))
+			hasRemovalCriteria = true
+		}
+	}
+
+	if !hasRemovalCriteria {
+		return nil, fmt.Errorf("%w: one of work_item_id, work_item_description, work_item_date, or item_index is required", ErrMissingRequired)
+	}
+
+	// Optional: remove_all_matching
+	if removeAll, ok := input["remove_all_matching"].(bool); ok && removeAll {
+		args = append(args, "--all")
+	}
+
+	// Optional: confirm
+	if confirm, ok := input["confirm"].(bool); ok && confirm {
+		args = append(args, "--yes")
 	}
 
 	return args, nil
@@ -717,7 +869,7 @@ func (b *CLIBridge) buildClientDeleteArgs(input map[string]interface{}) ([]strin
 }
 
 func (b *CLIBridge) buildImportCSVArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
 	// Required: file_path
 	filePath, ok := input["file_path"].(string)
@@ -726,33 +878,75 @@ func (b *CLIBridge) buildImportCSVArgs(input map[string]interface{}) ([]string, 
 	}
 	args = append(args, filePath)
 
-	// Optional: invoice_id or create new
-	if invoiceID, ok := input["invoice_id"].(string); ok && invoiceID != "" {
-		args = append(args, "--invoice", invoiceID)
-	} else if createNew, ok := input["create_new"].(bool); ok && createNew {
-		// Client name required for new invoice
-		if clientName, ok := input["client_name"].(string); ok && clientName != "" {
-			args = append(args, "--new-invoice", "--client", clientName)
+	// Handle import_mode and required parameters
+	importMode, hasMode := input["import_mode"].(string)
+	if hasMode && importMode == "append_invoice" {
+		// For append mode, we need an invoice ID
+		if invoiceID, ok := input["invoice_id"].(string); ok && invoiceID != "" {
+			args = append(args, "--invoice", invoiceID)
+		} else if invoiceNumber, ok := input["invoice_number"].(string); ok && invoiceNumber != "" {
+			args = append(args, "--invoice", invoiceNumber)
 		} else {
-			return nil, ErrMissingClientNameForCreate
+			return nil, fmt.Errorf("%w: invoice_id or invoice_number is required for append_invoice mode", ErrMissingRequired)
+		}
+	} else {
+		// Create new invoice mode - need client identifier
+		if clientID, ok := input["client_id"].(string); ok && clientID != "" {
+			args = append(args, "--client-id", clientID)
+		} else if clientName, ok := input["client_name"].(string); ok && clientName != "" {
+			args = append(args, "--client", clientName)
+		} else if clientEmail, ok := input["client_email"].(string); ok && clientEmail != "" {
+			args = append(args, "--client-email", clientEmail)
+		} else {
+			return nil, fmt.Errorf("%w: client_id, client_name, or client_email is required for new invoice", ErrMissingRequired)
+		}
+
+		// Optional: description for new invoice
+		if description, ok := input["description"].(string); ok && description != "" {
+			args = append(args, "--description", description)
+		}
+
+		// Optional: invoice_date for new invoice
+		if invoiceDate, ok := input["invoice_date"].(string); ok && invoiceDate != "" {
+			args = append(args, "--date", invoiceDate)
+		}
+
+		// Optional: due_days for new invoice
+		if dueDays, ok := getIntValue(input["due_days"]); ok {
+			args = append(args, "--due-days", fmt.Sprintf("%d", dueDays))
 		}
 	}
 
-	// Optional: append mode
-	if appendMode, ok := input["append"].(bool); ok && appendMode {
-		args = append(args, "--append")
+	// Common optional parameters for both modes
+	if defaultRate, ok := getFloatValue(input["default_rate"]); ok {
+		args = append(args, "--default-rate", fmt.Sprintf("%.2f", defaultRate))
 	}
 
-	// Optional: dry run
+	if rateOverride, ok := input["rate_override"].(bool); ok && rateOverride {
+		args = append(args, "--rate-override")
+	}
+
 	if dryRun, ok := input["dry_run"].(bool); ok && dryRun {
 		args = append(args, "--dry-run")
+	}
+
+	if delimiter, ok := input["delimiter"].(string); ok && delimiter != "" {
+		args = append(args, "--delimiter", delimiter)
+	}
+
+	if hasHeader, ok := input["has_header"].(bool); ok && !hasHeader {
+		args = append(args, "--no-header")
+	}
+
+	if currency, ok := input["currency"].(string); ok && currency != "" {
+		args = append(args, "--currency", currency)
 	}
 
 	return args, nil
 }
 
 func (b *CLIBridge) buildImportValidateArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
 	// Required: file_path
 	filePath, ok := input["file_path"].(string)
@@ -761,7 +955,62 @@ func (b *CLIBridge) buildImportValidateArgs(input map[string]interface{}) ([]str
 	}
 	args = append(args, filePath)
 
-	// Optional: strict validation
+	// Optional: delimiter
+	if delimiter, ok := input["delimiter"].(string); ok && delimiter != "" {
+		args = append(args, "--delimiter", delimiter)
+	}
+
+	// Optional: has_header
+	if hasHeader, ok := input["has_header"].(bool); ok && !hasHeader {
+		args = append(args, "--no-header")
+	}
+
+	// Optional: validate_rates
+	if validateRates, ok := input["validate_rates"].(bool); ok && validateRates {
+		args = append(args, "--validate-rates")
+	}
+
+	// Optional: validate_dates
+	if validateDates, ok := input["validate_dates"].(bool); ok && validateDates {
+		args = append(args, "--validate-dates")
+	}
+
+	// Optional: validate_business
+	if validateBusiness, ok := input["validate_business"].(bool); ok && validateBusiness {
+		args = append(args, "--validate-business")
+	}
+
+	// Optional: max_hours_per_day
+	if maxHours, ok := getFloatValue(input["max_hours_per_day"]); ok {
+		args = append(args, "--max-hours", fmt.Sprintf("%.1f", maxHours))
+	}
+
+	// Optional: min_rate
+	if minRate, ok := getFloatValue(input["min_rate"]); ok {
+		args = append(args, "--min-rate", fmt.Sprintf("%.2f", minRate))
+	}
+
+	// Optional: max_rate
+	if maxRate, ok := getFloatValue(input["max_rate"]); ok {
+		args = append(args, "--max-rate", fmt.Sprintf("%.2f", maxRate))
+	}
+
+	// Optional: check_duplicates
+	if checkDuplicates, ok := input["check_duplicates"].(bool); ok && checkDuplicates {
+		args = append(args, "--check-duplicates")
+	}
+
+	// Optional: check_weekends
+	if checkWeekends, ok := input["check_weekends"].(bool); ok && checkWeekends {
+		args = append(args, "--check-weekends")
+	}
+
+	// Optional: quick_validate
+	if quickValidate, ok := input["quick_validate"].(bool); ok && quickValidate {
+		args = append(args, "--quick")
+	}
+
+	// Optional: strict validation (legacy)
 	if strict, ok := input["strict"].(bool); ok && strict {
 		args = append(args, "--strict")
 	}
@@ -770,18 +1019,26 @@ func (b *CLIBridge) buildImportValidateArgs(input map[string]interface{}) ([]str
 }
 
 func (b *CLIBridge) buildImportPreviewArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := b.getConfigArgs()
 
 	// Required: file_path
 	filePath, ok := input["file_path"].(string)
 	if !ok || filePath == "" {
 		return nil, fmt.Errorf("%w: file_path", ErrMissingRequired)
 	}
-	args = append(args, filePath, "--output", "json")
+	args = append(args, filePath)
 
-	// Optional: limit rows
-	if limit, ok := getIntValue(input["limit"]); ok {
-		args = append(args, "--limit", fmt.Sprintf("%d", limit))
+	// For preview, we use the validate command with dry-run
+	args = append(args, "--dry-run")
+
+	// Optional: delimiter
+	if delimiter, ok := input["delimiter"].(string); ok && delimiter != "" {
+		args = append(args, "--delimiter", delimiter)
+	}
+
+	// Optional: has_header
+	if hasHeader, ok := input["has_header"].(bool); ok && !hasHeader {
+		args = append(args, "--no-header")
 	}
 
 	return args, nil

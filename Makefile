@@ -8,7 +8,7 @@ include .make/go.mk
 REPO_NAME  ?= go-invoice
 REPO_OWNER ?= mrz1836
 
-.PHONY: rebuild-global rebuild-mcp
+.PHONY: rebuild-global rebuild-mcp run-mcp
 rebuild-global: ## Rebuild app, clear local cache, install globally as go-invoice, and build MCP server
 	@echo "Downloading fresh dependencies..."
 	@go mod download
@@ -17,10 +17,12 @@ rebuild-global: ## Rebuild app, clear local cache, install globally as go-invoic
 	@echo "Force rebuilding MCP server..."
 	@rm -f bin/go-invoice-mcp
 	@go build -o bin/go-invoice-mcp ./cmd/go-invoice-mcp
-	@echo "MCP server rebuilt successfully"
+	@echo "Installing MCP server globally..."
+	@cp bin/go-invoice-mcp $$(go env GOPATH)/bin/go-invoice-mcp
+	@echo "MCP server rebuilt and installed successfully"
 
-rebuild-mcp: ## Force rebuild MCP server to bin/go-invoice-mcp
-	@echo "Force rebuilding MCP server..."
-	@rm -f bin/go-invoice-mcp
-	@go build -o bin/go-invoice-mcp ./cmd/go-invoice-mcp
-	@echo "MCP server rebuilt successfully"
+run-mcp: ## Run the MCP server with stdio transport
+	@echo "Starting go-invoice MCP server..."
+	@./bin/go-invoice-mcp --stdio
+
+rebuild-run-mcp: rebuild-global run-mcp ## Rebuild and run the MCP server

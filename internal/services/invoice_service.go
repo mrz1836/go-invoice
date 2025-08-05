@@ -333,6 +333,29 @@ func (s *InvoiceService) AddWorkItemToInvoice(ctx context.Context, invoiceID mod
 	return invoice, nil
 }
 
+// UpdateInvoiceDirectly updates an invoice directly in storage without additional validation
+// This method is used internally by import service to avoid optimistic locking conflicts
+func (s *InvoiceService) UpdateInvoiceDirectly(ctx context.Context, invoice *models.Invoice) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	s.logger.Info("updating invoice directly", "invoice_id", invoice.ID)
+
+	// Update timestamp
+	invoice.UpdatedAt = time.Now()
+
+	// Update invoice in storage
+	if err := s.invoiceStorage.UpdateInvoice(ctx, invoice); err != nil {
+		return fmt.Errorf("failed to update invoice in storage: %w", err)
+	}
+
+	s.logger.Info("invoice updated directly", "invoice_id", invoice.ID, "version", invoice.Version)
+	return nil
+}
+
 // RemoveWorkItemFromInvoice removes a work item from an invoice
 func (s *InvoiceService) RemoveWorkItemFromInvoice(ctx context.Context, invoiceID models.InvoiceID, workItemID string) (*models.Invoice, error) {
 	select {

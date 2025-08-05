@@ -177,7 +177,13 @@ func (s *ImportService) AppendToInvoice(ctx context.Context, reader io.Reader, r
 		return result, nil
 	}
 
-	// Add work items to invoice
+	// Get the invoice once to add all work items in a single update
+	invoice, err := s.invoiceService.GetInvoice(ctx, models.InvoiceID(req.InvoiceID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get invoice for batch update: %w", err)
+	}
+
+	// Add work items to invoice in memory
 	successCount := 0
 	for _, workItem := range parseResult.WorkItems {
 		select {
@@ -186,17 +192,38 @@ func (s *ImportService) AppendToInvoice(ctx context.Context, reader io.Reader, r
 		default:
 		}
 
-		_, err := s.invoiceService.AddWorkItemToInvoice(ctx, models.InvoiceID(req.InvoiceID), workItem)
-		if err != nil {
+		// Generate work item ID if not provided
+		if workItem.ID == "" {
+			workItemID, genErr := s.idGenerator.GenerateWorkItemID(ctx)
+			if genErr != nil {
+				s.logger.Error("failed to generate work item ID",
+					"work_item_date", workItem.Date,
+					"error", genErr)
+				continue
+			}
+			workItem.ID = workItemID
+		}
+
+		// Set creation time
+		workItem.CreatedAt = time.Now()
+
+		// Add work item to invoice in memory without version increment
+		if addErr := invoice.AddWorkItemWithoutVersionIncrement(ctx, workItem); addErr != nil {
 			s.logger.Error("failed to add work item to invoice",
 				"invoice_id", req.InvoiceID,
 				"work_item_date", workItem.Date,
-				"error", err)
-
+				"error", addErr)
 			continue
 		}
 
 		successCount++
+	}
+
+	// Update invoice once with all work items
+	if successCount > 0 {
+		if updateErr := s.invoiceService.UpdateInvoiceDirectly(ctx, invoice); updateErr != nil {
+			return nil, fmt.Errorf("failed to update invoice with work items: %w", updateErr)
+		}
 	}
 
 	totalAmount := s.calculateTotalAmount(parseResult.WorkItems[:successCount])

@@ -67,3 +67,4 @@ node_modules/
 # timesheets/
 /.mcp.json.backup
 /.mcp.json
+/bin

@@ -204,6 +204,10 @@ func (s *DefaultServer) handleStdioRequests(ctx context.Context) {
 				s.logger.Error("Failed to encode response", "error", err)
 				return
 			}
+			// Explicitly flush stdout to ensure response is sent immediately
+			if err := os.Stdout.Sync(); err != nil {
+				s.logger.Error("Failed to sync stdout", "error", err)
+			}
 		}
 	}
 }

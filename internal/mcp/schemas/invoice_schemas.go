@@ -121,7 +121,6 @@ func InvoiceCreateSchema() map[string]interface{} {
 				},
 			},
 		},
-		"additionalProperties": false,
 		"anyOf": []map[string]interface{}{
 			{
 				"required": []string{"client_name"},
@@ -133,6 +132,7 @@ func InvoiceCreateSchema() map[string]interface{} {
 				"required": []string{"client_email"},
 			},
 		},
+		"additionalProperties": false,
 	}
 }
 
@@ -244,7 +244,6 @@ func InvoiceShowSchema() map[string]interface{} {
 				"description": "Include full client information in the output.",
 			},
 		},
-		"additionalProperties": false,
 		"anyOf": []map[string]interface{}{
 			{
 				"required": []string{"invoice_id"},
@@ -253,6 +252,7 @@ func InvoiceShowSchema() map[string]interface{} {
 				"required": []string{"invoice_number"},
 			},
 		},
+		"additionalProperties": false,
 	}
 }
 
@@ -295,7 +295,6 @@ func InvoiceUpdateSchema() map[string]interface{} {
 				"examples":    []string{"Updated: January 2025 consulting services", "Q1 2025 development work"},
 			},
 		},
-		"additionalProperties": false,
 		"allOf": []map[string]interface{}{
 			{
 				"anyOf": []map[string]interface{}{
@@ -321,6 +320,7 @@ func InvoiceUpdateSchema() map[string]interface{} {
 				},
 			},
 		},
+		"additionalProperties": false,
 	}
 }
 
@@ -470,7 +470,6 @@ func InvoiceRemoveItemSchema() map[string]interface{} {
 				"description": "Confirm removal without additional prompts.",
 			},
 		},
-		"additionalProperties": false,
 		"allOf": []map[string]interface{}{
 			{
 				"anyOf": []map[string]interface{}{
@@ -496,6 +495,7 @@ func InvoiceRemoveItemSchema() map[string]interface{} {
 				},
 			},
 		},
+		"additionalProperties": false,
 	}
 }
 

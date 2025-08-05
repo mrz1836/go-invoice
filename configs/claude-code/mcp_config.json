@@ -3,7 +3,7 @@
     "go-invoice": {
       "name": "Go Invoice MCP Server",
       "description": "Natural language invoice management through go-invoice CLI",
-      "command": "go-invoice-mcp",
+      "command": "/Users/mrz/projects/go-invoice/bin/go-invoice-mcp",
       "args": [
         "--stdio",
         "--config",
