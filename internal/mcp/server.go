@@ -206,7 +206,8 @@ func (s *DefaultServer) handleStdioRequests(ctx context.Context) {
 			}
 			// Explicitly flush stdout to ensure response is sent immediately
 			if err := os.Stdout.Sync(); err != nil {
-				s.logger.Error("Failed to sync stdout", "error", err)
+				// Sync failure is non-critical - response was already sent
+				s.logger.Debug("stdout sync failed (non-critical)", "error", err)
 			}
 		}
 	}

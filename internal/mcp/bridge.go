@@ -84,6 +84,10 @@ func (b *DefaultCLIBridge) ExecuteCommand(ctx context.Context, req *CommandReque
 	cmd := exec.CommandContext(execCtx, req.Command, req.Args...)
 	cmd.Dir = cleanWorkDir
 
+	// Debug: Log the command being executed
+	debugCmd := fmt.Sprintf("Command: %s, Args: %v, WorkDir: %s", req.Command, req.Args, cleanWorkDir)
+	os.WriteFile(filepath.Join(os.TempDir(), "mcp-command-debug.txt"), []byte(debugCmd), 0o644)
+
 	// Set up environment
 	cmd.Env = b.buildEnvironment(req.Env)
 

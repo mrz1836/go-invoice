@@ -48,7 +48,7 @@ func GenerateHTMLSchema() map[string]interface{} {
 			},
 			"template": map[string]interface{}{
 				"type":        "string",
-				"enum":        []string{"default", "professional", "minimal", "custom", "web"},
+				"enum":        []string{"default", "minimal", "custom", "web"},
 				"default":     "default",
 				"description": "Template style for HTML generation.",
 			},

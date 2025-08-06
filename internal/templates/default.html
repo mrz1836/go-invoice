@@ -28,26 +28,26 @@
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
-            
+
             .invoice-container {
                 box-shadow: none !important;
                 border: none !important;
                 margin: 0 !important;
                 padding: 0 !important;
             }
-            
+
             .no-print {
                 display: none !important;
             }
-            
+
             .page-break {
                 page-break-before: always;
             }
-            
+
             table {
                 border-collapse: collapse !important;
             }
-            
+
             th, td {
                 border: 1px solid #ddd !important;
             }
@@ -315,29 +315,29 @@
             .invoice-content {
                 padding: 20px;
             }
-            
+
             .invoice-header {
                 flex-direction: column;
                 gap: 20px;
             }
-            
+
             .invoice-meta {
                 text-align: left;
             }
-            
+
             .billing-section {
                 flex-direction: column;
                 gap: 30px;
             }
-            
+
             .bill-to {
                 margin-right: 0;
             }
-            
+
             .work-items-table {
                 font-size: 12px;
             }
-            
+
             .work-items-table th,
             .work-items-table td {
                 padding: 10px 8px;
@@ -360,7 +360,7 @@
                     </div>
                 </div>
                 <div class="invoice-meta">
-                    <div class="invoice-title">INVOICE</div>
+                    <div class="invoice-title" title="invoice">INVOICE</div>
                     <div class="invoice-number">
                         #{{.Number}}
                         <span class="status-badge status-{{.Status | lower}}">{{.Status | title}}</span>

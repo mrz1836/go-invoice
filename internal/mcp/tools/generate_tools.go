@@ -119,7 +119,7 @@ func createGenerateHTMLTool() *MCPTool {
 		},
 		Category:   CategoryDataExport,
 		CLICommand: "go-invoice",
-		CLIArgs:    []string{"generate", "html"},
+		CLIArgs:    []string{"generate", "invoice"},
 		HelpText:   "Generates professional HTML invoices with template selection, branding options, and batch processing capabilities. Perfect for client presentation and printing.",
 		Version:    "1.0.0",
 		Timeout:    45 * time.Second,

@@ -15,6 +15,7 @@ import (
 	"github.com/mrz/go-invoice/internal/render"
 	"github.com/mrz/go-invoice/internal/services"
 	jsonStorage "github.com/mrz/go-invoice/internal/storage/json"
+	"github.com/mrz/go-invoice/internal/templates"
 	"github.com/spf13/cobra"
 )
 
@@ -208,7 +209,7 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 	}
 
 	// Write output file
-	outputPath, err := a.writeGeneratedInvoice(html, options.OutputPath, invoice.Number)
+	outputPath, err := a.writeGeneratedInvoice(html, options.OutputPath, invoice.Number, config.Storage.DataDir)
 	if err != nil {
 		return err
 	}
@@ -236,9 +237,14 @@ func (a *App) setupGenerateServices(ctx context.Context, configPath, invoiceID s
 	// Create invoice service and get invoice
 	invoiceService := a.createInvoiceService(config.Storage.DataDir)
 
+	// Try to get invoice by ID first, then by number if that fails
 	invoice, err := invoiceService.GetInvoice(ctx, models.InvoiceID(invoiceID))
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to retrieve invoice: %w", err)
+		// If getting by ID failed, try getting by invoice number
+		invoice, err = invoiceService.GetInvoiceByNumber(ctx, invoiceID)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("invoice '%s' not found. Please check the invoice ID or invoice number and try again", invoiceID)
+		}
 	}
 
 	return config, renderService, invoice, nil
@@ -283,10 +289,10 @@ func (a *App) buildCalculationOptions(options GenerateInvoiceOptions, invoice *m
 }
 
 // writeGeneratedInvoice writes the generated HTML to a file
-func (a *App) writeGeneratedInvoice(html, outputPath, invoiceNumber string) (string, error) {
+func (a *App) writeGeneratedInvoice(html, outputPath, invoiceNumber, dataDir string) (string, error) {
 	// Determine output path if not specified
 	if outputPath == "" {
-		outputPath = a.createSafeFilename(invoiceNumber)
+		outputPath = a.createSafeFilename(invoiceNumber, dataDir)
 	}
 
 	// Ensure output directory exists
@@ -302,11 +308,13 @@ func (a *App) writeGeneratedInvoice(html, outputPath, invoiceNumber string) (str
 	return outputPath, nil
 }
 
-// createSafeFilename creates a safe filename from invoice number
-func (a *App) createSafeFilename(invoiceNumber string) string {
+// createSafeFilename creates a safe filename from invoice number in the data directory's generated subdirectory
+func (a *App) createSafeFilename(invoiceNumber, dataDir string) string {
 	safeNumber := strings.ReplaceAll(invoiceNumber, "/", "-")
 	safeNumber = strings.ReplaceAll(safeNumber, "\\", "-")
-	return fmt.Sprintf("%s.html", safeNumber)
+	filename := fmt.Sprintf("%s.html", safeNumber)
+	generatedDir := filepath.Join(dataDir, "generated")
+	return filepath.Join(generatedDir, filename)
 }
 
 // ensureOutputDirectory ensures the output directory exists
@@ -523,12 +531,9 @@ func (a *App) createInvoiceService(dataDir string) *services.InvoiceService {
 }
 
 func (a *App) loadBuiltInTemplates(ctx context.Context, engine render.TemplateEngine) error {
-	// Load default template
-	defaultTemplate, err := os.ReadFile("templates/invoice/default.html")
-	if err != nil {
-		// If file doesn't exist, use embedded template
-		defaultTemplate = []byte(a.getDefaultTemplateContent())
-	}
+	// Use embedded template (always available regardless of working directory)
+	a.logger.Printf("✅ Loading embedded template (size: %d bytes)\n", len(templates.DefaultInvoiceTemplate))
+	defaultTemplate := []byte(templates.DefaultInvoiceTemplate)
 
 	if err := engine.ParseTemplateString(ctx, "default", string(defaultTemplate)); err != nil {
 		return fmt.Errorf("failed to load default template: %w", err)
@@ -573,13 +578,13 @@ func (a *App) createInvoiceData(invoice *models.Invoice, config *config.Config) 
 }
 
 func (a *App) renderInvoice(ctx context.Context, renderService render.InvoiceRenderer, data *InvoiceData, templateName string) (string, error) {
-	// Use type assertion to access the RenderData method
-	if templateRenderer, ok := renderService.(*render.TemplateRenderer); ok {
-		return templateRenderer.RenderData(ctx, data, templateName)
+	// Always use type assertion to access the RenderData method with business info
+	templateRenderer, ok := renderService.(*render.TemplateRenderer)
+	if !ok {
+		return "", fmt.Errorf("render service must be a TemplateRenderer to access business data")
 	}
 
-	// Fallback: convert data back to invoice (losing business info)
-	return renderService.RenderInvoice(ctx, &data.Invoice, templateName)
+	return templateRenderer.RenderData(ctx, data, templateName)
 }
 
 func getCurrencySymbol(currency string) string {
@@ -683,52 +688,6 @@ func (a *App) openInBrowser(path string) error {
 	// This is a simplified implementation - in a real CLI you'd use exec.Command
 	a.logger.Printf("To open in browser, run: %s\n", cmd)
 	return nil
-}
-
-func (a *App) getDefaultTemplateContent() string {
-	// Return basic template content if file can't be read
-	return `<!DOCTYPE html>
-<html>
-<head>
-    <title>Invoice {{.Number}}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { border-bottom: 2px solid #ccc; padding-bottom: 20px; }
-        .invoice-title { font-size: 36px; color: #333; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .total { font-weight: bold; font-size: 18px; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1 class="invoice-title">INVOICE</h1>
-        <p>Invoice #{{.Number}}</p>
-        <p>Date: {{formatDate .Date "January 2, 2006"}}</p>
-    </div>
-    
-    <h2>Bill To:</h2>
-    <p>{{.Client.Name}}<br>{{.Client.Address}}</p>
-    
-    <table>
-        <tr><th>Date</th><th>Description</th><th>Hours</th><th>Rate</th><th>Amount</th></tr>
-        {{range .WorkItems}}
-        <tr>
-            <td>{{formatDate .Date "Jan 2"}}</td>
-            <td>{{.Description}}</td>
-            <td>{{.Hours}}</td>
-            <td>{{formatCurrency .Rate "USD"}}</td>
-            <td>{{formatCurrency .Total "USD"}}</td>
-        </tr>
-        {{end}}
-    </table>
-    
-    <div class="total">
-        <p>Total: {{formatCurrency .Total "USD"}}</p>
-    </div>
-</body>
-</html>`
 }
 
 // Option types for generate commands

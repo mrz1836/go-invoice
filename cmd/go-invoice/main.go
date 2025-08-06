@@ -14,6 +14,7 @@ import (
 	"github.com/mrz/go-invoice/internal/config"
 	"github.com/mrz/go-invoice/internal/storage"
 	jsonStorage "github.com/mrz/go-invoice/internal/storage/json"
+	"github.com/mrz/go-invoice/internal/templates"
 	"github.com/spf13/cobra"
 )
 
@@ -23,180 +24,6 @@ var (
 	Commit  = "unknown" //nolint:gochecknoglobals // Build-time commit information
 	Date    = "unknown" //nolint:gochecknoglobals // Build-time date information
 )
-
-// defaultInvoiceTemplate contains the default invoice HTML template
-const defaultInvoiceTemplate = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice {{.Invoice.Number}}</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-        .invoice-title {
-            font-size: 32px;
-            font-weight: 300;
-            color: #2c3e50;
-            margin: 0;
-        }
-        .invoice-number {
-            text-align: right;
-            color: #7f8c8d;
-        }
-        .invoice-number strong {
-            color: #2c3e50;
-        }
-        .parties {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            margin-bottom: 40px;
-        }
-        .party h3 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        .party p {
-            margin: 5px 0;
-            color: #555;
-        }
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 40px;
-        }
-        .items-table th {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 2px solid #e9ecef;
-            color: #495057;
-            font-weight: 600;
-        }
-        .items-table td {
-            padding: 12px;
-            border-bottom: 1px solid #e9ecef;
-        }
-        .items-table .amount {
-            text-align: right;
-        }
-        .totals {
-            margin-left: auto;
-            width: 300px;
-        }
-        .totals-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-        }
-        .totals-row.total {
-            font-weight: bold;
-            font-size: 1.2em;
-            border-top: 2px solid #e9ecef;
-            padding-top: 16px;
-        }
-        .footer {
-            margin-top: 60px;
-            padding-top: 30px;
-            border-top: 1px solid #e9ecef;
-            text-align: center;
-            color: #6c757d;
-        }
-        @media print {
-            body {
-                padding: 0;
-            }
-            .header {
-                page-break-after: avoid;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1 class="invoice-title">Invoice</h1>
-        <div class="invoice-number">
-            <strong>{{.Invoice.Number}}</strong><br>
-            {{.Invoice.Date}}
-        </div>
-    </div>
-
-    <div class="parties">
-        <div class="party">
-            <h3>From</h3>
-            <p><strong>{{.Business.Name}}</strong></p>
-            {{if .Business.Address}}<p>{{.Business.Address}}</p>{{end}}
-            {{if .Business.Email}}<p>{{.Business.Email}}</p>{{end}}
-            {{if .Business.Phone}}<p>{{.Business.Phone}}</p>{{end}}
-        </div>
-        <div class="party">
-            <h3>To</h3>
-            <p><strong>{{.Client.Name}}</strong></p>
-            {{if .Client.Address}}<p>{{.Client.Address}}</p>{{end}}
-            {{if .Client.Email}}<p>{{.Client.Email}}</p>{{end}}
-            {{if .Client.Phone}}<p>{{.Client.Phone}}</p>{{end}}
-        </div>
-    </div>
-
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Description</th>
-                <th>Hours</th>
-                <th>Rate</th>
-                <th class="amount">Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .Invoice.Items}}
-            <tr>
-                <td>{{.Date}}</td>
-                <td>{{.Description}}</td>
-                <td>{{.Quantity}}</td>
-                <td>${{.Rate}}/hr</td>
-                <td class="amount">${{.Total}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
-
-    <div class="totals">
-        <div class="totals-row">
-            <span>Subtotal</span>
-            <span>${{.Invoice.Subtotal}}</span>
-        </div>
-        {{if gt .Invoice.Tax 0}}
-        <div class="totals-row">
-            <span>Tax ({{.Invoice.TaxRate}}%)</span>
-            <span>${{.Invoice.Tax}}</span>
-        </div>
-        {{end}}
-        <div class="totals-row total">
-            <span>Total</span>
-            <span>${{.Invoice.Total}}</span>
-        </div>
-    </div>
-
-    <div class="footer">
-        <p>Payment is due within {{.Invoice.PaymentTerms}} days.</p>
-        <p>Thank you for your business!</p>
-    </div>
-</body>
-</html>`
 
 // App represents the main application with dependency injection
 type App struct {
@@ -713,8 +540,8 @@ func (a *App) createDefaultTemplate() error {
 		return nil
 	}
 
-	// Write the embedded template
-	if err := os.WriteFile(templatePath, []byte(defaultInvoiceTemplate), 0o600); err != nil {
+	// Write the embedded template from templates package
+	if err := os.WriteFile(templatePath, []byte(templates.DefaultInvoiceTemplate), 0o600); err != nil {
 		return fmt.Errorf("failed to write invoice template: %w", err)
 	}
 

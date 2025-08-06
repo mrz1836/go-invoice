@@ -1072,7 +1072,8 @@ func (b *CLIBridge) buildGenerateHTMLArgs(input map[string]interface{}) ([]strin
 		args = append(args, "--template", template)
 	}
 
-	// Optional: output path
+	// Optional: output path - only pass --output if explicitly provided
+	// Let the CLI handle its own default path logic
 	if outputPath, ok := input["output_path"].(string); ok && outputPath != "" {
 		args = append(args, "--output", outputPath)
 	}
