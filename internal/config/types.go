@@ -11,15 +11,16 @@ type Config struct {
 
 // BusinessConfig contains business information for invoices
 type BusinessConfig struct {
-	Name         string      `json:"name" validate:"required"`
-	Address      string      `json:"address" validate:"required"`
-	Phone        string      `json:"phone,omitempty"`
-	Email        string      `json:"email" validate:"required,email"`
-	TaxID        string      `json:"tax_id,omitempty"`
-	VATID        string      `json:"vat_id,omitempty"`
-	Website      string      `json:"website,omitempty"`
-	PaymentTerms string      `json:"payment_terms" validate:"required"`
-	BankDetails  BankDetails `json:"bank_details,omitempty"`
+	Name           string         `json:"name" validate:"required"`
+	Address        string         `json:"address" validate:"required"`
+	Phone          string         `json:"phone,omitempty"`
+	Email          string         `json:"email" validate:"required,email"`
+	TaxID          string         `json:"tax_id,omitempty"`
+	VATID          string         `json:"vat_id,omitempty"`
+	Website        string         `json:"website,omitempty"`
+	PaymentTerms   string         `json:"payment_terms" validate:"required"`
+	BankDetails    BankDetails    `json:"bank_details,omitempty"`
+	CryptoPayments CryptoPayments `json:"crypto_payments,omitempty"`
 }
 
 // BankDetails contains banking information for payments
@@ -30,6 +31,15 @@ type BankDetails struct {
 	IBAN                string `json:"iban,omitempty"`
 	SWIFT               string `json:"swift,omitempty"`
 	PaymentInstructions string `json:"payment_instructions,omitempty"`
+	ACHEnabled          bool   `json:"ach_enabled"`
+}
+
+// CryptoPayments contains cryptocurrency payment addresses
+type CryptoPayments struct {
+	USDCAddress string `json:"usdc_address,omitempty"`
+	USDCEnabled bool   `json:"usdc_enabled"`
+	BSVAddress  string `json:"bsv_address,omitempty"`
+	BSVEnabled  bool   `json:"bsv_enabled"`
 }
 
 // InvoiceConfig contains invoice generation settings

@@ -444,11 +444,30 @@ func (e *HTMLTemplateEngine) ClearCache(ctx context.Context) error {
 	return nil
 }
 
+// getCurrencySymbol converts currency codes to symbols
+func getCurrencySymbol(currency string) string {
+	switch currency {
+	case "USD":
+		return "$"
+	case "EUR":
+		return "€"
+	case "GBP":
+		return "£"
+	case "CAD":
+		return "C$"
+	case "AUD":
+		return "A$"
+	default:
+		return currency // fallback to currency code
+	}
+}
+
 // getTemplateFunctions returns useful template functions
 func (e *HTMLTemplateEngine) getTemplateFunctions() template.FuncMap {
 	return template.FuncMap{
 		"formatCurrency": func(amount float64, currency string) string {
-			return fmt.Sprintf("%.2f %s", amount, currency)
+			symbol := getCurrencySymbol(currency)
+			return fmt.Sprintf("%s%.2f", symbol, amount)
 		},
 		"formatDate": func(t time.Time, format string) string {
 			if format == "" {

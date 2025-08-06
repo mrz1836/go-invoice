@@ -180,6 +180,10 @@
             letter-spacing: 0.5px;
         }
 
+        .work-items-table th.rate-col {
+            text-align: right;
+        }
+
         .work-items-table td {
             padding: 15px 12px;
             border-bottom: 1px solid #eee;
@@ -434,8 +438,8 @@
                             <td class="date-col">{{formatDate .Date "Jan 2"}}</td>
                             <td class="description-col">{{.Description}}</td>
                             <td class="hours-col">{{formatFloat .Hours 2}}</td>
-                            <td class="rate-col">{{formatCurrency .Rate "USD"}}</td>
-                            <td class="amount-col amount-cell">{{formatCurrency .Total "USD"}}</td>
+                            <td class="rate-col">{{formatCurrency .Rate $.Config.Currency}}</td>
+                            <td class="amount-col amount-cell">{{formatCurrency .Total $.Config.Currency}}</td>
                         </tr>
                         {{end}}
                     </tbody>
@@ -453,17 +457,17 @@
                 <table class="totals-table">
                     <tr>
                         <td class="label">Subtotal:</td>
-                        <td class="amount">{{formatCurrency .Subtotal "USD"}}</td>
+                        <td class="amount">{{formatCurrency .Subtotal .Config.Currency}}</td>
                     </tr>
                     {{if gt .TaxRate 0.0}}
                     <tr>
                         <td class="label">Tax ({{formatFloat (multiply .TaxRate 100) 1}}%):</td>
-                        <td class="amount">{{formatCurrency .TaxAmount "USD"}}</td>
+                        <td class="amount">{{formatCurrency .TaxAmount .Config.Currency}}</td>
                     </tr>
                     {{end}}
                     <tr class="total-row">
                         <td class="label">Total:</td>
-                        <td class="amount">{{formatCurrency .Total "USD"}}</td>
+                        <td class="amount">{{formatCurrency .Total .Config.Currency}}</td>
                     </tr>
                 </table>
             </section>
@@ -475,10 +479,37 @@
                 <h4 class="payment-title">Payment Terms</h4>
                 <div class="payment-terms">
                     {{.Business.PaymentTerms}}
-                    {{if .Business.BankDetails}}
+                    
+                    {{if or (and .Business.BankDetails.ACHEnabled (or .Business.BankDetails.Name .Business.BankDetails.AccountNumber .Business.BankDetails.RoutingNumber .Business.BankDetails.IBAN .Business.BankDetails.SWIFT .Business.BankDetails.PaymentInstructions)) (and .Business.CryptoPayments.USDCEnabled .Business.CryptoPayments.USDCAddress) (and .Business.CryptoPayments.BSVEnabled .Business.CryptoPayments.BSVAddress)}}
                     <br><br>
-                    <strong>Payment Details:</strong><br>
-                    {{.Business.BankDetails}}
+                    <strong>Payment Methods:</strong>
+                    {{end}}
+                    
+                    {{if and .Business.BankDetails.ACHEnabled (or .Business.BankDetails.Name .Business.BankDetails.AccountNumber .Business.BankDetails.RoutingNumber .Business.BankDetails.IBAN .Business.BankDetails.SWIFT)}}
+                    <br><br>
+                    <strong>ACH Bank Transfer:</strong><br>
+                    {{if .Business.BankDetails.Name}}Bank: {{.Business.BankDetails.Name}}<br>{{end}}
+                    {{if .Business.BankDetails.AccountNumber}}Account: {{.Business.BankDetails.AccountNumber}}<br>{{end}}
+                    {{if .Business.BankDetails.RoutingNumber}}Routing: {{.Business.BankDetails.RoutingNumber}}<br>{{end}}
+                    {{if .Business.BankDetails.IBAN}}IBAN: {{.Business.BankDetails.IBAN}}<br>{{end}}
+                    {{if .Business.BankDetails.SWIFT}}SWIFT: {{.Business.BankDetails.SWIFT}}<br>{{end}}
+                    {{end}}
+                    
+                    {{if and .Business.CryptoPayments.USDCEnabled .Business.CryptoPayments.USDCAddress}}
+                    <br><br>
+                    <strong>USDC Cryptocurrency:</strong><br>
+                    {{.Business.CryptoPayments.USDCAddress}}
+                    {{end}}
+                    
+                    {{if and .Business.CryptoPayments.BSVEnabled .Business.CryptoPayments.BSVAddress}}
+                    <br><br>
+                    <strong>BSV (Bitcoin SV) Cryptocurrency:</strong><br>
+                    {{.Business.CryptoPayments.BSVAddress}}
+                    {{end}}
+                    
+                    {{if .Business.BankDetails.PaymentInstructions}}
+                    <br><br>
+                    {{.Business.BankDetails.PaymentInstructions}}
                     {{end}}
                 </div>
             </section>

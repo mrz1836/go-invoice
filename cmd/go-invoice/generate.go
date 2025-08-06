@@ -553,11 +553,6 @@ func (a *App) loadBuiltInTemplates(ctx context.Context, engine render.TemplateEn
 }
 
 func (a *App) createInvoiceData(invoice *models.Invoice, config *config.Config) *InvoiceData {
-	bankDetailsStr := ""
-	if config.Business.BankDetails.Name != "" || config.Business.BankDetails.AccountNumber != "" {
-		bankDetailsStr = fmt.Sprintf("%s - %s", config.Business.BankDetails.Name, config.Business.BankDetails.AccountNumber)
-	}
-
 	// Calculate total hours
 	totalHours := 0.0
 	for _, item := range invoice.WorkItems {
@@ -567,14 +562,15 @@ func (a *App) createInvoiceData(invoice *models.Invoice, config *config.Config) 
 	return &InvoiceData{
 		Invoice: *invoice,
 		Business: BusinessInfo{
-			Name:         config.Business.Name,
-			Address:      config.Business.Address,
-			Phone:        config.Business.Phone,
-			Email:        config.Business.Email,
-			Website:      config.Business.Website,
-			TaxID:        config.Business.TaxID,
-			PaymentTerms: config.Business.PaymentTerms,
-			BankDetails:  bankDetailsStr,
+			Name:           config.Business.Name,
+			Address:        config.Business.Address,
+			Phone:          config.Business.Phone,
+			Email:          config.Business.Email,
+			Website:        config.Business.Website,
+			TaxID:          config.Business.TaxID,
+			PaymentTerms:   config.Business.PaymentTerms,
+			BankDetails:    config.Business.BankDetails,
+			CryptoPayments: config.Business.CryptoPayments,
 		},
 		Config: ConfigInfo{
 			Currency:       config.Invoice.Currency,
@@ -754,14 +750,15 @@ type InvoiceData struct {
 }
 
 type BusinessInfo struct {
-	Name         string `json:"name"`
-	Address      string `json:"address"`
-	Phone        string `json:"phone"`
-	Email        string `json:"email"`
-	Website      string `json:"website"`
-	TaxID        string `json:"tax_id"`
-	PaymentTerms string `json:"payment_terms"`
-	BankDetails  string `json:"bank_details"`
+	Name           string                `json:"name"`
+	Address        string                `json:"address"`
+	Phone          string                `json:"phone"`
+	Email          string                `json:"email"`
+	Website        string                `json:"website"`
+	TaxID          string                `json:"tax_id"`
+	PaymentTerms   string                `json:"payment_terms"`
+	BankDetails    config.BankDetails    `json:"bank_details"`
+	CryptoPayments config.CryptoPayments `json:"crypto_payments"`
 }
 
 type ConfigInfo struct {

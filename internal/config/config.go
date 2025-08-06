@@ -155,6 +155,13 @@ func (s *ConfigService) buildConfigFromEnv(ctx context.Context) (*Config, error)
 				IBAN:                getEnv("BANK_IBAN", ""),
 				SWIFT:               getEnv("BANK_SWIFT", ""),
 				PaymentInstructions: getEnv("PAYMENT_INSTRUCTIONS", ""),
+				ACHEnabled:          getEnvBool("ACH_ENABLED", false),
+			},
+			CryptoPayments: CryptoPayments{
+				USDCAddress: getEnv("USDC_ADDRESS", ""),
+				USDCEnabled: getEnvBool("USDC_ENABLED", false),
+				BSVAddress:  getEnv("BSV_ADDRESS", ""),
+				BSVEnabled:  getEnvBool("BSV_ENABLED", false),
 			},
 		},
 		Invoice: InvoiceConfig{
