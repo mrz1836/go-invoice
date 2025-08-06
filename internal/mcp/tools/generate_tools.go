@@ -64,21 +64,19 @@ func createGenerateHTMLTool() *MCPTool {
 				Input: map[string]interface{}{
 					"invoice_number": "INV-001",
 					"template":       "default",
-					"output_path":    "./invoices/INV-001.html",
 				},
-				ExpectedOutput: "HTML invoice generated successfully with professional styling",
+				ExpectedOutput: "HTML invoice generated successfully and saved to ~/.go-invoice/generated/",
 				UseCase:        "Creating presentable invoice for client email or printing",
 			},
 			{
-				Description: "Generate HTML with professional template and company branding",
+				Description: "Generate HTML with minimal template and company branding",
 				Input: map[string]interface{}{
 					"invoice_id":   "invoice_abc123",
-					"template":     "professional",
+					"template":     "minimal",
 					"include_logo": true,
 					"company_name": "My Consulting LLC",
-					"output_path":  "./client-invoices/professional-invoice.html",
 				},
-				ExpectedOutput: "Branded HTML invoice with company logo and professional styling",
+				ExpectedOutput: "Branded HTML invoice saved to ~/.go-invoice/generated/",
 				UseCase:        "High-quality client presentation with company branding",
 			},
 			{
@@ -86,10 +84,8 @@ func createGenerateHTMLTool() *MCPTool {
 				Input: map[string]interface{}{
 					"batch_invoices": []string{"INV-001", "INV-002", "INV-003"},
 					"template":       "minimal",
-					"output_dir":     "./monthly-invoices/",
-					"auto_name":      true,
 				},
-				ExpectedOutput: "Multiple HTML invoices generated with consistent formatting",
+				ExpectedOutput: "Multiple HTML invoices generated in ~/.go-invoice/generated/",
 				UseCase:        "Monthly invoice delivery to multiple clients",
 			},
 			{
@@ -100,9 +96,8 @@ func createGenerateHTMLTool() *MCPTool {
 					"custom_css":     "./assets/company-styles.css",
 					"include_notes":  true,
 					"footer_text":    "Thank you for your business! Payment terms: Net 30 days.",
-					"output_path":    "./custom-invoice.html",
 				},
-				ExpectedOutput: "Custom-styled invoice with personalized notes and footer",
+				ExpectedOutput: "Custom-styled invoice saved to ~/.go-invoice/generated/",
 				UseCase:        "Highly customized invoice presentation for special clients",
 			},
 			{

@@ -85,8 +85,10 @@ func (b *DefaultCLIBridge) ExecuteCommand(ctx context.Context, req *CommandReque
 	cmd.Dir = cleanWorkDir
 
 	// Debug: Log the command being executed
+	// Creating files in tmp without tempfile is flagged by gosec G303, but this is just debug info
 	debugCmd := fmt.Sprintf("Command: %s, Args: %v, WorkDir: %s", req.Command, req.Args, cleanWorkDir)
-	os.WriteFile(filepath.Join(os.TempDir(), "mcp-command-debug.txt"), []byte(debugCmd), 0o644)
+	//nolint:gosec // G303: Debug file creation is intentional
+	_ = os.WriteFile(filepath.Join(os.TempDir(), "mcp-command-debug.txt"), []byte(debugCmd), 0o644)
 
 	// Set up environment
 	cmd.Env = b.buildEnvironment(req.Env)

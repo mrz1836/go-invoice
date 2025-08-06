@@ -130,7 +130,7 @@ go-invoice client create --name "Acme Corp" --email "billing@acme.com"
 go-invoice import create timesheet.csv --client-name "Acme Corp"
 
 # Generate HTML from the invoice
-go-invoice generate invoice <invoice-id> --output invoice.html
+go-invoice generate invoice <invoice-id>
 
 # View your invoice in the browser
 open invoice.html

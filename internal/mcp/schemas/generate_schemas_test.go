@@ -76,7 +76,7 @@ func (s *GenerateSchemasTestSuite) TestGenerateHTMLSchema() {
 			// Should have valid template options
 			if enum, hasEnum := templateMap["enum"]; hasEnum {
 				if enumSlice, ok := enum.([]string); ok {
-					expectedTemplates := []string{"default", "professional", "minimal", "custom", "web"}
+					expectedTemplates := []string{"default", "minimal", "custom", "web"}
 					for _, expectedTemplate := range expectedTemplates {
 						s.Contains(enumSlice, expectedTemplate, "Should contain template: %s", expectedTemplate)
 					}

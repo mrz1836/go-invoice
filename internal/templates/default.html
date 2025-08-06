@@ -237,10 +237,11 @@
         }
 
         .totals-table .total-row {
-            background: #2c3e50;
-            color: white;
+            background: #f8f9fa;
+            color: #2c3e50;
             font-size: 16px;
             font-weight: 700;
+            border: 2px solid #dee2e6;
         }
 
         .totals-table .total-row td {
@@ -252,14 +253,14 @@
             background: #f8f9fa;
             padding: 25px;
             border-radius: 8px;
-            border-left: 4px solid #e74c3c;
+            border-left: 4px solid #aaaaaa;
             margin-bottom: 30px;
         }
 
         .payment-title {
             font-size: 16px;
             font-weight: 600;
-            color: #e74c3c;
+            color: #3a3a3a;
             margin-bottom: 10px;
         }
 
@@ -355,8 +356,8 @@
                     <div class="company-details">
                         {{if .Business.Address}}{{.Business.Address}}<br>{{end}}
                         {{if .Business.Phone}}Phone: {{.Business.Phone}}<br>{{end}}
-                        {{if .Business.Email}}Email: {{.Business.Email}}<br>{{end}}
-                        {{if .Business.Website}}Web: {{.Business.Website}}{{end}}
+                        {{if .Business.Email}}Email: <a href="mailto:{{.Business.Email}}">{{.Business.Email}}</a><br>{{end}}
+                        {{if .Business.Website}}<a href="{{.Business.Website}}" target="_blank">{{.Business.Website}}</a>{{end}}
                     </div>
                 </div>
                 <div class="invoice-meta">
@@ -370,7 +371,7 @@
                         <div><strong>Due Date:</strong> {{formatDate .DueDate "January 2, 2006"}}</div>
                         {{if gt (len .WorkItems) 0}}
                         <div class="small text-muted" style="margin-top: 10px;">
-                            {{len .WorkItems}} work item{{if ne (len .WorkItems) 1}}s{{end}} • {{.TotalHours | formatFloat 1}} hours
+                            {{len .WorkItems}} work item{{if ne (len .WorkItems) 1}}s{{end}} • {{formatFloat .TotalHours 2}} hours
                         </div>
                         {{end}}
                     </div>
@@ -387,27 +388,29 @@
                             {{if .Client.Email}}{{.Client.Email}}<br>{{end}}
                             {{if .Client.Phone}}{{.Client.Phone}}<br>{{end}}
                             {{if .Client.Address}}{{.Client.Address}}<br>{{end}}
+                            {{if .Client.ApproverContacts}}<div style="margin-top: 10px;"><strong>Approver Contacts:</strong><br> {{.Client.ApproverContacts}}</div>{{end}}
                             {{if .Client.TaxID}}<small class="text-muted">Tax ID: {{.Client.TaxID}}</small>{{end}}
                         </div>
                     </div>
                 </div>
                 <div class="invoice-details">
                     <h3 class="section-title">Invoice Details</h3>
-                    {{if .Description}}
+                    {{if or .Description .Business.PaymentTerms (gt (len .WorkItems) 0)}}
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                        {{if .Description}}
                         <strong>Description:</strong><br>
                         {{.Description}}
+                        {{end}}
+						<br>
+						{{if .Business.PaymentTerms}}
+						<div><strong>Terms:</strong> {{.Business.PaymentTerms}}</div>
+						{{end}}
+						{{if gt (len .WorkItems) 0}}
+						<div><strong>Work Period:</strong> {{formatDate (minDate .WorkItems) "1/2/06"}} to {{formatDate (maxDate .WorkItems) "1/2/06"}}</div>
+						{{end}}
                     </div>
                     {{end}}
-                    <div style="color: #666; line-height: 1.8;">
-                        <div><strong>Created:</strong> {{formatDate .CreatedAt "January 2, 2006 at 3:04 PM"}}</div>
-                        {{if ne .CreatedAt .UpdatedAt}}
-                        <div><strong>Updated:</strong> {{formatDate .UpdatedAt "January 2, 2006 at 3:04 PM"}}</div>
-                        {{end}}
-                        {{if .Business.PaymentTerms}}
-                        <div><strong>Terms:</strong> {{.Business.PaymentTerms}}</div>
-                        {{end}}
-                    </div>
+
                 </div>
             </section>
 
@@ -430,7 +433,7 @@
                         <tr>
                             <td class="date-col">{{formatDate .Date "Jan 2"}}</td>
                             <td class="description-col">{{.Description}}</td>
-                            <td class="hours-col">{{.Hours | formatFloat 1}}</td>
+                            <td class="hours-col">{{formatFloat .Hours 2}}</td>
                             <td class="rate-col">{{formatCurrency .Rate "USD"}}</td>
                             <td class="amount-col amount-cell">{{formatCurrency .Total "USD"}}</td>
                         </tr>
@@ -454,7 +457,7 @@
                     </tr>
                     {{if gt .TaxRate 0.0}}
                     <tr>
-                        <td class="label">Tax ({{multiply .TaxRate 100 | formatFloat 1}}%):</td>
+                        <td class="label">Tax ({{formatFloat (multiply .TaxRate 100) 1}}%):</td>
                         <td class="amount">{{formatCurrency .TaxAmount "USD"}}</td>
                     </tr>
                     {{end}}

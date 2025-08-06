@@ -61,6 +61,12 @@ func ClientCreateSchema() map[string]interface{} {
 				"maxLength":   50.0,
 				"examples":    []interface{}{"EIN-12-3456789", "DE123456789", "VAT-GB123456789"},
 			},
+			"approver_contacts": map[string]interface{}{
+				"type":        "string",
+				"description": "Approver contacts (names or departments) who should be shown on the invoice. Can be multiple people separated by commas.",
+				"maxLength":   500.0,
+				"examples":    []interface{}{"John Doe, Finance Dept", "Jane Smith", "HR Department, Accounting Team"},
+			},
 		},
 		"required":             []interface{}{"name", "email"},
 		"additionalProperties": false,
@@ -271,6 +277,12 @@ func ClientUpdateSchema() map[string]interface{} {
 				"description": "Update tax identification number for the client.",
 				"maxLength":   50.0,
 				"examples":    []interface{}{"EIN-98-7654321", "VAT-GB987654321"},
+			},
+			"approver_contacts": map[string]interface{}{
+				"type":        "string",
+				"description": "Update approver contacts (names or departments) who should be shown on the invoice.",
+				"maxLength":   500.0,
+				"examples":    []interface{}{"John Doe, Finance Dept", "Jane Smith", "HR Department, Accounting Team"},
 			},
 			"activate": map[string]interface{}{
 				"type":        "boolean",

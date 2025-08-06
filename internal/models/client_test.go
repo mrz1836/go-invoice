@@ -780,6 +780,94 @@ func (suite *ClientTestSuite) TestUpdateTaxID() {
 	}
 }
 
+func (suite *ClientTestSuite) TestUpdateApproverContacts() {
+	t := suite.T()
+
+	client := &Client{
+		ID:               "CLIENT-001",
+		Name:             "Test Client",
+		Email:            "test@example.com",
+		ApproverContacts: "John Doe",
+		Active:           true,
+		CreatedAt:        time.Now().Add(-1 * time.Hour),
+		UpdatedAt:        time.Now().Add(-1 * time.Hour),
+	}
+
+	originalUpdatedAt := client.UpdatedAt
+
+	tests := []struct {
+		name                     string
+		newApproverContacts      string
+		expectError              bool
+		errorMsg                 string
+		expectedApproverContacts string
+	}{
+		{
+			name:                     "ValidUpdate",
+			newApproverContacts:      "Jane Smith, Finance Dept",
+			expectError:              false,
+			expectedApproverContacts: "Jane Smith, Finance Dept",
+		},
+		{
+			name:                     "MultipleContacts",
+			newApproverContacts:      "John Doe, Jane Smith, HR Department, Finance Team",
+			expectError:              false,
+			expectedApproverContacts: "John Doe, Jane Smith, HR Department, Finance Team",
+		},
+		{
+			name:                     "TrimmedApproverContacts",
+			newApproverContacts:      "  Bob Johnson  ",
+			expectError:              false,
+			expectedApproverContacts: "Bob Johnson",
+		},
+		{
+			name:                     "EmptyApproverContacts",
+			newApproverContacts:      "",
+			expectError:              false,
+			expectedApproverContacts: "",
+		},
+		{
+			name:                     "WhitespaceOnlyApproverContacts",
+			newApproverContacts:      "   ",
+			expectError:              false,
+			expectedApproverContacts: "",
+		},
+		{
+			name:                "TooLongApproverContacts",
+			newApproverContacts: strings.Repeat("a", 501),
+			expectError:         true,
+			errorMsg:            "approver contacts cannot exceed 500 characters",
+		},
+		{
+			name:                     "MaxLengthApproverContacts",
+			newApproverContacts:      strings.Repeat("a", 500),
+			expectError:              false,
+			expectedApproverContacts: strings.Repeat("a", 500),
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			// Reset client for each test
+			client.ApproverContacts = "John Doe"
+			client.UpdatedAt = originalUpdatedAt
+
+			err := client.UpdateApproverContacts(suite.ctx, tt.newApproverContacts)
+
+			if tt.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorMsg)
+				assert.Equal(t, "John Doe", client.ApproverContacts)
+				assert.Equal(t, originalUpdatedAt, client.UpdatedAt)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedApproverContacts, client.ApproverContacts)
+				assert.True(t, client.UpdatedAt.After(originalUpdatedAt))
+			}
+		})
+	}
+}
+
 func (suite *ClientTestSuite) TestActivateDeactivate() {
 	t := suite.T()
 

@@ -33,6 +33,20 @@ var (
 	ErrMultipleClientsFound      = fmt.Errorf("multiple clients found matching")
 )
 
+// getInvoiceByIDOrNumber is a helper function to get an invoice by ID or number
+func (a *App) getInvoiceByIDOrNumber(ctx context.Context, invoiceService *services.InvoiceService, identifier string) (*models.Invoice, error) {
+	// Try by ID first
+	invoice, err := invoiceService.GetInvoice(ctx, models.InvoiceID(identifier))
+	if err != nil {
+		// If not found by ID, try by number
+		invoice, err = invoiceService.GetInvoiceByNumber(ctx, identifier)
+		if err != nil {
+			return nil, fmt.Errorf("%w: '%s'", models.ErrInvoiceNotFound, identifier)
+		}
+	}
+	return invoice, nil
+}
+
 // buildInvoiceCommand creates the invoice command with all subcommands
 func (a *App) buildInvoiceCommand() *cobra.Command {
 	// Ensure cli package is marked as used (a.logger is *cli.SimpleLogger)
@@ -327,13 +341,9 @@ func (a *App) runInvoiceShow(cmd *cobra.Command, args []string) error {
 	clientService := services.NewClientService(clientStorage, invoiceStorage, a.logger, idGen)
 
 	// Get invoice - try by ID first, then by number
-	invoice, err := invoiceService.GetInvoice(ctx, models.InvoiceID(invoiceID))
+	invoice, err := a.getInvoiceByIDOrNumber(ctx, invoiceService, invoiceID)
 	if err != nil {
-		// If not found by ID, try by number
-		invoice, err = invoiceService.GetInvoiceByNumber(ctx, invoiceID)
-		if err != nil {
-			return fmt.Errorf("failed to get invoice: %w", err)
-		}
+		return fmt.Errorf("failed to get invoice: %w", err)
 	}
 
 	// Get client
@@ -422,8 +432,8 @@ func (a *App) runInvoiceUpdate(cmd *cobra.Command, args []string) error {
 		return a.runInvoiceUpdateInteractive(ctx, invoiceService, invoice)
 	}
 
-	// Build update request
-	req, hasUpdates, err := a.buildUpdateRequest(cmd, invoiceID)
+	// Build update request - use the actual invoice ID from the retrieved invoice
+	req, hasUpdates, err := a.buildUpdateRequest(cmd, string(invoice.ID))
 	if err != nil {
 		return err
 	}
@@ -450,8 +460,8 @@ func (a *App) setupUpdateCommand(ctx context.Context, cmd *cobra.Command, invoic
 	idGen := services.NewUUIDGenerator()
 	invoiceService := services.NewInvoiceService(invoiceStorage, clientStorage, a.logger, idGen)
 
-	// Get current invoice
-	invoice, err := invoiceService.GetInvoice(ctx, models.InvoiceID(invoiceID))
+	// Get current invoice - try by ID first, then by number
+	invoice, err := a.getInvoiceByIDOrNumber(ctx, invoiceService, invoiceID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get invoice: %w", err)
 	}
@@ -609,13 +619,9 @@ func (a *App) runInvoiceDelete(cmd *cobra.Command, args []string) error {
 	invoiceService := services.NewInvoiceService(invoiceStorage, clientStorage, a.logger, idGen)
 
 	// Get invoice to verify it exists and check status - try by ID first, then by number
-	invoice, err := invoiceService.GetInvoice(ctx, models.InvoiceID(invoiceID))
+	invoice, err := a.getInvoiceByIDOrNumber(ctx, invoiceService, invoiceID)
 	if err != nil {
-		// If not found by ID, try by number
-		invoice, err = invoiceService.GetInvoiceByNumber(ctx, invoiceID)
-		if err != nil {
-			return fmt.Errorf("failed to get invoice: %w: invoice with ID '%s' not found", models.ErrInvoiceNotFound, invoiceID)
-		}
+		return fmt.Errorf("failed to get invoice: %w", err)
 	}
 
 	// Check if invoice can be deleted

@@ -51,6 +51,7 @@ func (c *Client) Validate(ctx context.Context) error {
 		AddLengthRange("phone", c.Phone, 10, 20).
 		AddMaxLength("address", c.Address, 500).
 		AddMaxLength("tax_id", c.TaxID, 50).
+		AddMaxLength("approver_contacts", c.ApproverContacts, 500).
 		AddTimeRequired("created_at", c.CreatedAt).
 		AddTimeRequired("updated_at", c.UpdatedAt).
 		AddTimeOrder("updated_at", c.CreatedAt, c.UpdatedAt, "created_at", "updated_at").
@@ -157,6 +158,24 @@ func (c *Client) UpdateTaxID(ctx context.Context, taxID string) error {
 	return nil
 }
 
+// UpdateApproverContacts updates the client approver contacts with validation
+func (c *Client) UpdateApproverContacts(ctx context.Context, approverContacts string) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	approverContacts = strings.TrimSpace(approverContacts)
+	if approverContacts != "" && len(approverContacts) > 500 {
+		return ErrClientApproverContactsTooLong
+	}
+
+	c.ApproverContacts = approverContacts
+	c.UpdatedAt = time.Now()
+	return nil
+}
+
 // Deactivate marks the client as inactive
 func (c *Client) Deactivate(ctx context.Context) error {
 	select {
@@ -213,11 +232,12 @@ func (c *Client) HasCompleteInfo() bool {
 
 // CreateClientRequest represents a request to create a new client
 type CreateClientRequest struct {
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Phone   string `json:"phone,omitempty"`
-	Address string `json:"address,omitempty"`
-	TaxID   string `json:"tax_id,omitempty"`
+	Name             string `json:"name"`
+	Email            string `json:"email"`
+	Phone            string `json:"phone,omitempty"`
+	Address          string `json:"address,omitempty"`
+	TaxID            string `json:"tax_id,omitempty"`
+	ApproverContacts string `json:"approver_contacts,omitempty"`
 }
 
 // Validate validates the create client request
@@ -236,5 +256,6 @@ func (r *CreateClientRequest) Validate(ctx context.Context) error {
 		AddLengthRange("phone", r.Phone, 10, 20).
 		AddMaxLength("address", r.Address, 500).
 		AddMaxLength("tax_id", r.TaxID, 50).
+		AddMaxLength("approver_contacts", r.ApproverContacts, 500).
 		Build(ErrCreateClientRequestInvalid)
 }

@@ -8,13 +8,14 @@ var (
 	ErrValidationFailed = fmt.Errorf("validation failed")
 
 	// Client-related errors
-	ErrClientValidationFailed     = fmt.Errorf("client validation failed")
-	ErrClientNameTooLong          = fmt.Errorf("name cannot exceed 200 characters")
-	ErrClientEmailInvalid         = fmt.Errorf("email must be a valid email address")
-	ErrClientPhoneInvalid         = fmt.Errorf("phone must be between 10 and 20 characters")
-	ErrClientAddressTooLong       = fmt.Errorf("address cannot exceed 500 characters")
-	ErrClientTaxIDTooLong         = fmt.Errorf("tax ID cannot exceed 50 characters")
-	ErrCreateClientRequestInvalid = fmt.Errorf("create client request validation failed")
+	ErrClientValidationFailed        = fmt.Errorf("client validation failed")
+	ErrClientNameTooLong             = fmt.Errorf("name cannot exceed 200 characters")
+	ErrClientEmailInvalid            = fmt.Errorf("email must be a valid email address")
+	ErrClientPhoneInvalid            = fmt.Errorf("phone must be between 10 and 20 characters")
+	ErrClientAddressTooLong          = fmt.Errorf("address cannot exceed 500 characters")
+	ErrClientTaxIDTooLong            = fmt.Errorf("tax ID cannot exceed 50 characters")
+	ErrClientApproverContactsTooLong = fmt.Errorf("approver contacts cannot exceed 500 characters")
+	ErrCreateClientRequestInvalid    = fmt.Errorf("create client request validation failed")
 
 	// Invoice-related errors
 	ErrInvoiceValidationFailed = fmt.Errorf("invoice validation failed")

@@ -40,15 +40,16 @@ type WorkItem struct {
 
 // Client represents customer information
 type Client struct {
-	ID        ClientID  `json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Phone     string    `json:"phone,omitempty"`
-	Address   string    `json:"address,omitempty"`
-	TaxID     string    `json:"tax_id,omitempty"`
-	Active    bool      `json:"active"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID               ClientID  `json:"id"`
+	Name             string    `json:"name"`
+	Email            string    `json:"email"`
+	Phone            string    `json:"phone,omitempty"`
+	Address          string    `json:"address,omitempty"`
+	TaxID            string    `json:"tax_id,omitempty"`
+	ApproverContacts string    `json:"approver_contacts,omitempty"`
+	Active           bool      `json:"active"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 // NewInvoice creates a new invoice with validation
@@ -437,7 +438,8 @@ func (i *Invoice) UpdateStatus(ctx context.Context, newStatus string) error {
 	// Update status
 	i.Status = newStatus
 	i.UpdatedAt = time.Now()
-	i.Version++
+	// Version should only be incremented by the storage layer during save
+	// i.Version++
 
 	return nil
 }

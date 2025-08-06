@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/mrz/go-invoice/internal/mcp/executor"
 	"github.com/mrz/go-invoice/internal/mcp/tools"
@@ -164,7 +165,15 @@ func CreateProductionHandler(config *Config) (MCPHandler, error) {
 	securityConfig := executor.DefaultSecurityConfig()
 	// Apply security settings from config
 	securityConfig.Sandbox.AllowedCommands = config.Security.AllowedCommands
-	securityConfig.Sandbox.AllowedPaths = []string{config.Security.WorkingDir}
+
+	// Allow both the configured working directory and current working directory
+	// This enables MCP import operations from the project directory
+	currentDir, _ := os.Getwd()
+	allowedPaths := []string{config.Security.WorkingDir}
+	if currentDir != "" && currentDir != config.Security.WorkingDir {
+		allowedPaths = append(allowedPaths, currentDir)
+	}
+	securityConfig.Sandbox.AllowedPaths = allowedPaths
 	securityConfig.StrictMode = config.Security.SandboxEnabled
 
 	// Create audit logger

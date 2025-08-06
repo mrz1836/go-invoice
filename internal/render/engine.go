@@ -483,6 +483,50 @@ func (e *HTMLTemplateEngine) getTemplateFunctions() template.FuncMap {
 			}
 			return value
 		},
+		"minDate": func(workItems interface{}) time.Time {
+			return getMinDateFromWorkItems(workItems)
+		},
+		"maxDate": func(workItems interface{}) time.Time {
+			return getMaxDateFromWorkItems(workItems)
+		},
+	}
+}
+
+// getMinDateFromWorkItems finds the earliest date from work items
+func getMinDateFromWorkItems(workItems interface{}) time.Time {
+	switch items := workItems.(type) {
+	case []models.WorkItem:
+		if len(items) == 0 {
+			return time.Time{}
+		}
+		minDate := items[0].Date
+		for _, item := range items[1:] {
+			if item.Date.Before(minDate) {
+				minDate = item.Date
+			}
+		}
+		return minDate
+	default:
+		return time.Time{}
+	}
+}
+
+// getMaxDateFromWorkItems finds the latest date from work items
+func getMaxDateFromWorkItems(workItems interface{}) time.Time {
+	switch items := workItems.(type) {
+	case []models.WorkItem:
+		if len(items) == 0 {
+			return time.Time{}
+		}
+		maxDate := items[0].Date
+		for _, item := range items[1:] {
+			if item.Date.After(maxDate) {
+				maxDate = item.Date
+			}
+		}
+		return maxDate
+	default:
+		return time.Time{}
 	}
 }
 

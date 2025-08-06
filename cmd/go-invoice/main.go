@@ -78,7 +78,11 @@ Key features:
 
 	// Add persistent flags
 	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug logging")
-	rootCmd.PersistentFlags().String("config", ".env.config", "Path to configuration file")
+
+	// Default config path to ~/.go-invoice/.env.config
+	homeDir, _ := os.UserHomeDir()
+	defaultConfigPath := filepath.Join(homeDir, ".go-invoice", ".env.config")
+	rootCmd.PersistentFlags().String("config", defaultConfigPath, "Path to configuration file")
 
 	// Add subcommands
 	rootCmd.AddCommand(a.buildConfigCommand())
@@ -128,7 +132,8 @@ This wizard will prompt you for:
 
 			configPath, _ := cmd.Flags().GetString("config")
 			if configPath == "" {
-				configPath = ".env.config"
+				homeDir, _ := os.UserHomeDir()
+				configPath = filepath.Join(homeDir, ".go-invoice", ".env.config")
 			}
 
 			return a.runConfigSetup(ctx, configPath)

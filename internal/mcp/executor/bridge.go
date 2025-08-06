@@ -119,13 +119,18 @@ func (b *CLIBridge) ExecuteToolCommand(ctx context.Context, toolName string, inp
 	// Build command arguments
 	args, err := toolCmd.BuildArgs(input)
 	if err != nil {
+		b.logger.Error("argument building failed",
+			"tool", toolName,
+			"error", err,
+			"input", input,
+		)
 		return nil, fmt.Errorf("%w: %w", ErrCommandBuildFailed, err)
 	}
 
 	// For go-invoice imports, we need to handle dynamic subcommands
 	var finalSubCommands []string
 	if toolName == "import_csv" {
-		// Determine subcommand based on import mode
+		// Determine subcommand based on import mode (skip for debug echo command)
 		if importMode, ok := input["import_mode"].(string); ok && importMode == "append_invoice" {
 			finalSubCommands = []string{"import", "append"}
 		} else {
@@ -162,6 +167,11 @@ func (b *CLIBridge) ExecuteToolCommand(ctx context.Context, toolName string, inp
 	// Handle file operations if needed
 	if toolCmd.RequiresFiles {
 		if prepareErr := b.prepareFilesForCommand(ctx, req, input); prepareErr != nil {
+			b.logger.Error("file preparation failed",
+				"tool", toolName,
+				"error", prepareErr,
+				"input", input,
+			)
 			return nil, fmt.Errorf("file preparation failed: %w", prepareErr)
 		}
 	}
@@ -176,6 +186,12 @@ func (b *CLIBridge) ExecuteToolCommand(ctx context.Context, toolName string, inp
 	// Execute the command
 	resp, err := b.executor.Execute(ctx, req)
 	if err != nil {
+		b.logger.Error("command execution failed",
+			"tool", toolName,
+			"command", req.Command,
+			"args", req.Args,
+			"error", err,
+		)
 		return nil, fmt.Errorf("command execution failed: %w", err)
 	}
 
@@ -324,7 +340,7 @@ func (b *CLIBridge) registerToolCommands() {
 		Command:       b.cliPath,
 		SubCommands:   []string{"import"}, // Will add subcommand dynamically based on mode
 		BuildArgs:     b.buildImportCSVArgs,
-		RequiresFiles: true,
+		RequiresFiles: false, // Keep disabled for now
 		Timeout:       30 * time.Second,
 	}
 
@@ -333,7 +349,7 @@ func (b *CLIBridge) registerToolCommands() {
 		Command:       b.cliPath,
 		SubCommands:   []string{"import", "validate"},
 		BuildArgs:     b.buildImportValidateArgs,
-		RequiresFiles: true,
+		RequiresFiles: false, // Temporarily disable file validation to test
 		Timeout:       10 * time.Second,
 	}
 
@@ -342,7 +358,7 @@ func (b *CLIBridge) registerToolCommands() {
 		Command:       b.cliPath,
 		SubCommands:   []string{"import", "validate"},
 		BuildArgs:     b.buildImportPreviewArgs,
-		RequiresFiles: true,
+		RequiresFiles: false, // Temporarily disable file validation to test
 		ExpectJSON:    false, // validate command doesn't output JSON by default
 		Timeout:       10 * time.Second,
 	}

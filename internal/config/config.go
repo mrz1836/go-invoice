@@ -112,7 +112,8 @@ func (s *ConfigService) loadEnvFile(ctx context.Context, path string) error {
 	}
 
 	if path == "" {
-		path = ".env.config"
+		// Default to ~/.go-invoice/.env.config
+		path = filepath.Join(getDefaultDataDir(), ".env.config")
 	}
 
 	// Check if file exists

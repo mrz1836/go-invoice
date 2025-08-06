@@ -97,6 +97,12 @@ func (s *ClientService) CreateClient(ctx context.Context, req models.CreateClien
 		}
 	}
 
+	if req.ApproverContacts != "" {
+		if err := client.UpdateApproverContacts(ctx, req.ApproverContacts); err != nil {
+			return nil, fmt.Errorf("failed to set client approver contacts: %w", err)
+		}
+	}
+
 	// Store client
 	if err := s.clientStorage.CreateClient(ctx, client); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrFailedToStoreClient, err)

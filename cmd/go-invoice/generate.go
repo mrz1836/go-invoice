@@ -187,7 +187,7 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 	start := time.Now()
 
 	// Setup services and retrieve invoice
-	config, renderService, invoice, err := a.setupGenerateServices(ctx, configPath, invoiceID)
+	config, renderService, invoice, invoiceService, err := a.setupGenerateServices(ctx, configPath, invoiceID)
 	if err != nil {
 		return err
 	}
@@ -199,8 +199,8 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 		return validateErr
 	}
 
-	// Create data structure for template
-	invoiceData := a.createInvoiceData(invoice, config)
+	// Create data structure for template with fresh client data
+	invoiceData := a.createInvoiceDataWithFreshClient(ctx, invoice, config, invoiceService)
 
 	// Generate HTML content using template engine directly to support data
 	html, err := a.renderInvoice(ctx, renderService, invoiceData, options.TemplateName)
@@ -221,17 +221,17 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 }
 
 // setupGenerateServices sets up configuration and services for invoice generation
-func (a *App) setupGenerateServices(ctx context.Context, configPath, invoiceID string) (*config.Config, render.InvoiceRenderer, *models.Invoice, error) {
+func (a *App) setupGenerateServices(ctx context.Context, configPath, invoiceID string) (*config.Config, render.InvoiceRenderer, *models.Invoice, *services.InvoiceService, error) {
 	// Load configuration
 	config, err := a.configService.LoadConfig(ctx, configPath)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to load configuration: %w", err)
+		return nil, nil, nil, nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
 
 	// Create render service
 	renderService, err := a.createRenderService(ctx, config)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create render service: %w", err)
+		return nil, nil, nil, nil, fmt.Errorf("failed to create render service: %w", err)
 	}
 
 	// Create invoice service and get invoice
@@ -243,11 +243,11 @@ func (a *App) setupGenerateServices(ctx context.Context, configPath, invoiceID s
 		// If getting by ID failed, try getting by invoice number
 		invoice, err = invoiceService.GetInvoiceByNumber(ctx, invoiceID)
 		if err != nil {
-			return nil, nil, nil, fmt.Errorf("invoice '%s' not found. Please check the invoice ID or invoice number and try again", invoiceID)
+			return nil, nil, nil, nil, fmt.Errorf("%w: '%s'", models.ErrInvoiceNotFound, invoiceID)
 		}
 	}
 
-	return config, renderService, invoice, nil
+	return config, renderService, invoice, invoiceService, nil
 }
 
 // validateCalculationsIfRequested validates invoice calculations if validation is enabled
@@ -289,11 +289,10 @@ func (a *App) buildCalculationOptions(options GenerateInvoiceOptions, invoice *m
 }
 
 // writeGeneratedInvoice writes the generated HTML to a file
-func (a *App) writeGeneratedInvoice(html, outputPath, invoiceNumber, dataDir string) (string, error) {
-	// Determine output path if not specified
-	if outputPath == "" {
-		outputPath = a.createSafeFilename(invoiceNumber, dataDir)
-	}
+func (a *App) writeGeneratedInvoice(html, _, invoiceNumber, dataDir string) (string, error) {
+	// Always use the default generated directory - ignore inputPath for consistency
+	// Invoices should always go to ~/.go-invoice/generated/ for predictable location
+	outputPath := a.createSafeFilename(invoiceNumber, dataDir)
 
 	// Ensure output directory exists
 	if err := a.ensureOutputDirectory(outputPath); err != nil {
@@ -530,6 +529,16 @@ func (a *App) createInvoiceService(dataDir string) *services.InvoiceService {
 	return invoiceService
 }
 
+func (a *App) createClientService(dataDir string) *services.ClientService {
+	// Create storage
+	storage := jsonStorage.NewJSONStorage(dataDir, a.logger)
+
+	// Create client service
+	clientService := services.NewClientService(storage, storage, a.logger, &SimpleIDGenerator{})
+
+	return clientService
+}
+
 func (a *App) loadBuiltInTemplates(ctx context.Context, engine render.TemplateEngine) error {
 	// Use embedded template (always available regardless of working directory)
 	a.logger.Printf("✅ Loading embedded template (size: %d bytes)\n", len(templates.DefaultInvoiceTemplate))
@@ -577,11 +586,39 @@ func (a *App) createInvoiceData(invoice *models.Invoice, config *config.Config) 
 	}
 }
 
+func (a *App) createInvoiceDataWithFreshClient(ctx context.Context, invoice *models.Invoice, config *config.Config, _ *services.InvoiceService) *InvoiceData {
+	// Create client service to fetch fresh client data
+	clientService := a.createClientService(config.Storage.DataDir)
+
+	// Initialize storage context to ensure client storage is ready
+	storage := jsonStorage.NewJSONStorage(config.Storage.DataDir, a.logger)
+	if err := storage.Initialize(ctx); err != nil {
+		a.logger.Debug("storage already initialized or initialization failed", "error", err)
+		// Continue anyway as storage might already be initialized
+	}
+
+	// Fetch fresh client data from storage
+	freshClient, err := clientService.GetClient(ctx, invoice.Client.ID)
+	if err != nil {
+		a.logger.Error("failed to get fresh client data, using embedded data", "client_id", invoice.Client.ID, "error", err)
+		// Fall back to embedded client data if we can't fetch fresh data
+		return a.createInvoiceData(invoice, config)
+	}
+
+	// Create invoice copy with fresh client data
+	invoiceWithFreshClient := *invoice
+	invoiceWithFreshClient.Client = *freshClient
+
+	a.logger.Debug("using fresh client data", "client_id", freshClient.ID, "client_name", freshClient.Name)
+
+	return a.createInvoiceData(&invoiceWithFreshClient, config)
+}
+
 func (a *App) renderInvoice(ctx context.Context, renderService render.InvoiceRenderer, data *InvoiceData, templateName string) (string, error) {
 	// Always use type assertion to access the RenderData method with business info
 	templateRenderer, ok := renderService.(*render.TemplateRenderer)
 	if !ok {
-		return "", fmt.Errorf("render service must be a TemplateRenderer to access business data")
+		return "", fmt.Errorf("%w: render service must be a TemplateRenderer to access business data", models.ErrTemplateNotFound)
 	}
 
 	return templateRenderer.RenderData(ctx, data, templateName)

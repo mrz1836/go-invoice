@@ -79,21 +79,6 @@ func GenerateHTMLSchema() map[string]interface{} {
 				"maxLength":   500,
 				"examples":    []string{"Thank you for your business!", "Payment terms: Net 30 days"},
 			},
-			"output_path": map[string]interface{}{
-				"type":        "string",
-				"description": "File path where the HTML should be saved. Required unless using web_preview or return_html.",
-				"examples":    []string{"./invoices/INV-001.html", "/exports/invoice.html"},
-			},
-			"output_dir": map[string]interface{}{
-				"type":        "string",
-				"description": "Directory for batch invoice generation (used with batch_invoices).",
-				"examples":    []string{"./monthly-invoices/", "/exports/batch/"},
-			},
-			"auto_name": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Automatically generate file names based on invoice numbers (for batch generation).",
-			},
 			"web_preview": map[string]interface{}{
 				"type":        "boolean",
 				"default":     false,
