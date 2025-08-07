@@ -992,35 +992,6 @@ go tool cover -html=coverage.out -o coverage.html
 <br/>
 
 
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](.github/CONTRIBUTING.md) for details.
-
-### Quick Contribution Guide
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Make** your changes with tests
-4. **Run** the test suite (`make test`)
-5. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-6. **Push** to the branch (`git push origin feature/amazing-feature`)
-7. **Open** a Pull Request
-
-### Development Setup
-
-```bash
-# Clone your fork
-git clone https://github.com/yourusername/go-invoice.git
-cd go-invoice
-
-# Install dependencies
-go mod download
-
-# Run tests to verify setup
-make test
-
-# Start developing!
-```
 
 <br/>
 
@@ -1337,6 +1308,32 @@ These ensure that both AI assistants and the MCP integration follow the same hig
 ## 🤝 Contributing
 
 We welcome contributions from the community! Please read our [contributing guidelines](.github/CONTRIBUTING.md) and [code of conduct](.github/CODE_OF_CONDUCT.md).
+
+### Quick Contribution Guide
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Make** your changes with tests
+4. **Run** the test suite (`make test`)
+5. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+6. **Push** to the branch (`git push origin feature/amazing-feature`)
+7. **Open** a Pull Request
+
+### Development Setup
+
+```bash
+# Clone your fork
+git clone https://github.com/yourusername/go-invoice.git
+cd go-invoice
+
+# Install dependencies
+go mod download
+
+# Run tests to verify setup
+make test
+
+# Start developing!
+```
 
 ### How Can I Help?
 
