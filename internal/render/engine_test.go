@@ -243,7 +243,7 @@ func (suite *RenderTestSuite) TestGoTemplate_Execute() {
 	output := buf.String()
 	suite.Contains(output, "Invoice #TEST-001")
 	suite.Contains(output, "Test Client")
-	suite.Contains(output, "1993.75 USD")
+	suite.Contains(output, "$1,993.75")
 }
 
 // TestGoTemplate_ExecuteToString tests template execution to string
@@ -267,7 +267,7 @@ func (suite *RenderTestSuite) TestGoTemplate_ExecuteToString() {
 
 	suite.Contains(output, "Invoice #TEST-001")
 	suite.Contains(output, "Test Client")
-	suite.Contains(output, "1993.75 USD")
+	suite.Contains(output, "$1,993.75")
 }
 
 // TestGoTemplate_Validate tests template validation
@@ -555,7 +555,7 @@ func (suite *RenderTestSuite) TestTemplateFunctions() {
 			name:     "FormatCurrency",
 			template: "{{formatCurrency 1234.56 \"USD\"}}",
 			data:     nil,
-			expected: []string{"1234.56 USD"},
+			expected: []string{"$1,234.56"},
 		},
 		{
 			name:     "FormatDate",

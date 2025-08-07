@@ -444,6 +444,37 @@ func (e *HTMLTemplateEngine) ClearCache(ctx context.Context) error {
 	return nil
 }
 
+// formatNumberWithCommas formats a number with comma separators for thousands
+func formatNumberWithCommas(amount float64) string {
+	// Format to 2 decimal places first
+	str := fmt.Sprintf("%.2f", amount)
+
+	// Split into integer and decimal parts
+	parts := strings.Split(str, ".")
+	intPart := parts[0]
+	decimalPart := ""
+	if len(parts) > 1 {
+		decimalPart = "." + parts[1]
+	}
+
+	// Add commas to integer part
+	if len(intPart) <= 3 {
+		return intPart + decimalPart
+	}
+
+	// Process from right to left, adding commas every 3 digits
+	// Pre-allocate result slice with estimated capacity (intPart length + potential commas)
+	result := make([]byte, 0, len(intPart)+(len(intPart)/3)+1)
+	for i, digit := range []byte(intPart) {
+		if i > 0 && (len(intPart)-i)%3 == 0 {
+			result = append(result, ',')
+		}
+		result = append(result, digit)
+	}
+
+	return string(result) + decimalPart
+}
+
 // getCurrencySymbol converts currency codes to symbols
 func getCurrencySymbol(currency string) string {
 	switch currency {
@@ -467,7 +498,7 @@ func (e *HTMLTemplateEngine) getTemplateFunctions() template.FuncMap {
 	return template.FuncMap{
 		"formatCurrency": func(amount float64, currency string) string {
 			symbol := getCurrencySymbol(currency)
-			return fmt.Sprintf("%s%.2f", symbol, amount)
+			return fmt.Sprintf("%s%s", symbol, formatNumberWithCommas(amount))
 		},
 		"formatDate": func(t time.Time, format string) string {
 			if format == "" {

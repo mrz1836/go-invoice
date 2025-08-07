@@ -405,7 +405,7 @@
                         <strong>Description:</strong><br>
                         {{.Description}}
                         {{end}}
-						<br>
+						<br><br>
 						{{if .Business.PaymentTerms}}
 						<div><strong>Terms:</strong> {{.Business.PaymentTerms}}</div>
 						{{end}}
@@ -479,12 +479,12 @@
                 <h4 class="payment-title">Payment Terms</h4>
                 <div class="payment-terms">
                     {{.Business.PaymentTerms}}
-                    
+
                     {{if or (and .Business.BankDetails.ACHEnabled (or .Business.BankDetails.Name .Business.BankDetails.AccountNumber .Business.BankDetails.RoutingNumber .Business.BankDetails.IBAN .Business.BankDetails.SWIFT .Business.BankDetails.PaymentInstructions)) (and .Business.CryptoPayments.USDCEnabled .Business.CryptoPayments.USDCAddress) (and .Business.CryptoPayments.BSVEnabled .Business.CryptoPayments.BSVAddress)}}
                     <br><br>
                     <strong>Payment Methods:</strong>
                     {{end}}
-                    
+
                     {{if and .Business.BankDetails.ACHEnabled (or .Business.BankDetails.Name .Business.BankDetails.AccountNumber .Business.BankDetails.RoutingNumber .Business.BankDetails.IBAN .Business.BankDetails.SWIFT)}}
                     <br><br>
                     <strong>ACH Bank Transfer:</strong><br>
@@ -494,19 +494,19 @@
                     {{if .Business.BankDetails.IBAN}}IBAN: {{.Business.BankDetails.IBAN}}<br>{{end}}
                     {{if .Business.BankDetails.SWIFT}}SWIFT: {{.Business.BankDetails.SWIFT}}<br>{{end}}
                     {{end}}
-                    
+
                     {{if and .Business.CryptoPayments.USDCEnabled .Business.CryptoPayments.USDCAddress}}
                     <br><br>
                     <strong>USDC Cryptocurrency:</strong><br>
                     {{.Business.CryptoPayments.USDCAddress}}
                     {{end}}
-                    
+
                     {{if and .Business.CryptoPayments.BSVEnabled .Business.CryptoPayments.BSVAddress}}
                     <br><br>
                     <strong>BSV (Bitcoin SV) Cryptocurrency:</strong><br>
                     {{.Business.CryptoPayments.BSVAddress}}
                     {{end}}
-                    
+
                     {{if .Business.BankDetails.PaymentInstructions}}
                     <br><br>
                     {{.Business.BankDetails.PaymentInstructions}}

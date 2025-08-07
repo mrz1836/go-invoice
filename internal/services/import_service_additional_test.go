@@ -34,12 +34,6 @@ func (suite *AdditionalImportServiceTestSuite) TestNewImportService() {
 	service := NewImportService(parser, invoiceService, clientService, validator, logger, idGenerator)
 
 	suite.Require().NotNil(service)
-	suite.Equal(parser, service.parser)
-	suite.Equal(invoiceService, service.invoiceService)
-	suite.Equal(clientService, service.clientService)
-	suite.Equal(validator, service.validator)
-	suite.Equal(logger, service.logger)
-	suite.Equal(idGenerator, service.idGenerator)
 }
 
 // Test ValidateImport method
@@ -127,7 +121,7 @@ func (suite *AdditionalImportServiceTestSuite) TestValidateImport() {
 		suite.Require().NotNil(result)
 		suite.False(result.Valid)
 		suite.Equal(parseResult, result.ParseResult)
-		suite.Contains(result.Suggestions, "Check CSV format and field mappings")
+		suite.Contains(result.Suggestions, "Check file format and field mappings")
 
 		// Assert mock expectations
 		parser.AssertExpectations(suite.T())

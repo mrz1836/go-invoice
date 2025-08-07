@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/mrz/go-invoice/internal/csv"
+	jsonparser "github.com/mrz/go-invoice/internal/json"
 	"github.com/mrz/go-invoice/internal/models"
 )
 
@@ -26,7 +28,8 @@ var (
 // ImportService provides high-level import orchestration operations
 // Follows dependency injection pattern with consumer-driven interfaces
 type ImportService struct {
-	parser         csv.TimesheetParser
+	csvParser      csv.TimesheetParser
+	jsonParser     csv.TimesheetParser
 	invoiceService *InvoiceService
 	clientService  *ClientService
 	validator      csv.CSVValidator
@@ -34,17 +37,35 @@ type ImportService struct {
 	idGenerator    IDGenerator
 }
 
+// idGeneratorAdapter adapts services.IDGenerator to csv.IDGenerator
+type idGeneratorAdapter struct {
+	gen IDGenerator
+}
+
+func (a *idGeneratorAdapter) GenerateID() string {
+	// Use work item ID generation for CSV/JSON parsing
+	id, _ := a.gen.GenerateWorkItemID(context.Background())
+	return id
+}
+
 // NewImportService creates a new import service with injected dependencies
 func NewImportService(
-	parser csv.TimesheetParser,
+	csvParser csv.TimesheetParser,
 	invoiceService *InvoiceService,
 	clientService *ClientService,
 	validator csv.CSVValidator,
 	logger Logger,
 	idGenerator IDGenerator,
 ) *ImportService {
+	// Create adapter for JSON parser
+	csvIDGen := &idGeneratorAdapter{gen: idGenerator}
+
+	// Create JSON parser using the adapted ID generator
+	jsonParser := jsonparser.NewJSONParser(validator, logger, csvIDGen)
+
 	return &ImportService{
-		parser:         parser,
+		csvParser:      csvParser,
+		jsonParser:     jsonParser,
 		invoiceService: invoiceService,
 		clientService:  clientService,
 		validator:      validator,
@@ -53,7 +74,17 @@ func NewImportService(
 	}
 }
 
-// ImportToNewInvoice imports CSV data and creates a new invoice
+// getParser selects the appropriate parser based on format
+func (s *ImportService) getParser(format string) csv.TimesheetParser {
+	format = strings.ToLower(format)
+	if format == "json" {
+		return s.jsonParser
+	}
+	// Default to CSV parser for "csv" or any other format
+	return s.csvParser
+}
+
+// ImportToNewInvoice imports data (CSV or JSON) and creates a new invoice
 func (s *ImportService) ImportToNewInvoice(ctx context.Context, reader io.Reader, req ImportToNewInvoiceRequest) (*csv.ImportResult, error) {
 	select {
 	case <-ctx.Done():
@@ -61,12 +92,15 @@ func (s *ImportService) ImportToNewInvoice(ctx context.Context, reader io.Reader
 	default:
 	}
 
-	s.logger.Info("starting import to new invoice", "client_id", req.ClientID, "dry_run", req.DryRun)
+	s.logger.Info("starting import to new invoice", "client_id", req.ClientID, "format", req.Format, "dry_run", req.DryRun)
 
-	// Parse CSV data
-	parseResult, err := s.parser.ParseTimesheet(ctx, reader, req.ParseOptions)
+	// Select appropriate parser based on format
+	parser := s.getParser(req.Format)
+
+	// Parse data (CSV or JSON)
+	parseResult, err := parser.ParseTimesheet(ctx, reader, req.ParseOptions)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrCSVParsingFailed, err)
+		return nil, fmt.Errorf("parsing failed (%s): %w", req.Format, err)
 	}
 
 	if len(parseResult.WorkItems) == 0 {
@@ -133,7 +167,7 @@ func (s *ImportService) ImportToNewInvoice(ctx context.Context, reader io.Reader
 	return result, nil
 }
 
-// AppendToInvoice imports CSV data and appends to existing invoice
+// AppendToInvoice imports data (CSV or JSON) and appends to existing invoice
 func (s *ImportService) AppendToInvoice(ctx context.Context, reader io.Reader, req AppendToInvoiceRequest) (*csv.ImportResult, error) {
 	select {
 	case <-ctx.Done():
@@ -141,12 +175,15 @@ func (s *ImportService) AppendToInvoice(ctx context.Context, reader io.Reader, r
 	default:
 	}
 
-	s.logger.Info("starting import append to invoice", "invoice_id", req.InvoiceID, "dry_run", req.DryRun)
+	s.logger.Info("starting import append to invoice", "invoice_id", req.InvoiceID, "format", req.Format, "dry_run", req.DryRun)
 
-	// Parse CSV data
-	parseResult, err := s.parser.ParseTimesheet(ctx, reader, req.ParseOptions)
+	// Select appropriate parser based on format
+	parser := s.getParser(req.Format)
+
+	// Parse data (CSV or JSON)
+	parseResult, err := parser.ParseTimesheet(ctx, reader, req.ParseOptions)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrCSVParsingFailed, err)
+		return nil, fmt.Errorf("parsing failed (%s): %w", req.Format, err)
 	}
 
 	if len(parseResult.WorkItems) == 0 {
@@ -245,7 +282,7 @@ func (s *ImportService) AppendToInvoice(ctx context.Context, reader io.Reader, r
 	return result, nil
 }
 
-// ValidateImport validates CSV data without importing
+// ValidateImport validates data without importing
 func (s *ImportService) ValidateImport(ctx context.Context, reader io.Reader, req csv.ValidateImportRequest) (*csv.ValidationResult, error) {
 	select {
 	case <-ctx.Done():
@@ -253,16 +290,19 @@ func (s *ImportService) ValidateImport(ctx context.Context, reader io.Reader, re
 	default:
 	}
 
-	s.logger.Info("starting import validation")
+	s.logger.Info("starting import validation", "format", req.Options.Format)
 
-	// Parse CSV data
-	parseResult, err := s.parser.ParseTimesheet(ctx, reader, req.Options)
+	// Select appropriate parser based on format
+	parser := s.getParser(req.Options.Format)
+
+	// Parse data
+	parseResult, err := parser.ParseTimesheet(ctx, reader, req.Options)
 	if err != nil {
 		return &csv.ValidationResult{
 			Valid:       false,
 			ParseResult: parseResult,
-			Suggestions: []string{"Check CSV format and field mappings"},
-		}, fmt.Errorf("failed to parse CSV: %w", err)
+			Suggestions: []string{"Check file format and field mappings"},
+		}, fmt.Errorf("failed to parse data: %w", err)
 	}
 
 	// Validate batch
@@ -487,17 +527,20 @@ func (s *ImportService) generateValidationWarnings(workItems []models.WorkItem) 
 // ImportToNewInvoiceRequest represents a request to import CSV data into a new invoice
 type ImportToNewInvoiceRequest struct {
 	ClientID      models.ClientID  `json:"client_id"`      // Client for the new invoice
-	ParseOptions  csv.ParseOptions `json:"parse_options"`  // CSV parsing options
+	ParseOptions  csv.ParseOptions `json:"parse_options"`  // Parsing options
 	InvoiceNumber string           `json:"invoice_number"` // Optional invoice number (generated if empty)
 	InvoiceDate   time.Time        `json:"invoice_date"`   // Invoice date
 	DueDate       time.Time        `json:"due_date"`       // Due date
 	Description   string           `json:"description"`    // Invoice description
 	DryRun        bool             `json:"dry_run"`        // Validate only, don't create
+	Format        string           `json:"format"`         // Import format: "csv" or "json"
 }
 
-// AppendToInvoiceRequest represents a request to append CSV data to existing invoice
+// AppendToInvoiceRequest represents a request to append data to existing invoice
 type AppendToInvoiceRequest struct {
 	InvoiceID    string           `json:"invoice_id"`    // Existing invoice ID
-	ParseOptions csv.ParseOptions `json:"parse_options"` // CSV parsing options
+	ParseOptions csv.ParseOptions `json:"parse_options"` // Parsing options
 	DryRun       bool             `json:"dry_run"`       // Validate only, don't append
+	SkipDupes    bool             `json:"skip_dupes"`    // Skip duplicate work items
+	Format       string           `json:"format"`        // Import format: "csv" or "json"
 }

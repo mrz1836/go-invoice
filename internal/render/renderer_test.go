@@ -279,7 +279,7 @@ func (suite *TemplateRendererTestSuite) TestRenderInvoice_Success() {
 
 	suite.Contains(result, "Invoice TEST-001")
 	suite.Contains(result, "Test Client")
-	suite.Contains(result, "1993.75 USD")
+	suite.Contains(result, "$1,993.75")
 }
 
 func (suite *TemplateRendererTestSuite) TestRenderInvoice_DefaultTemplate() {
@@ -571,7 +571,7 @@ func TestSecurityValidation(t *testing.T) {
 		result, err := tmpl.ExecuteToString(ctx, nil)
 		require.NoError(t, err)
 
-		assert.Contains(t, result, "1234.56 USD")
+		assert.Contains(t, result, "$1,234.56")
 		assert.Contains(t, result, "HELLO")
 		assert.Contains(t, result, "8")
 	})

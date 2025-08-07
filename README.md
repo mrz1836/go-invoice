@@ -98,7 +98,8 @@
 
 ```bash
 # 1. Install go-invoice
-go install github.com/mrz1836/go-invoice@latest
+go install github.com/mrz1836/go-invoice/cmd/go-invoice@latest
+go install github.com/mrz1836/go-invoice/cmd/go-invoice-mcp@latest
 
 # 2. Initialize storage and set up your business configuration
 go-invoice init
@@ -117,20 +118,22 @@ go-invoice config setup-claude
 
 ```bash
 # Install go-invoice
-go install github.com/mrz1836/go-invoice@latest
+go install github.com/mrz1836/go-invoice/cmd/go-invoice@latest
 
 # Initialize storage and set up your business configuration
 go-invoice init
 go-invoice config setup
 
 # Add your first client
-go-invoice client create --name "Acme Corp" --email "billing@acme.com"
+go-invoice client create --name "Acme Corp" --email "billing@acme.com" --phone "+1-555-0123"
 
-# Import timesheet data and create invoice
-go-invoice import create timesheet.csv --client-name "Acme Corp"
+# Import timesheet data (CSV or JSON) and create invoice
+go-invoice import create timesheet.csv --client-name "Acme Corp" --description "August 2025 Services"
+# OR for JSON:
+go-invoice import create timesheet.json --client-name "Acme Corp" --description "August 2025 Services"
 
 # Generate HTML from the invoice
-go-invoice generate invoice <invoice-id>
+go-invoice generate invoice <invoice-id> --output invoice.html
 
 # View your invoice in the browser
 open invoice.html
@@ -177,12 +180,13 @@ Claude: ✅ Generated invoice-2025-001.html in current directory
 
 ### Traditional CLI (Also Available)
 ```bash
-go-invoice client add --name "Acme Corp" --email "billing@acme.com"
-go-invoice import csv timesheet.csv --client "Acme Corp"
-go-invoice invoice create --client "Acme Corp" --output invoice.html
+go-invoice client create --name "Acme Corp" --email "billing@acme.com"
+go-invoice import create timesheet.csv --client-name "Acme Corp" --description "Monthly Services"
+go-invoice invoice update --invoice-number INV-2025-001 --date 2025-08-07  # Auto-calculates due date
+go-invoice generate invoice INV-2025-001 --output invoice.html
 ```
 
-**🎯 21 MCP Tools Available:** Invoice creation, client management, CSV import, HTML generation, reporting, and more - all accessible through natural conversation.
+**🎯 21 MCP Tools Available:** Invoice creation, client management, CSV/JSON import, HTML generation, reporting, and more - all accessible through natural conversation.
 
 <br/>
 
@@ -431,13 +435,25 @@ BUSINESS_NAME=Your Business Name
 BUSINESS_ADDRESS=123 Business St\nCity, State 12345
 BUSINESS_EMAIL=billing@yourbusiness.com
 BUSINESS_PHONE=+1-555-0123
-PAYMENT_TERMS=Net 30
+BUSINESS_WEBSITE=yourbusiness.com
+PAYMENT_TERMS=Net-30
 
 # Invoice Settings
 INVOICE_PREFIX=INV
 INVOICE_START_NUMBER=1000
+INVOICE_DUE_DAYS=30  # Auto-calculates due dates
 CURRENCY=USD
-VAT_RATE=0.10
+
+# Tax Settings
+TAX_RATE=0.10  # 10% tax
+TAX_ENABLED=true
+
+# Payment Methods
+ACH_ENABLED=true
+USDC_ENABLED=false
+USDC_ADDRESS="0xYourUSDCWalletAddress"
+BSV_ENABLED=false
+BSV_ADDRESS="YourBSVWalletAddress"
 
 # Storage Settings
 DATA_DIR=./data
@@ -454,23 +470,26 @@ AUTO_BACKUP=true
 <summary><strong>👥 Client Management</strong></summary>
 
 ```bash
-# Add a new client
+# Add a new client with all details
 go-invoice client create \
   --name "Acme Corporation" \
   --email "billing@acme.com" \
   --address "456 Client Ave, Client City, CC 67890" \
-  --phone "+1-555-0199"
+  --phone "+1-555-0199" \
+  --tax-id "EIN-12-3456789" \
+  --approver-contacts "John Doe, Finance Dept"
 
-# List all clients
+# List all clients with optional filters
 go-invoice client list
+go-invoice client list --active-only --name-search "Acme"
 
-# View client details
-go-invoice client show --client-name "Acme Corporation"
+# View client details and invoice history
+go-invoice client show --client-name "Acme Corporation" --include-invoices
 
 # Update client information
 go-invoice client update --client-name "Acme Corporation" --email "newbilling@acme.com"
 
-# Deactivate a client (soft delete)
+# Deactivate a client (soft delete preserves data)
 go-invoice client delete --client-name "Acme Corporation" --soft-delete
 ```
 
@@ -480,31 +499,33 @@ go-invoice client delete --client-name "Acme Corporation" --soft-delete
 <summary><strong>📄 Invoice Management</strong></summary>
 
 ```bash
-# Create a new invoice
+# Create a new invoice with optional work items
 go-invoice invoice create \
   --client-name "Acme Corporation" \
-  --description "Monthly development services"
+  --description "August 2025 Development Services" \
+  --invoice-date 2025-08-07  # Due date auto-calculated based on net terms
 
-# Add work items manually
+# Add work items to existing invoice
 go-invoice invoice add-item \
-  --invoice-id INV-1001 \
+  --invoice-number INV-2025-001 \
   --description "Frontend development" \
-  --hours 8 \
+  --hours 8.5 \
   --rate 125.00 \
-  --date 2024-01-15
+  --date 2025-08-01
 
-# List all invoices
+# List all invoices with filters
 go-invoice invoice list
+go-invoice invoice list --status sent --from-date 2025-08-01
+go-invoice invoice list --client-name "Acme" --include-summary
 
-# Filter invoices by status
-go-invoice invoice list --status sent
+# Update invoice (including date which auto-updates due date)
+go-invoice invoice update --invoice-number INV-2025-001 --date 2025-08-07
+go-invoice invoice update --invoice-number INV-2025-001 --status sent
+go-invoice invoice update --invoice-number INV-2025-001 --status paid
 
-# Update invoice status
-go-invoice invoice update --invoice-id INV-1001 --status sent
-go-invoice invoice update --invoice-id INV-1001 --status paid
-
-# Generate HTML output
-go-invoice generate invoice INV-1001 --output invoice-1001.html
+# Generate HTML invoice
+go-invoice generate invoice INV-2025-001 --output invoice-august.html
+go-invoice generate invoice INV-2025-001 --template professional --open
 ```
 
 </details>
@@ -534,34 +555,87 @@ go-invoice export invoices --format json --output invoices-backup.json
 
 go-invoice supports importing timesheet data from popular time tracking applications.
 
-### Supported CSV Format
+### Supported Import Formats
 
+#### CSV Format
 ```csv
 date,description,hours,rate
-2024-01-15,Frontend development and testing,8.5,125.00
-2024-01-16,Backend API implementation,7.25,135.00
-2024-01-17,Code review and documentation,3.0,100.00
+2025-08-01,Frontend development and testing,8.5,125.00
+2025-08-02,Backend API implementation,7.25,135.00
+2025-08-03,Code review and documentation,3.0,100.00
+```
+
+#### JSON Format (Array)
+```json
+[
+  {
+    "date": "2025-08-01",
+    "description": "Frontend development",
+    "hours": 8.5,
+    "rate": 125.00
+  },
+  {
+    "date": "2025-08-02",
+    "description": "Backend API implementation",
+    "hours": 7.25,
+    "rate": 135.00
+  }
+]
+```
+
+#### JSON Format (Structured)
+```json
+{
+  "metadata": {
+    "client": "Acme Corp",
+    "period": "August 2025",
+    "project": "Website Redesign"
+  },
+  "work_items": [
+    {
+      "date": "2025-08-01",
+      "description": "Frontend development",
+      "hours": 8.5,
+      "rate": 125.00
+    }
+  ]
+}
 ```
 
 ### Import Commands
 
 ```bash
-# Import CSV timesheet and create new invoice
+# Import timesheet (auto-detects CSV or JSON format) and create new invoice
 go-invoice import create timesheet.csv \
-  --client-name "Acme Corporation"
+  --client-name "Acme Corporation" \
+  --description "August 2025 Services" \
+  --invoice-date 2025-08-07
 
-# Import CSV data into existing invoice
+# Import JSON data with same command (format auto-detected)
+go-invoice import create timesheet.json \
+  --client-name "Acme Corporation" \
+  --description "August 2025 Services"
+
+# Append data to existing invoice (CSV or JSON)
 go-invoice import append timesheet.csv \
-  --invoice-id INV-1001
+  --invoice-number INV-2025-001 \
+  --skip-duplicates
 
-# Validate CSV format before importing
-go-invoice import validate timesheet.csv
+# Preview import before executing
+go-invoice import preview timesheet.csv \
+  --client-name "Acme Corporation" \
+  --show-totals --show-warnings
+
+# Validate format before importing
+go-invoice import validate timesheet.json
 
 # Import with custom configuration
 go-invoice import create timesheet.csv \
   --client-name "Acme Corporation" \
   --default-rate 125.00 \
-  --description "Monthly development work"
+  --description "Monthly development work" \
+  --currency USD \
+  --due-days 30
 ```
 
 ### Supported Date Formats
@@ -653,17 +727,18 @@ Create custom invoice templates using Go's `text/template` syntax:
 ### Using Custom Templates
 
 ```bash
-# Generate invoice with default template
-go-invoice generate invoice INV-1001 \
+# Generate HTML invoice with default template
+go-invoice generate invoice INV-2025-001 \
   --output invoice.html
 
-# Generate invoice with specific template
-go-invoice generate invoice INV-1001 \
+# Generate with professional template
+go-invoice generate invoice INV-2025-001 \
   --template professional \
-  --output invoice.html
+  --output invoice.html \
+  --open  # Open in browser after generation
 
 # Preview invoice generation without saving
-go-invoice generate preview INV-1001
+go-invoice generate preview INV-2025-001
 
 # List available templates
 go-invoice generate templates
@@ -953,6 +1028,57 @@ make test
 
 ### 🤖 Natural Language Workflow
 
+<details>
+<summary><strong>📋 Complete MCP Tools Reference</strong></summary>
+
+#### Client Management Tools
+- **client_create** - Create new clients with full contact details and approver contacts
+- **client_list** - List and filter clients with search options
+- **client_show** - Display detailed client information and invoice history
+- **client_update** - Modify client information and status
+- **client_delete** - Remove or deactivate clients
+
+#### Invoice Management Tools
+- **invoice_create** - Create invoices with optional work items
+- **invoice_list** - List and filter invoices by status, date, client
+- **invoice_show** - Display comprehensive invoice details
+- **invoice_update** - Update invoice status, dates (auto-calculates due dates)
+- **invoice_delete** - Remove invoices with safety checks
+- **invoice_add_item** - Add work items to existing invoices
+- **invoice_remove_item** - Remove work items from invoices
+
+#### Import/Export Tools
+- **import_csv** - Import timesheet data from CSV or JSON files (auto-detects format)
+- **import_preview** - Preview import results without making changes
+- **import_validate** - Validate CSV/JSON file structure before import
+- **export_data** - Export invoices in CSV, JSON, XML, Excel formats
+
+#### Generation & Reports Tools
+- **generate_html** - Create HTML invoices with customizable templates
+- **generate_summary** - Generate business reports and analytics
+
+#### Configuration Tools
+- **config_init** - Initialize system configuration
+- **config_show** - Display current configuration
+- **config_validate** - Validate configuration integrity
+
+#### Example MCP Usage in Claude:
+```
+User: "Create an invoice for Acme Corp"
+Claude: [Uses invoice_create tool]
+
+User: "Import my timesheet.json file"
+Claude: [Uses import_csv tool - auto-detects JSON format]
+
+User: "Update invoice INV-2025-001 date to August 7th"
+Claude: [Uses invoice_update tool with --date flag, auto-calculates due date]
+
+User: "Show me all unpaid invoices from last month"
+Claude: [Uses invoice_list tool with filters]
+```
+
+</details>
+
 **Freelancer Monthly Invoice with Claude Desktop:**
 ```
 User: "I need to create an invoice for TechCorp Solutions for January 2025. 
@@ -982,32 +1108,88 @@ Claude: ✅ Invoice INV-2025-001 marked as sent
 ### Complete Workflow Example
 
 ```bash
-# 1. Set up your business
-export BUSINESS_NAME="Freelance Developer"
-export BUSINESS_EMAIL="billing@freelancer.dev"
-export CURRENCY="USD"
-export VAT_RATE="0.08"
+# 1. Initialize and configure go-invoice
+go-invoice init
+go-invoice config setup  # Interactive setup wizard
 
-# 2. Add a client
+# Or create a .env.config file:
+cat > .env.config << EOF
+BUSINESS_NAME="Freelance Developer"
+BUSINESS_EMAIL="billing@freelancer.dev"
+BUSINESS_WEBSITE="freelancer.dev"
+BUSINESS_PHONE="+1-555-0123"
+PAYMENT_TERMS="Net-30"
+CURRENCY="USD"
+TAX_RATE="0.08"
+TAX_ENABLED="true"
+INVOICE_DUE_DAYS="30"  # Auto-calculates due dates
+
+# Optional: Enable cryptocurrency payments
+USDC_ENABLED="true"
+USDC_ADDRESS="0xYourUSDCWalletAddress"
+BSV_ENABLED="false"
+BSV_ADDRESS=""
+EOF
+
+# 2. Add a client with full details
 go-invoice client create \
   --name "TechCorp Solutions" \
   --email "accounting@techcorp.com" \
-  --address "789 Tech Blvd, Innovation City, IC 54321"
+  --address "789 Tech Blvd, Innovation City, IC 54321" \
+  --phone "+1-555-9876" \
+  --approver-contacts "Jane Smith, CFO" \
+  --tax-id "EIN-98-7654321"
 
-# 3. Import time tracking data and create invoice
-go-invoice import create january-timesheet.csv \
+# 3. Create timesheet data (CSV or JSON)
+# CSV format:
+cat > january-timesheet.csv << EOF
+date,description,hours,rate
+2025-01-15,Frontend development and UI design,8.5,125.00
+2025-01-16,Backend API implementation,7.25,135.00
+2025-01-17,Code review and documentation,3.0,100.00
+EOF
+
+# JSON format (alternative):
+cat > january-timesheet.json << EOF
+[
+  {"date": "2025-01-15", "description": "Frontend development", "hours": 8.5, "rate": 125.00},
+  {"date": "2025-01-16", "description": "Backend API", "hours": 7.25, "rate": 135.00}
+]
+EOF
+
+# 4. Import and create invoice (format auto-detected)
+INVOICE_NUMBER=$(go-invoice import create january-timesheet.csv \
   --client-name "TechCorp Solutions" \
-  --description "January 2024 Development Services"
+  --description "January 2025 Development Services" \
+  --invoice-date 2025-01-31 \
+  --output json | jq -r '.number')
 
-# 4. Generate HTML invoice (get invoice ID from previous step)
-go-invoice generate invoice <invoice-id> \
-  --output january-invoice.html
+echo "Created invoice: $INVOICE_NUMBER"
+# Output: Created invoice: INV-2025-001
 
-# 5. Update invoice status to sent
-go-invoice invoice update --invoice-id <invoice-id> --status sent
+# 5. Generate professional HTML invoice (with comma-separated currency)
+go-invoice generate invoice $INVOICE_NUMBER \
+  --output january-invoice.html \
+  --template professional
 
-# 6. Later, mark as paid
-go-invoice invoice update --invoice-id <invoice-id> --status paid
+# 6. Update invoice date (auto-updates due date to 30 days later)
+go-invoice invoice update --invoice-number $INVOICE_NUMBER --date 2025-02-01
+# Due date automatically becomes 2025-03-03
+
+# 7. Mark invoice as sent
+go-invoice invoice update --invoice-number $INVOICE_NUMBER --status sent
+
+# 8. View invoice details
+go-invoice invoice show --invoice-number $INVOICE_NUMBER
+
+# 9. Later, mark as paid
+go-invoice invoice update --invoice-number $INVOICE_NUMBER --status paid
+
+# 10. List all invoices for the month (as a summary)
+go-invoice invoice list \
+  --from-date 2025-01-01 \
+  --to-date 2025-01-31 \
+  --include-summary
 ```
 
 ### Automation Example
@@ -1022,15 +1204,15 @@ TIMESHEET="timesheets/${MONTH}-timesheet.csv"
 INVOICE_FILE="invoices/${MONTH}-invoice.html"
 
 # Import timesheet and create invoice
-INVOICE_ID=$(go-invoice import create "$TIMESHEET" --client-name "$CLIENT" --description "$MONTH Development Services" --output json | jq -r '.id')
+INVOICE_NUMBER=$(go-invoice import create "$TIMESHEET" --client-name "$CLIENT" --description "$MONTH Development Services" --output json | jq -r '.number')
 
 # Generate HTML invoice
-go-invoice generate invoice "$INVOICE_ID" --output "$INVOICE_FILE"
+go-invoice generate invoice "$INVOICE_NUMBER" --output "$INVOICE_FILE"
 
 # Update invoice status to sent
-go-invoice invoice update --invoice-id "$INVOICE_ID" --status sent
+go-invoice invoice update --invoice-number "$INVOICE_NUMBER" --status sent
 
-echo "Invoice $INVOICE_ID created and sent for $CLIENT"
+echo "Invoice $INVOICE_NUMBER created and sent for $CLIENT"
 ```
 
 </details>
@@ -1050,10 +1232,14 @@ go-invoice config show
 go-invoice config setup
 ```
 
-**CSV import fails**
+**Import fails (CSV or JSON)**
 ```bash
-# Validate CSV format first
+# Validate file format first (auto-detects CSV/JSON)
 go-invoice import validate timesheet.csv
+go-invoice import validate data.json
+
+# Preview import to see what will happen
+go-invoice import preview timesheet.csv --client-name "Acme Corp"
 
 # Check supported import commands
 go-invoice import --help
@@ -1089,10 +1275,11 @@ go-invoice [command] --help
 
 ### v1.0: Core Features ✅
 - [x] CLI interface with comprehensive commands
-- [x] Client management system
-- [x] Invoice creation and management
-- [x] CSV import with validation
-- [x] Professional HTML generation
+- [x] Client management with approver contacts and tax IDs
+- [x] Invoice creation with automatic due date calculation
+- [x] CSV and JSON import with validation and preview
+- [x] Professional HTML generation with comma-separated currency
+- [x] Cryptocurrency payment methods (USDC, BSV)
 - [x] **MCP Integration** - Natural language interface for Claude Desktop and Claude Code
 - [x] **21 MCP Tools** - Complete invoice management via AI conversation
 - [x] **Dual Transport Support** - HTTP (Claude Desktop) and stdio (Claude Code)

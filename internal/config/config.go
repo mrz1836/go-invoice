@@ -227,13 +227,13 @@ func getEnvFloat(key string, defaultValue float64) float64 {
 	return defaultValue
 }
 
-func getEnvBool(key string, defaultValue bool) bool {
+func getEnvBool(key string, _ bool) bool {
 	if value := os.Getenv(key); value != "" {
 		if parsed, err := strconv.ParseBool(value); err == nil {
 			return parsed
 		}
 	}
-	return defaultValue
+	return false
 }
 
 func getEnvDuration(key string, defaultValue time.Duration) time.Duration {

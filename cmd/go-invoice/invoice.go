@@ -406,6 +406,7 @@ Work items should be managed through the import command.`,
 
 	// Add flags
 	cmd.Flags().String("status", "", "Update status (draft, sent, paid, overdue, canceled)")
+	cmd.Flags().String("date", "", "Update invoice date (YYYY-MM-DD)")
 	cmd.Flags().String("due-date", "", "Update due date (YYYY-MM-DD)")
 	cmd.Flags().String("description", "", "Update description")
 	cmd.Flags().String("notes", "", "Update internal notes")
@@ -422,7 +423,7 @@ func (a *App) runInvoiceUpdate(cmd *cobra.Command, args []string) error {
 	invoiceID := args[0]
 
 	// Setup and validation
-	invoiceService, invoice, err := a.setupUpdateCommand(ctx, cmd, invoiceID)
+	invoiceService, invoice, config, err := a.setupUpdateCommand(ctx, cmd, invoiceID)
 	if err != nil {
 		return err
 	}
@@ -433,7 +434,7 @@ func (a *App) runInvoiceUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Build update request - use the actual invoice ID from the retrieved invoice
-	req, hasUpdates, err := a.buildUpdateRequest(cmd, string(invoice.ID))
+	req, hasUpdates, err := a.buildUpdateRequest(cmd, string(invoice.ID), config)
 	if err != nil {
 		return err
 	}
@@ -447,12 +448,12 @@ func (a *App) runInvoiceUpdate(cmd *cobra.Command, args []string) error {
 }
 
 // setupUpdateCommand sets up the invoice service and validates the invoice
-func (a *App) setupUpdateCommand(ctx context.Context, cmd *cobra.Command, invoiceID string) (*services.InvoiceService, *models.Invoice, error) {
+func (a *App) setupUpdateCommand(ctx context.Context, cmd *cobra.Command, invoiceID string) (*services.InvoiceService, *models.Invoice, *config.Config, error) {
 	// Load configuration
 	configPath, _ := cmd.Flags().GetString("config")
 	config, err := a.configService.LoadConfig(ctx, configPath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to load configuration: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
 
 	// Create storage and services
@@ -463,24 +464,25 @@ func (a *App) setupUpdateCommand(ctx context.Context, cmd *cobra.Command, invoic
 	// Get current invoice - try by ID first, then by number
 	invoice, err := a.getInvoiceByIDOrNumber(ctx, invoiceService, invoiceID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get invoice: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to get invoice: %w", err)
 	}
 
 	// Check if invoice can be updated
 	if invoice.Status == models.StatusPaid || invoice.Status == models.StatusVoided {
-		return nil, nil, fmt.Errorf("%w: %s", ErrCannotUpdateInvoiceStatus, invoice.Status)
+		return nil, nil, nil, fmt.Errorf("%w: %s", ErrCannotUpdateInvoiceStatus, invoice.Status)
 	}
 
-	return invoiceService, invoice, nil
+	return invoiceService, invoice, config, nil
 }
 
 // buildUpdateRequest builds the update request from command flags
-func (a *App) buildUpdateRequest(cmd *cobra.Command, invoiceID string) (models.UpdateInvoiceRequest, bool, error) {
+func (a *App) buildUpdateRequest(cmd *cobra.Command, invoiceID string, cfg *config.Config) (models.UpdateInvoiceRequest, bool, error) {
 	req := models.UpdateInvoiceRequest{
 		ID: models.InvoiceID(invoiceID),
 	}
 
 	hasUpdates := false
+	dateChanged := false
 
 	// Update status
 	if status, _ := cmd.Flags().GetString("status"); status != "" {
@@ -490,12 +492,33 @@ func (a *App) buildUpdateRequest(cmd *cobra.Command, invoiceID string) (models.U
 		hasUpdates = true
 	}
 
+	// Update invoice date
+	if dateStr, _ := cmd.Flags().GetString("date"); dateStr != "" {
+		if err := a.validateAndSetInvoiceDate(&req, dateStr); err != nil {
+			return req, false, err
+		}
+		hasUpdates = true
+		dateChanged = true
+	}
+
 	// Update due date
-	if dueDateStr, _ := cmd.Flags().GetString("due-date"); dueDateStr != "" {
+	dueDateStr, _ := cmd.Flags().GetString("due-date")
+	if dueDateStr != "" {
+		// User explicitly set due date, use it
 		if err := a.validateAndSetDueDate(&req, dueDateStr); err != nil {
 			return req, false, err
 		}
 		hasUpdates = true
+	} else if dateChanged && req.Date != nil {
+		// Invoice date changed but no explicit due date provided
+		// Auto-calculate due date based on net terms
+		dueDays := cfg.Invoice.DefaultDueDays
+		if dueDays == 0 {
+			dueDays = 30 // Default to 30 days if not configured
+		}
+		newDueDate := req.Date.AddDate(0, 0, dueDays)
+		req.DueDate = &newDueDate
+		a.logger.Printf("   Note: Due date automatically adjusted to %d days from invoice date\n", dueDays)
 	}
 
 	// Update description
@@ -524,6 +547,16 @@ func (a *App) validateAndSetStatus(req *models.UpdateInvoiceRequest, status stri
 	}
 
 	return fmt.Errorf("%w: %s (must be one of: %s)", ErrInvalidStatus, status, strings.Join(validStatuses, ", "))
+}
+
+// validateAndSetInvoiceDate validates and sets the invoice date in the update request
+func (a *App) validateAndSetInvoiceDate(req *models.UpdateInvoiceRequest, dateStr string) error {
+	invoiceDate, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return fmt.Errorf("invalid invoice date format (use YYYY-MM-DD): %w", err)
+	}
+	req.Date = &invoiceDate
+	return nil
 }
 
 // validateAndSetDueDate validates and sets the due date in the update request
@@ -556,6 +589,12 @@ func (a *App) displayUpdateResults(original, updated *models.Invoice, req models
 
 	if req.Status != nil {
 		a.logger.Printf("   Status: %s → %s\n", original.Status, updated.Status)
+	}
+
+	if req.Date != nil {
+		a.logger.Printf("   Invoice Date: %s → %s\n",
+			original.Date.Format("2006-01-02"),
+			updated.Date.Format("2006-01-02"))
 	}
 
 	if req.DueDate != nil {

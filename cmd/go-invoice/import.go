@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/mrz/go-invoice/internal/csv"
@@ -19,19 +21,49 @@ var (
 	ErrInvoiceIDRequired = fmt.Errorf("invoice ID is required (use --invoice flag)")
 )
 
+// detectFileFormat detects the format based on file extension
+func detectFileFormat(filename string, specifiedFormat string) string {
+	// If format is explicitly specified and not "auto", use it
+	if specifiedFormat != "" && specifiedFormat != "auto" {
+		return specifiedFormat
+	}
+
+	// Auto-detect based on file extension
+	ext := strings.ToLower(filepath.Ext(filename))
+	switch ext {
+	case ".json":
+		return "json"
+	case ".csv":
+		return "csv"
+	case ".tsv", ".tab":
+		return "tsv"
+	case ".xlsx", ".xls":
+		return "excel"
+	default:
+		// Default to CSV if unknown
+		return "csv"
+	}
+}
+
 // buildImportCommand creates the import command with subcommands
 func (a *App) buildImportCommand() *cobra.Command {
 	importCmd := &cobra.Command{
 		Use:   "import",
-		Short: "Import timesheet data from CSV files",
-		Long: `Import work hours from CSV files into invoices.
+		Short: "Import timesheet data from CSV or JSON files",
+		Long: `Import work hours from CSV or JSON files into invoices.
 
-Supports multiple CSV formats including:
+Supports multiple formats:
+
+CSV Formats:
 - Standard CSV (RFC 4180)
 - Excel CSV exports
 - Google Sheets CSV exports
 - Tab-separated values (TSV)
 - Custom delimiter formats
+
+JSON Formats:
+- Simple array format: [{"date": "2025-08-01", "hours": 8, "rate": 150, "description": "Work"}]
+- Structured format with metadata: {"metadata": {...}, "work_items": [...]}
 
 Can create new invoices or append to existing ones.`,
 	}
@@ -58,31 +90,39 @@ func (a *App) buildImportCreateCommand() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "create <csv-file>",
-		Short: "Import CSV data into a new invoice",
-		Long: `Import timesheet data from a CSV file and create a new invoice.
+		Use:   "create <file>",
+		Short: "Import data into a new invoice",
+		Long: `Import timesheet data from a CSV or JSON file and create a new invoice.
 
-The CSV file should contain columns for:
+For CSV files, columns should include:
 - date (work date)
 - hours (hours worked) 
 - rate (hourly rate)
 - description (work description)
 
-Example:
-  go-invoice import create timesheet.csv --client CLIENT_001`,
+For JSON files, use either format:
+- Array: [{"date": "2025-08-01", "hours": 8, "rate": 150, "description": "Work"}]
+- Structured: {"metadata": {...}, "work_items": [...]}
+
+Format is auto-detected from file extension, or use --format flag.
+
+Examples:
+  go-invoice import create timesheet.csv --client CLIENT_001
+  go-invoice import create timesheet.json --client CLIENT_001
+  go-invoice import create data.txt --format json --client CLIENT_001`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithCancel(cmd.Context())
 			defer cancel()
 
-			csvFile := args[0]
+			dataFile := args[0]
 			configPath, _ := cmd.Flags().GetString("config")
 
 			if clientID == "" {
 				return ErrClientIDRequired
 			}
 
-			return a.executeImportCreate(ctx, csvFile, configPath, ImportCreateOptions{
+			return a.executeImportCreate(ctx, dataFile, configPath, ImportCreateOptions{
 				ClientID:      clientID,
 				InvoiceNumber: invoiceNumber,
 				Description:   description,
@@ -102,7 +142,7 @@ Example:
 	cmd.Flags().StringVar(&dueDate, "due-date", "", "Due date (YYYY-MM-DD, default: 30 days from invoice date)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Validate only, don't create invoice")
 	cmd.Flags().BoolVar(&interactive, "interactive", false, "Interactive mode for resolving ambiguous data")
-	cmd.Flags().StringVar(&format, "format", "", "Force specific CSV format (standard, excel, tab)")
+	cmd.Flags().StringVar(&format, "format", "auto", "Import format (auto, csv, json, excel, tsv)")
 
 	return cmd
 }
@@ -117,27 +157,28 @@ func (a *App) buildImportAppendCommand() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "append <csv-file>",
-		Short: "Import CSV data and append to existing invoice",
-		Long: `Import timesheet data from a CSV file and append work items to an existing invoice.
+		Use:   "append <file>",
+		Short: "Import data and append to existing invoice",
+		Long: `Import timesheet data from a CSV or JSON file and append work items to an existing invoice.
 
 The invoice must be in draft status to accept additional work items.
 
-Example:
-  go-invoice import append timesheet.csv --invoice INV-001`,
+Examples:
+  go-invoice import append timesheet.csv --invoice INV-001
+  go-invoice import append timesheet.json --invoice INV-001`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithCancel(cmd.Context())
 			defer cancel()
 
-			csvFile := args[0]
+			dataFile := args[0]
 			configPath, _ := cmd.Flags().GetString("config")
 
 			if invoiceID == "" {
 				return ErrInvoiceIDRequired
 			}
 
-			return a.executeImportAppend(ctx, csvFile, configPath, ImportAppendOptions{
+			return a.executeImportAppend(ctx, dataFile, configPath, ImportAppendOptions{
 				InvoiceID:   invoiceID,
 				DryRun:      dryRun,
 				Interactive: interactive,
@@ -149,7 +190,7 @@ Example:
 	cmd.Flags().StringVar(&invoiceID, "invoice", "", "Invoice ID to append to (required)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Validate only, don't append to invoice")
 	cmd.Flags().BoolVar(&interactive, "interactive", false, "Interactive mode for resolving ambiguous data")
-	cmd.Flags().StringVar(&format, "format", "", "Force specific CSV format (standard, excel, tab)")
+	cmd.Flags().StringVar(&format, "format", "auto", "Import format (auto, csv, json, excel, tsv)")
 
 	return cmd
 }
@@ -159,42 +200,45 @@ func (a *App) buildImportValidateCommand() *cobra.Command {
 	var format string
 
 	cmd := &cobra.Command{
-		Use:   "validate <csv-file>",
-		Short: "Validate CSV file format and data",
-		Long: `Validate a CSV file for import compatibility without actually importing data.
+		Use:   "validate <file>",
+		Short: "Validate file format and data",
+		Long: `Validate a CSV or JSON file for import compatibility without actually importing data.
 
 Checks for:
-- Valid CSV format and structure
-- Required columns (date, hours, rate, description)
+- Valid file format and structure (CSV or JSON)
+- Required fields (date, hours, rate, description)
 - Data type validation
 - Business rule compliance
 - Potential issues and warnings
 
-Example:
-  go-invoice import validate timesheet.csv`,
+Examples:
+  go-invoice import validate timesheet.csv
+  go-invoice import validate timesheet.json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithCancel(cmd.Context())
 			defer cancel()
 
-			csvFile := args[0]
+			dataFile := args[0]
 			configPath, _ := cmd.Flags().GetString("config")
 
-			return a.executeImportValidate(ctx, csvFile, configPath, ImportValidateOptions{
+			return a.executeImportValidate(ctx, dataFile, configPath, ImportValidateOptions{
 				Format: format,
 			})
 		},
 	}
 
-	cmd.Flags().StringVar(&format, "format", "", "Force specific CSV format (standard, excel, tab)")
+	cmd.Flags().StringVar(&format, "format", "auto", "Import format (auto, csv, json, excel, tsv)")
 
 	return cmd
 }
 
 // Import command execution methods
 
-func (a *App) executeImportCreate(ctx context.Context, csvFile, configPath string, options ImportCreateOptions) error {
-	a.logger.Info("executing import create", "file", csvFile, "client", options.ClientID)
+func (a *App) executeImportCreate(ctx context.Context, dataFile, configPath string, options ImportCreateOptions) error {
+	// Detect file format
+	fileFormat := detectFileFormat(dataFile, options.Format)
+	a.logger.Info("executing import create", "file", dataFile, "client", options.ClientID, "format", fileFormat)
 
 	// Load configuration
 	config, err := a.configService.LoadConfig(ctx, configPath)
@@ -205,10 +249,10 @@ func (a *App) executeImportCreate(ctx context.Context, csvFile, configPath strin
 	// Create import service
 	importService := a.createImportService(config.Storage.DataDir)
 
-	// Open CSV file
-	file, err := os.Open(csvFile) // #nosec G304 -- User-provided file path is expected in CLI
+	// Open data file
+	file, err := os.Open(dataFile) // #nosec G304 -- User-provided file path is expected in CLI
 	if err != nil {
-		return fmt.Errorf("failed to open CSV file: %w", err)
+		return fmt.Errorf("failed to open data file: %w", err)
 	}
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
@@ -238,8 +282,9 @@ func (a *App) executeImportCreate(ctx context.Context, csvFile, configPath strin
 		ClientID:     models.ClientID(options.ClientID),
 		InvoiceDate:  invoiceDate,
 		DueDate:      dueDate,
-		ParseOptions: a.createParseOptions(options.Format),
+		ParseOptions: a.createParseOptions(fileFormat),
 		DryRun:       options.DryRun,
+		Format:       fileFormat,
 	}
 
 	if options.InvoiceNumber != "" {
@@ -262,8 +307,10 @@ func (a *App) executeImportCreate(ctx context.Context, csvFile, configPath strin
 	return nil
 }
 
-func (a *App) executeImportAppend(ctx context.Context, csvFile, configPath string, options ImportAppendOptions) error {
-	a.logger.Info("executing import append", "file", csvFile, "invoice", options.InvoiceID)
+func (a *App) executeImportAppend(ctx context.Context, dataFile, configPath string, options ImportAppendOptions) error {
+	// Detect file format
+	fileFormat := detectFileFormat(dataFile, options.Format)
+	a.logger.Info("executing import append", "file", dataFile, "invoice", options.InvoiceID, "format", fileFormat)
 
 	// Load configuration
 	config, err := a.configService.LoadConfig(ctx, configPath)
@@ -274,10 +321,10 @@ func (a *App) executeImportAppend(ctx context.Context, csvFile, configPath strin
 	// Create import service
 	importService := a.createImportService(config.Storage.DataDir)
 
-	// Open CSV file
-	file, err := os.Open(csvFile) // #nosec G304 -- User-provided file path is expected in CLI
+	// Open data file
+	file, err := os.Open(dataFile) // #nosec G304 -- User-provided file path is expected in CLI
 	if err != nil {
-		return fmt.Errorf("failed to open CSV file: %w", err)
+		return fmt.Errorf("failed to open data file: %w", err)
 	}
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
@@ -301,8 +348,9 @@ func (a *App) executeImportAppend(ctx context.Context, csvFile, configPath strin
 	// Prepare import request using the resolved invoice ID
 	req := services.AppendToInvoiceRequest{
 		InvoiceID:    string(invoice.ID),
-		ParseOptions: a.createParseOptions(options.Format),
+		ParseOptions: a.createParseOptions(fileFormat),
 		DryRun:       options.DryRun,
+		Format:       fileFormat,
 	}
 
 	// Execute import
@@ -317,8 +365,10 @@ func (a *App) executeImportAppend(ctx context.Context, csvFile, configPath strin
 	return nil
 }
 
-func (a *App) executeImportValidate(ctx context.Context, csvFile, configPath string, options ImportValidateOptions) error {
-	a.logger.Info("executing import validation", "file", csvFile)
+func (a *App) executeImportValidate(ctx context.Context, dataFile, configPath string, options ImportValidateOptions) error {
+	// Detect file format
+	fileFormat := detectFileFormat(dataFile, options.Format)
+	a.logger.Info("executing import validation", "file", dataFile, "format", fileFormat)
 
 	// Load configuration
 	config, err := a.configService.LoadConfig(ctx, configPath)
@@ -329,10 +379,10 @@ func (a *App) executeImportValidate(ctx context.Context, csvFile, configPath str
 	// Create import service
 	importService := a.createImportService(config.Storage.DataDir)
 
-	// Open CSV file
-	file, err := os.Open(csvFile) // #nosec G304 -- User-provided file path is expected in CLI
+	// Open data file
+	file, err := os.Open(dataFile) // #nosec G304 -- User-provided file path is expected in CLI
 	if err != nil {
-		return fmt.Errorf("failed to open CSV file: %w", err)
+		return fmt.Errorf("failed to open data file: %w", err)
 	}
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
@@ -342,7 +392,7 @@ func (a *App) executeImportValidate(ctx context.Context, csvFile, configPath str
 
 	// Prepare validation request
 	req := csv.ValidateImportRequest{
-		Options: a.createParseOptions(options.Format),
+		Options: a.createParseOptions(fileFormat),
 	}
 
 	// Execute validation
@@ -367,12 +417,12 @@ func (a *App) createImportService(dataDir string) *services.ImportService {
 	invoiceService := services.NewInvoiceService(storage, storage, a.logger, &SimpleIDGenerator{})
 	clientService := services.NewClientService(storage, storage, a.logger, &SimpleIDGenerator{})
 
-	// Create CSV components
+	// Create CSV components (validator is shared between CSV and JSON parsers)
 	validator := csv.NewWorkItemValidator(a.logger)
-	parser := csv.NewCSVParser(validator, a.logger, &SimpleIDGenerator{})
+	csvParser := csv.NewCSVParser(validator, a.logger, &SimpleIDGenerator{})
 
-	// Create import service
-	importService := services.NewImportService(parser, invoiceService, clientService, validator, a.logger, &SimpleIDGenerator{})
+	// Create import service (JSON parser will be created internally)
+	importService := services.NewImportService(csvParser, invoiceService, clientService, validator, a.logger, &SimpleIDGenerator{})
 
 	return importService
 }
@@ -381,12 +431,12 @@ func (a *App) createParseOptions(format string) csv.ParseOptions {
 	options := csv.ParseOptions{
 		ContinueOnError: false,
 		SkipEmptyRows:   true,
+		Format:          format,
 	}
 
-	if format != "" {
-		options.Format = format
-	} else {
-		options.Format = "standard" // Default format
+	// Set default format if not specified
+	if options.Format == "" {
+		options.Format = "standard"
 	}
 
 	return options
