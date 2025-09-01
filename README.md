@@ -182,7 +182,7 @@ Claude: ✅ Generated invoice-2025-001.html in current directory
 ```bash
 go-invoice client create --name "Acme Corp" --email "billing@acme.com"
 go-invoice import create timesheet.csv --client-name "Acme Corp" --description "Monthly Services"
-go-invoice invoice update --invoice-number INV-2025-001 --date 2025-08-07  # Auto-calculates due date
+go-invoice invoice update INV-2025-001 --date 2025-08-07  # Auto-calculates due date
 go-invoice generate invoice INV-2025-001 --output invoice.html
 ```
 
@@ -507,7 +507,7 @@ go-invoice invoice create \
 
 # Add work items to existing invoice
 go-invoice invoice add-item \
-  --invoice-number INV-2025-001 \
+  INV-2025-001 \
   --description "Frontend development" \
   --hours 8.5 \
   --rate 125.00 \
@@ -519,9 +519,9 @@ go-invoice invoice list --status sent --from-date 2025-08-01
 go-invoice invoice list --client-name "Acme" --include-summary
 
 # Update invoice (including date which auto-updates due date)
-go-invoice invoice update --invoice-number INV-2025-001 --date 2025-08-07
-go-invoice invoice update --invoice-number INV-2025-001 --status sent
-go-invoice invoice update --invoice-number INV-2025-001 --status paid
+go-invoice invoice update INV-2025-001 --date 2025-08-07
+go-invoice invoice update INV-2025-001 --status sent
+go-invoice invoice update INV-2025-001 --status paid
 
 # Generate HTML invoice
 go-invoice generate invoice INV-2025-001 --output invoice-august.html
@@ -618,7 +618,7 @@ go-invoice import create timesheet.json \
 
 # Append data to existing invoice (CSV or JSON)
 go-invoice import append timesheet.csv \
-  --invoice-number INV-2025-001 \
+  INV-2025-001 \
   --skip-duplicates
 
 # Preview import before executing
@@ -1144,17 +1144,17 @@ go-invoice generate invoice $INVOICE_NUMBER \
   --template professional
 
 # 6. Update invoice date (auto-updates due date to 30 days later)
-go-invoice invoice update --invoice-number $INVOICE_NUMBER --date 2025-02-01
+go-invoice invoice update $INVOICE_NUMBER --date 2025-02-01
 # Due date automatically becomes 2025-03-03
 
 # 7. Mark invoice as sent
-go-invoice invoice update --invoice-number $INVOICE_NUMBER --status sent
+go-invoice invoice update $INVOICE_NUMBER --status sent
 
 # 8. View invoice details
-go-invoice invoice show --invoice-number $INVOICE_NUMBER
+go-invoice invoice show $INVOICE_NUMBER
 
 # 9. Later, mark as paid
-go-invoice invoice update --invoice-number $INVOICE_NUMBER --status paid
+go-invoice invoice update $INVOICE_NUMBER --status paid
 
 # 10. List all invoices for the month (as a summary)
 go-invoice invoice list \
@@ -1181,7 +1181,7 @@ INVOICE_NUMBER=$(go-invoice import create "$TIMESHEET" --client-name "$CLIENT" -
 go-invoice generate invoice "$INVOICE_NUMBER" --output "$INVOICE_FILE"
 
 # Update invoice status to sent
-go-invoice invoice update --invoice-number "$INVOICE_NUMBER" --status sent
+go-invoice invoice update "$INVOICE_NUMBER" --status sent
 
 echo "Invoice $INVOICE_NUMBER created and sent for $CLIENT"
 ```

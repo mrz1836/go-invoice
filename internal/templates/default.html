@@ -433,13 +433,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {{range .WorkItems}}
+                        {{$config := .Config}}{{range .WorkItems}}
                         <tr>
                             <td class="date-col">{{formatDate .Date "Jan 2"}}</td>
                             <td class="description-col">{{.Description}}</td>
                             <td class="hours-col">{{formatFloat .Hours 2}}</td>
-                            <td class="rate-col">{{formatCurrency .Rate $.Config.Currency}}</td>
-                            <td class="amount-col amount-cell">{{formatCurrency .Total $.Config.Currency}}</td>
+                            <td class="rate-col">{{formatCurrency .Rate $config.Currency}}</td>
+                            <td class="amount-col amount-cell">{{formatCurrency .Total $config.Currency}}</td>
                         </tr>
                         {{end}}
                     </tbody>
