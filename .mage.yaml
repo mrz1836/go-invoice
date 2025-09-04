@@ -1,8 +1,8 @@
 project:
-  name: go-broadcast
-  binary: go-broadcast
-  module: github.com/mrz1836/go-broadcast
-  main: ./cmd/go-broadcast/main.go
+  name: go-invoice
+  binary: go-invoice
+  module: github.com/mrz1836/go-invoice
+  main: ./cmd/go-invoice/main.go
 
 build:
   # Custom ldflags with version injection
@@ -13,4 +13,4 @@ build:
     - "-X main.buildDate={{.Date}}"
   flags:
     - "-trimpath"
-  output: "./cmd/go-broadcast"
+  output: "./cmd/go-invoice"
