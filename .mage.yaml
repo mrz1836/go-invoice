@@ -1,0 +1,16 @@
+project:
+  name: go-broadcast
+  binary: go-broadcast
+  module: github.com/mrz1836/go-broadcast
+  main: ./cmd/go-broadcast/main.go
+
+build:
+  # Custom ldflags with version injection
+  ldflags:
+    - "-s -w"
+    - "-X main.version={{.Version}}"
+    - "-X main.commit={{.Commit}}"
+    - "-X main.buildDate={{.Date}}"
+  flags:
+    - "-trimpath"
+  output: "./cmd/go-broadcast"
