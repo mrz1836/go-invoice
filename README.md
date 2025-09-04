@@ -50,8 +50,8 @@
         <a href=".github/AGENTS.md">
           <img src="https://img.shields.io/badge/AGENTS.md-found-40b814?style=flat&logo=openai" alt="AI Agent Rules">
         </a><br/>
-        <a href="Makefile" target="_blank">
-          <img src="https://img.shields.io/badge/Makefile-supported-brightgreen?style=flat&logo=probot&logoColor=white" alt="Makefile Supported">
+        <a href="magefile.go" target="_blank">
+          <img src="https://img.shields.io/badge/Magefile-supported-brightgreen?style=flat&logo=probot&logoColor=white" alt="Magefile Supported">
         </a><br/>
       </td>
       <td valign="top" align="left">
@@ -370,10 +370,7 @@ git clone https://github.com/mrz1836/go-invoice.git
 cd go-invoice
 
 # Build the application
-make build-go
-
-# Install globally (optional)
-make install
+magex devBuild
 ```
 
 ### Install via Go
@@ -775,7 +772,7 @@ go-invoice generate templates
 ### Benchmark Results
 ```bash
 # Run performance benchmarks
-make bench
+magex bench
 
 # Sample results:
 BenchmarkSimpleServerOperations/ping_request-10         1486044    860.1 ns/op    1034 B/op    9 allocs/op
@@ -877,41 +874,53 @@ go-invoice/
 ### Build Commands
 
 ```bash
-# Install development dependencies
-make mod-download
-
 # Run linting
-make lint
+magex lint
 
 # Run all tests
-make test
+magex test
 
 # Run tests with race detection
-make test-race
+magex test:race
 
 # Run integration tests
 go test -v -run TestIntegrationSuite
 
 # Generate test coverage
-make coverage
+magex test:cover
 
-# Build binary
-make build-go
+# Build main application only
+magex buildMain
 
-# Install locally
-make install
+# Build MCP server only
+magex buildMCP
 
-# Build MCP server
-make build-mcp
+# Build both applications (default target)
+magex buildAll
 
-# Run MCP integration tests
-make test-mcp
+# Build development version with "dev" tag
+magex devBuild
 
-# Run security tests
-make test-security
+# Build development versions of both binaries
+magex devBuildAll
+
+# Install main binary to $GOPATH/bin
+magex installMain
+
+# Install MCP server to $GOPATH/bin
+magex installMCP
+
+# Install both binaries to $GOPATH/bin
+magex installAll
+
+# Clean build artifacts
+magex clean
+
+# Clean all artifacts and installed binaries
+magex cleanAll
 
 # Run performance benchmarks
-make bench
+magex bench
 ```
 
 </details>
@@ -937,19 +946,19 @@ This project maintains comprehensive test coverage with multiple test categories
 
 ```bash
 # Run all tests (fast)
-make test
+magex test
 
 # Run tests with race detection (slower but thorough)
-make test-race
+magex test:race
 
 # Run integration tests only
 go test -v -run TestIntegrationSuite
 
 # Run tests with coverage report
-make coverage
+magex test:cover
 
 # Run benchmarks
-make bench
+magex bench
 
 # Generate HTML coverage report
 go test -coverprofile=coverage.out ./...
@@ -1314,7 +1323,7 @@ We welcome contributions from the community! Please read our [contributing guide
 1. **Fork** the repository
 2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
 3. **Make** your changes with tests
-4. **Run** the test suite (`make test`)
+4. **Run** the test suite (`magex test`)
 5. **Commit** your changes (`git commit -m 'Add amazing feature'`)
 6. **Push** to the branch (`git push origin feature/amazing-feature`)
 7. **Open** a Pull Request
@@ -1330,7 +1339,7 @@ cd go-invoice
 go mod download
 
 # Run tests to verify setup
-make test
+magex test
 
 # Start developing!
 ```
