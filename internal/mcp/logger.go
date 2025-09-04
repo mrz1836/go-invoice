@@ -196,7 +196,7 @@ func (t *TestLogger) HasMessage(level, message string) bool {
 }
 
 // HasMessageWithKV checks if a message exists with specific key-value pairs
-func (t *TestLogger) HasMessageWithKV(level, message string, key string, value interface{}) bool {
+func (t *TestLogger) HasMessageWithKV(level, message, key string, value interface{}) bool {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	for _, msg := range t.messages {

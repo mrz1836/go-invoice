@@ -234,7 +234,7 @@ type InputValidator interface {
 	// - Provides field path information for nested validation errors
 	// - Includes suggested corrections for common validation failures
 	// - Respects context cancellation for large schema validation
-	ValidateAgainstSchema(ctx context.Context, input map[string]interface{}, schema map[string]interface{}) error
+	ValidateAgainstSchema(ctx context.Context, input, schema map[string]interface{}) error
 
 	// ValidateRequired checks presence and validity of required fields with context-aware processing.
 	//

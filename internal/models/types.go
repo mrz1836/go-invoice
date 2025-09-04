@@ -73,7 +73,7 @@ func (vb *ValidationBuilder) WithContext(_ context.Context) *ValidationBuilder {
 }
 
 // AddRequired adds a required field validation error if the value is empty
-func (vb *ValidationBuilder) AddRequired(field string, value string) *ValidationBuilder {
+func (vb *ValidationBuilder) AddRequired(field, value string) *ValidationBuilder {
 	if strings.TrimSpace(value) == "" {
 		vb.errors = append(vb.errors, ValidationError{
 			Field:   field,
@@ -85,7 +85,7 @@ func (vb *ValidationBuilder) AddRequired(field string, value string) *Validation
 }
 
 // AddMaxLength adds a max length validation error if the value exceeds the limit
-func (vb *ValidationBuilder) AddMaxLength(field string, value string, maxLen int) *ValidationBuilder {
+func (vb *ValidationBuilder) AddMaxLength(field, value string, maxLen int) *ValidationBuilder {
 	if len(value) > maxLen {
 		vb.errors = append(vb.errors, ValidationError{
 			Field:   field,
@@ -97,7 +97,7 @@ func (vb *ValidationBuilder) AddMaxLength(field string, value string, maxLen int
 }
 
 // AddMinLength adds a min length validation error if the value is below the limit
-func (vb *ValidationBuilder) AddMinLength(field string, value string, minLen int) *ValidationBuilder {
+func (vb *ValidationBuilder) AddMinLength(field, value string, minLen int) *ValidationBuilder {
 	trimmed := strings.TrimSpace(value)
 	if value != "" && len(trimmed) < minLen {
 		vb.errors = append(vb.errors, ValidationError{
@@ -110,7 +110,7 @@ func (vb *ValidationBuilder) AddMinLength(field string, value string, minLen int
 }
 
 // AddLengthRange adds a length range validation error if the value is outside the range
-func (vb *ValidationBuilder) AddLengthRange(field string, value string, minLen, maxLen int) *ValidationBuilder {
+func (vb *ValidationBuilder) AddLengthRange(field, value string, minLen, maxLen int) *ValidationBuilder {
 	if value != "" && (len(value) < minLen || len(value) > maxLen) {
 		vb.errors = append(vb.errors, ValidationError{
 			Field:   field,
@@ -122,7 +122,7 @@ func (vb *ValidationBuilder) AddLengthRange(field string, value string, minLen, 
 }
 
 // AddEmail adds an email validation error if the value is not a valid email
-func (vb *ValidationBuilder) AddEmail(field string, value string) *ValidationBuilder {
+func (vb *ValidationBuilder) AddEmail(field, value string) *ValidationBuilder {
 	if value != "" && !emailPattern.MatchString(value) {
 		vb.errors = append(vb.errors, ValidationError{
 			Field:   field,
@@ -233,7 +233,7 @@ func (vb *ValidationBuilder) AddAmountRange(field string, minVal, maxVal float64
 }
 
 // AddValidOption adds a validation error if value is not in the list of valid options
-func (vb *ValidationBuilder) AddValidOption(field string, value string, validOptions []string) *ValidationBuilder {
+func (vb *ValidationBuilder) AddValidOption(field, value string, validOptions []string) *ValidationBuilder {
 	if value != "" {
 		valid := false
 		for _, option := range validOptions {
@@ -291,7 +291,7 @@ func (vb *ValidationBuilder) AddPositive(field string, value float64) *Validatio
 }
 
 // AddMaxValue adds a validation error if the value exceeds the maximum
-func (vb *ValidationBuilder) AddMaxValue(field string, value float64, maxVal float64, unit string) *ValidationBuilder {
+func (vb *ValidationBuilder) AddMaxValue(field string, value, maxVal float64, unit string) *ValidationBuilder {
 	if value > maxVal {
 		vb.errors = append(vb.errors, ValidationError{
 			Field:   field,
@@ -335,7 +335,7 @@ func (vb *ValidationBuilder) AddFloatValidation(field string, value, maxVal floa
 }
 
 // AddPattern adds a pattern validation error if the value doesn't match the regex
-func (vb *ValidationBuilder) AddPattern(field string, value string, pattern *regexp.Regexp, message string) *ValidationBuilder {
+func (vb *ValidationBuilder) AddPattern(field, value string, pattern *regexp.Regexp, message string) *ValidationBuilder {
 	if value != "" && !pattern.MatchString(value) {
 		vb.errors = append(vb.errors, ValidationError{
 			Field:   field,

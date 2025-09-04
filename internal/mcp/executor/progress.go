@@ -21,7 +21,7 @@ var (
 // ProgressTracker manages progress tracking for command execution.
 type ProgressTracker interface {
 	// StartOperation starts tracking a new operation.
-	StartOperation(ctx context.Context, operationID string, description string, totalSteps int) (*Operation, error)
+	StartOperation(ctx context.Context, operationID, description string, totalSteps int) (*Operation, error)
 
 	// GetOperation retrieves an active operation by ID.
 	GetOperation(ctx context.Context, operationID string) (*Operation, error)
@@ -99,7 +99,7 @@ func NewDefaultProgressTracker(logger Logger) *DefaultProgressTracker {
 }
 
 // StartOperation starts tracking a new operation.
-func (t *DefaultProgressTracker) StartOperation(ctx context.Context, operationID string, description string, totalSteps int) (*Operation, error) {
+func (t *DefaultProgressTracker) StartOperation(ctx context.Context, operationID, description string, totalSteps int) (*Operation, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -261,7 +261,7 @@ func (t *DefaultProgressTracker) monitorOperation(ctx context.Context, op *Opera
 // Operation methods
 
 // UpdateProgress updates the operation progress.
-func (op *Operation) UpdateProgress(step int, stage string, message string) {
+func (op *Operation) UpdateProgress(step int, stage, message string) {
 	op.mu.Lock()
 	defer op.mu.Unlock()
 

@@ -414,7 +414,7 @@ func (f *DefaultFileHandler) copyFileToWorkspace(ctx context.Context, file FileR
 }
 
 // createFileReference creates a FileReference for a file.
-func (f *DefaultFileHandler) createFileReference(ctx context.Context, path string, baseDir string) (*FileReference, error) {
+func (f *DefaultFileHandler) createFileReference(ctx context.Context, path, baseDir string) (*FileReference, error) {
 	// Get file info
 	info, err := os.Stat(path)
 	if err != nil {

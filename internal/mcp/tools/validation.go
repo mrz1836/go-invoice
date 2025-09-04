@@ -102,7 +102,7 @@ func NewDefaultInputValidator(logger Logger) *DefaultInputValidator {
 // - Includes suggested corrections for common validation failures
 // - Respects context cancellation for large schema validation
 // - Performance-optimized for frequent validation operations
-func (v *DefaultInputValidator) ValidateAgainstSchema(ctx context.Context, input map[string]interface{}, schema map[string]interface{}) error {
+func (v *DefaultInputValidator) ValidateAgainstSchema(ctx context.Context, input, schema map[string]interface{}) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -352,7 +352,7 @@ func (v *DefaultInputValidator) BuildValidationError(ctx context.Context, fieldP
 // - Handles type validation, format validation, and constraints
 // - Provides field-specific error messages with context
 // - Supports nested validation for complex field types
-func (v *DefaultInputValidator) validateField(ctx context.Context, fieldName string, value interface{}, fieldSchema interface{}) error {
+func (v *DefaultInputValidator) validateField(ctx context.Context, fieldName string, value, fieldSchema interface{}) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -421,7 +421,7 @@ func (v *DefaultInputValidator) validateField(ctx context.Context, fieldName str
 //
 // Returns:
 // - error: Type validation error, or nil if type matches
-func (v *DefaultInputValidator) validateFieldType(ctx context.Context, fieldName string, value interface{}, expectedType interface{}) error {
+func (v *DefaultInputValidator) validateFieldType(ctx context.Context, fieldName string, value, expectedType interface{}) error {
 	expectedTypeStr, ok := expectedType.(string)
 	if !ok {
 		return v.BuildValidationError(ctx, fieldName,
