@@ -22,7 +22,7 @@ var (
 )
 
 // detectFileFormat detects the format based on file extension
-func detectFileFormat(filename string, specifiedFormat string) string {
+func detectFileFormat(filename, specifiedFormat string) string {
 	// If format is explicitly specified and not "auto", use it
 	if specifiedFormat != "" && specifiedFormat != "auto" {
 		return specifiedFormat

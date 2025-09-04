@@ -31,7 +31,7 @@ func NewPrompter(logger Logger) *Prompter {
 }
 
 // PromptString prompts for a string value
-func (p *Prompter) PromptString(ctx context.Context, prompt string, defaultValue string) (string, error) {
+func (p *Prompter) PromptString(ctx context.Context, prompt, defaultValue string) (string, error) {
 	select {
 	case <-ctx.Done():
 		return "", ctx.Err()

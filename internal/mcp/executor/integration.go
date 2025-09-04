@@ -363,7 +363,7 @@ func (h *ToolCallHandler) parseToolOutput(ctx context.Context, _ *tools.MCPTool,
 
 // Helper functions
 
-func convertParams(from interface{}, to interface{}) error {
+func convertParams(from, to interface{}) error {
 	// Convert using JSON marshaling/unmarshaling for proper type conversion
 	data, err := json.Marshal(from)
 	if err != nil {
