@@ -646,7 +646,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchDateRange() {
 		},
 		{
 			ID:          "test-2",
-			Date:        time.Now().AddDate(0, -6, 0), // 6 months ago (more than 1 year later than first item)
+			Date:        time.Now().AddDate(0, -5, 0), // 5 months ago (more than 1 year later than first item)
 			Hours:       8.0,
 			Rate:        100.0,
 			Description: "Recent development work",
