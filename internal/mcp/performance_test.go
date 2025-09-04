@@ -103,6 +103,31 @@ func (s *PerformanceTestSuite) SetupSuite() {
 	s.setupTransports()
 }
 
+// setupBenchmarkSuite creates a PerformanceTestSuite for benchmark usage
+func setupBenchmarkSuite(b *testing.B) *PerformanceTestSuite {
+	s := &PerformanceTestSuite{}
+	s.logger = NewTestLogger()
+	s.bridge = NewMockCLIBridge()
+	s.config = s.createTestConfig()
+	s.responseTimer = NewResponseTimeTracker()
+	s.resourceMonitor = NewResourceMonitor()
+	s.dataGenerator = NewTestDataGenerator()
+
+	// Initialize tool system
+	ctx := context.Background()
+	components, err := tools.InitializeToolSystem(ctx, s.logger)
+	require.NoError(b, err, "Failed to initialize tool system")
+	s.toolComponents = components
+
+	// Create server instance
+	s.server = NewServer(s.logger, s.bridge, s.config).(*DefaultServer)
+
+	// Initialize transports
+	s.setupTransportsBenchmark(b)
+
+	return s
+}
+
 // TearDownSuite cleans up test resources
 func (s *PerformanceTestSuite) TearDownSuite() {
 	if s.httpServer != nil {
@@ -128,6 +153,27 @@ func (s *PerformanceTestSuite) setupTransports() {
 	transportConfig.Type = types.TransportHTTP
 	http, err := factory.CreateTransport(transportConfig, s.server)
 	s.Require().NoError(err)
+	s.httpTransport = http
+
+	// Create HTTP test server
+	s.httpServer = httptest.NewServer(http.(*HTTPTransport).handler)
+}
+
+// setupTransportsBenchmark initializes both stdio and HTTP transports for benchmark testing
+func (s *PerformanceTestSuite) setupTransportsBenchmark(b *testing.B) {
+	transportConfig := DefaultTransportConfig()
+	factory := NewTransportFactory(s.logger)
+
+	// Setup stdio transport
+	transportConfig.Type = types.TransportStdio
+	stdio, err := factory.CreateTransport(transportConfig, nil)
+	require.NoError(b, err)
+	s.stdioTransport = stdio
+
+	// Setup HTTP transport with test server
+	transportConfig.Type = types.TransportHTTP
+	http, err := factory.CreateTransport(transportConfig, s.server)
+	require.NoError(b, err)
 	s.httpTransport = http
 
 	// Create HTTP test server
@@ -162,8 +208,7 @@ func (s *PerformanceTestSuite) createTestConfig() *Config {
 
 // BenchmarkToolExecution tests performance of all 21 tools
 func BenchmarkToolExecution(b *testing.B) {
-	suite := &PerformanceTestSuite{}
-	suite.SetupSuite()
+	suite := setupBenchmarkSuite(b)
 	defer suite.TearDownSuite()
 
 	// Get all available tools
@@ -180,8 +225,7 @@ func BenchmarkToolExecution(b *testing.B) {
 
 // BenchmarkToolsByCategory tests performance by tool category
 func BenchmarkToolsByCategory(b *testing.B) {
-	suite := &PerformanceTestSuite{}
-	suite.SetupSuite()
+	suite := setupBenchmarkSuite(b)
 	defer suite.TearDownSuite()
 
 	categories := []tools.CategoryType{
@@ -202,8 +246,7 @@ func BenchmarkToolsByCategory(b *testing.B) {
 
 // BenchmarkTransportPerformance compares stdio vs HTTP transport performance
 func BenchmarkTransportPerformance(b *testing.B) {
-	suite := &PerformanceTestSuite{}
-	suite.SetupSuite()
+	suite := setupBenchmarkSuite(b)
 	defer suite.TearDownSuite()
 
 	testRequest := suite.createSimpleToolRequest()
@@ -219,8 +262,7 @@ func BenchmarkTransportPerformance(b *testing.B) {
 
 // BenchmarkConcurrentRequests tests concurrent request handling
 func BenchmarkConcurrentRequests(b *testing.B) {
-	suite := &PerformanceTestSuite{}
-	suite.SetupSuite()
+	suite := setupBenchmarkSuite(b)
 	defer suite.TearDownSuite()
 
 	concurrencyLevels := []int{1, 5, 10, 25, 50, 100}
@@ -234,8 +276,7 @@ func BenchmarkConcurrentRequests(b *testing.B) {
 
 // BenchmarkMemoryUsage tests memory allocation patterns
 func BenchmarkMemoryUsage(b *testing.B) {
-	suite := &PerformanceTestSuite{}
-	suite.SetupSuite()
+	suite := setupBenchmarkSuite(b)
 	defer suite.TearDownSuite()
 
 	payloadSizes := []string{"small", "medium", "large"}
@@ -249,8 +290,7 @@ func BenchmarkMemoryUsage(b *testing.B) {
 
 // BenchmarkResourceLimits validates timeout enforcement and resource constraints
 func BenchmarkResourceLimits(b *testing.B) {
-	suite := &PerformanceTestSuite{}
-	suite.SetupSuite()
+	suite := setupBenchmarkSuite(b)
 	defer suite.TearDownSuite()
 
 	b.Run("timeout_enforcement", func(b *testing.B) {
@@ -268,8 +308,7 @@ func BenchmarkResourceLimits(b *testing.B) {
 
 // BenchmarkScalability tests performance under increasing load
 func BenchmarkScalability(b *testing.B) {
-	suite := &PerformanceTestSuite{}
-	suite.SetupSuite()
+	suite := setupBenchmarkSuite(b)
 	defer suite.TearDownSuite()
 
 	loadPatterns := []string{"burst", "sustained", "ramp_up"}

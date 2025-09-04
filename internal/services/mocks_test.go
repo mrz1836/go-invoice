@@ -83,7 +83,7 @@ func (m *MockClientStorage) DeleteClient(ctx context.Context, id models.ClientID
 	return args.Error(0)
 }
 
-func (m *MockClientStorage) ListClients(ctx context.Context, activeOnly bool, limit int, offset int) (*storage.ClientListResult, error) {
+func (m *MockClientStorage) ListClients(ctx context.Context, activeOnly bool, limit, offset int) (*storage.ClientListResult, error) {
 	args := m.Called(ctx, activeOnly, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)

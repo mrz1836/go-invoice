@@ -415,7 +415,7 @@ func (s *CategoriesTestSuite) isValidCategoryFormat(category CategoryType) bool 
 	return true
 }
 
-func (s *CategoriesTestSuite) categoryMatchesFilter(category CategoryType, filter CategoryType) bool {
+func (s *CategoriesTestSuite) categoryMatchesFilter(category, filter CategoryType) bool {
 	// Empty filter matches all categories
 	if filter == CategoryType("") {
 		return true

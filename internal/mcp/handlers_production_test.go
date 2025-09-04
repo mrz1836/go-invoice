@@ -916,15 +916,15 @@ func (m *mockRegistryLogger) Error(_ string, _ ...interface{}) {}
 // mockInputValidator implements the InputValidator interface for the mock registry
 type mockInputValidator struct{}
 
-func (m *mockInputValidator) ValidateInput(_ context.Context, _ map[string]interface{}, _ map[string]interface{}) error {
+func (m *mockInputValidator) ValidateInput(_ context.Context, _, _ map[string]interface{}) error {
 	return nil
 }
 
-func (m *mockInputValidator) BuildValidationError(_ context.Context, _ string, _ string, _ []string) error {
+func (m *mockInputValidator) BuildValidationError(_ context.Context, _, _ string, _ []string) error {
 	return errValidationError
 }
 
-func (m *mockInputValidator) ValidateAgainstSchema(_ context.Context, _ map[string]interface{}, _ map[string]interface{}) error {
+func (m *mockInputValidator) ValidateAgainstSchema(_ context.Context, _, _ map[string]interface{}) error {
 	return nil
 }
 

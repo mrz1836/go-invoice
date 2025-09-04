@@ -32,7 +32,7 @@ type MockInputValidator struct {
 	mock.Mock
 }
 
-func (m *MockInputValidator) ValidateAgainstSchema(ctx context.Context, input map[string]interface{}, schema map[string]interface{}) error {
+func (m *MockInputValidator) ValidateAgainstSchema(ctx context.Context, input, schema map[string]interface{}) error {
 	args := m.Called(ctx, input, schema)
 	return args.Error(0)
 }

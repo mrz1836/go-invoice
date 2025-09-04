@@ -110,7 +110,7 @@ type MockProgressTracker struct {
 	mock.Mock
 }
 
-func (m *MockProgressTracker) StartOperation(ctx context.Context, operationID string, description string, totalSteps int) (*Operation, error) {
+func (m *MockProgressTracker) StartOperation(ctx context.Context, operationID, description string, totalSteps int) (*Operation, error) {
 	arguments := m.Called(ctx, operationID, description, totalSteps)
 	return arguments.Get(0).(*Operation), arguments.Error(1)
 }
