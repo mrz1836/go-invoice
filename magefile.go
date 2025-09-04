@@ -6,7 +6,9 @@
 package main
 
 import (
-	"fmt"
+	"errors"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -17,7 +19,7 @@ import (
 )
 
 // Default target when no target is specified
-var Default = BuildAll
+var Default = BuildAll //nolint:gochecknoglobals // required by mage framework
 
 const (
 	mainBinary = "go-invoice"
@@ -25,10 +27,12 @@ const (
 	binDir     = "bin"
 )
 
+var errSourceBinaryNotExist = errors.New("source binary does not exist")
+
 // BuildMain builds the main go-invoice application.
 func BuildMain() error {
 	mg.Deps(ensureBinDir)
-	fmt.Println("Building go-invoice...")
+	log.Println("Building go-invoice...")
 
 	ldflags := buildLDFlags("main")
 	args := []string{"build", "-trimpath", "-ldflags", ldflags, "-o", filepath.Join(binDir, mainBinary), "./cmd/go-invoice"}
@@ -39,7 +43,7 @@ func BuildMain() error {
 // BuildMCP builds the go-invoice-mcp server.
 func BuildMCP() error {
 	mg.Deps(ensureBinDir)
-	fmt.Println("Building go-invoice-mcp...")
+	log.Println("Building go-invoice-mcp...")
 
 	ldflags := buildLDFlags("main")
 	args := []string{"build", "-trimpath", "-ldflags", ldflags, "-o", filepath.Join(binDir, mcpBinary), "./cmd/go-invoice-mcp"}
@@ -50,7 +54,7 @@ func BuildMCP() error {
 // BuildAll builds both the main application and MCP server.
 func BuildAll() error {
 	mg.Deps(BuildMain, BuildMCP)
-	fmt.Println("✅ All builds completed successfully")
+	log.Println("✅ All builds completed successfully")
 	return nil
 }
 
@@ -78,10 +82,10 @@ func InstallAll() error {
 // DevBuild builds development versions with forced "dev" version.
 func DevBuild() error {
 	mg.Deps(ensureBinDir)
-	fmt.Println("============================================================")
-	fmt.Println("=== Building Development Version ===")
-	fmt.Println("============================================================")
-	fmt.Println()
+	log.Println("============================================================")
+	log.Println("=== Building Development Version ===")
+	log.Println("============================================================")
+	log.Println()
 
 	ldflags := buildLDFlagsWithVersion("main", "dev")
 	args := []string{"build", "-trimpath", "-ldflags", ldflags, "-o", filepath.Join(binDir, mainBinary), "./cmd/go-invoice"}
@@ -94,17 +98,17 @@ func DevBuild() error {
 		return err
 	}
 
-	fmt.Printf("✅ Installed development build of %s to %s\n", mainBinary, getGOPATHBin())
+	log.Printf("✅ Installed development build of %s to %s\n", mainBinary, getGOPATHBin())
 	return nil
 }
 
 // DevBuildAll builds development versions of both binaries.
 func DevBuildAll() error {
 	mg.Deps(ensureBinDir)
-	fmt.Println("============================================================")
-	fmt.Println("=== Building Development Versions (Both) ===")
-	fmt.Println("============================================================")
-	fmt.Println()
+	log.Println("============================================================")
+	log.Println("=== Building Development Versions (Both) ===")
+	log.Println("============================================================")
+	log.Println()
 
 	// Build main with dev version
 	ldflags := buildLDFlagsWithVersion("main", "dev")
@@ -127,20 +131,20 @@ func DevBuildAll() error {
 		return err
 	}
 
-	fmt.Printf("✅ Installed development builds to %s\n", getGOPATHBin())
+	log.Printf("✅ Installed development builds to %s\n", getGOPATHBin())
 	return nil
 }
 
 // Clean removes build artifacts.
 func Clean() error {
-	fmt.Println("Cleaning build artifacts...")
+	log.Println("Cleaning build artifacts...")
 
 	// Remove bin directory
 	if err := sh.Rm(binDir); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to remove %s: %w", binDir, err)
+		return err
 	}
 
-	fmt.Println("✅ Build artifacts cleaned")
+	log.Println("✅ Build artifacts cleaned")
 	return nil
 }
 
@@ -155,11 +159,11 @@ func CleanAll() error {
 	// Remove installed binaries
 	for _, path := range []string{mainPath, mcpPath} {
 		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("failed to remove %s: %w", path, err)
+			return err
 		}
 	}
 
-	fmt.Println("✅ All artifacts and installed binaries cleaned")
+	log.Println("✅ All artifacts and installed binaries cleaned")
 	return nil
 }
 
@@ -167,7 +171,7 @@ func CleanAll() error {
 
 // ensureBinDir creates the bin directory if it doesn't exist.
 func ensureBinDir() error {
-	return os.MkdirAll(binDir, 0o755)
+	return os.MkdirAll(binDir, 0o750)
 }
 
 // buildLDFlags constructs ldflags for the build with version information.
@@ -176,8 +180,7 @@ func buildLDFlags(pkg string) string {
 	commit := getCommit()
 	buildDate := time.Now().UTC().Format(time.RFC3339)
 
-	return fmt.Sprintf("-s -w -X %s.version=%s -X %s.commit=%s -X %s.buildDate=%s",
-		pkg, version, pkg, commit, pkg, buildDate)
+	return "-s -w -X " + pkg + ".version=" + version + " -X " + pkg + ".commit=" + commit + " -X " + pkg + ".buildDate=" + buildDate
 }
 
 // buildLDFlagsWithVersion constructs ldflags with a specific version.
@@ -185,8 +188,7 @@ func buildLDFlagsWithVersion(pkg, version string) string {
 	commit := getCommit()
 	buildDate := time.Now().UTC().Format(time.RFC3339)
 
-	return fmt.Sprintf("-s -w -X %s.version=%s -X %s.commit=%s -X %s.buildDate=%s",
-		pkg, version, pkg, commit, pkg, buildDate)
+	return "-s -w -X " + pkg + ".version=" + version + " -X " + pkg + ".commit=" + commit + " -X " + pkg + ".buildDate=" + buildDate
 }
 
 // getVersion returns the current version from git tags or "dev".
@@ -228,12 +230,12 @@ func installBinary(binaryName string) error {
 
 	// Check if source exists
 	if _, err := os.Stat(src); os.IsNotExist(err) {
-		return fmt.Errorf("source binary %s does not exist", src)
+		return errSourceBinaryNotExist
 	}
 
 	// Ensure destination directory exists
-	if err := os.MkdirAll(getGOPATHBin(), 0o755); err != nil {
-		return fmt.Errorf("failed to create GOPATH bin directory: %w", err)
+	if err := os.MkdirAll(getGOPATHBin(), 0o750); err != nil {
+		return err
 	}
 
 	// Copy file
@@ -242,20 +244,28 @@ func installBinary(binaryName string) error {
 
 // copyFile copies a file from src to dst with executable permissions.
 func copyFile(src, dst string) error {
-	sourceFile, err := os.Open(src)
+	sourceFile, err := os.Open(src) //nolint:gosec // src is controlled by build system
 	if err != nil {
-		return fmt.Errorf("failed to open source file: %w", err)
+		return err
 	}
-	defer sourceFile.Close()
+	defer func() {
+		if closeErr := sourceFile.Close(); closeErr != nil {
+			log.Printf("Error closing source file: %v", closeErr)
+		}
+	}()
 
-	destFile, err := os.Create(dst)
+	destFile, err := os.Create(dst) //nolint:gosec // dst is controlled by build system
 	if err != nil {
-		return fmt.Errorf("failed to create destination file: %w", err)
+		return err
 	}
-	defer destFile.Close()
+	defer func() {
+		if closeErr := destFile.Close(); closeErr != nil {
+			log.Printf("Error closing destination file: %v", closeErr)
+		}
+	}()
 
-	if _, err := destFile.ReadFrom(sourceFile); err != nil {
-		return fmt.Errorf("failed to copy file: %w", err)
+	if _, err := io.Copy(destFile, sourceFile); err != nil {
+		return err
 	}
 
 	// Make executable
