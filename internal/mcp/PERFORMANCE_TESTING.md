@@ -11,7 +11,7 @@ The performance test suite validates response time targets, identifies performan
 The test suite validates against these performance targets:
 
 - **Simple operations**: < 100ms response time
-- **Complex operations**: < 2s response time  
+- **Complex operations**: < 2s response time
 - **Concurrent requests**: Minimum 100 concurrent requests supported
 - **Throughput**: Minimum 50 operations per second sustained load
 
@@ -105,7 +105,7 @@ go test -bench=BenchmarkTool -short ./internal/mcp
 go test -bench=BenchmarkToolExecution -cpuprofile=cpu.prof ./internal/mcp
 go tool pprof cpu.prof
 
-# Generate memory profile  
+# Generate memory profile
 go test -bench=BenchmarkMemoryUsage -memprofile=mem.prof ./internal/mcp
 go tool pprof mem.prof
 
@@ -188,18 +188,18 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: 1.24
-      
+
       # Run performance tests
       - name: Run Performance Tests
         run: go test -bench=. -benchmem ./internal/mcp
-      
+
       # Generate performance report
       - name: Generate Performance Report
         run: |
           go test -bench=BenchmarkToolExecution -benchmem -cpuprofile=cpu.prof -memprofile=mem.prof ./internal/mcp
           go tool pprof -text cpu.prof > cpu_profile.txt
           go tool pprof -text mem.prof > mem_profile.txt
-      
+
       # Upload performance artifacts
       - name: Upload Performance Reports
         uses: actions/upload-artifact@v3
@@ -232,7 +232,7 @@ Regular performance monitoring should include:
 ### Debugging Performance Issues
 
 1. **Use CPU Profiling**: Identify hot paths and bottlenecks
-2. **Use Memory Profiling**: Find memory leaks and excessive allocations  
+2. **Use Memory Profiling**: Find memory leaks and excessive allocations
 3. **Use Tracing**: Understand goroutine behavior and blocking operations
 4. **Check Response Time Reports**: Identify specific operations that are slow
 

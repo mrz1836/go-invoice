@@ -366,7 +366,7 @@ Excellent! Here's your new invoice structure:
 **Original Invoice**: INV-002 - $34,100.00 - CANCELLED (superseded)
 
 **New Split Invoices**:
-- **INV-003**: Phase 1 (Analysis & Design) - $9,600.00 
+- **INV-003**: Phase 1 (Analysis & Design) - $9,600.00
 - **INV-004**: Phase 2 (Implementation & Follow-up) - $5,200.00
 - **Total**: $14,800.00 (matches the restructured scope)
 

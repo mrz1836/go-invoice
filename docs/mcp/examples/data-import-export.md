@@ -5,7 +5,7 @@ This example demonstrates comprehensive data import and export workflows includi
 ## Scenario Overview
 
 **David** runs a digital marketing agency that works with multiple time tracking systems and needs to integrate data from various sources. He needs to:
-1. Import timesheet data from different time tracking applications  
+1. Import timesheet data from different time tracking applications
 2. Validate and clean data before processing
 3. Handle complex field mapping for different CSV formats
 4. Export data in various formats for different purposes
@@ -25,7 +25,7 @@ This workflow demonstrates **11 different MCP tools** focused on data operations
 
 **David**: "Yes, I have three CSV files ready:
 1. `/data/timesheets/toggl-export-client-alpha.csv` - from Toggl for Client Alpha
-2. `/data/timesheets/harvest-export-client-beta.csv` - from Harvest for Client Beta  
+2. `/data/timesheets/harvest-export-client-beta.csv` - from Harvest for Client Beta
 3. `/data/timesheets/clockify-export-client-gamma.csv` - from Clockify for Client Gamma
 
 Each has different column names and date formats. Can you help me preview each one first?"
@@ -136,7 +136,7 @@ Perfect! I can see each system has a completely different format. Let me validat
 
 **Validation Results:**
 - **Toggl**: 45 entries, all valid, no duplicates
-- **Harvest**: 32 entries, all valid, no duplicates  
+- **Harvest**: 32 entries, all valid, no duplicates
 - **Clockify**: 38 entries, 2 entries with missing descriptions (will need cleanup)
 
 Great! The data looks good overall. Now let's import each file with appropriate field mapping. What are the billing rates for Client Alpha (Toggl) and Client Gamma (Clockify) since those files don't include rates?
@@ -158,7 +158,7 @@ Great! The data looks good overall. Now let's import each file with appropriate 
     "default_rate": 175.0,
     "field_mapping": {
       "date": "Date",
-      "hours": "Duration", 
+      "hours": "Duration",
       "description": "Description",
       "project": "Project"
     },
@@ -177,7 +177,7 @@ Now the Harvest data for Client Beta (this one includes rates):
   "tool": "import_csv",
   "parameters": {
     "file_path": "/data/timesheets/harvest-export-client-beta.csv",
-    "client_name": "Client Beta", 
+    "client_name": "Client Beta",
     "description": "Marketing Campaign Management - August 2025",
     "import_mode": "new_invoice",
     "due_days": 30,
@@ -204,14 +204,14 @@ Finally, the Clockify data for Client Gamma:
   "parameters": {
     "file_path": "/data/timesheets/clockify-export-client-gamma.csv",
     "client_name": "Client Gamma",
-    "description": "SEO and Content Marketing - August 2025", 
+    "description": "SEO and Content Marketing - August 2025",
     "import_mode": "new_invoice",
     "due_days": 30,
     "default_rate": 150.0,
     "field_mapping": {
       "date": "Start Date",
       "hours": "Duration (h)",
-      "description": "Description", 
+      "description": "Description",
       "project": "Project"
     },
     "date_format": "DD/MM/YYYY",
@@ -224,7 +224,7 @@ Perfect! Invoice INV-007 created for Client Gamma: $5,700.00 (38 hours @ $150/ho
 
 **Summary of Imports:**
 - **Client Alpha** (Toggl): INV-005 - $7,875.00
-- **Client Beta** (Harvest): INV-006 - $6,400.00  
+- **Client Beta** (Harvest): INV-006 - $6,400.00
 - **Client Gamma** (Clockify): INV-007 - $5,700.00
 - **Total Billing**: $19,975.00
 
@@ -265,7 +265,7 @@ Now the JSON export for your project management system:
   "tool": "export_data",
   "parameters": {
     "data_type": "time_entries",
-    "from_date": "2025-08-01", 
+    "from_date": "2025-08-01",
     "to_date": "2025-08-31",
     "output_format": "json",
     "include_project_breakdown": true,
@@ -286,7 +286,7 @@ Finally, the comprehensive PDF report for your monthly agency review:
   "tool": "generate_summary",
   "parameters": {
     "from_date": "2025-08-01",
-    "to_date": "2025-08-31", 
+    "to_date": "2025-08-31",
     "include_client_breakdown": true,
     "include_project_analysis": true,
     "include_team_productivity": true,
@@ -312,7 +312,7 @@ Perfect! Your comprehensive agency review is ready at `./reports/agency/August-2
 
 **Project Insights:**
 - **Digital Marketing**: Highest margins
-- **Campaign Management**: Good efficiency 
+- **Campaign Management**: Good efficiency
 - **SEO/Content**: Steady recurring revenue
 
 ### Part 3: Advanced Data Analysis and Reporting
@@ -387,14 +387,14 @@ Now let me analyze client profitability:
 - **Efficiency**: High (clear project definitions, minimal revisions)
 
 **Client Beta (Harvest/Variable Rates)**
-- **Revenue**: $6,400.00  
+- **Revenue**: $6,400.00
 - **Estimated Costs**: $1,920.00
 - **Gross Margin**: $4,480.00 (70.0%)
 - **Efficiency**: Medium (some scope creep, rate variations)
 
 **Client Gamma (Clockify/Standard Rate)**
 - **Revenue**: $5,700.00
-- **Estimated Costs**: $1,900.00  
+- **Estimated Costs**: $1,900.00
 - **Gross Margin**: $3,800.00 (66.7%)
 - **Efficiency**: Medium (steady work, some communication gaps)
 
@@ -416,7 +416,7 @@ Now let me analyze client profitability:
   "tool": "config_show",
   "parameters": {
     "section": "export_settings",
-    "output_format": "yaml", 
+    "output_format": "yaml",
     "show_templates": true
   }
 }
@@ -436,7 +436,7 @@ I can see your export configuration supports templates. Let me create a standard
     "include_analysis": ["profitability", "productivity", "data_quality"],
     "stakeholder_versions": {
       "accounting": "csv_financial",
-      "project_management": "json_detailed", 
+      "project_management": "json_detailed",
       "executive": "pdf_comprehensive"
     },
     "automation_schedule": "monthly",
@@ -461,7 +461,7 @@ Perfect! I've created a standardized monthly reporting template. Here's your rep
 
 3. **Analysis Phase:**
    - Client profitability comparison
-   - Time tracking system effectiveness review  
+   - Time tracking system effectiveness review
    - Team productivity and efficiency metrics
 
 4. **Distribution Phase:**
@@ -483,13 +483,13 @@ Simply tell me "Run the standard monthly report for [Month Year]" and I'll execu
   "parameters": {
     "data_type": "consolidated",
     "from_date": "2025-08-01",
-    "to_date": "2025-08-31", 
+    "to_date": "2025-08-31",
     "output_format": "xlsx",
     "include_all_tables": true,
     "separate_worksheets": true,
     "worksheets": [
       "time_entries_raw",
-      "invoices_summary", 
+      "invoices_summary",
       "client_analysis",
       "profitability_breakdown",
       "data_source_comparison"
@@ -501,12 +501,12 @@ Simply tell me "Run the standard monthly report for [Month Year]" and I'll execu
 }
 ```
 
-Excellent! Your consolidated Excel workbook is ready at `./exports/consolidated/August-2025-Complete-Dataset.xlsx`. 
+Excellent! Your consolidated Excel workbook is ready at `./exports/consolidated/August-2025-Complete-Dataset.xlsx`.
 
 **The workbook includes 5 worksheets:**
 
 1. **Time Entries Raw**: All imported timesheet data with source system identification
-2. **Invoices Summary**: Invoice details, totals, and status for all three clients  
+2. **Invoices Summary**: Invoice details, totals, and status for all three clients
 3. **Client Analysis**: Profitability, efficiency, and relationship metrics per client
 4. **Profitability Breakdown**: Detailed margin analysis and cost breakdowns
 5. **Data Source Comparison**: Quality metrics and recommendations for each time tracking system

@@ -79,8 +79,8 @@ func (suite *CSVEdgeCasesTestSuite) TestMalformedCSVData() {
 		},
 		{
 			name: "WhitespaceOnly",
-			csvData: `   
-   
+			csvData: `
+
    `,
 			expectError: true,
 			expectRows:  0,

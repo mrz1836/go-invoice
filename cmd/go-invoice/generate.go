@@ -25,7 +25,7 @@ func (a *App) buildGenerateCommand() *cobra.Command {
 		Use:   "generate",
 		Short: "Generate HTML invoices from stored data",
 		Long: `Generate professional HTML invoices using customizable templates.
-		
+
 Features:
 - Professional HTML output optimized for printing
 - Customizable templates with Go template syntax

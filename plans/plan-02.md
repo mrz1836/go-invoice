@@ -151,24 +151,24 @@ func (s *MCPServer) HandleToolCall(ctx context.Context, req *MCPToolRequest) (*M
         return nil, ctx.Err()
     default:
     }
-    
+
     if err := s.validator.ValidateRequest(ctx, req); err != nil {
         return nil, fmt.Errorf("invalid MCP request: %w", err)
     }
-    
+
     cmdReq, err := s.convertToCommandRequest(ctx, req)
     if err != nil {
         return nil, fmt.Errorf("failed to convert MCP request: %w", err)
     }
-    
+
     cmdResp, err := s.bridge.ExecuteCommand(ctx, cmdReq)
     if err != nil {
         return nil, fmt.Errorf("command execution failed: %w", err)
     }
-    
+
     mcpResp := s.convertToMCPResponse(cmdResp)
     s.logger.Info("MCP tool executed successfully", "tool", req.Tool, "duration", cmdResp.Duration)
-    
+
     return mcpResp, nil
 }
 ```
@@ -366,12 +366,12 @@ func NewToolRegistry(validator InputValidator, logger Logger) *DefaultToolRegist
         validator: validator,
         logger:    logger,
     }
-    
+
     // Register all tools
     registry.registerTool(&InvoiceCreateTool)
     registry.registerTool(&CSVImportTool)
     // ... register other tools
-    
+
     return registry
 }
 
@@ -381,16 +381,16 @@ func (r *DefaultToolRegistry) ValidateToolInput(ctx context.Context, toolName st
         return ctx.Err()
     default:
     }
-    
+
     tool, exists := r.tools[toolName]
     if !exists {
         return fmt.Errorf("tool not found: %s", toolName)
     }
-    
+
     if err := r.validator.ValidateAgainstSchema(ctx, input, tool.InputSchema); err != nil {
         return fmt.Errorf("input validation failed for tool %s: %w", toolName, err)
     }
-    
+
     return nil
 }
 ```
@@ -516,46 +516,46 @@ func (e *SecureExecutor) Execute(ctx context.Context, req *ExecutionRequest) (*E
         return nil, ctx.Err()
     default:
     }
-    
+
     // Validate command is allowed
     if err := e.ValidateCommand(ctx, req.Command, req.Args); err != nil {
         return nil, fmt.Errorf("command validation failed: %w", err)
     }
-    
+
     // Prepare execution environment
     execCtx, cancel := context.WithTimeout(ctx, req.Timeout)
     defer cancel()
-    
+
     // Handle input files
     workDir, cleanup, err := e.fileHandler.PrepareWorkspace(execCtx, req.InputFiles)
     if err != nil {
         return nil, fmt.Errorf("workspace preparation failed: %w", err)
     }
     defer cleanup()
-    
+
     // Execute command with sandboxing
     cmd := exec.CommandContext(execCtx, req.Command, req.Args...)
     cmd.Dir = workDir
     cmd.Env = e.buildEnvironment(req.Environment)
-    
+
     start := time.Now()
     stdout, stderr, err := e.executeWithCapture(cmd)
     duration := time.Since(start)
-    
+
     response := &ExecutionResponse{
         ExitCode: e.getExitCode(err),
         Stdout:   string(stdout),
         Stderr:   string(stderr),
         Duration: duration,
     }
-    
+
     if err != nil {
         response.Error = err.Error()
         e.logger.Error("command execution failed", "command", req.Command, "error", err)
     } else {
         e.logger.Info("command executed successfully", "command", req.Command, "duration", duration)
     }
-    
+
     // Handle output files
     outputFiles, err := e.fileHandler.CollectOutputFiles(execCtx, workDir)
     if err != nil {
@@ -563,7 +563,7 @@ func (e *SecureExecutor) Execute(ctx context.Context, req *ExecutionRequest) (*E
     } else {
         response.OutputFiles = outputFiles
     }
-    
+
     return response, nil
 }
 
@@ -584,17 +584,17 @@ func (p *DefaultResponseProcessor) ProcessCommandOutput(ctx context.Context, res
         return nil, ctx.Err()
     default:
     }
-    
+
     if resp.ExitCode != 0 {
         return p.FormatErrorResponse(ctx, fmt.Errorf("command failed with exit code %d: %s", resp.ExitCode, resp.Stderr))
     }
-    
+
     // Parse structured output from CLI
     content, err := p.parser.ParseOutput(ctx, resp.Stdout, resp.OutputFiles)
     if err != nil {
         return nil, fmt.Errorf("failed to parse command output: %w", err)
     }
-    
+
     mcpResp := &MCPToolResponse{
         Content: []MCPContent{
             {
@@ -604,7 +604,7 @@ func (p *DefaultResponseProcessor) ProcessCommandOutput(ctx context.Context, res
         },
         IsError: false,
     }
-    
+
     // Add file attachments if present
     for _, file := range resp.OutputFiles {
         mcpResp.Content = append(mcpResp.Content, MCPContent{
@@ -613,7 +613,7 @@ func (p *DefaultResponseProcessor) ProcessCommandOutput(ctx context.Context, res
             MimeType: file.ContentType,
         })
     }
-    
+
     return mcpResp, nil
 }
 ```
@@ -748,7 +748,7 @@ timeout 3s ./go-invoice-mcp --test-long-operation
 ```go
 // Transport detection and configuration
 type TransportConfig struct {
-    Type    string `json:"type"`    // "stdio" | "http" 
+    Type    string `json:"type"`    // "stdio" | "http"
     Host    string `json:"host,omitempty"`
     Port    int    `json:"port,omitempty"`
     Timeout string `json:"timeout"`
@@ -765,7 +765,7 @@ type MCPServer struct {
 func NewMCPServer(logger Logger, bridge CLIBridge, config *MCPConfig) *MCPServer {
     // Auto-detect transport based on environment/args
     transport := detectTransport()
-    
+
     return &MCPServer{
         logger:    logger,
         bridge:    bridge,
@@ -831,7 +831,7 @@ func (h *DefaultHealthChecker) CheckHealth(ctx context.Context) (*HealthStatus, 
         return nil, ctx.Err()
     default:
     }
-    
+
     status := &HealthStatus{
         Status:    "unknown",
         Version:   buildinfo.Version,
@@ -839,17 +839,17 @@ func (h *DefaultHealthChecker) CheckHealth(ctx context.Context) (*HealthStatus, 
         Checks:    []HealthCheck{},
         Metadata:  make(map[string]string),
     }
-    
+
     // Check CLI availability
     cliCheck := h.checkCLIAvailability(ctx)
     status.Checks = append(status.Checks, cliCheck)
     status.CLIStatus = cliCheck.Status
-    
+
     // Check storage accessibility
     storageCheck := h.checkStorageHealth(ctx)
     status.Checks = append(status.Checks, storageCheck)
     status.StorageOK = storageCheck.Status == "healthy"
-    
+
     // Determine overall status
     allHealthy := true
     for _, check := range status.Checks {
@@ -860,13 +860,13 @@ func (h *DefaultHealthChecker) CheckHealth(ctx context.Context) (*HealthStatus, 
             }
         }
     }
-    
+
     if allHealthy {
         status.Status = "healthy"
     } else {
         status.Status = "unhealthy"
     }
-    
+
     h.logger.Info("health check completed", "status", status.Status, "checks", len(status.Checks))
     return status, nil
 }
@@ -892,9 +892,9 @@ func (c *DefaultConnectionManager) HandleClaudeRequest(ctx context.Context, req 
         return nil, ctx.Err()
     default:
     }
-    
+
     c.logger.Info("handling Claude request", "method", req.Method, "tool", req.Params.Name)
-    
+
     switch req.Method {
     case "tools/list":
         return c.handleToolsList(ctx, req)
@@ -932,31 +932,31 @@ mkdir -p "$MCP_CONFIG_DIR"
 
 setup_claude_desktop() {
     echo "Setting up Claude Desktop integration (HTTP transport)..."
-    
+
     # Create Claude Desktop config directory
     mkdir -p "$HOME/.claude"
-    
+
     # Copy Claude Desktop configuration
     cp configs/claude-desktop/mcp_servers.json "$HOME/.claude/"
-    
+
     # Test HTTP transport
     echo "Testing Claude Desktop MCP server..."
     go-invoice-mcp --http --config "$MCP_CONFIG_DIR/mcp-config.json" --test
-    
+
     echo "✅ Claude Desktop setup complete!"
     echo "📝 Restart Claude Desktop to load the new MCP server."
 }
 
 setup_claude_code() {
     echo "Setting up Claude Code integration (stdio transport)..."
-    
-    # Copy Claude Code configuration  
+
+    # Copy Claude Code configuration
     cp configs/claude-code/mcp_config.json "$MCP_CONFIG_DIR/"
-    
+
     # Test stdio transport
     echo "Testing Claude Code MCP server..."
     echo '{"method":"ping","id":1}' | go-invoice-mcp --stdio --config "$MCP_CONFIG_DIR/mcp-config.json"
-    
+
     echo "✅ Claude Code setup complete!"
     echo "📝 Add the MCP server configuration to your Claude Code settings."
     echo "🔧 Configuration file: ~/.go-invoice/mcp_config.json"
@@ -970,7 +970,7 @@ case "$PLATFORM" in
     "desktop")
         setup_claude_desktop
         ;;
-    "code") 
+    "code")
         setup_claude_code
         ;;
     "both"|*)
@@ -1049,7 +1049,7 @@ go test -v -race -cover ./internal/mcp/transport/...
 ./scripts/setup-claude-integration.sh desktop
 go-invoice-mcp --http --health-check
 
-# 5. Test Claude Code integration (stdio transport)  
+# 5. Test Claude Code integration (stdio transport)
 ./scripts/setup-claude-code-integration.sh
 echo '{"method":"ping","id":1}' | go-invoice-mcp --stdio
 
@@ -1154,25 +1154,25 @@ func TestMCPToolExecution(t *testing.T) {
             expectError: true,
         },
     }
-    
+
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             ctx := context.Background()
-            
+
             // Setup test dependencies with dependency injection
             executor := NewMockExecutor()
             registry := NewToolRegistry(NewValidator(), NewLogger())
             processor := NewResponseProcessor(NewLogger(), NewOutputParser())
-            
+
             server := NewMCPServer(NewLogger(), executor, &MCPConfig{}, registry, processor)
-            
+
             req := &MCPToolRequest{
                 Tool:   tt.tool,
                 Input:  tt.input,
             }
-            
+
             resp, err := server.HandleToolCall(ctx, req)
-            
+
             if tt.expectError {
                 require.Error(t, err)
             } else {
@@ -1187,7 +1187,7 @@ func TestMCPToolExecution(t *testing.T) {
 // Integration test example using testify suite
 func TestFullMCPWorkflow(t *testing.T) {
     ctx := context.Background()
-    
+
     // Setup test environment
     tempDir := t.TempDir()
     config := &MCPConfig{
@@ -1195,12 +1195,12 @@ func TestFullMCPWorkflow(t *testing.T) {
         WorkingDir: tempDir,
         MaxTimeout: 30 * time.Second,
     }
-    
+
     // Initialize MCP server with real dependencies
     executor := NewSecureExecutor(NewLogger(), NewValidator(), SandboxConfig{}, NewFileHandler())
     registry := NewToolRegistry(NewValidator(), NewLogger())
     server := NewMCPServer(NewLogger(), executor, config, registry, NewResponseProcessor(NewLogger(), NewOutputParser()))
-    
+
     // Test 1: Create client
     clientReq := &MCPToolRequest{
         Tool: "client_create",
@@ -1210,11 +1210,11 @@ func TestFullMCPWorkflow(t *testing.T) {
             "address": "123 Test St",
         },
     }
-    
+
     clientResp, err := server.HandleToolCall(ctx, clientReq)
     require.NoError(t, err)
     require.False(t, clientResp.IsError)
-    
+
     // Test 2: Create invoice
     invoiceReq := &MCPToolRequest{
         Tool: "invoice_create",
@@ -1223,21 +1223,21 @@ func TestFullMCPWorkflow(t *testing.T) {
             "project_name": "Integration Testing",
         },
     }
-    
+
     invoiceResp, err := server.HandleToolCall(ctx, invoiceReq)
     require.NoError(t, err)
     require.False(t, invoiceResp.IsError)
-    
+
     // Extract invoice ID from response
     invoiceID := extractInvoiceID(invoiceResp.Content)
     require.NotEmpty(t, invoiceID)
-    
+
     // Test 3: Import CSV data
     csvContent := "Date,Hours,Rate,Description\n2025-08-01,8,100,Development work\n2025-08-02,6,100,Testing"
     csvFile := filepath.Join(tempDir, "test-timesheet.csv")
     err = os.WriteFile(csvFile, []byte(csvContent), 0644)
     require.NoError(t, err)
-    
+
     importReq := &MCPToolRequest{
         Tool: "import_csv",
         Input: map[string]interface{}{
@@ -1245,11 +1245,11 @@ func TestFullMCPWorkflow(t *testing.T) {
             "invoice_id": invoiceID,
         },
     }
-    
+
     importResp, err := server.HandleToolCall(ctx, importReq)
     require.NoError(t, err)
     require.False(t, importResp.IsError)
-    
+
     // Test 4: Generate invoice
     generateReq := &MCPToolRequest{
         Tool: "generate_invoice",
@@ -1258,11 +1258,11 @@ func TestFullMCPWorkflow(t *testing.T) {
             "template":   "default",
         },
     }
-    
+
     generateResp, err := server.HandleToolCall(ctx, generateReq)
     require.NoError(t, err)
     require.False(t, generateResp.IsError)
-    
+
     // Verify HTML file was generated
     htmlFiles := findFilesByExtension(generateResp.Content, ".html")
     require.NotEmpty(t, htmlFiles, "HTML invoice should be generated")
@@ -1448,7 +1448,7 @@ grep -r "func init()" internal/mcp/
 ## Implementation Timeline
 
 - **Session 1**: MCP Foundation (Phase 0-1) - 3-4 hours
-- **Session 2**: Tool Definitions (Phase 2) - 3-4 hours  
+- **Session 2**: Tool Definitions (Phase 2) - 3-4 hours
 - **Session 3**: Command Execution (Phase 3) - 3-4 hours
 - **Session 4**: Claude Integration (Phase 4) - 2-3 hours
 - **Session 5**: Testing and Documentation (Phase 5) - 3-4 hours

@@ -100,7 +100,7 @@ Perfect! I can see your CSV has columns for Date, Client, Description, Hours, an
 Great! I've successfully imported your timesheet and created invoices for 3 clients:
 
 1. **TechCorp Solutions**: $4,800 (40 hours)
-2. **StartupXYZ**: $2,250 (18 hours) 
+2. **StartupXYZ**: $2,250 (18 hours)
 3. **LocalBusiness**: $1,500 (20 hours)
 
 Total billable amount: $8,550

@@ -281,7 +281,7 @@ Step 3: Create batch delivery summary
 }
 ```
 
-**Result**: 
+**Result**:
 - All top clients processed simultaneously
 - Invoices created and formatted
 - Delivery packages prepared

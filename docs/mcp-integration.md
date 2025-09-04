@@ -65,8 +65,8 @@ Flexible configuration system supporting:
 
 ### Claude Desktop Integration
 
-**Transport**: HTTP  
-**Configuration**: `~/Library/Application Support/Claude/mcp_servers.json`  
+**Transport**: HTTP
+**Configuration**: `~/Library/Application Support/Claude/mcp_servers.json`
 **Use Case**: Application-level invoice management
 
 Features:
@@ -77,8 +77,8 @@ Features:
 
 ### Claude Code Integration
 
-**Transport**: stdio  
-**Configuration**: `.mcp.json` (project-level)  
+**Transport**: stdio
+**Configuration**: `.mcp.json` (project-level)
 **Use Case**: Project-specific invoice management
 
 Features:
@@ -323,7 +323,7 @@ go-invoice config setup-claude
 # Claude Desktop only
 go-invoice config setup-claude --desktop
 
-# Claude Code only  
+# Claude Code only
 go-invoice config setup-claude --code
 
 # Update existing installation

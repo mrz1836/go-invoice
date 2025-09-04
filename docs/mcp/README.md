@@ -32,7 +32,7 @@ Perfect for business users who want a visual interface with natural language inv
 - Integrated document generation
 - Automatic backup and sync
 
-### Claude Code (stdio Transport)  
+### Claude Code (stdio Transport)
 Ideal for developers and power users who prefer command-line integration.
 
 **Key Features:**
@@ -109,7 +109,7 @@ Choose your platform to get started:
 - Document generation workflows
 - Business user examples
 
-### 💻 Claude Code Setup  
+### 💻 Claude Code Setup
 **Recommended for:** Developers, command-line preference, automation scripts
 
 [**→ Claude Code Setup Guide**](claude-code-setup.md)

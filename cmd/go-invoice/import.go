@@ -96,7 +96,7 @@ func (a *App) buildImportCreateCommand() *cobra.Command {
 
 For CSV files, columns should include:
 - date (work date)
-- hours (hours worked) 
+- hours (hours worked)
 - rate (hourly rate)
 - description (work description)
 

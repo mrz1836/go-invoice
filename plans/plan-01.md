@@ -148,17 +148,17 @@ func (s *ConfigService) LoadConfig(ctx context.Context, path string) (*Config, e
         return nil, ctx.Err()
     default:
     }
-    
+
     // Implementation with proper error wrapping
     config, err := s.readConfigFile(ctx, path)
     if err != nil {
         return nil, fmt.Errorf("failed to read config from %s: %w", path, err)
     }
-    
+
     if err := s.validator.ValidateConfig(ctx, config); err != nil {
         return nil, fmt.Errorf("config validation failed: %w", err)
     }
-    
+
     return config, nil
 }
 ```
@@ -274,11 +274,11 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, req CreateInvoiceReq
         return nil, ctx.Err()
     default:
     }
-    
+
     if err := req.Validate(); err != nil {
         return nil, fmt.Errorf("invalid create request: %w", err)
     }
-    
+
     invoice := &Invoice{
         ID:        s.idGen.GenerateID(),
         Number:    req.Number,
@@ -289,11 +289,11 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, req CreateInvoiceReq
         CreatedAt: time.Now(),
         UpdatedAt: time.Now(),
     }
-    
+
     if err := s.storage.SaveInvoice(ctx, invoice); err != nil {
         return nil, fmt.Errorf("failed to save invoice %s: %w", invoice.ID, err)
     }
-    
+
     s.logger.Info("invoice created successfully", "id", invoice.ID, "number", invoice.Number)
     return invoice, nil
 }
@@ -392,37 +392,37 @@ func (p *CSVParser) ParseTimesheet(ctx context.Context, reader io.Reader) ([]Wor
         return nil, ctx.Err()
     default:
     }
-    
+
     csvReader := csv.NewReader(reader)
     rows, err := csvReader.ReadAll()
     if err != nil {
         return nil, fmt.Errorf("failed to read CSV data: %w", err)
     }
-    
+
     var workItems []WorkItem
     for i, row := range rows {
         if i == 0 {
             continue // Skip header
         }
-        
+
         select {
         case <-ctx.Done():
             return nil, ctx.Err()
         default:
         }
-        
+
         workItem, err := p.parseRow(ctx, row)
         if err != nil {
             return nil, fmt.Errorf("failed to parse row %d: %w", i+1, err)
         }
-        
+
         if err := p.validator.ValidateWorkItem(ctx, workItem); err != nil {
             return nil, fmt.Errorf("validation failed for row %d: %w", i+1, err)
         }
-        
+
         workItems = append(workItems, workItem)
     }
-    
+
     p.logger.Info("successfully parsed timesheet", "rows", len(workItems))
     return workItems, nil
 }
@@ -519,17 +519,17 @@ func (r *TemplateRenderer) RenderInvoice(ctx context.Context, invoice *Invoice) 
         return "", ctx.Err()
     default:
     }
-    
+
     tmpl, err := r.cache.GetTemplate(ctx, "default")
     if err != nil {
         return "", fmt.Errorf("failed to load template: %w", err)
     }
-    
+
     var buf bytes.Buffer
     if err := tmpl.Execute(&buf, invoice); err != nil {
         return "", fmt.Errorf("template execution failed for invoice %s: %w", invoice.ID, err)
     }
-    
+
     r.logger.Info("invoice rendered successfully", "id", invoice.ID, "size", buf.Len())
     return buf.String(), nil
 }
@@ -722,14 +722,14 @@ func TestInvoiceCalculation(t *testing.T) {
             expectError: false,
         },
     }
-    
+
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             ctx := context.Background()
             calculator := NewInvoiceCalculator()
-            
+
             total, err := calculator.CalculateTotal(ctx, tt.workItems, tt.taxRate)
-            
+
             if tt.expectError {
                 require.Error(t, err)
             } else {
@@ -743,13 +743,13 @@ func TestInvoiceCalculation(t *testing.T) {
 // Integration test example using testify suite
 func TestFullInvoiceWorkflow(t *testing.T) {
     ctx := context.Background()
-    
+
     // Setup test dependencies with dependency injection
     storage := NewMemoryStorage()
     parser := NewCSVParser(NewValidator(), NewLogger())
     renderer := NewTemplateRenderer(NewLogger())
     service := NewInvoiceService(storage, NewLogger(), NewIDGenerator())
-    
+
     // Create invoice
     invoice, err := service.CreateInvoice(ctx, CreateInvoiceRequest{
         Number: "TEST-001",
@@ -758,17 +758,17 @@ func TestFullInvoiceWorkflow(t *testing.T) {
     })
     require.NoError(t, err)
     require.NotNil(t, invoice)
-    
+
     // Import CSV
     csvData := strings.NewReader("Date,Hours,Rate,Description\n2024-01-01,8,100,Development")
     workItems, err := parser.ParseTimesheet(ctx, csvData)
     require.NoError(t, err)
     require.Len(t, workItems, 1)
-    
+
     // Add work items to invoice
     err = service.AddWorkItems(ctx, invoice.ID, workItems)
     require.NoError(t, err)
-    
+
     // Generate HTML
     html, err := renderer.RenderInvoice(ctx, invoice)
     require.NoError(t, err)
@@ -959,7 +959,7 @@ Claude Code exposes go-invoice functionality through slash commands:
 ```bash
 # Invoice management commands
 /invoice
-/mcp__go_invoice__list_invoices  
+/mcp__go_invoice__list_invoices
 /mcp__go_invoice__show_invoice
 /import
 /generate
@@ -998,7 +998,7 @@ Claude: I'll create a new invoice for Acme Corp using the go-invoice MCP tool.
 
 ✅ Invoice INV-2025-003 created successfully for Acme Corp
 - Invoice ID: INV-2025-003
-- Client: Acme Corp  
+- Client: Acme Corp
 - Status: Draft
 - Due Date: 2025-09-01
 
@@ -1024,7 +1024,7 @@ Claude: Let me retrieve all unpaid invoices for Acme Corp.
 
 📊 Found 3 unpaid invoices for Acme Corp:
 - INV-2025-001: $8,400 (Due: 2025-08-15) - OVERDUE
-- INV-2025-002: $12,200 (Due: 2025-09-01) 
+- INV-2025-002: $12,200 (Due: 2025-09-01)
 - INV-2025-003: $15,600 (Due: 2025-09-01)
 
 Total Outstanding: $36,200
@@ -1037,7 +1037,7 @@ Claude: I'll generate HTML invoices for all 3 unpaid Acme Corp invoices.
 
 ✅ Generated 3 HTML invoices:
 - invoice-2025-001.html (Ready for sending)
-- invoice-2025-002.html (Ready for sending) 
+- invoice-2025-002.html (Ready for sending)
 - invoice-2025-003.html (Ready for sending)
 ```
 
@@ -1058,7 +1058,7 @@ The MCP integration prioritizes security through local-only operation and compre
   "security": {
     "allowedCommands": [
       "go-invoice",
-      "config", 
+      "config",
       "invoice",
       "import",
       "generate"
@@ -1101,7 +1101,7 @@ Add to your Claude Code MCP configuration:
 ```json
 {
   "go-invoice": {
-    "command": "go-invoice-mcp", 
+    "command": "go-invoice-mcp",
     "args": ["--stdio"],
     "env": {
       "GO_INVOICE_HOME": "~/.go-invoice"
@@ -1116,7 +1116,7 @@ The MCP integration enhances development workflows by providing contextual invoi
 
 **During Development:**
 ```
-User: I just finished the authentication module for @client:startup-xyz. 
+User: I just finished the authentication module for @client:startup-xyz.
       Log 8 hours at $150/hour to their current invoice.
 
 Claude: I'll add 8 hours of authentication development work to StartupXYZ's current invoice.
@@ -1126,7 +1126,7 @@ Claude: I'll add 8 hours of authentication development work to StartupXYZ's curr
 ✅ Added work item:
 - Date: 2025-08-03
 - Hours: 8.0
-- Rate: $150/hour  
+- Rate: $150/hour
 - Description: Authentication module development
 - Total: $1,200
 - Added to: INV-2025-004 (StartupXYZ)
@@ -1134,7 +1134,7 @@ Claude: I'll add 8 hours of authentication development work to StartupXYZ's curr
 
 **Project Completion:**
 ```
-User: The project is complete. Generate final invoices for all clients 
+User: The project is complete. Generate final invoices for all clients
       and show me the total earnings for this month.
 
 Claude: I'll generate final invoices and calculate monthly earnings.

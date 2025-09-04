@@ -130,7 +130,7 @@ Add 8.5% tax and set payment terms to 30 days.
 
 #### Claude Code
 ```
-Create an invoice for TechCorp Solutions 
+Create an invoice for TechCorp Solutions
 Import hours from ./timesheets/q1-hours.csv
 Use $175/hour rate with 8.5% tax
 ```
@@ -233,7 +233,7 @@ All operations are logged for compliance and debugging:
 # View error rate
 grep "ERROR" ~/.go-invoice/logs/mcp-server.log | wc -l
 
-# Monitor response times  
+# Monitor response times
 grep "duration" ~/.go-invoice/logs/mcp-server.log | awk '{print $NF}'
 
 # Most used tools
@@ -353,7 +353,7 @@ We welcome contributions! See the main [CONTRIBUTING.md](../CONTRIBUTING.md) for
 
 #### Tool Categories
 - Invoice Management (5 tools)
-- Client Management (4 tools)  
+- Client Management (4 tools)
 - Data Import/Export (4 tools)
 - Configuration (2 tools)
 

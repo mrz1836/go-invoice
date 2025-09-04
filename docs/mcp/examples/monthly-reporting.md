@@ -179,7 +179,7 @@ Now for the operational leadership report:
   "parameters": {
     "data_type": "financial_complete",
     "from_date": "2025-08-01",
-    "to_date": "2025-08-31", 
+    "to_date": "2025-08-31",
     "output_format": "xlsx",
     "include_tax_details": true,
     "include_payment_tracking": true,
@@ -188,7 +188,7 @@ Now for the operational leadership report:
     "worksheets": [
       "income_statement_detail",
       "accounts_receivable",
-      "client_aging_report", 
+      "client_aging_report",
       "tax_summary",
       "payment_history"
     ],
@@ -223,7 +223,7 @@ Perfect! Your accounting package is ready with comprehensive financial data for 
 **Current Cash Position:**
 - **Collections in August**: $89,750.00
 - **Outstanding Receivables**: $37,750.00
-- **Aging Analysis**: 
+- **Aging Analysis**:
   - Current (0-30 days): $32,500.00 (86%)
   - 31-60 days: $5,250.00 (14%)
   - Over 60 days: $0.00 (excellent!)
@@ -339,7 +339,7 @@ Now let me create the tax-ready summary for year-end planning:
     "include_benchmark_comparisons": true,
     "kpi_categories": [
       "financial_performance",
-      "client_metrics", 
+      "client_metrics",
       "operational_efficiency",
       "growth_indicators",
       "competitive_position"
@@ -359,7 +359,7 @@ Now let me create the tax-ready summary for year-end planning:
 - Cash Flow Projections
 - Client Concentration Risk
 
-**Client Success KPIs:** 
+**Client Success KPIs:**
 - Client Retention Rate
 - Average Contract Value
 - Client Satisfaction Scores

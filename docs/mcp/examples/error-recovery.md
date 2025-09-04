@@ -30,7 +30,7 @@ This workflow demonstrates **15 different MCP tools** with focus on error handli
   "tool": "invoice_list",
   "parameters": {
     "from_date": "2025-08-03",
-    "to_date": "2025-08-03", 
+    "to_date": "2025-08-03",
     "include_import_metadata": true,
     "show_data_quality_flags": true,
     "output_format": "detailed"
@@ -241,7 +241,7 @@ Your client is fully restored and you can proceed with tomorrow's invoice as pla
 
 Let me examine the specific work items that might be disputed:
 
-Looking at the breakdown, I see some entries on July 25-26 that have generic descriptions like "API development" and "database optimization." These could potentially be confused with work for other clients. 
+Looking at the breakdown, I see some entries on July 25-26 that have generic descriptions like "API development" and "database optimization." These could potentially be confused with work for other clients.
 
 Let me check what other invoices you generated around the same time period to see if there might have been a mix-up:
 
@@ -288,7 +288,7 @@ Let me create a corrected invoice for TechStartup LLC:
 {
   "tool": "invoice_remove_item",
   "parameters": {
-    "invoice_number": "INV-012", 
+    "invoice_number": "INV-012",
     "work_item_date": "2025-07-26",
     "work_item_description": "database optimization",
     "confirm": true,
@@ -409,7 +409,7 @@ Let me walk you through fixing these issues. First, let's correct the tax rate:
     "update_existing": true,
     "tax_settings": {
       "default_tax_rate": 7.25,
-      "tax_jurisdiction": "Texas", 
+      "tax_jurisdiction": "Texas",
       "tax_exempt_handling": true,
       "multi_state_rules": "destination_based"
     },
@@ -485,7 +485,7 @@ First, let me create a comprehensive system health check that you can run regula
     "template_name": "monthly_system_health",
     "check_categories": [
       "data_integrity",
-      "configuration_compliance", 
+      "configuration_compliance",
       "backup_status",
       "performance_metrics",
       "security_validation"
@@ -547,7 +547,7 @@ Finally, let me establish monitoring for critical business metrics:
     "dashboard_name": "business_health_monitor",
     "key_indicators": [
       "data_quality_score",
-      "invoice_accuracy_rate", 
+      "invoice_accuracy_rate",
       "client_payment_patterns",
       "system_performance_metrics",
       "backup_success_rate"
@@ -606,7 +606,7 @@ Now let me generate a comprehensive incident response playbook:
     "create_document": "incident_response_playbook",
     "include_scenarios": [
       "data_corruption_recovery",
-      "accidental_deletion_procedures", 
+      "accidental_deletion_procedures",
       "billing_dispute_resolution",
       "configuration_issue_diagnosis",
       "system_performance_problems"
@@ -620,7 +620,7 @@ Now let me generate a comprehensive incident response playbook:
 
 **You're now protected against future issues with:**
 - Comprehensive monitoring and alerting
-- Automated backup and recovery systems  
+- Automated backup and recovery systems
 - Preventive validation for all data operations
 - Clear procedures for common problems
 - Regular health check routines

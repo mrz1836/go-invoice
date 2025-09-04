@@ -7,7 +7,7 @@ This comprehensive guide covers all configuration options for the go-invoice MCP
 The go-invoice MCP server uses a layered configuration system:
 
 1. **Business Configuration** - Your company details and invoice settings
-2. **MCP Server Configuration** - Transport, security, and logging settings  
+2. **MCP Server Configuration** - Transport, security, and logging settings
 3. **Claude Configuration** - Client-specific MCP server setup
 4. **Runtime Configuration** - Environment variables and runtime options
 
@@ -158,7 +158,7 @@ Configure the MCP server behavior in `~/.go-invoice/mcp-config.json`:
     "type": "http",
     "host": "localhost",
     "port": 0,
-    "readTimeout": "30s", 
+    "readTimeout": "30s",
     "writeTimeout": "30s",
     "maxMessageSize": 10485760,
     "enableLogging": true,
@@ -283,7 +283,7 @@ For Claude Desktop (`claude_desktop_config.json`):
 }
 ```
 
-### Claude Code Configuration  
+### Claude Code Configuration
 
 For Claude Code (`~/.config/claude/mcp/go-invoice.json`):
 
@@ -296,7 +296,7 @@ For Claude Code (`~/.config/claude/mcp/go-invoice.json`):
       "command": "go-invoice-mcp",
       "args": [
         "--stdio",
-        "--config", 
+        "--config",
         "~/.go-invoice/mcp-config.json"
       ],
       "env": {
@@ -314,7 +314,7 @@ For Claude Code (`~/.config/claude/mcp/go-invoice.json`):
         "patterns": [
           "@invoice:*",
           "@client:*",
-          "@timesheet:*", 
+          "@timesheet:*",
           "@config:*"
         ],
         "handlers": {
@@ -358,7 +358,7 @@ For Claude Code (`~/.config/claude/mcp/go-invoice.json`):
       "retryLimit": 2,
       "metadata": {
         "version": "1.0.0",
-        "author": "go-invoice", 
+        "author": "go-invoice",
         "projectScope": true,
         "documentation": "https://github.com/mrz1836/go-invoice/docs/mcp/claude-code-setup.md"
       }
@@ -381,7 +381,7 @@ export MCP_LOG_FILE="~/.go-invoice/mcp.log"  # Log file location
 
 # Performance settings
 export MCP_READ_TIMEOUT="30s"         # Read operation timeout
-export MCP_WRITE_TIMEOUT="30s"        # Write operation timeout  
+export MCP_WRITE_TIMEOUT="30s"        # Write operation timeout
 export MCP_MAX_MESSAGE_SIZE="10485760" # Maximum message size in bytes
 export MCP_BUFFER_SIZE="8192"         # I/O buffer size
 
@@ -448,7 +448,7 @@ export GO_INVOICE_MCP_TOOLS="all"     # Available tools: all, basic, advanced
 {
   "transport": {
     "readTimeout": "10s",
-    "writeTimeout": "10s", 
+    "writeTimeout": "10s",
     "maxMessageSize": 1048576,
     "bufferSize": 2048
   },
@@ -495,7 +495,7 @@ export GOMEMLIMIT="512MiB"            # Go memory limit
     ],
     "blockedPaths": [
       "/etc",
-      "/var", 
+      "/var",
       "/usr/bin",
       "/sbin",
       "/boot",
@@ -505,7 +505,7 @@ export GOMEMLIMIT="512MiB"            # Go memory limit
     "allowedExtensions": [
       ".csv",
       ".json",
-      ".html", 
+      ".html",
       ".pdf",
       ".txt",
       ".md"
@@ -633,7 +633,7 @@ cp ~/.go-invoice/templates/small-business-mcp.json ~/.go-invoice/mcp-config.json
 ### Enterprise Template
 ```bash
 # Copy enterprise configuration
-cp ~/.go-invoice/templates/enterprise.env ~/.go-invoice/.env.config  
+cp ~/.go-invoice/templates/enterprise.env ~/.go-invoice/.env.config
 cp ~/.go-invoice/templates/enterprise-mcp.json ~/.go-invoice/mcp-config.json
 ```
 
@@ -660,7 +660,7 @@ cp ~/.go-invoice/templates/developer-mcp.json ~/.go-invoice/mcp-config.json
    ```bash
    # Test path resolution
    go-invoice config paths --test
-   
+
    # Expand paths
    go-invoice config paths --expand
    ```
@@ -669,8 +669,8 @@ cp ~/.go-invoice/templates/developer-mcp.json ~/.go-invoice/mcp-config.json
    ```bash
    # Check environment
    go-invoice config env --show
-   
-   # Validate environment  
+
+   # Validate environment
    go-invoice config env --validate
    ```
 

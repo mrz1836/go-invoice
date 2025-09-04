@@ -48,14 +48,14 @@ create_directories() {
     local current_year=$(date +%Y)
     local current_month=$(date +%m)
     local month_name=$(date +%B)
-    
+
     echo -e "${BLUE}📁 Creating directory structure...${NC}"
-    
+
     # Create base directories
     mkdir -p "$DATA_DIR/timesheets/$current_year/$current_month-$month_name"
     mkdir -p "$DATA_DIR/invoices/$current_year/$current_month-$month_name"
     mkdir -p "$DATA_DIR/templates"
-    
+
     echo -e "${GREEN}✅ Created directories for $current_year/$current_month-$month_name${NC}"
 }
 
@@ -63,14 +63,14 @@ create_directories() {
 add_client_to_go_invoice() {
     local client_name="$1"
     local client_email="$2"
-    
+
     echo -e "${BLUE}👤 Adding client to go-invoice...${NC}"
-    
+
     local cmd="go-invoice client add --name \"$client_name\""
     if [[ -n "$client_email" ]]; then
         cmd="$cmd --email \"$client_email\""
     fi
-    
+
     if eval "$cmd"; then
         echo -e "${GREEN}✅ Client added successfully${NC}"
     else
@@ -87,11 +87,11 @@ create_sample_timesheet() {
     local current_year=$(date +%Y)
     local current_month=$(date +%m)
     local month_name=$(date +%B)
-    
+
     local timesheet_file="$DATA_DIR/timesheets/$current_year/$current_month-$month_name/${client_slug}.csv"
-    
+
     echo -e "${BLUE}📄 Creating sample timesheet...${NC}"
-    
+
     # Generate some sample dates (last 5 working days)
     local dates=()
     local current_date=$(date +%Y-%m-%d)
@@ -99,25 +99,25 @@ create_sample_timesheet() {
     local day_of_week
     local days_back=0
     local working_days=0
-    
+
     while [[ $working_days -lt 5 ]]; do
         temp_date=$(date -d "$current_date -$days_back days" +%Y-%m-%d)
         day_of_week=$(date -d "$temp_date" +%u)
-        
+
         # Only include weekdays (1-5, Monday-Friday)
         if [[ $day_of_week -le 5 ]]; then
             dates+=("$temp_date")
             working_days=$((working_days + 1))
         fi
-        
+
         days_back=$((days_back + 1))
-        
+
         # Safety check to avoid infinite loop
         if [[ $days_back -gt 30 ]]; then
             break
         fi
     done
-    
+
     # Create the timesheet with sample data
     cat > "$timesheet_file" << EOF
 date,description,hours,rate
@@ -127,7 +127,7 @@ ${dates[2]},API development and endpoint testing,7.5,$hourly_rate
 ${dates[1]},Frontend integration and UI improvements,8.0,$hourly_rate
 ${dates[0]},Code review and bug fixes,4.0,$hourly_rate
 EOF
-    
+
     echo -e "${GREEN}✅ Sample timesheet created: $timesheet_file${NC}"
     echo -e "${BLUE}ℹ️  Edit this file with your actual work hours${NC}"
 }
@@ -136,9 +136,9 @@ EOF
 add_to_clients_file() {
     local client_name="$1"
     local clients_file="$DATA_DIR/clients.txt"
-    
+
     echo -e "${BLUE}📝 Adding client to automation list...${NC}"
-    
+
     # Create clients file if it doesn't exist
     if [[ ! -f "$clients_file" ]]; then
         cat > "$clients_file" << 'EOF'
@@ -153,7 +153,7 @@ add_to_clients_file() {
 
 EOF
     fi
-    
+
     # Check if client already exists
     if grep -Fxq "$client_name" "$clients_file"; then
         echo -e "${YELLOW}⚠️  Client already exists in $clients_file${NC}"
@@ -170,11 +170,11 @@ create_quick_commands() {
     local current_year=$(date +%Y)
     local current_month=$(date +%m)
     local month_name=$(date +%B)
-    
+
     local commands_file="$DATA_DIR/quick-commands-${client_slug}.sh"
-    
+
     echo -e "${BLUE}⚡ Creating quick commands script...${NC}"
-    
+
     cat > "$commands_file" << EOF
 #!/bin/bash
 
@@ -278,7 +278,7 @@ case "\$1" in
         ;;
 esac
 EOF
-    
+
     chmod +x "$commands_file"
     echo -e "${GREEN}✅ Quick commands script created: $commands_file${NC}"
 }
@@ -290,7 +290,7 @@ show_next_steps() {
     local current_year=$(date +%Y)
     local current_month=$(date +%m)
     local month_name=$(date +%B)
-    
+
     echo ""
     echo -e "${GREEN}🎉 Client setup completed for: $client_name${NC}"
     echo ""
@@ -327,7 +327,7 @@ main() {
     local client_name="$1"
     local client_email="$2"
     local hourly_rate="${3:-100.00}"
-    
+
     # Validate arguments
     if [[ -z "$client_name" ]]; then
         echo -e "${RED}❌ Error: Client name is required${NC}"
@@ -335,38 +335,38 @@ main() {
         usage
         exit 1
     fi
-    
+
     # Create client slug (safe filename)
     local client_slug="${client_name// /-}"
     client_slug="${client_slug//[^a-zA-Z0-9-]/}"
-    
+
     echo -e "${GREEN}🚀 Setting up client: $client_name${NC}"
     echo -e "${BLUE}📧 Email: ${client_email:-'Not provided'}${NC}"
     echo -e "${BLUE}💰 Rate: \$${hourly_rate}/hour${NC}"
     echo -e "${BLUE}🏷️  Slug: ${client_slug}${NC}"
     echo ""
-    
+
     # Check if go-invoice is available
     if ! command -v go-invoice &> /dev/null; then
         echo -e "${RED}❌ Error: go-invoice is not installed or not in PATH${NC}"
         exit 1
     fi
-    
+
     # Create directory structure
     create_directories "$client_slug"
-    
+
     # Add client to go-invoice
     add_client_to_go_invoice "$client_name" "$client_email"
-    
+
     # Create sample timesheet
     create_sample_timesheet "$client_name" "$client_slug" "$hourly_rate"
-    
+
     # Add to clients.txt
     add_to_clients_file "$client_name"
-    
+
     # Create quick commands
     create_quick_commands "$client_name" "$client_slug"
-    
+
     # Show next steps
     show_next_steps "$client_name" "$client_slug"
 }

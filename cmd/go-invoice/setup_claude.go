@@ -65,7 +65,7 @@ func (a *App) buildConfigSetupClaudeCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "setup-claude",
 		Short: "Set up Claude Desktop and Claude Code integration",
-		Long: `Interactive setup wizard to configure go-invoice MCP integration for both 
+		Long: `Interactive setup wizard to configure go-invoice MCP integration for both
 Claude Desktop and Claude Code. This will:
 
 - Check prerequisites (go-invoice CLI, Go compiler)

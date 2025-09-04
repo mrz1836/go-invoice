@@ -395,19 +395,19 @@ cp templates/invoice/default.html my-custom-invoice.html
     <title>Invoice {{.Number}} - {{.Config.Business.Name}}</title>
     <style>
         /* Custom CSS styles */
-        body { 
-            font-family: 'Georgia', serif; 
+        body {
+            font-family: 'Georgia', serif;
             color: #2c3e50;
             line-height: 1.6;
         }
-        .header { 
+        .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 2rem;
             margin-bottom: 2rem;
         }
-        .company-name { 
-            font-size: 2.5rem; 
+        .company-name {
+            font-size: 2.5rem;
             font-weight: bold;
             margin-bottom: 0.5rem;
         }
@@ -596,19 +596,19 @@ CLIENTS=("TechStartup Inc" "Marketing Agency LLC" "E-commerce Solutions")
 
 for client in "${CLIENTS[@]}"; do
     echo "Processing $client..."
-    
+
     # Import timesheet
     timesheet_file="timesheets/${client// /-}-january.csv"
     if [[ -f "$timesheet_file" ]]; then
         go-invoice import csv "$timesheet_file" --client "$client"
-        
+
         # Create invoice
         invoice_file="invoices/${client// /-}-$MONTH.html"
         go-invoice invoice create \
             --client "$client" \
             --description "$MONTH Development Services" \
             --output "$invoice_file"
-            
+
         echo "✅ Created invoice for $client"
     else
         echo "⚠️  No timesheet found for $client"
@@ -664,14 +664,14 @@ process_client() {
     local client_slug="${client// /-}"
     local timesheet="$TIMESHEET_DIR/${client_slug}-$(date +%m).csv"
     local invoice_file="$INVOICE_DIR/${client_slug}.html"
-    
+
     echo "🔄 Processing $client..."
-    
+
     if [[ ! -f "$timesheet" ]]; then
         echo "❌ Timesheet not found: $timesheet"
         return 1
     fi
-    
+
     # Import timesheet
     if go-invoice import csv "$timesheet" --client "$client" --validate; then
         echo "✅ Imported timesheet for $client"
@@ -679,7 +679,7 @@ process_client() {
         echo "❌ Failed to import timesheet for $client"
         return 1
     fi
-    
+
     # Create invoice
     if go-invoice invoice create \
         --client "$client" \
@@ -690,12 +690,12 @@ process_client() {
         echo "❌ Failed to create invoice for $client"
         return 1
     fi
-    
+
     # Get the latest invoice ID for this client
     local invoice_id
     invoice_id=$(go-invoice invoice list --client "$client" --status draft --format json | \
                 jq -r '.[0].id // empty')
-    
+
     if [[ -n "$invoice_id" ]]; then
         # Send invoice
         if go-invoice invoice send --invoice "$invoice_id"; then
@@ -814,8 +814,8 @@ Error: invalid date format at line 3
    ```bash
    # Bad
    2024-01-15,Development,8,125.00
-   
-   # Good  
+
+   # Good
    2024-01-15,React component development for user dashboard,8,125.00
    ```
 
@@ -823,7 +823,7 @@ Error: invalid date format at line 3
    ```bash
    # Check supported formats
    go-invoice help import csv
-   
+
    # Specify custom format
    go-invoice import csv file.csv --date-format "01/02/2006"
    ```
@@ -1089,14 +1089,14 @@ go-invoice import csv toggl-export.csv --client "Client"
 
 Congratulations! You've completed the comprehensive go-invoice tutorial. You now have the knowledge to:
 
-✅ Set up and configure go-invoice for your business  
-✅ Manage clients and their information effectively  
-✅ Import time tracking data from CSV files  
-✅ Create and manage professional invoices  
-✅ Customize invoice templates for your brand  
-✅ Automate repetitive billing workflows  
-✅ Troubleshoot common issues  
-✅ Follow best practices for data management  
+✅ Set up and configure go-invoice for your business
+✅ Manage clients and their information effectively
+✅ Import time tracking data from CSV files
+✅ Create and manage professional invoices
+✅ Customize invoice templates for your brand
+✅ Automate repetitive billing workflows
+✅ Troubleshoot common issues
+✅ Follow best practices for data management
 
 ### Next Steps
 

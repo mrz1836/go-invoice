@@ -62,7 +62,7 @@ mkdir -p ~/.go-invoice
 ```
 invoice-project/
 ├── data/           # Invoice and client data
-├── templates/      # Custom invoice templates  
+├── templates/      # Custom invoice templates
 ├── exports/        # Generated documents
 ├── imports/        # CSV files and imports
 ├── backups/        # Data backups
@@ -115,7 +115,7 @@ RETENTION_DAYS=365
 Add development-focused settings:
 
 ```bash
-# Development Settings  
+# Development Settings
 MCP_LOG_LEVEL="debug"
 MCP_LOG_FILE="~/.go-invoice/mcp-claude-code.log"
 MCP_TRANSPORT="stdio"
@@ -145,7 +145,7 @@ Create MCP configuration at `~/.go-invoice/mcp-config.json`:
   "transport": {
     "type": "stdio",
     "readTimeout": "60s",
-    "writeTimeout": "60s", 
+    "writeTimeout": "60s",
     "maxMessageSize": 10485760,
     "enableLogging": true,
     "logLevel": "debug"
@@ -171,7 +171,7 @@ Create MCP configuration at `~/.go-invoice/mcp-config.json`:
       "HOME",
       "USER",
       "PATH",
-      "GO_INVOICE_HOME", 
+      "GO_INVOICE_HOME",
       "MCP_LOG_LEVEL",
       "MCP_TRANSPORT",
       "MCP_LOG_FILE",
@@ -232,7 +232,7 @@ cat > ~/.config/claude/mcp/go-invoice.json << 'EOF'
       "resources": {
         "patterns": [
           "@invoice:*",
-          "@client:*", 
+          "@client:*",
           "@timesheet:*",
           "@config:*"
         ],
@@ -242,7 +242,7 @@ cat > ~/.config/claude/mcp/go-invoice.json << 'EOF'
             "examples": ["@invoice:INV-2025-001", "@invoice:latest"]
           },
           "@client": {
-            "description": "Reference clients by name or ID", 
+            "description": "Reference clients by name or ID",
             "examples": ["@client:\"Acme Corp\"", "@client:CL-001"]
           },
           "@timesheet": {
@@ -274,7 +274,7 @@ EOF
 # Test stdio transport
 echo '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2024-11-05", "capabilities": {"tools": {}}}}' | go-invoice-mcp --stdio --config ~/.go-invoice/mcp-config.json
 
-# Test configuration validation  
+# Test configuration validation
 go-invoice-mcp --config ~/.go-invoice/mcp-config.json --validate
 
 # Test business configuration
@@ -368,7 +368,7 @@ Claude Code supports powerful resource reference patterns for seamless integrati
 
 # Reference specific section
 @config:business
-@config:invoice_defaults  
+@config:invoice_defaults
 @config:storage
 
 # Reference specific setting
@@ -596,7 +596,7 @@ sudo systemctl --user enable claude-mcp@go-invoice
 # Disable network access if not needed
 export MCP_NO_NETWORK=true
 
-# Use local file operations only  
+# Use local file operations only
 export MCP_LOCAL_ONLY=true
 ```
 
@@ -619,7 +619,7 @@ export BACKUP_COMPRESS=true
    ```bash
    # Test stdio manually
    echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' | go-invoice-mcp --stdio
-   
+
    # Check process communication
    ps aux | grep go-invoice-mcp
    lsof -p $(pgrep go-invoice-mcp)
@@ -629,7 +629,7 @@ export BACKUP_COMPRESS=true
    ```bash
    # Validate resource patterns
    claude mcp --server go-invoice --validate-resources
-   
+
    # Test specific pattern
    claude mcp --server go-invoice --test-resource "@invoice:INV-2025-001"
    ```
@@ -638,7 +638,7 @@ export BACKUP_COMPRESS=true
    ```bash
    # Check logs for bottlenecks
    tail -f ~/.go-invoice/mcp-claude-code.log
-   
+
    # Monitor resource usage
    htop -p $(pgrep go-invoice-mcp)
    ```
@@ -648,7 +648,7 @@ export BACKUP_COMPRESS=true
    # Validate all configurations
    go-invoice config validate
    claude mcp --validate-config ~/.config/claude/mcp/go-invoice.json
-   
+
    # Reset to defaults
    go-invoice config init --force
    ```

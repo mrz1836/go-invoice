@@ -73,18 +73,18 @@ func (a *App) buildInvoiceCreateCommand() *cobra.Command {
 		Use:   "create",
 		Short: "Create a new invoice",
 		Long: `Create a new invoice with the specified client and options.
-		
+
 The command will automatically generate the next invoice number based on your configuration.
 If the specified client doesn't exist and --create-client is used, it will be created.`,
 		Example: `  # Create invoice for existing client
   go-invoice invoice create --client "Acme Corp"
-  
+
   # Create invoice with specific dates
   go-invoice invoice create --client "Acme Corp" --date 2024-01-15 --due-date 2024-02-15
-  
+
   # Create invoice and client if needed
   go-invoice invoice create --client "New Client" --create-client --email "client@example.com"
-  
+
   # Interactive mode
   go-invoice invoice create --interactive`,
 		RunE: a.runInvoiceCreate,
@@ -209,19 +209,19 @@ func (a *App) buildInvoiceListCommand() *cobra.Command {
 		Long:  "List all invoices with optional filtering and sorting",
 		Example: `  # List all invoices
   go-invoice invoice list
-  
+
   # Filter by status
   go-invoice invoice list --status unpaid
-  
+
   # Filter by client
   go-invoice invoice list --client "Acme Corp"
-  
+
   # Filter by date range
   go-invoice invoice list --from 2024-01-01 --to 2024-12-31
-  
+
   # Sort by amount descending
   go-invoice invoice list --sort amount --desc
-  
+
   # Output as JSON
   go-invoice invoice list --output json`,
 		RunE: a.runInvoiceList,
@@ -303,10 +303,10 @@ func (a *App) buildInvoiceShowCommand() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		Example: `  # Show invoice by ID
   go-invoice invoice show INV-001
-  
+
   # Output as JSON
   go-invoice invoice show INV-001 --output json
-  
+
   # Show with work items
   go-invoice invoice show INV-001 --show-items`,
 		RunE: a.runInvoiceShow,
@@ -386,19 +386,19 @@ func (a *App) buildInvoiceUpdateCommand() *cobra.Command {
 		Use:   "update [invoice-id]",
 		Short: "Update an invoice",
 		Long: `Update invoice details such as dates, status, or description.
-		
+
 Note: You cannot update invoices that are already paid or canceled.
 Work items should be managed through the import command.`,
 		Args: cobra.ExactArgs(1),
 		Example: `  # Update invoice status
   go-invoice invoice update INV-001 --status sent
-  
+
   # Update due date
   go-invoice invoice update INV-001 --due-date 2024-02-28
-  
+
   # Update description
   go-invoice invoice update INV-001 --description "January consulting services"
-  
+
   # Interactive update
   go-invoice invoice update INV-001 --interactive`,
 		RunE: a.runInvoiceUpdate,
@@ -614,18 +614,18 @@ func (a *App) buildInvoiceDeleteCommand() *cobra.Command {
 		Use:   "delete [invoice-id]",
 		Short: "Delete an invoice",
 		Long: `Delete an invoice from the system.
-		
+
 By default, this performs a soft delete (marks as deleted but retains data).
 Use --hard to permanently remove the invoice and all associated data.
-		
+
 Note: You cannot delete invoices that are paid or have associated transactions.`,
 		Args: cobra.ExactArgs(1),
 		Example: `  # Soft delete (default)
   go-invoice invoice delete INV-001
-  
+
   # Hard delete with confirmation
   go-invoice invoice delete INV-001 --hard
-  
+
   # Force delete without confirmation (dangerous!)
   go-invoice invoice delete INV-001 --hard --force`,
 		RunE: a.runInvoiceDelete,

@@ -49,7 +49,7 @@ Add the go-invoice server configuration:
     "go-invoice": {
       "command": "/path/to/go-invoice/bin/go-invoice-mcp",
       "args": [
-        "--http", 
+        "--http",
         "--port", "0",
         "--config", "~/.go-invoice/mcp-config.json"
       ],
@@ -113,7 +113,7 @@ Tools are organized into categories for better UX:
       "tools": ["invoice_create", "invoice_list", "invoice_show"]
     },
     "client_management": {
-      "name": "Client Management", 
+      "name": "Client Management",
       "description": "Manage client information",
       "tools": ["client_create", "client_list", "client_show"]
     }

@@ -12,7 +12,7 @@ examples/
 │   ├── tool-usage-examples.md          # Natural language tool examples
 │   └── workflow-automation.md          # Automation pattern examples
 ├── timesheet-standard.csv              # Basic CSV format example
-├── timesheet-excel.csv                 # Excel export format example  
+├── timesheet-excel.csv                 # Excel export format example
 ├── timesheet-tabs.tsv                  # Tab-separated format example
 ├── templates/                          # Custom invoice templates
 │   ├── modern-invoice.html             # Modern gradient design template
@@ -270,7 +270,7 @@ Handle different rates for different types of work:
 ### Project Phase Billing
 Organize work by project phases:
 - Phase 1: Analysis & Design
-- Phase 2: Core Development  
+- Phase 2: Core Development
 - Phase 3: Frontend & UI
 - Phase 4: Testing & QA
 - Phase 5: Deployment & Launch
@@ -321,7 +321,7 @@ See `workflows/complete-example.md` for a comprehensive step-by-step tutorial co
 - Customize `modern-invoice.html` template
 - Set up monthly automation with `monthly-billing.sh`
 
-### For Consultants  
+### For Consultants
 - Use `multi-rate-timesheet.csv` for different service rates
 - Organize by `project-phases.csv` for complex projects
 - Use `minimal-invoice.html` for corporate clients

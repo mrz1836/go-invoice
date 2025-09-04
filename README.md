@@ -105,7 +105,7 @@ go install github.com/mrz1836/go-invoice/cmd/go-invoice-mcp@latest
 go-invoice init
 go-invoice config setup
 
-# 3. Setup Claude integration  
+# 3. Setup Claude integration
 go-invoice config setup-claude
 
 # 4. Start using natural language!
@@ -150,7 +150,7 @@ open invoice.html
 ### Talk to Claude Desktop
 ```
 User: "Create an invoice for Acme Corp for website redesign, 40 hours at $125/hour"
-Claude: ✅ Created invoice INV-2025-001 for Acme Corp 
+Claude: ✅ Created invoice INV-2025-001 for Acme Corp
         📊 Total: $5,000.00 (40 hours × $125.00)
 
 User: "Import my timesheet.csv and generate the final HTML invoice"
@@ -685,19 +685,19 @@ Create custom invoice templates using Go's `text/template` syntax:
 </head>
 <body>
     <h1>Invoice {{.Number}}</h1>
-    
+
     <div class="business">
         <h2>{{.Config.Business.Name}}</h2>
         <p>{{.Config.Business.Address}}</p>
         <p>{{.Config.Business.Email}}</p>
     </div>
-    
+
     <div class="client">
         <h3>Bill To:</h3>
         <p>{{.Client.Name}}</p>
         <p>{{.Client.Address}}</p>
     </div>
-    
+
     <table class="work-items">
         <tr>
             <th>Description</th>
@@ -714,7 +714,7 @@ Create custom invoice templates using Go's `text/template` syntax:
         </tr>
         {{end}}
     </table>
-    
+
     <div class="totals">
         <p>Subtotal: ${{.Subtotal | printf "%.2f"}}</p>
         <p>Tax ({{.TaxRate | printf "%.1f"}}%): ${{.TaxAmount | printf "%.2f"}}</p>
@@ -755,7 +755,7 @@ go-invoice generate templates
 ```
 🚀 Response Times
   Simple operations: 0.0008ms average (sub-microsecond)
-  Complex operations: < 100ms average  
+  Complex operations: < 100ms average
   MCP tool execution: < 2s average
 
 📈 Throughput
@@ -786,7 +786,7 @@ BenchmarkResponseTimeValidation/response_time_under_target-10  1480423    884.0 
 
 ### Security Test Coverage
 - Command injection prevention: 15 test cases
-- Path traversal protection: 12 test cases  
+- Path traversal protection: 12 test cases
 - Sandbox enforcement: 18 test cases
 - Environment security: 8 test cases
 - File handler security: 11 test cases
@@ -836,7 +836,7 @@ go-invoice/
 ### Architecture Principles
 
 - **Context-First Design**: All operations support context cancellation
-- **Dependency Injection**: Services use constructor injection  
+- **Dependency Injection**: Services use constructor injection
 - **Interface Segregation**: Small, focused interfaces for testability
 - **Error Handling**: Comprehensive error handling with context
 - **Concurrent Safety**: All operations are thread-safe
@@ -929,7 +929,7 @@ This project maintains comprehensive test coverage with multiple test categories
 
 - **Unit Tests**: Test individual components in isolation
 - **Integration Tests**: End-to-end MCP workflows for both Claude platforms
-- **Security Tests**: 64 test cases covering injection prevention and sandboxing  
+- **Security Tests**: 64 test cases covering injection prevention and sandboxing
 - **Performance Tests**: Sub-microsecond response time validation
 - **Race Detection**: Concurrent safety testing
 
@@ -959,7 +959,7 @@ go tool cover -html=coverage.out -o coverage.html
 ### Test Categories
 
 1. **models_test.go** - Domain model validation and business logic
-2. **storage_test.go** - Data persistence and retrieval operations  
+2. **storage_test.go** - Data persistence and retrieval operations
 3. **services_test.go** - Business service integration
 4. **csv_test.go** - CSV parsing and validation
 5. **cli_test.go** - CLI interface and user interaction
@@ -971,7 +971,7 @@ go tool cover -html=coverage.out -o coverage.html
 ### Security Test Results
 ```
 ✅ Command Injection Prevention: 15/15 tests passed
-✅ Path Traversal Protection: 12/12 tests passed  
+✅ Path Traversal Protection: 12/12 tests passed
 ✅ Sandbox Enforcement: 18/18 tests passed
 ✅ Environment Security: 8/8 tests passed
 ✅ File Handler Security: 11/11 tests passed
@@ -1052,7 +1052,7 @@ Claude: [Uses invoice_list tool with filters]
 
 **Freelancer Monthly Invoice with Claude Desktop:**
 ```
-User: "I need to create an invoice for TechCorp Solutions for January 2025. 
+User: "I need to create an invoice for TechCorp Solutions for January 2025.
       I worked 85 hours at $135/hour on web development."
 
 Claude: ✅ Created invoice INV-2025-001 for TechCorp Solutions
@@ -1260,7 +1260,7 @@ go-invoice [command] --help
 
 ### v2.0: Enhanced Features (Planned)
 - [ ] PDF generation with customizable templates
-- [ ] Email integration for automated invoice delivery  
+- [ ] Email integration for automated invoice delivery
 - [ ] Payment tracking and reconciliation
 - [ ] Recurring invoices and subscription billing
 - [ ] Enhanced multi-currency support

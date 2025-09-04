@@ -224,7 +224,7 @@ Edit `~/.config/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "go-invoice": {
-      "name": "Go Invoice MCP Server", 
+      "name": "Go Invoice MCP Server",
       "description": "Natural language invoice management through go-invoice CLI",
       "command": "go-invoice-mcp",
       "args": [
@@ -312,7 +312,7 @@ Expected response:
 I'll create an invoice for Acme Corp. Let me set this up with the details you provided:
 
 - Client: Acme Corp
-- Work: 40 hours of web development 
+- Work: 40 hours of web development
 - Rate: $85/hour
 - Total: $3,400
 - Due date: 30 days from today
@@ -423,7 +423,7 @@ BACKUP_DIR="~/.go-invoice/backups"
    ```bash
    # Check configuration syntax
    go-invoice-mcp --config ~/.go-invoice/mcp-config.json --validate
-   
+
    # Check port availability
    netstat -an | grep :8080
    ```
@@ -437,7 +437,7 @@ BACKUP_DIR="~/.go-invoice/backups"
    ```bash
    # Fix directory permissions
    chmod -R 750 ~/.go-invoice
-   
+
    # Check file ownership
    ls -la ~/.go-invoice
    ```

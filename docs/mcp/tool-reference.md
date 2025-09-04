@@ -19,7 +19,7 @@ This document provides comprehensive technical reference for all 21 MCP tools in
 ### Categories and Tool Count
 
 1. **Invoice Management** (7 tools): Complete invoice lifecycle management
-2. **Client Management** (5 tools): Client relationship and contact management  
+2. **Client Management** (5 tools): Client relationship and contact management
 3. **Data Import** (3 tools): CSV import and validation workflows
 4. **Data Export** (3 tools): Document generation and data export
 5. **Configuration** (3 tools): System configuration and validation
@@ -30,8 +30,8 @@ This document provides comprehensive technical reference for all 21 MCP tools in
 
 ### Category: Invoice Management
 
-**Purpose**: Complete invoice lifecycle management from creation to payment tracking  
-**Tools**: 7 tools for comprehensive invoice operations  
+**Purpose**: Complete invoice lifecycle management from creation to payment tracking
+**Tools**: 7 tools for comprehensive invoice operations
 **Common Use Cases**: Creating invoices, tracking payments, managing work items, status updates
 
 #### Tool: `invoice_create`
@@ -50,7 +50,7 @@ This document provides comprehensive technical reference for all 21 MCP tools in
       "maxLength": 200
     },
     "client_id": {
-      "type": "string", 
+      "type": "string",
       "description": "Exact client ID for invoice",
       "pattern": "^[A-Za-z0-9_-]+$"
     },
@@ -66,7 +66,7 @@ This document provides comprehensive technical reference for all 21 MCP tools in
     },
     "due_date": {
       "type": "string",
-      "format": "date", 
+      "format": "date",
       "description": "Payment due date in YYYY-MM-DD format"
     },
     "description": {
@@ -110,7 +110,7 @@ This document provides comprehensive technical reference for all 21 MCP tools in
   },
   "anyOf": [
     {"required": ["client_name"]},
-    {"required": ["client_id"]}, 
+    {"required": ["client_id"]},
     {"required": ["client_email"]}
   ]
 }
@@ -144,7 +144,7 @@ This document provides comprehensive technical reference for all 21 MCP tools in
 {
   "client_name": "Tech Solutions Inc",
   "invoice_date": "2025-08-01",
-  "due_date": "2025-08-31", 
+  "due_date": "2025-08-31",
   "description": "Website development - Phase 1",
   "work_items": [
     {
@@ -218,7 +218,7 @@ This document provides comprehensive technical reference for all 21 MCP tools in
       "description": "Show invoices from this date onwards"
     },
     "to_date": {
-      "type": "string", 
+      "type": "string",
       "format": "date",
       "description": "Show invoices up to this date"
     },
@@ -270,7 +270,7 @@ This document provides comprehensive technical reference for all 21 MCP tools in
   "invoices": [
     {
       "id": "INV-001",
-      "number": "INV-001", 
+      "number": "INV-001",
       "client_name": "Acme Corp",
       "client_id": "client_123",
       "date": "2025-08-01",
@@ -286,7 +286,7 @@ This document provides comprehensive technical reference for all 21 MCP tools in
     "by_status": {
       "draft": 3,
       "sent": 7,
-      "paid": 4, 
+      "paid": 4,
       "overdue": 1
     }
   }
@@ -320,7 +320,7 @@ This document provides comprehensive technical reference for all 21 MCP tools in
 ```json
 {
   "from_date": "2025-01-01",
-  "to_date": "2025-12-31", 
+  "to_date": "2025-12-31",
   "output_format": "csv",
   "status": "paid"
 }
@@ -363,7 +363,7 @@ This document provides comprehensive technical reference for all 21 MCP tools in
       "minLength": 1
     },
     "invoice_number": {
-      "type": "string", 
+      "type": "string",
       "description": "Invoice number to display details for",
       "minLength": 1
     },
@@ -378,7 +378,7 @@ This document provides comprehensive technical reference for all 21 MCP tools in
       "description": "Include detailed work items"
     },
     "show_client_details": {
-      "type": "boolean", 
+      "type": "boolean",
       "default": true,
       "description": "Include full client information"
     }
@@ -427,7 +427,7 @@ Financial Summary:
     "id": "INV-001",
     "number": "INV-001",
     "date": "2025-08-01",
-    "due_date": "2025-08-31", 
+    "due_date": "2025-08-31",
     "status": "sent",
     "description": "January 2025 consulting services",
     "client": {
@@ -528,7 +528,7 @@ Financial Summary:
     },
     "invoice_number": {
       "type": "string",
-      "description": "Invoice number to update", 
+      "description": "Invoice number to update",
       "minLength": 1
     },
     "status": {
@@ -661,7 +661,7 @@ Financial Summary:
       "description": "Permanently delete invoice (cannot be undone)"
     },
     "force": {
-      "type": "boolean", 
+      "type": "boolean",
       "default": false,
       "description": "Skip confirmation prompt (use with caution)"
     }
@@ -684,7 +684,7 @@ Financial Summary:
   "backup_reference": "backup_inv_001_20250803",
   "business_rules_checked": [
     "Invoice status validated for deletion",
-    "Payment history checked", 
+    "Payment history checked",
     "Audit trail preserved"
   ]
 }
@@ -851,7 +851,7 @@ Financial Summary:
       "description": "Frontend component development"
     },
     {
-      "date": "2025-08-02", 
+      "date": "2025-08-02",
       "hours": 7.5,
       "rate": 125.0,
       "description": "API integration and testing"
@@ -1047,8 +1047,8 @@ Financial Summary:
 
 ### Category: Client Management
 
-**Purpose**: Complete client relationship and contact information management  
-**Tools**: 5 tools for comprehensive client operations  
+**Purpose**: Complete client relationship and contact information management
+**Tools**: 5 tools for comprehensive client operations
 **Common Use Cases**: Client onboarding, contact management, relationship tracking
 
 #### Tool: `client_create`
@@ -1108,7 +1108,7 @@ Financial Summary:
 {
   "success": true,
   "client_id": "client_abc123",
-  "name": "Acme Corporation", 
+  "name": "Acme Corporation",
   "email": "contact@acme.com",
   "created_at": "2025-08-03T10:00:00Z",
   "validation_results": {
@@ -1216,7 +1216,7 @@ Financial Summary:
       "description": "Include full contact information"
     },
     "include_invoice_summary": {
-      "type": "boolean", 
+      "type": "boolean",
       "default": false,
       "description": "Include invoice count and totals"
     }
@@ -1766,8 +1766,8 @@ Financial Summary:
 
 ### Category: Data Import
 
-**Purpose**: CSV import and validation workflows for timesheet and client data  
-**Tools**: 3 tools for comprehensive data import operations  
+**Purpose**: CSV import and validation workflows for timesheet and client data
+**Tools**: 3 tools for comprehensive data import operations
 **Common Use Cases**: Timesheet import, data validation, bulk client import
 
 #### Tool: `import_csv`
@@ -2072,7 +2072,7 @@ Financial Summary:
     "data_types": {
       "Date": "date",
       "Hours": "numeric",
-      "Rate": "numeric", 
+      "Rate": "numeric",
       "Description": "text",
       "Project": "text"
     }
@@ -2392,8 +2392,8 @@ Financial Summary:
 
 ### Category: Data Export
 
-**Purpose**: Document generation and data export in various formats  
-**Tools**: 3 tools for comprehensive export operations  
+**Purpose**: Document generation and data export in various formats
+**Tools**: 3 tools for comprehensive export operations
 **Common Use Cases**: Invoice generation, report creation, data export
 
 #### Tool: `generate_html`
@@ -2534,7 +2534,7 @@ Financial Summary:
 ```json
 {
   "invoice_number": "INV-042",
-  "template": "minimal", 
+  "template": "minimal",
   "output_path": "/tmp/invoice.html",
   "include_css": true,
   "show_work_items": false,
@@ -2592,7 +2592,7 @@ Financial Summary:
           "description": "Start date for report period"
         },
         "to_date": {
-          "type": "string", 
+          "type": "string",
           "format": "date",
           "description": "End date for report period"
         },
@@ -2806,7 +2806,7 @@ Financial Summary:
         },
         "to_date": {
           "type": "string",
-          "format": "date", 
+          "format": "date",
           "description": "End date for export"
         }
       }
@@ -3003,8 +3003,8 @@ Financial Summary:
 
 ### Category: Configuration
 
-**Purpose**: System configuration, settings management, and validation  
-**Tools**: 3 tools for comprehensive configuration operations  
+**Purpose**: System configuration, settings management, and validation
+**Tools**: 3 tools for comprehensive configuration operations
 **Common Use Cases**: System setup, configuration validation, settings management
 
 #### Tool: `config_show`
@@ -3786,9 +3786,9 @@ Guidelines for:
 
 ---
 
-**Document Version**: 1.0.0  
-**Last Updated**: August 3, 2025  
-**Go-Invoice MCP Server**: v1.0.0  
-**Schema Standard**: JSON Schema Draft 7  
+**Document Version**: 1.0.0
+**Last Updated**: August 3, 2025
+**Go-Invoice MCP Server**: v1.0.0
+**Schema Standard**: JSON Schema Draft 7
 
 For additional support and examples, see the complete documentation suite in the `docs/mcp/` directory.

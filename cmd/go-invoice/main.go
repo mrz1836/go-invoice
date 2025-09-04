@@ -117,8 +117,8 @@ func (a *App) buildConfigSetupCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "setup",
 		Short: "Set up initial business configuration",
-		Long: `Interactive setup wizard to configure your business information, 
-invoice settings, and storage preferences. This will create a .env.config 
+		Long: `Interactive setup wizard to configure your business information,
+invoice settings, and storage preferences. This will create a .env.config
 file with your settings.
 
 This wizard will prompt you for:
@@ -196,7 +196,7 @@ func (a *App) buildInitCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
 		Short: "Initialize storage system",
-		Long: `Initialize the local storage system by creating the necessary directories 
+		Long: `Initialize the local storage system by creating the necessary directories
 and metadata files for invoice and client data.
 
 This command must be run before using other invoice management commands.`,

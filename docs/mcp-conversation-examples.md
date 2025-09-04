@@ -712,20 +712,20 @@ company:
   phone: "+1-555-CONSULT"
   email: "billing@yourconsulting.com"
   tax_id: "12-3456789"
-  
+
 billing:
   default_rate: 125.00
   payment_terms: "NET 30"
   late_fee_rate: 1.5
   currency: "USD"
   tax_rate: 8.5
-  
+
 invoices:
   number_format: "CONS-{YYYY}-{NNN}"
   default_template: "professional"
   auto_send: false
   include_time_details: true
-  
+
 email:
   smtp_server: "your-email-provider.com"
   from_address: "billing@yourconsulting.com"
@@ -1218,7 +1218,7 @@ First, let me preview your CSV to see exactly what we're dealing with:
 I can see the issues! Here's what the preview found:
 
 **🔍 Data Quality Issues Detected:**
-1. **Mixed Date Formats**: 
+1. **Mixed Date Formats**:
    - Rows 1-15: MM/DD/YYYY format (e.g., "03/15/2025")
    - Rows 16-30: DD/MM/YYYY format (e.g., "15/03/2025")
 2. **Missing Client Names**: 8 rows have empty client fields
@@ -1306,7 +1306,7 @@ For the rows needing client assignment, here are your options:
     "file_path": "/path/to/cleaned-timesheet.csv",
     "manual_client_assignment": {
       "row_23": "Default Client",
-      "row_27": "Default Client", 
+      "row_27": "Default Client",
       "row_29": "Default Client"
     },
     "skip_rows": [31],

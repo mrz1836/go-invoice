@@ -612,7 +612,7 @@
   "usage_guidance": {
     "getting_started": [
       "Use 'config_show' to check current system configuration",
-      "Use 'config_validate' to ensure system is properly set up", 
+      "Use 'config_validate' to ensure system is properly set up",
       "Use 'client_create' to add clients before creating invoices",
       "Use 'invoice_create' to create new invoices for clients",
       "Use 'invoice_list' to view and filter existing invoices"
@@ -625,7 +625,7 @@
         "generate_html (to create deliverable invoice)"
       ],
       "timesheet_import": [
-        "import_validate (check data quality)", 
+        "import_validate (check data quality)",
         "import_preview (review changes)",
         "import_csv (perform actual import)"
       ],
@@ -653,7 +653,7 @@
       "version": "1.0",
       "supported_features": [
         "tool_discovery",
-        "parameter_validation", 
+        "parameter_validation",
         "structured_responses",
         "error_handling",
         "context_cancellation"

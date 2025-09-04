@@ -8,7 +8,7 @@ Architectural decisions for the go-invoice MCP integration with rationale and al
 
 **Decision**: Create separate `go-invoice-mcp` binary instead of adding MCP support to existing CLI.
 
-**Rationale**: 
+**Rationale**:
 - **Non-Disruptive**: Existing CLI users unaffected
 - **Single Responsibility**: MCP server focused solely on protocol implementation
 - **Independent Deployment**: MCP server can be updated independently
@@ -50,7 +50,7 @@ Architectural decisions for the go-invoice MCP integration with rationale and al
 - **Resource Management**: Automatic cleanup on cancellation
 - **Go Idioms**: Follows established Go patterns
 
-**Implementation**: 
+**Implementation**:
 ```go
 func (s *MCPServer) HandleToolCall(ctx context.Context, req *MCPToolRequest) (*MCPToolResponse, error)
 ```

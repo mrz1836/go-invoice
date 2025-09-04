@@ -166,7 +166,7 @@ grep -i "http\|port\|bind" ~/.go-invoice/mcp-server.log
 # Or specify different port
 {
   "transport": {
-    "type": "http", 
+    "type": "http",
     "port": 8081
   }
 }
@@ -216,7 +216,7 @@ Claude Desktop doesn't show go-invoice tools.
 **Diagnosis:**
 ```bash
 # Check Claude Desktop configuration
-# Windows: %APPDATA%\Claude\claude_desktop_config.json  
+# Windows: %APPDATA%\Claude\claude_desktop_config.json
 # macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
 # Linux: ~/.config/Claude/claude_desktop_config.json
 
@@ -304,7 +304,7 @@ claude mcp --server go-invoice --test-resource "@invoice:list"
   "resources": {
     "patterns": [
       "@invoice:*",
-      "@client:*", 
+      "@client:*",
       "@timesheet:*",
       "@config:*"
     ]

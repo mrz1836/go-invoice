@@ -180,7 +180,7 @@ For project-based work with milestones:
 # Milestone billing
 "Create milestone invoices for the Website Redesign project:
 - Phase 1 (Discovery): $5,000 due immediately
-- Phase 2 (Design): $8,000 due in 30 days  
+- Phase 2 (Design): $8,000 due in 30 days
 - Phase 3 (Development): $12,000 due in 60 days"
 
 # Project completion

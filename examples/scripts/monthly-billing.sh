@@ -33,13 +33,13 @@ log() {
     shift
     local message="$*"
     local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
+
     # Create log directory if it doesn't exist
     mkdir -p "$(dirname "$LOG_FILE")"
-    
+
     # Log to file
     echo "[$timestamp] [$level] $message" >> "$LOG_FILE"
-    
+
     # Also output to console with colors
     case "$level" in
         "ERROR")
@@ -63,24 +63,24 @@ log() {
 # Function to check prerequisites
 check_prerequisites() {
     log "INFO" "Checking prerequisites..."
-    
+
     # Check if go-invoice is installed
     if ! command -v go-invoice &> /dev/null; then
         log "ERROR" "go-invoice is not installed or not in PATH"
         exit 1
     fi
-    
+
     # Check if jq is installed (for JSON processing)
     if ! command -v jq &> /dev/null; then
         log "WARNING" "jq is not installed. Some features may not work properly"
         log "INFO" "Install jq with: sudo apt-get install jq (Ubuntu) or brew install jq (macOS)"
     fi
-    
+
     # Create necessary directories
     mkdir -p "$TIMESHEETS_DIR/$YEAR/$MONTH-$MONTH_NAME"
     mkdir -p "$INVOICES_DIR/$YEAR/$MONTH-$MONTH_NAME"
     mkdir -p "$(dirname "$LOG_FILE")"
-    
+
     log "SUCCESS" "Prerequisites check completed"
 }
 
@@ -92,10 +92,10 @@ validate_clients_file() {
         log "INFO" "  echo 'Client Company Inc' >> $CLIENTS_FILE"
         exit 1
     fi
-    
+
     local client_count=$(grep -v '^#' "$CLIENTS_FILE" | grep -v '^$' | wc -l)
     log "INFO" "Found $client_count active clients in $CLIENTS_FILE"
-    
+
     if [[ $client_count -eq 0 ]]; then
         log "ERROR" "No active clients found in $CLIENTS_FILE"
         exit 1
@@ -108,9 +108,9 @@ process_client() {
     local client_slug="${client// /-}"
     local timesheet_file="$TIMESHEETS_DIR/$YEAR/$MONTH-$MONTH_NAME/${client_slug}.csv"
     local invoice_file="$INVOICES_DIR/$YEAR/$MONTH-$MONTH_NAME/${client_slug}.html"
-    
+
     log "INFO" "Processing client: $client"
-    
+
     # Check if timesheet exists
     if [[ ! -f "$timesheet_file" ]]; then
         log "WARNING" "Timesheet not found for $client: $timesheet_file"
@@ -118,7 +118,7 @@ process_client() {
         echo "$client: SKIPPED (no timesheet)" >> "$INVOICES_DIR/$YEAR/$MONTH-$MONTH_NAME/summary.txt"
         return 0
     fi
-    
+
     # Validate timesheet format
     log "INFO" "Validating timesheet for $client..."
     if ! go-invoice import csv "$timesheet_file" --client "$client" --validate --dry-run > /dev/null 2>&1; then
@@ -127,7 +127,7 @@ process_client() {
         echo "$client: FAILED (invalid timesheet)" >> "$INVOICES_DIR/$YEAR/$MONTH-$MONTH_NAME/summary.txt"
         return 1
     fi
-    
+
     # Import timesheet
     log "INFO" "Importing timesheet for $client..."
     if ! go-invoice import csv "$timesheet_file" --client "$client" --validate; then
@@ -135,7 +135,7 @@ process_client() {
         echo "$client: FAILED (import error)" >> "$INVOICES_DIR/$YEAR/$MONTH-$MONTH_NAME/summary.txt"
         return 1
     fi
-    
+
     # Create invoice
     log "INFO" "Creating invoice for $client..."
     local invoice_description="$MONTH_NAME $YEAR Services"
@@ -147,7 +147,7 @@ process_client() {
         echo "$client: FAILED (invoice creation)" >> "$INVOICES_DIR/$YEAR/$MONTH-$MONTH_NAME/summary.txt"
         return 1
     fi
-    
+
     # Get the latest invoice ID for this client
     local invoice_id
     if command -v jq &> /dev/null; then
@@ -158,7 +158,7 @@ process_client() {
         invoice_id=$(go-invoice invoice list --client "$client" --status draft 2>/dev/null | \
                     grep -E '^[A-Z0-9-]+' | head -n1 | awk '{print $1}' || echo "")
     fi
-    
+
     if [[ -n "$invoice_id" ]]; then
         # Send invoice
         log "INFO" "Sending invoice $invoice_id for $client..."
@@ -173,7 +173,7 @@ process_client() {
         log "WARNING" "Could not find invoice ID for $client, but invoice was created"
         echo "$client: PARTIAL SUCCESS (invoice created)" >> "$INVOICES_DIR/$YEAR/$MONTH-$MONTH_NAME/summary.txt"
     fi
-    
+
     log "SUCCESS" "Completed processing for $client"
     return 0
 }
@@ -182,9 +182,9 @@ process_client() {
 generate_summary() {
     local summary_file="$INVOICES_DIR/$YEAR/$MONTH-$MONTH_NAME/summary.txt"
     local report_file="$INVOICES_DIR/$YEAR/$MONTH-$MONTH_NAME/monthly-report.html"
-    
+
     log "INFO" "Generating monthly summary report..."
-    
+
     # Create summary header
     {
         echo "# Monthly Billing Summary - $MONTH_NAME $YEAR"
@@ -193,7 +193,7 @@ generate_summary() {
         echo ""
         echo "## Processing Results:"
     } > "$summary_file.header"
-    
+
     # Combine header with results
     if [[ -f "$summary_file" ]]; then
         cat "$summary_file.header" "$summary_file" > "$summary_file.tmp"
@@ -201,14 +201,14 @@ generate_summary() {
     else
         mv "$summary_file.header" "$summary_file"
     fi
-    
+
     # Generate detailed HTML report if go-invoice supports it
     if go-invoice report summary --month "$YEAR-$MONTH" --output "$report_file" 2>/dev/null; then
         log "SUCCESS" "Detailed HTML report generated: $report_file"
     else
         log "INFO" "HTML report generation not supported or failed"
     fi
-    
+
     log "SUCCESS" "Summary report created: $summary_file"
 }
 
@@ -217,28 +217,28 @@ backup_data() {
     local backup_dir="${BACKUP_DIR:-$PROJECT_ROOT/backups}"
     local backup_name="monthly-billing-$YEAR-$MONTH-$(date +%Y%m%d_%H%M%S)"
     local backup_path="$backup_dir/$backup_name"
-    
+
     if [[ "${ENABLE_BACKUP:-true}" == "true" ]]; then
         log "INFO" "Creating backup..."
         mkdir -p "$backup_path"
-        
+
         # Backup invoice data
         if [[ -d "$PROJECT_ROOT/data" ]]; then
             cp -r "$PROJECT_ROOT/data" "$backup_path/"
         fi
-        
+
         # Backup logs
         if [[ -f "$LOG_FILE" ]]; then
             cp "$LOG_FILE" "$backup_path/"
         fi
-        
+
         # Create backup info
         {
             echo "Backup created: $(date)"
             echo "Month: $MONTH_NAME $YEAR"
             echo "Script version: $(grep '^# Version:' "$0" || echo 'Unknown')"
         } > "$backup_path/backup-info.txt"
-        
+
         log "SUCCESS" "Backup created: $backup_path"
     else
         log "INFO" "Backup disabled via ENABLE_BACKUP=false"
@@ -276,57 +276,57 @@ usage() {
 # Main execution
 main() {
     local start_time=$(date +%s)
-    
+
     # Handle help flag
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         usage
         exit 0
     fi
-    
+
     log "INFO" "Starting monthly billing automation for $MONTH_NAME $YEAR"
     log "INFO" "Script: $0"
     log "INFO" "Arguments: $*"
-    
+
     # Check prerequisites
     check_prerequisites
-    
+
     # Validate clients file
     validate_clients_file
-    
+
     # Initialize summary file
     rm -f "$INVOICES_DIR/$YEAR/$MONTH-$MONTH_NAME/summary.txt"
-    
+
     # Process each client
     local total_clients=0
     local successful_clients=0
     local failed_clients=0
-    
+
     while IFS= read -r client || [[ -n "$client" ]]; do
         # Skip empty lines and comments
         [[ -z "$client" || "$client" =~ ^[[:space:]]*# ]] && continue
-        
+
         total_clients=$((total_clients + 1))
-        
+
         if process_client "$client"; then
             successful_clients=$((successful_clients + 1))
         else
             failed_clients=$((failed_clients + 1))
         fi
-        
+
         echo ""  # Add spacing between clients
-        
+
     done < "$CLIENTS_FILE"
-    
+
     # Generate summary
     generate_summary
-    
+
     # Backup data
     backup_data
-    
+
     # Final statistics
     local end_time=$(date +%s)
     local duration=$((end_time - start_time))
-    
+
     log "INFO" "Monthly billing automation completed"
     log "INFO" "Processed: $total_clients clients"
     log "SUCCESS" "Successful: $successful_clients clients"
@@ -335,7 +335,7 @@ main() {
     fi
     log "INFO" "Duration: ${duration}s"
     log "INFO" "Check detailed results in: $INVOICES_DIR/$YEAR/$MONTH-$MONTH_NAME/"
-    
+
     # Exit with error code if any clients failed
     if [[ $failed_clients -gt 0 ]]; then
         exit 1

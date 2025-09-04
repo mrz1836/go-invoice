@@ -320,13 +320,13 @@ Create custom templates in `./templates/`:
 </head>
 <body>
     <h1>Invoice {{.Invoice.Number}}</h1>
-    
+
     <div class="client-info">
         <h2>Bill To:</h2>
         <p>{{.Client.Name}}</p>
         <p>{{.Client.Address}}</p>
     </div>
-    
+
     <table class="items">
         {{range .Invoice.Items}}
         <tr>
@@ -337,7 +337,7 @@ Create custom templates in `./templates/`:
         </tr>
         {{end}}
     </table>
-    
+
     <div class="total">
         <strong>Total: ${{.Invoice.Total}}</strong>
     </div>
