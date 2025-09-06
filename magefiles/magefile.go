@@ -3,7 +3,7 @@
 
 // Package main provides custom build targets for go-invoice project using mage.
 // This includes targets for building both the main application and MCP server.
-package main
+package magefiles
 
 import (
 	"errors"
@@ -264,7 +264,7 @@ func copyFile(src, dst string) error {
 		}
 	}()
 
-	if _, err := io.Copy(destFile, sourceFile); err != nil {
+	if _, err = io.Copy(destFile, sourceFile); err != nil {
 		return err
 	}
 
