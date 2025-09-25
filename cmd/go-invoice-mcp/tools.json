@@ -1,663 +1,764 @@
 {
-  "version": "1.0.0",
-  "description": "Complete MCP tool registry for go-invoice with all 21 tools across 5 categories",
-  "generated_at": "2025-08-03T00:00:00Z",
-  "tool_count": 21,
-  "category_count": 5,
-  "categories": {
-    "invoice_management": {
-      "description": "Tools for creating, updating, and managing invoices",
-      "tool_count": 7,
-      "tools": [
-        {
-          "name": "invoice_create",
-          "description": "Create a new invoice for a client with optional work items. Supports flexible client identification and automatic client creation when needed.",
-          "category": "invoice_management",
-          "cli_command": "go-invoice",
-          "cli_args": ["invoice", "create"],
-          "version": "1.0.0",
-          "timeout_seconds": 30,
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "client_name": {
-                "type": "string",
-                "description": "Name of the client to create invoice for"
-              },
-              "client_email": {
-                "type": "string",
-                "description": "Email address for client identification (alternative to client_name)"
-              },
-              "client_id": {
-                "type": "string",
-                "description": "Unique client identifier (alternative identification method)"
-              },
-              "invoice_date": {
-                "type": "string",
-                "format": "date",
-                "description": "Invoice date in YYYY-MM-DD format (defaults to today)"
-              },
-              "due_date": {
-                "type": "string",
-                "format": "date",
-                "description": "Payment due date in YYYY-MM-DD format (defaults to 30 days from invoice date)"
-              },
-              "description": {
-                "type": "string",
-                "description": "Invoice description or project name"
-              },
-              "create_client_if_missing": {
-                "type": "boolean",
-                "description": "Create new client if not found (requires new_client_* fields)"
-              },
-              "new_client_email": {
-                "type": "string",
-                "format": "email",
-                "description": "Email for new client creation"
-              },
-              "new_client_address": {
-                "type": "string",
-                "description": "Address for new client creation"
-              },
-              "new_client_phone": {
-                "type": "string",
-                "description": "Phone number for new client creation"
-              },
-              "work_items": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "date": {
-                      "type": "string",
-                      "format": "date",
-                      "description": "Work date in YYYY-MM-DD format"
-                    },
-                    "hours": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Hours worked (supports decimals)"
-                    },
-                    "rate": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Hourly rate for this work"
-                    },
-                    "description": {
-                      "type": "string",
-                      "description": "Description of work performed"
-                    }
-                  },
-                  "required": ["date", "hours", "rate", "description"]
+    "categories": {
+        "client_management": {
+            "description": "Tools for managing client information and contacts",
+            "tool_count": 5,
+            "tools": [
+                {
+                    "category": "client_management",
+                    "cli_args": [
+                        "client",
+                        "create"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Create a new client with contact information and business details. Supports comprehensive client data entry with validation.",
+                    "name": "client_create",
+                    "timeout_seconds": 20,
+                    "version": "1.0.0"
                 },
-                "description": "Optional work items to add to the invoice"
-              }
-            },
-            "required": []
-          },
-          "examples": [
-            {
-              "description": "Create a simple invoice for an existing client",
-              "input": {
-                "client_name": "Acme Corp",
-                "description": "January 2025 consulting services"
-              },
-              "expected_output": "Invoice created successfully with auto-generated number and default due date",
-              "use_case": "Basic invoice creation for regular clients"
-            }
-          ]
-        },
-        {
-          "name": "invoice_list",
-          "description": "List and filter invoices with flexible search criteria. Supports filtering by status, client, date ranges, and provides multiple output formats.",
-          "category": "invoice_management",
-          "cli_command": "go-invoice",
-          "cli_args": ["invoice", "list"],
-          "version": "1.0.0",
-          "timeout_seconds": 20,
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "status": {
-                "type": "string",
-                "enum": ["draft", "sent", "paid", "overdue", "cancelled"],
-                "description": "Filter by invoice status"
-              },
-              "client_name": {
-                "type": "string",
-                "description": "Filter by client name (partial matches supported)"
-              },
-              "client_email": {
-                "type": "string",
-                "description": "Filter by client email address"
-              },
-              "from_date": {
-                "type": "string",
-                "format": "date",
-                "description": "Filter invoices from this date (YYYY-MM-DD)"
-              },
-              "to_date": {
-                "type": "string",
-                "format": "date",
-                "description": "Filter invoices to this date (YYYY-MM-DD)"
-              },
-              "output_format": {
-                "type": "string",
-                "enum": ["table", "json", "csv", "yaml"],
-                "default": "table",
-                "description": "Output format for invoice list"
-              },
-              "sort_by": {
-                "type": "string",
-                "enum": ["invoice_date", "due_date", "amount", "client_name", "status"],
-                "default": "invoice_date",
-                "description": "Field to sort results by"
-              },
-              "sort_order": {
-                "type": "string",
-                "enum": ["asc", "desc"],
-                "default": "desc",
-                "description": "Sort order"
-              },
-              "limit": {
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 1000,
-                "description": "Maximum number of invoices to return"
-              },
-              "include_summary": {
-                "type": "boolean",
-                "description": "Include summary statistics with results"
-              }
-            }
-          },
-          "examples": [
-            {
-              "description": "List all unpaid invoices with summary statistics",
-              "input": {
-                "status": "sent",
-                "include_summary": true,
-                "sort_by": "due_date",
-                "sort_order": "asc"
-              },
-              "expected_output": "List of sent invoices sorted by due date with total unpaid amounts",
-              "use_case": "Collections management and overdue invoice tracking"
-            }
-          ]
-        },
-        {
-          "name": "invoice_show",
-          "description": "Display comprehensive details for a specific invoice including client information, work items, and financial breakdown.",
-          "category": "invoice_management",
-          "cli_command": "go-invoice",
-          "cli_args": ["invoice", "show"],
-          "version": "1.0.0",
-          "timeout_seconds": 15,
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "invoice_number": {
-                "type": "string",
-                "description": "Invoice number to display"
-              },
-              "invoice_id": {
-                "type": "string",
-                "description": "Invoice ID to display (alternative to invoice_number)"
-              },
-              "show_work_items": {
-                "type": "boolean",
-                "default": true,
-                "description": "Include detailed work item breakdown"
-              },
-              "show_client_details": {
-                "type": "boolean",
-                "default": true,
-                "description": "Include detailed client information"
-              },
-              "output_format": {
-                "type": "string",
-                "enum": ["text", "json", "yaml"],
-                "default": "text",
-                "description": "Output format for invoice details"
-              }
-            },
-            "required": []
-          },
-          "examples": [
-            {
-              "description": "Show complete invoice details in readable format",
-              "input": {
-                "invoice_number": "INV-001",
-                "show_work_items": true,
-                "show_client_details": true
-              },
-              "expected_output": "Formatted display with client info, all work items, totals, and timestamps",
-              "use_case": "Invoice review and client communication preparation"
-            }
-          ]
-        },
-        {
-          "name": "invoice_update",
-          "description": "Update invoice details such as status, due date, or description. Validates business rules and prevents invalid status transitions.",
-          "category": "invoice_management",
-          "cli_command": "go-invoice",
-          "cli_args": ["invoice", "update"],
-          "version": "1.0.0",
-          "timeout_seconds": 20,
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "invoice_number": {
-                "type": "string",
-                "description": "Invoice number to update"
-              },
-              "invoice_id": {
-                "type": "string",
-                "description": "Invoice ID to update (alternative to invoice_number)"
-              },
-              "status": {
-                "type": "string",
-                "enum": ["draft", "sent", "paid", "cancelled"],
-                "description": "New invoice status"
-              },
-              "due_date": {
-                "type": "string",
-                "format": "date",
-                "description": "New due date in YYYY-MM-DD format"
-              },
-              "description": {
-                "type": "string",
-                "description": "New invoice description"
-              }
-            },
-            "required": []
-          },
-          "examples": [
-            {
-              "description": "Mark invoice as sent after delivery to client",
-              "input": {
-                "invoice_number": "INV-001",
-                "status": "sent"
-              },
-              "expected_output": "Invoice status updated to 'sent' with timestamp recorded",
-              "use_case": "Invoice delivery workflow and status tracking"
-            }
-          ]
-        },
-        {
-          "name": "invoice_delete",
-          "description": "Delete invoices with safety confirmations and business rule validation. Supports both soft delete (default) and permanent removal.",
-          "category": "invoice_management",
-          "cli_command": "go-invoice",
-          "cli_args": ["invoice", "delete"],
-          "version": "1.0.0",
-          "timeout_seconds": 25,
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "invoice_number": {
-                "type": "string",
-                "description": "Invoice number to delete"
-              },
-              "invoice_id": {
-                "type": "string",
-                "description": "Invoice ID to delete (alternative to invoice_number)"
-              },
-              "hard_delete": {
-                "type": "boolean",
-                "default": false,
-                "description": "Permanently delete invoice data (default is soft delete)"
-              },
-              "force": {
-                "type": "boolean",
-                "default": false,
-                "description": "Skip confirmation prompts (use with extreme caution)"
-              }
-            },
-            "required": []
-          },
-          "examples": [
-            {
-              "description": "Soft delete draft invoice (recommended approach)",
-              "input": {
-                "invoice_number": "INV-001"
-              },
-              "expected_output": "Invoice marked as deleted but data preserved for audit trail",
-              "use_case": "Removing incorrect or duplicate draft invoices safely"
-            }
-          ]
-        },
-        {
-          "name": "invoice_add_item",
-          "description": "Add work items to existing invoices with automatic total calculation. Supports single or batch work item entry for draft invoices.",
-          "category": "invoice_management",
-          "cli_command": "go-invoice",
-          "cli_args": ["import", "--add-to-invoice"],
-          "version": "1.0.0",
-          "timeout_seconds": 25,
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "invoice_number": {
-                "type": "string",
-                "description": "Invoice number to add items to"
-              },
-              "invoice_id": {
-                "type": "string",
-                "description": "Invoice ID to add items to (alternative to invoice_number)"
-              },
-              "work_items": {
-                "type": "array",
-                "minItems": 1,
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "date": {
-                      "type": "string",
-                      "format": "date",
-                      "description": "Work date in YYYY-MM-DD format"
-                    },
-                    "hours": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Hours worked (supports decimals)"
-                    },
-                    "rate": {
-                      "type": "number",
-                      "minimum": 0,
-                      "description": "Hourly rate for this work"
-                    },
-                    "description": {
-                      "type": "string",
-                      "description": "Description of work performed"
-                    }
-                  },
-                  "required": ["date", "hours", "rate", "description"]
+                {
+                    "category": "client_management",
+                    "cli_args": [
+                        "client",
+                        "list"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "List and filter clients with flexible search criteria. Supports filtering by name, email, active status, and provides multiple output formats.",
+                    "name": "client_list",
+                    "timeout_seconds": 15,
+                    "version": "1.0.0"
                 },
-                "description": "Work items to add to the invoice"
-              }
-            },
-            "required": []
-          },
-          "examples": [
-            {
-              "description": "Add single work item to invoice",
-              "input": {
-                "invoice_number": "INV-001",
-                "work_items": [
-                  {
-                    "date": "2025-08-03",
-                    "hours": 6.0,
-                    "rate": 150.0,
-                    "description": "Bug fixes and performance optimization"
-                  }
-                ]
-              },
-              "expected_output": "Work item added to invoice with totals automatically recalculated",
-              "use_case": "Adding newly completed work to existing invoices"
-            }
-          ]
+                {
+                    "category": "client_management",
+                    "cli_args": [
+                        "client",
+                        "show"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Display comprehensive client details including contact information, invoice history, and relationship statistics.",
+                    "name": "client_show",
+                    "timeout_seconds": 15,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "client_management",
+                    "cli_args": [
+                        "client",
+                        "update"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Update client information including contact details, business information, and status. Maintains audit trail of changes.",
+                    "name": "client_update",
+                    "timeout_seconds": 20,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "client_management",
+                    "cli_args": [
+                        "client",
+                        "delete"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Delete clients with dependency checking and safety confirmations. Supports both soft delete and permanent removal.",
+                    "name": "client_delete",
+                    "timeout_seconds": 25,
+                    "version": "1.0.0"
+                }
+            ]
         },
-        {
-          "name": "invoice_remove_item",
-          "description": "Remove work items from invoices using flexible identification methods. Supports removal by ID, description match, or date with automatic total recalculation.",
-          "category": "invoice_management",
-          "cli_command": "go-invoice",
-          "cli_args": ["invoice", "remove-item"],
-          "version": "1.0.0",
-          "timeout_seconds": 20,
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "invoice_number": {
-                "type": "string",
-                "description": "Invoice number to remove items from"
-              },
-              "invoice_id": {
-                "type": "string",
-                "description": "Invoice ID to remove items from (alternative to invoice_number)"
-              },
-              "work_item_id": {
-                "type": "string",
-                "description": "Specific work item ID to remove"
-              },
-              "work_item_description": {
-                "type": "string",
-                "description": "Remove items matching this description (partial match)"
-              },
-              "work_item_date": {
-                "type": "string",
-                "format": "date",
-                "description": "Remove items from this specific date"
-              },
-              "remove_all_matching": {
-                "type": "boolean",
-                "default": false,
-                "description": "Remove all items matching criteria (not just first match)"
-              },
-              "confirm": {
-                "type": "boolean",
-                "default": false,
-                "description": "Skip confirmation prompt"
-              }
-            },
-            "required": []
-          },
-          "examples": [
-            {
-              "description": "Remove specific work item by ID",
-              "input": {
-                "invoice_number": "INV-001",
-                "work_item_id": "work_item_123",
-                "confirm": true
-              },
-              "expected_output": "Specific work item removed with totals recalculated",
-              "use_case": "Removing incorrectly added or duplicate work items"
-            }
-          ]
+        "configuration": {
+            "description": "Tools for system configuration and validation",
+            "tool_count": 3,
+            "tools": [
+                {
+                    "category": "configuration",
+                    "cli_args": [
+                        "config",
+                        "show"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Display current system configuration including database settings, file paths, and business rules. Shows all configuration sources and their priorities.",
+                    "name": "config_show",
+                    "timeout_seconds": 10,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "configuration",
+                    "cli_args": [
+                        "config",
+                        "validate"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Validate system configuration for completeness and correctness. Checks database connectivity, file permissions, and business rule consistency.",
+                    "name": "config_validate",
+                    "timeout_seconds": 20,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "configuration",
+                    "cli_args": [
+                        "config",
+                        "init"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Initialize system configuration with interactive setup wizard. Creates configuration files, sets up database, and configures business rules.",
+                    "name": "config_init",
+                    "timeout_seconds": 120,
+                    "version": "1.0.0"
+                }
+            ]
+        },
+        "data_export": {
+            "description": "Tools for generating and exporting invoice documents and reports",
+            "tool_count": 3,
+            "tools": [
+                {
+                    "category": "data_export",
+                    "cli_args": [
+                        "generate",
+                        "html"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Generate professional HTML invoices with customizable templates and branding. Supports multiple design themes and client-specific formatting.",
+                    "name": "generate_html",
+                    "timeout_seconds": 30,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "data_export",
+                    "cli_args": [
+                        "generate",
+                        "summary"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Generate comprehensive business reports and summaries including revenue analysis, client statistics, and time tracking reports.",
+                    "name": "generate_summary",
+                    "timeout_seconds": 45,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "data_export",
+                    "cli_args": [
+                        "export"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Export invoice and client data in various formats (CSV, JSON, Excel) for accounting systems and external integrations.",
+                    "name": "export_data",
+                    "timeout_seconds": 60,
+                    "version": "1.0.0"
+                }
+            ]
+        },
+        "data_import": {
+            "description": "Tools for importing timesheet and client data from external sources",
+            "tool_count": 3,
+            "tools": [
+                {
+                    "category": "data_import",
+                    "cli_args": [
+                        "import",
+                        "csv"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Import timesheet data from CSV files with flexible column mapping and validation. Supports batch import of work items and client creation.",
+                    "name": "import_csv",
+                    "timeout_seconds": 60,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "data_import",
+                    "cli_args": [
+                        "import",
+                        "validate"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Validate import data before processing to identify potential issues and data quality problems. Provides detailed validation reports.",
+                    "name": "import_validate",
+                    "timeout_seconds": 30,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "data_import",
+                    "cli_args": [
+                        "import",
+                        "preview"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Preview import results without making changes to the database. Shows what would be imported with detailed change summary.",
+                    "name": "import_preview",
+                    "timeout_seconds": 45,
+                    "version": "1.0.0"
+                }
+            ]
+        },
+        "invoice_management": {
+            "description": "Tools for creating, updating, and managing invoices",
+            "tool_count": 7,
+            "tools": [
+                {
+                    "category": "invoice_management",
+                    "cli_args": [
+                        "invoice",
+                        "create"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Create a new invoice for a client with optional work items. Supports flexible client identification and automatic client creation when needed.",
+                    "examples": [
+                        {
+                            "description": "Create a simple invoice for an existing client",
+                            "expected_output": "Invoice created successfully with auto-generated number and default due date",
+                            "input": {
+                                "client_name": "Acme Corp",
+                                "description": "January 2025 consulting services"
+                            },
+                            "use_case": "Basic invoice creation for regular clients"
+                        }
+                    ],
+                    "input_schema": {
+                        "properties": {
+                            "client_email": {
+                                "description": "Email address for client identification (alternative to client_name)",
+                                "type": "string"
+                            },
+                            "client_id": {
+                                "description": "Unique client identifier (alternative identification method)",
+                                "type": "string"
+                            },
+                            "client_name": {
+                                "description": "Name of the client to create invoice for",
+                                "type": "string"
+                            },
+                            "create_client_if_missing": {
+                                "description": "Create new client if not found (requires new_client_* fields)",
+                                "type": "boolean"
+                            },
+                            "description": {
+                                "description": "Invoice description or project name",
+                                "type": "string"
+                            },
+                            "due_date": {
+                                "description": "Payment due date in YYYY-MM-DD format (defaults to 30 days from invoice date)",
+                                "format": "date",
+                                "type": "string"
+                            },
+                            "invoice_date": {
+                                "description": "Invoice date in YYYY-MM-DD format (defaults to today)",
+                                "format": "date",
+                                "type": "string"
+                            },
+                            "new_client_address": {
+                                "description": "Address for new client creation",
+                                "type": "string"
+                            },
+                            "new_client_email": {
+                                "description": "Email for new client creation",
+                                "format": "email",
+                                "type": "string"
+                            },
+                            "new_client_phone": {
+                                "description": "Phone number for new client creation",
+                                "type": "string"
+                            },
+                            "work_items": {
+                                "description": "Optional work items to add to the invoice",
+                                "items": {
+                                    "properties": {
+                                        "date": {
+                                            "description": "Work date in YYYY-MM-DD format",
+                                            "format": "date",
+                                            "type": "string"
+                                        },
+                                        "description": {
+                                            "description": "Description of work performed",
+                                            "type": "string"
+                                        },
+                                        "hours": {
+                                            "description": "Hours worked (supports decimals)",
+                                            "minimum": 0,
+                                            "type": "number"
+                                        },
+                                        "rate": {
+                                            "description": "Hourly rate for this work",
+                                            "minimum": 0,
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": [
+                                        "date",
+                                        "hours",
+                                        "rate",
+                                        "description"
+                                    ],
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "required": [],
+                        "type": "object"
+                    },
+                    "name": "invoice_create",
+                    "timeout_seconds": 30,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "invoice_management",
+                    "cli_args": [
+                        "invoice",
+                        "list"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "List and filter invoices with flexible search criteria. Supports filtering by status, client, date ranges, and provides multiple output formats.",
+                    "examples": [
+                        {
+                            "description": "List all unpaid invoices with summary statistics",
+                            "expected_output": "List of sent invoices sorted by due date with total unpaid amounts",
+                            "input": {
+                                "include_summary": true,
+                                "sort_by": "due_date",
+                                "sort_order": "asc",
+                                "status": "sent"
+                            },
+                            "use_case": "Collections management and overdue invoice tracking"
+                        }
+                    ],
+                    "input_schema": {
+                        "properties": {
+                            "client_email": {
+                                "description": "Filter by client email address",
+                                "type": "string"
+                            },
+                            "client_name": {
+                                "description": "Filter by client name (partial matches supported)",
+                                "type": "string"
+                            },
+                            "from_date": {
+                                "description": "Filter invoices from this date (YYYY-MM-DD)",
+                                "format": "date",
+                                "type": "string"
+                            },
+                            "include_summary": {
+                                "description": "Include summary statistics with results",
+                                "type": "boolean"
+                            },
+                            "limit": {
+                                "description": "Maximum number of invoices to return",
+                                "maximum": 1000,
+                                "minimum": 1,
+                                "type": "integer"
+                            },
+                            "output_format": {
+                                "default": "table",
+                                "description": "Output format for invoice list",
+                                "enum": [
+                                    "table",
+                                    "json",
+                                    "csv",
+                                    "yaml"
+                                ],
+                                "type": "string"
+                            },
+                            "sort_by": {
+                                "default": "invoice_date",
+                                "description": "Field to sort results by",
+                                "enum": [
+                                    "invoice_date",
+                                    "due_date",
+                                    "amount",
+                                    "client_name",
+                                    "status"
+                                ],
+                                "type": "string"
+                            },
+                            "sort_order": {
+                                "default": "desc",
+                                "description": "Sort order",
+                                "enum": [
+                                    "asc",
+                                    "desc"
+                                ],
+                                "type": "string"
+                            },
+                            "status": {
+                                "description": "Filter by invoice status",
+                                "enum": [
+                                    "draft",
+                                    "sent",
+                                    "paid",
+                                    "overdue",
+                                    "cancelled"
+                                ],
+                                "type": "string"
+                            },
+                            "to_date": {
+                                "description": "Filter invoices to this date (YYYY-MM-DD)",
+                                "format": "date",
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "name": "invoice_list",
+                    "timeout_seconds": 20,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "invoice_management",
+                    "cli_args": [
+                        "invoice",
+                        "show"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Display comprehensive details for a specific invoice including client information, work items, and financial breakdown.",
+                    "examples": [
+                        {
+                            "description": "Show complete invoice details in readable format",
+                            "expected_output": "Formatted display with client info, all work items, totals, and timestamps",
+                            "input": {
+                                "invoice_number": "INV-001",
+                                "show_client_details": true,
+                                "show_work_items": true
+                            },
+                            "use_case": "Invoice review and client communication preparation"
+                        }
+                    ],
+                    "input_schema": {
+                        "properties": {
+                            "invoice_id": {
+                                "description": "Invoice ID to display (alternative to invoice_number)",
+                                "type": "string"
+                            },
+                            "invoice_number": {
+                                "description": "Invoice number to display",
+                                "type": "string"
+                            },
+                            "output_format": {
+                                "default": "text",
+                                "description": "Output format for invoice details",
+                                "enum": [
+                                    "text",
+                                    "json",
+                                    "yaml"
+                                ],
+                                "type": "string"
+                            },
+                            "show_client_details": {
+                                "default": true,
+                                "description": "Include detailed client information",
+                                "type": "boolean"
+                            },
+                            "show_work_items": {
+                                "default": true,
+                                "description": "Include detailed work item breakdown",
+                                "type": "boolean"
+                            }
+                        },
+                        "required": [],
+                        "type": "object"
+                    },
+                    "name": "invoice_show",
+                    "timeout_seconds": 15,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "invoice_management",
+                    "cli_args": [
+                        "invoice",
+                        "update"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Update invoice details such as status, due date, or description. Validates business rules and prevents invalid status transitions.",
+                    "examples": [
+                        {
+                            "description": "Mark invoice as sent after delivery to client",
+                            "expected_output": "Invoice status updated to 'sent' with timestamp recorded",
+                            "input": {
+                                "invoice_number": "INV-001",
+                                "status": "sent"
+                            },
+                            "use_case": "Invoice delivery workflow and status tracking"
+                        }
+                    ],
+                    "input_schema": {
+                        "properties": {
+                            "description": {
+                                "description": "New invoice description",
+                                "type": "string"
+                            },
+                            "due_date": {
+                                "description": "New due date in YYYY-MM-DD format",
+                                "format": "date",
+                                "type": "string"
+                            },
+                            "invoice_id": {
+                                "description": "Invoice ID to update (alternative to invoice_number)",
+                                "type": "string"
+                            },
+                            "invoice_number": {
+                                "description": "Invoice number to update",
+                                "type": "string"
+                            },
+                            "status": {
+                                "description": "New invoice status",
+                                "enum": [
+                                    "draft",
+                                    "sent",
+                                    "paid",
+                                    "cancelled"
+                                ],
+                                "type": "string"
+                            }
+                        },
+                        "required": [],
+                        "type": "object"
+                    },
+                    "name": "invoice_update",
+                    "timeout_seconds": 20,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "invoice_management",
+                    "cli_args": [
+                        "invoice",
+                        "delete"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Delete invoices with safety confirmations and business rule validation. Supports both soft delete (default) and permanent removal.",
+                    "examples": [
+                        {
+                            "description": "Soft delete draft invoice (recommended approach)",
+                            "expected_output": "Invoice marked as deleted but data preserved for audit trail",
+                            "input": {
+                                "invoice_number": "INV-001"
+                            },
+                            "use_case": "Removing incorrect or duplicate draft invoices safely"
+                        }
+                    ],
+                    "input_schema": {
+                        "properties": {
+                            "force": {
+                                "default": false,
+                                "description": "Skip confirmation prompts (use with extreme caution)",
+                                "type": "boolean"
+                            },
+                            "hard_delete": {
+                                "default": false,
+                                "description": "Permanently delete invoice data (default is soft delete)",
+                                "type": "boolean"
+                            },
+                            "invoice_id": {
+                                "description": "Invoice ID to delete (alternative to invoice_number)",
+                                "type": "string"
+                            },
+                            "invoice_number": {
+                                "description": "Invoice number to delete",
+                                "type": "string"
+                            }
+                        },
+                        "required": [],
+                        "type": "object"
+                    },
+                    "name": "invoice_delete",
+                    "timeout_seconds": 25,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "invoice_management",
+                    "cli_args": [
+                        "import",
+                        "--add-to-invoice"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Add work items to existing invoices with automatic total calculation. Supports single or batch work item entry for draft invoices.",
+                    "examples": [
+                        {
+                            "description": "Add single work item to invoice",
+                            "expected_output": "Work item added to invoice with totals automatically recalculated",
+                            "input": {
+                                "invoice_number": "INV-001",
+                                "work_items": [
+                                    {
+                                        "date": "2025-08-03",
+                                        "description": "Bug fixes and performance optimization",
+                                        "hours": 6,
+                                        "rate": 150
+                                    }
+                                ]
+                            },
+                            "use_case": "Adding newly completed work to existing invoices"
+                        }
+                    ],
+                    "input_schema": {
+                        "properties": {
+                            "invoice_id": {
+                                "description": "Invoice ID to add items to (alternative to invoice_number)",
+                                "type": "string"
+                            },
+                            "invoice_number": {
+                                "description": "Invoice number to add items to",
+                                "type": "string"
+                            },
+                            "work_items": {
+                                "description": "Work items to add to the invoice",
+                                "items": {
+                                    "properties": {
+                                        "date": {
+                                            "description": "Work date in YYYY-MM-DD format",
+                                            "format": "date",
+                                            "type": "string"
+                                        },
+                                        "description": {
+                                            "description": "Description of work performed",
+                                            "type": "string"
+                                        },
+                                        "hours": {
+                                            "description": "Hours worked (supports decimals)",
+                                            "minimum": 0,
+                                            "type": "number"
+                                        },
+                                        "rate": {
+                                            "description": "Hourly rate for this work",
+                                            "minimum": 0,
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": [
+                                        "date",
+                                        "hours",
+                                        "rate",
+                                        "description"
+                                    ],
+                                    "type": "object"
+                                },
+                                "minItems": 1,
+                                "type": "array"
+                            }
+                        },
+                        "required": [],
+                        "type": "object"
+                    },
+                    "name": "invoice_add_item",
+                    "timeout_seconds": 25,
+                    "version": "1.0.0"
+                },
+                {
+                    "category": "invoice_management",
+                    "cli_args": [
+                        "invoice",
+                        "remove-item"
+                    ],
+                    "cli_command": "go-invoice",
+                    "description": "Remove work items from invoices using flexible identification methods. Supports removal by ID, description match, or date with automatic total recalculation.",
+                    "examples": [
+                        {
+                            "description": "Remove specific work item by ID",
+                            "expected_output": "Specific work item removed with totals recalculated",
+                            "input": {
+                                "confirm": true,
+                                "invoice_number": "INV-001",
+                                "work_item_id": "work_item_123"
+                            },
+                            "use_case": "Removing incorrectly added or duplicate work items"
+                        }
+                    ],
+                    "input_schema": {
+                        "properties": {
+                            "confirm": {
+                                "default": false,
+                                "description": "Skip confirmation prompt",
+                                "type": "boolean"
+                            },
+                            "invoice_id": {
+                                "description": "Invoice ID to remove items from (alternative to invoice_number)",
+                                "type": "string"
+                            },
+                            "invoice_number": {
+                                "description": "Invoice number to remove items from",
+                                "type": "string"
+                            },
+                            "remove_all_matching": {
+                                "default": false,
+                                "description": "Remove all items matching criteria (not just first match)",
+                                "type": "boolean"
+                            },
+                            "work_item_date": {
+                                "description": "Remove items from this specific date",
+                                "format": "date",
+                                "type": "string"
+                            },
+                            "work_item_description": {
+                                "description": "Remove items matching this description (partial match)",
+                                "type": "string"
+                            },
+                            "work_item_id": {
+                                "description": "Specific work item ID to remove",
+                                "type": "string"
+                            }
+                        },
+                        "required": [],
+                        "type": "object"
+                    },
+                    "name": "invoice_remove_item",
+                    "timeout_seconds": 20,
+                    "version": "1.0.0"
+                }
+            ]
         }
-      ]
     },
-    "client_management": {
-      "description": "Tools for managing client information and contacts",
-      "tool_count": 5,
-      "tools": [
-        {
-          "name": "client_create",
-          "description": "Create a new client with contact information and business details. Supports comprehensive client data entry with validation.",
-          "category": "client_management",
-          "cli_command": "go-invoice",
-          "cli_args": ["client", "create"],
-          "version": "1.0.0",
-          "timeout_seconds": 20
+    "category_count": 5,
+    "description": "Complete MCP tool registry for go-invoice with all 21 tools across 5 categories",
+    "generated_at": "2025-08-03T00:00:00Z",
+    "integration_notes": {
+        "claude_desktop": {
+            "recommended_context": "This tool set provides comprehensive invoice management capabilities including client management, timesheet import, invoice generation, and reporting.",
+            "server_command": "go-invoice-mcp",
+            "setup": "Add this tools.json to your Claude Desktop MCP configuration"
         },
-        {
-          "name": "client_list",
-          "description": "List and filter clients with flexible search criteria. Supports filtering by name, email, active status, and provides multiple output formats.",
-          "category": "client_management",
-          "cli_command": "go-invoice",
-          "cli_args": ["client", "list"],
-          "version": "1.0.0",
-          "timeout_seconds": 15
-        },
-        {
-          "name": "client_show",
-          "description": "Display comprehensive client details including contact information, invoice history, and relationship statistics.",
-          "category": "client_management",
-          "cli_command": "go-invoice",
-          "cli_args": ["client", "show"],
-          "version": "1.0.0",
-          "timeout_seconds": 15
-        },
-        {
-          "name": "client_update",
-          "description": "Update client information including contact details, business information, and status. Maintains audit trail of changes.",
-          "category": "client_management",
-          "cli_command": "go-invoice",
-          "cli_args": ["client", "update"],
-          "version": "1.0.0",
-          "timeout_seconds": 20
-        },
-        {
-          "name": "client_delete",
-          "description": "Delete clients with dependency checking and safety confirmations. Supports both soft delete and permanent removal.",
-          "category": "client_management",
-          "cli_command": "go-invoice",
-          "cli_args": ["client", "delete"],
-          "version": "1.0.0",
-          "timeout_seconds": 25
+        "mcp_protocol": {
+            "supported_features": [
+                "tool_discovery",
+                "parameter_validation",
+                "structured_responses",
+                "error_handling",
+                "context_cancellation"
+            ],
+            "version": "1.0"
         }
-      ]
     },
-    "data_import": {
-      "description": "Tools for importing timesheet and client data from external sources",
-      "tool_count": 3,
-      "tools": [
-        {
-          "name": "import_csv",
-          "description": "Import timesheet data from CSV files with flexible column mapping and validation. Supports batch import of work items and client creation.",
-          "category": "data_import",
-          "cli_command": "go-invoice",
-          "cli_args": ["import", "csv"],
-          "version": "1.0.0",
-          "timeout_seconds": 60
+    "tool_count": 21,
+    "usage_guidance": {
+        "best_practices": [
+            "Always validate configuration before starting work",
+            "Use preview and validation tools before making data changes",
+            "Keep regular backups using export_data",
+            "Use soft delete (default) instead of hard delete for data safety",
+            "Include work items during invoice creation for efficiency"
+        ],
+        "common_workflows": {
+            "monthly_reporting": [
+                "invoice_list (with date filters)",
+                "generate_summary (for business reports)",
+                "export_data (for accounting systems)"
+            ],
+            "new_invoice": [
+                "client_create (if new client)",
+                "invoice_create",
+                "invoice_add_item (if adding work items)",
+                "generate_html (to create deliverable invoice)"
+            ],
+            "timesheet_import": [
+                "import_validate (check data quality)",
+                "import_preview (review changes)",
+                "import_csv (perform actual import)"
+            ]
         },
-        {
-          "name": "import_validate",
-          "description": "Validate import data before processing to identify potential issues and data quality problems. Provides detailed validation reports.",
-          "category": "data_import",
-          "cli_command": "go-invoice",
-          "cli_args": ["import", "validate"],
-          "version": "1.0.0",
-          "timeout_seconds": 30
-        },
-        {
-          "name": "import_preview",
-          "description": "Preview import results without making changes to the database. Shows what would be imported with detailed change summary.",
-          "category": "data_import",
-          "cli_command": "go-invoice",
-          "cli_args": ["import", "preview"],
-          "version": "1.0.0",
-          "timeout_seconds": 45
-        }
-      ]
+        "getting_started": [
+            "Use 'config_show' to check current system configuration",
+            "Use 'config_validate' to ensure system is properly set up",
+            "Use 'client_create' to add clients before creating invoices",
+            "Use 'invoice_create' to create new invoices for clients",
+            "Use 'invoice_list' to view and filter existing invoices"
+        ]
     },
-    "data_export": {
-      "description": "Tools for generating and exporting invoice documents and reports",
-      "tool_count": 3,
-      "tools": [
-        {
-          "name": "generate_html",
-          "description": "Generate professional HTML invoices with customizable templates and branding. Supports multiple design themes and client-specific formatting.",
-          "category": "data_export",
-          "cli_command": "go-invoice",
-          "cli_args": ["generate", "html"],
-          "version": "1.0.0",
-          "timeout_seconds": 30
-        },
-        {
-          "name": "generate_summary",
-          "description": "Generate comprehensive business reports and summaries including revenue analysis, client statistics, and time tracking reports.",
-          "category": "data_export",
-          "cli_command": "go-invoice",
-          "cli_args": ["generate", "summary"],
-          "version": "1.0.0",
-          "timeout_seconds": 45
-        },
-        {
-          "name": "export_data",
-          "description": "Export invoice and client data in various formats (CSV, JSON, Excel) for accounting systems and external integrations.",
-          "category": "data_export",
-          "cli_command": "go-invoice",
-          "cli_args": ["export"],
-          "version": "1.0.0",
-          "timeout_seconds": 60
-        }
-      ]
-    },
-    "configuration": {
-      "description": "Tools for system configuration and validation",
-      "tool_count": 3,
-      "tools": [
-        {
-          "name": "config_show",
-          "description": "Display current system configuration including database settings, file paths, and business rules. Shows all configuration sources and their priorities.",
-          "category": "configuration",
-          "cli_command": "go-invoice",
-          "cli_args": ["config", "show"],
-          "version": "1.0.0",
-          "timeout_seconds": 10
-        },
-        {
-          "name": "config_validate",
-          "description": "Validate system configuration for completeness and correctness. Checks database connectivity, file permissions, and business rule consistency.",
-          "category": "configuration",
-          "cli_command": "go-invoice",
-          "cli_args": ["config", "validate"],
-          "version": "1.0.0",
-          "timeout_seconds": 20
-        },
-        {
-          "name": "config_init",
-          "description": "Initialize system configuration with interactive setup wizard. Creates configuration files, sets up database, and configures business rules.",
-          "category": "configuration",
-          "cli_command": "go-invoice",
-          "cli_args": ["config", "init"],
-          "version": "1.0.0",
-          "timeout_seconds": 120
-        }
-      ]
-    }
-  },
-  "usage_guidance": {
-    "getting_started": [
-      "Use 'config_show' to check current system configuration",
-      "Use 'config_validate' to ensure system is properly set up",
-      "Use 'client_create' to add clients before creating invoices",
-      "Use 'invoice_create' to create new invoices for clients",
-      "Use 'invoice_list' to view and filter existing invoices"
-    ],
-    "common_workflows": {
-      "new_invoice": [
-        "client_create (if new client)",
-        "invoice_create",
-        "invoice_add_item (if adding work items)",
-        "generate_html (to create deliverable invoice)"
-      ],
-      "timesheet_import": [
-        "import_validate (check data quality)",
-        "import_preview (review changes)",
-        "import_csv (perform actual import)"
-      ],
-      "monthly_reporting": [
-        "invoice_list (with date filters)",
-        "generate_summary (for business reports)",
-        "export_data (for accounting systems)"
-      ]
-    },
-    "best_practices": [
-      "Always validate configuration before starting work",
-      "Use preview and validation tools before making data changes",
-      "Keep regular backups using export_data",
-      "Use soft delete (default) instead of hard delete for data safety",
-      "Include work items during invoice creation for efficiency"
-    ]
-  },
-  "integration_notes": {
-    "claude_desktop": {
-      "setup": "Add this tools.json to your Claude Desktop MCP configuration",
-      "server_command": "go-invoice-mcp",
-      "recommended_context": "This tool set provides comprehensive invoice management capabilities including client management, timesheet import, invoice generation, and reporting."
-    },
-    "mcp_protocol": {
-      "version": "1.0",
-      "supported_features": [
-        "tool_discovery",
-        "parameter_validation",
-        "structured_responses",
-        "error_handling",
-        "context_cancellation"
-      ]
-    }
-  }
+    "version": "1.0.0"
 }
