@@ -338,9 +338,8 @@ func (s *RegistryTestSuite) TestGetTool() {
 				s.Nil(retrievedTool, "Should not return tool on error")
 
 				if tt.errorType != "" {
-					s.IsType(&ToolNotFoundError{}, err, "Should return ToolNotFoundError")
 					var toolErr *ToolNotFoundError
-					s.Require().ErrorAs(err, &toolErr)
+					s.Require().ErrorAs(err, &toolErr, "Should return ToolNotFoundError")
 					s.Equal(tt.toolName, toolErr.ToolName)
 				}
 			} else {
@@ -989,7 +988,8 @@ func TestDefaultToolRegistry_EdgeCases(t *testing.T) {
 		tool, err := registry.GetTool(ctx, "nonexistent")
 		require.Error(t, err)
 		assert.Nil(t, tool)
-		assert.IsType(t, &ToolNotFoundError{}, err)
+		var toolErr *ToolNotFoundError
+		assert.ErrorAs(t, err, &toolErr)
 	})
 
 	t.Run("ValidateInputForNonExistentTool", func(t *testing.T) {
