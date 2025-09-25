@@ -1,87 +1,114 @@
 {
-  "mcpServers": {
-    "go-invoice": {
-      "name": "Go Invoice MCP Server",
-      "description": "Natural language invoice management through go-invoice CLI",
-      "command": "/Users/mrz/projects/go-invoice/bin/go-invoice-mcp",
-      "args": [
-        "--stdio",
-        "--config",
-        "~/.go-invoice/mcp-config.json"
-      ],
-      "env": {
-        "GO_INVOICE_HOME": "~/.go-invoice",
-        "MCP_LOG_LEVEL": "info",
-        "MCP_TRANSPORT": "stdio",
-        "MCP_LOG_FILE": "~/.go-invoice/mcp-claude-code.log"
-      },
-      "capabilities": {
-        "tools": true,
-        "resources": true,
-        "prompts": false
-      },
-      "resources": {
-        "patterns": [
-          "@invoice:*",
-          "@client:*",
-          "@timesheet:*",
-          "@config:*"
-        ],
-        "handlers": {
-          "@invoice": {
-            "description": "Reference invoices by ID",
-            "examples": ["@invoice:INV-2025-001", "@invoice:latest"]
-          },
-          "@client": {
-            "description": "Reference clients by name or ID",
-            "examples": ["@client:\"Acme Corp\"", "@client:CL-001"]
-          },
-          "@timesheet": {
-            "description": "Reference timesheet files",
-            "examples": ["@timesheet:./hours.csv", "@timesheet:~/timesheets/august.csv"]
-          },
-          "@config": {
-            "description": "Reference configuration sections",
-            "examples": ["@config:invoice_defaults", "@config:storage_path"]
-          }
+    "mcpServers": {
+        "go-invoice": {
+            "args": [
+                "--stdio",
+                "--config",
+                "~/.go-invoice/mcp-config.json"
+            ],
+            "capabilities": {
+                "prompts": false,
+                "resources": true,
+                "tools": true
+            },
+            "command": "/Users/mrz/projects/go-invoice/bin/go-invoice-mcp",
+            "description": "Natural language invoice management through go-invoice CLI",
+            "env": {
+                "GO_INVOICE_HOME": "~/.go-invoice",
+                "MCP_LOG_FILE": "~/.go-invoice/mcp-claude-code.log",
+                "MCP_LOG_LEVEL": "info",
+                "MCP_TRANSPORT": "stdio"
+            },
+            "metadata": {
+                "author": "go-invoice",
+                "documentation": "https://github.com/mrz1836/go-invoice/docs/claude-code-integration.md",
+                "projectScope": true,
+                "version": "1.0.0"
+            },
+            "name": "Go Invoice MCP Server",
+            "resources": {
+                "handlers": {
+                    "@client": {
+                        "description": "Reference clients by name or ID",
+                        "examples": [
+                            "@client:\"Acme Corp\"",
+                            "@client:CL-001"
+                        ]
+                    },
+                    "@config": {
+                        "description": "Reference configuration sections",
+                        "examples": [
+                            "@config:invoice_defaults",
+                            "@config:storage_path"
+                        ]
+                    },
+                    "@invoice": {
+                        "description": "Reference invoices by ID",
+                        "examples": [
+                            "@invoice:INV-2025-001",
+                            "@invoice:latest"
+                        ]
+                    },
+                    "@timesheet": {
+                        "description": "Reference timesheet files",
+                        "examples": [
+                            "@timesheet:./hours.csv",
+                            "@timesheet:~/timesheets/august.csv"
+                        ]
+                    }
+                },
+                "patterns": [
+                    "@invoice:*",
+                    "@client:*",
+                    "@timesheet:*",
+                    "@config:*"
+                ]
+            },
+            "slashCommands": {
+                "commands": [
+                    {
+                        "aliases": [
+                            "new_invoice",
+                            "invoice_new"
+                        ],
+                        "description": "Create a new invoice",
+                        "name": "create_invoice"
+                    },
+                    {
+                        "aliases": [
+                            "show_invoices",
+                            "invoices"
+                        ],
+                        "description": "List all invoices with filters",
+                        "name": "list_invoices"
+                    },
+                    {
+                        "aliases": [
+                            "import_timesheet",
+                            "add_hours"
+                        ],
+                        "description": "Import timesheet from CSV",
+                        "name": "import_csv"
+                    },
+                    {
+                        "aliases": [
+                            "export_invoice",
+                            "make_invoice"
+                        ],
+                        "description": "Generate HTML invoice",
+                        "name": "generate_html"
+                    },
+                    {
+                        "aliases": [
+                            "config",
+                            "settings"
+                        ],
+                        "description": "Display configuration",
+                        "name": "show_config"
+                    }
+                ],
+                "prefix": "/mcp__go_invoice__"
+            }
         }
-      },
-      "slashCommands": {
-        "prefix": "/mcp__go_invoice__",
-        "commands": [
-          {
-            "name": "create_invoice",
-            "description": "Create a new invoice",
-            "aliases": ["new_invoice", "invoice_new"]
-          },
-          {
-            "name": "list_invoices",
-            "description": "List all invoices with filters",
-            "aliases": ["show_invoices", "invoices"]
-          },
-          {
-            "name": "import_csv",
-            "description": "Import timesheet from CSV",
-            "aliases": ["import_timesheet", "add_hours"]
-          },
-          {
-            "name": "generate_html",
-            "description": "Generate HTML invoice",
-            "aliases": ["export_invoice", "make_invoice"]
-          },
-          {
-            "name": "show_config",
-            "description": "Display configuration",
-            "aliases": ["config", "settings"]
-          }
-        ]
-      },
-      "metadata": {
-        "version": "1.0.0",
-        "author": "go-invoice",
-        "projectScope": true,
-        "documentation": "https://github.com/mrz1836/go-invoice/docs/claude-code-integration.md"
-      }
     }
-  }
 }

@@ -1,32 +1,32 @@
 {
-  "mcpServers": {
-    "go-invoice": {
-      "name": "Go Invoice MCP Server",
-      "description": "Natural language invoice management through go-invoice CLI",
-      "command": "go-invoice-mcp",
-      "args": [
-        "--http",
-        "--config",
-        "~/.go-invoice/mcp-config.json",
-        "--port",
-        "0"
-      ],
-      "env": {
-        "GO_INVOICE_HOME": "~/.go-invoice",
-        "MCP_LOG_LEVEL": "info",
-        "MCP_TRANSPORT": "http",
-        "MCP_SERVER_NAME": "go-invoice-mcp"
-      },
-      "capabilities": {
-        "tools": true,
-        "resources": false,
-        "prompts": false
-      },
-      "metadata": {
-        "version": "1.0.0",
-        "author": "go-invoice",
-        "documentation": "https://github.com/mrz1836/go-invoice/docs/mcp-integration.md"
-      }
+    "mcpServers": {
+        "go-invoice": {
+            "args": [
+                "--http",
+                "--config",
+                "~/.go-invoice/mcp-config.json",
+                "--port",
+                "0"
+            ],
+            "capabilities": {
+                "prompts": false,
+                "resources": false,
+                "tools": true
+            },
+            "command": "go-invoice-mcp",
+            "description": "Natural language invoice management through go-invoice CLI",
+            "env": {
+                "GO_INVOICE_HOME": "~/.go-invoice",
+                "MCP_LOG_LEVEL": "info",
+                "MCP_SERVER_NAME": "go-invoice-mcp",
+                "MCP_TRANSPORT": "http"
+            },
+            "metadata": {
+                "author": "go-invoice",
+                "documentation": "https://github.com/mrz1836/go-invoice/docs/mcp-integration.md",
+                "version": "1.0.0"
+            },
+            "name": "Go Invoice MCP Server"
+        }
     }
-  }
 }

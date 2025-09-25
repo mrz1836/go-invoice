@@ -1,150 +1,150 @@
 {
-  "server": {
-    "name": "go-invoice-mcp",
-    "version": "1.0.0",
-    "description": "MCP server for go-invoice CLI integration",
-    "transport": {
-      "autoDetect": true,
-      "stdio": {
-        "enabled": true,
-        "bufferSize": 65536,
-        "flushInterval": "100ms"
-      },
-      "http": {
-        "enabled": true,
-        "host": "127.0.0.1",
-        "port": 0,
-        "readTimeout": "30s",
-        "writeTimeout": "30s",
-        "maxBodySize": "10MB"
-      }
-    },
-    "logging": {
-      "level": "info",
-      "format": "json",
-      "outputs": [
-        {
-          "type": "file",
-          "path": "~/.go-invoice/mcp-server.log",
-          "maxSize": "10MB",
-          "maxBackups": 3,
-          "compress": true
+    "cli": {
+        "environment": {
+            "GO_INVOICE_HOME": "~/.go-invoice",
+            "NO_COLOR": "false"
         },
-        {
-          "type": "stderr",
-          "enabled": false
+        "maxTimeout": "60s",
+        "path": "go-invoice",
+        "workingDir": "~/.go-invoice"
+    },
+    "extensions": {
+        "customTools": {
+            "enabled": false,
+            "path": "~/.go-invoice/custom-tools"
+        },
+        "plugins": {
+            "enabled": false,
+            "path": "~/.go-invoice/plugins"
         }
-      ]
     },
-    "health": {
-      "enabled": true,
-      "interval": "30s",
-      "timeout": "5s",
-      "checks": {
-        "cli": true,
-        "storage": true,
-        "memory": true
-      }
+    "performance": {
+        "caching": {
+            "enabled": true,
+            "maxSize": "100MB",
+            "ttl": "5m"
+        },
+        "concurrency": {
+            "maxConcurrentTools": 5,
+            "queueSize": 100
+        },
+        "monitoring": {
+            "enabled": true,
+            "includeGoroutineStats": true,
+            "includeMemoryStats": true,
+            "metricsInterval": "1m"
+        }
+    },
+    "security": {
+        "audit": {
+            "enabled": true,
+            "includeTimestamps": true,
+            "includeUserInfo": true,
+            "logLevel": "info",
+            "logPath": "~/.go-invoice/audit.log"
+        },
+        "enabled": true,
+        "sandbox": {
+            "allowedCommands": [
+                "go-invoice",
+                "invoice",
+                "client",
+                "import",
+                "generate",
+                "export",
+                "config",
+                "summary"
+            ],
+            "allowedPaths": [
+                "~/.go-invoice",
+                "~/Documents/invoices",
+                "~/Downloads",
+                "/tmp"
+            ],
+            "blockedPaths": [
+                "/etc",
+                "/sys",
+                "/proc",
+                "/dev",
+                "/root",
+                "/.."
+            ],
+            "enabled": true,
+            "maxExecutionTime": "5m",
+            "maxFileSize": "50MB"
+        },
+        "validation": {
+            "strictMode": true,
+            "validateCommands": true,
+            "validateEnvironment": true,
+            "validatePaths": true
+        }
+    },
+    "server": {
+        "description": "MCP server for go-invoice CLI integration",
+        "health": {
+            "checks": {
+                "cli": true,
+                "memory": true,
+                "storage": true
+            },
+            "enabled": true,
+            "interval": "30s",
+            "timeout": "5s"
+        },
+        "logging": {
+            "format": "json",
+            "level": "info",
+            "outputs": [
+                {
+                    "compress": true,
+                    "maxBackups": 3,
+                    "maxSize": "10MB",
+                    "path": "~/.go-invoice/mcp-server.log",
+                    "type": "file"
+                },
+                {
+                    "enabled": false,
+                    "type": "stderr"
+                }
+            ]
+        },
+        "name": "go-invoice-mcp",
+        "transport": {
+            "autoDetect": true,
+            "http": {
+                "enabled": true,
+                "host": "127.0.0.1",
+                "maxBodySize": "10MB",
+                "port": 0,
+                "readTimeout": "30s",
+                "writeTimeout": "30s"
+            },
+            "stdio": {
+                "bufferSize": 65536,
+                "enabled": true,
+                "flushInterval": "100ms"
+            }
+        },
+        "version": "1.0.0"
+    },
+    "tools": {
+        "categories": [
+            "invoice_management",
+            "client_management",
+            "data_import",
+            "document_generation",
+            "configuration"
+        ],
+        "defaults": {
+            "retries": 3,
+            "retryDelay": "1s",
+            "timeout": "30s"
+        },
+        "enabled": true,
+        "validation": {
+            "schemaVersion": "draft-07",
+            "strict": true
+        }
     }
-  },
-  "cli": {
-    "path": "go-invoice",
-    "workingDir": "~/.go-invoice",
-    "maxTimeout": "60s",
-    "environment": {
-      "GO_INVOICE_HOME": "~/.go-invoice",
-      "NO_COLOR": "false"
-    }
-  },
-  "security": {
-    "enabled": true,
-    "sandbox": {
-      "enabled": true,
-      "allowedCommands": [
-        "go-invoice",
-        "invoice",
-        "client",
-        "import",
-        "generate",
-        "export",
-        "config",
-        "summary"
-      ],
-      "allowedPaths": [
-        "~/.go-invoice",
-        "~/Documents/invoices",
-        "~/Downloads",
-        "/tmp"
-      ],
-      "blockedPaths": [
-        "/etc",
-        "/sys",
-        "/proc",
-        "/dev",
-        "/root",
-        "/.."
-      ],
-      "maxFileSize": "50MB",
-      "maxExecutionTime": "5m"
-    },
-    "validation": {
-      "strictMode": true,
-      "validatePaths": true,
-      "validateCommands": true,
-      "validateEnvironment": true
-    },
-    "audit": {
-      "enabled": true,
-      "logPath": "~/.go-invoice/audit.log",
-      "logLevel": "info",
-      "includeTimestamps": true,
-      "includeUserInfo": true
-    }
-  },
-  "tools": {
-    "enabled": true,
-    "categories": [
-      "invoice_management",
-      "client_management",
-      "data_import",
-      "document_generation",
-      "configuration"
-    ],
-    "validation": {
-      "strict": true,
-      "schemaVersion": "draft-07"
-    },
-    "defaults": {
-      "timeout": "30s",
-      "retries": 3,
-      "retryDelay": "1s"
-    }
-  },
-  "performance": {
-    "caching": {
-      "enabled": true,
-      "ttl": "5m",
-      "maxSize": "100MB"
-    },
-    "concurrency": {
-      "maxConcurrentTools": 5,
-      "queueSize": 100
-    },
-    "monitoring": {
-      "enabled": true,
-      "metricsInterval": "1m",
-      "includeMemoryStats": true,
-      "includeGoroutineStats": true
-    }
-  },
-  "extensions": {
-    "customTools": {
-      "enabled": false,
-      "path": "~/.go-invoice/custom-tools"
-    },
-    "plugins": {
-      "enabled": false,
-      "path": "~/.go-invoice/plugins"
-    }
-  }
 }
