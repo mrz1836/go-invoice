@@ -50,7 +50,7 @@
         <a href=".github/AGENTS.md">
           <img src="https://img.shields.io/badge/AGENTS.md-found-40b814?style=flat&logo=openai" alt="AI Agent Rules">
         </a><br/>
-        <a href="magefile.go" target="_blank">
+        <a href="magefiles/magefile.go" target="_blank">
           <img src="https://img.shields.io/badge/Magefile-supported-brightgreen?style=flat&logo=probot&logoColor=white" alt="Magefile Supported">
         </a><br/>
       </td>
@@ -215,6 +215,7 @@ go-invoice generate invoice INV-2025-001 --output invoice.html
 - Configurable tax rates and payment terms
 - Multi-currency support
 - **Cryptocurrency service fee** - Optional configurable fee for crypto payments
+- **Per-invoice crypto address override** - Custom crypto addresses for enhanced payment tracking
 
 **👥 Client Management**
 - Add, edit, and manage client information
@@ -226,10 +227,14 @@ go-invoice generate invoice INV-2025-001 --output invoice.html
 - Automatic invoice numbering with configurable prefixes
 - Tax calculation and subtotal management
 - Multiple invoice statuses (draft, sent, paid, overdue, voided)
+- **Flexible line items** - Support for hourly, fixed, and quantity-based billing on the same invoice
 
-**⏱️ Time Tracking**
+**⏱️ Time Tracking & Billing**
 - CSV timesheet import from popular time tracking tools
-- Manual work item entry with hours and rates
+- **Hourly billing** - Traditional time-based work with hours × rate
+- **Fixed fees** - Flat amounts for retainers, setup fees, monthly charges
+- **Quantity-based pricing** - Unit pricing for materials, licenses, subscriptions
+- Mixed billing models on same invoice (e.g., hourly work + monthly retainer + materials)
 - Flexible date formats and validation
 - Work item descriptions with intelligent validation
 
@@ -351,6 +356,100 @@ go-invoice-mcp --transport stdio --list-tools
 For detailed troubleshooting, see our [comprehensive troubleshooting guide](docs/mcp/troubleshooting.md).
 
 </details>
+
+<br/>
+
+## 💰 Flexible Line Items
+
+go-invoice supports **three types of line items** on the same invoice, giving you complete flexibility for any billing scenario:
+
+### Line Item Types
+
+#### 1. ⏱️ Hourly Billing (Time-based)
+Traditional hourly work with automatic calculation: **Hours × Rate = Total**
+
+```bash
+# Via CLI
+go-invoice invoice add-line-item INV-001 \
+  --description "Development work on authentication module" \
+  --hours 8 --rate 125
+
+# Via Claude (natural language)
+# "Add 8 hours of development work at $125/hour to INV-001"
+```
+
+#### 2. 💵 Fixed Amount (Flat Fees)
+One-time charges, retainers, setup fees, monthly charges
+
+```bash
+# Via CLI
+go-invoice invoice add-line-item INV-001 \
+  --type fixed \
+  --description "Monthly Retainer - August 2025" \
+  --amount 2000
+
+# Via Claude (natural language)
+# "Add a $2000 monthly retainer to INV-001"
+```
+
+#### 3. 📦 Quantity-based (Unit Pricing)
+Materials, licenses, subscriptions: **Quantity × Unit Price = Total**
+
+```bash
+# Via CLI
+go-invoice invoice add-line-item INV-001 \
+  --type quantity \
+  --description "SSL certificates" \
+  --quantity 3 --unit-price 50
+
+# Via Claude (natural language)
+# "Add 3 SSL certificates at $50 each to INV-001"
+```
+
+### Real-World Example: Mixed Billing
+
+Create an invoice combining all three billing types:
+
+```bash
+# 1. Start with hourly work
+go-invoice invoice add-line-item INV-001 \
+  --description "Development - 40 hours" \
+  --hours 40 --rate 125
+  # Subtotal: $5,000
+
+# 2. Add project setup fee
+go-invoice invoice add-line-item INV-001 \
+  --type fixed \
+  --description "Project Setup & Configuration" \
+  --amount 500
+  # Subtotal: $5,500
+
+# 3. Add materials/licenses
+go-invoice invoice add-line-item INV-001 \
+  --type quantity \
+  --description "Development licenses (annual)" \
+  --quantity 2 --unit-price 99
+  # Final Total: $5,698
+```
+
+### Invoice Display
+
+Line items are intelligently displayed based on type:
+
+| Date  | Description                                              | Details      | Amount        |
+|-------|----------------------------------------------------------|--------------|---------------|
+| Aug 1 | Development - 40 hours<br><small>Hourly</small>          | 40h @ $125/h | $5,000.00     |
+| Aug 1 | Project Setup & Configuration<br><small>Fixed</small>    | —            | $500.00       |
+| Aug 1 | Development licenses (annual)<br><small>Quantity</small> | 2 × $99      | $198.00       |
+|       |                                                          | **Total**    | **$5,698.00** |
+
+### Benefits
+
+✅ **Flexibility** - Mix different billing models on one invoice
+✅ **Clarity** - Clear display shows exactly what was charged
+✅ **Accuracy** - Automatic calculations prevent errors
+✅ **Professional** - Clean, itemized invoices for clients
+✅ **Backward Compatible** - Works alongside existing time-based work items
 
 <br/>
 
@@ -480,6 +579,135 @@ To add crypto fee to an existing client:
 go-invoice client update "Acme Company" \
   --crypto-fee \
   --crypto-fee-amount 25.00
+```
+
+</details>
+
+<details>
+<summary><strong>🔐 Per-Invoice Crypto Address Override</strong></summary>
+
+### Overview
+
+While cryptocurrency addresses are configured globally in your business settings, you can override them on a per-invoice basis. This is useful when you want a unique payment address for specific invoices or clients.
+
+### How It Works
+
+1. **Default Behavior**: Invoices use the global USDC/BSV addresses from your configuration
+2. **Override Capability**: Set custom addresses when creating or updating an invoice
+3. **Future-Ready**: Architecture supports unique addresses per invoice for enhanced tracking
+
+### CLI Usage
+
+#### Create Invoice with Custom Crypto Address
+
+```bash
+# Override USDC address for this specific invoice
+go-invoice invoice create \
+  --client "Acme Corp" \
+  --usdc-address "0xCustomUSDCAddressForThisInvoice123"
+
+# Override both USDC and BSV addresses
+go-invoice invoice create \
+  --client "Tech Solutions" \
+  --usdc-address "0xCustomUSDCAddress123" \
+  --bsv-address "CustomBSVAddress123"
+
+# Works with all other flags
+go-invoice invoice create \
+  --client "New Client" \
+  --description "January 2025 services" \
+  --usdc-address "0xUniqueAddress123"
+```
+
+#### Update Invoice Crypto Address
+
+```bash
+# Add or change USDC address on existing invoice
+go-invoice invoice update INV-001 \
+  --usdc-address "0xNewUSDCAddress456"
+
+# Clear the override (will use global config address)
+go-invoice invoice update INV-001 \
+  --clear-usdc-address
+
+# Update both addresses
+go-invoice invoice update INV-001 \
+  --usdc-address "0xNewUSDCAddress" \
+  --bsv-address "NewBSVAddress"
+```
+
+### MCP Tool Usage
+
+When using the MCP tools with Claude or other AI assistants:
+
+```javascript
+// Create invoice with custom crypto address
+{
+  "tool": "invoice_create",
+  "parameters": {
+    "client_name": "Acme Corp",
+    "description": "Q1 2025 consulting",
+    "usdc_address": "0xCustomUSDCAddress123",
+    "bsv_address": "CustomBSVAddress456"
+  }
+}
+
+// Update invoice crypto address
+{
+  "tool": "invoice_update",
+  "parameters": {
+    "invoice_id": "INV-001",
+    "usdc_address": "0xNewAddress789"
+  }
+}
+
+// Clear override (set to empty string)
+{
+  "tool": "invoice_update",
+  "parameters": {
+    "invoice_id": "INV-001",
+    "usdc_address": ""
+  }
+}
+```
+
+### Invoice Display
+
+When an invoice has a custom crypto address override:
+- The custom address is displayed in the payment instructions
+- If no override is set, the global address from config is used
+
+### Benefits
+
+- **Enhanced Tracking**: Use unique addresses per invoice to track payments precisely
+- **Client-Specific Addresses**: Assign dedicated addresses to specific clients or projects
+- **Flexible Architecture**: Ready for future features like automatic address generation
+- **No Breaking Changes**: Existing invoices continue using global addresses seamlessly
+
+### Example Workflow
+
+```bash
+# 1. Set global crypto addresses in config
+export USDC_ENABLED=true
+export USDC_ADDRESS="0xYourDefaultUSDCAddress"
+export BSV_ENABLED=true
+export BSV_ADDRESS="YourDefaultBSVAddress"
+
+# 2. Create invoice with global addresses (default behavior)
+go-invoice invoice create --client "Regular Client"
+
+# 3. Create invoice with custom address for special tracking
+go-invoice invoice create \
+  --client "Premium Client" \
+  --usdc-address "0xPremiumClientUniqueAddress"
+
+# 4. Later, update an invoice to use a different address
+go-invoice invoice update INV-002 \
+  --usdc-address "0xUpdatedAddress"
+
+# 5. Clear override to go back to global address
+go-invoice invoice update INV-002 \
+  --clear-usdc-address
 ```
 
 </details>
@@ -1354,6 +1582,7 @@ go-invoice [command] --help
 - [x] Professional HTML generation with comma-separated currency
 - [x] Cryptocurrency payment methods (USDC, BSV)
 - [x] **Cryptocurrency Service Fee** - Configurable fee for crypto payment processing
+- [x] **Per-Invoice Crypto Address Override** - Custom crypto addresses per invoice for enhanced tracking
 - [x] **MCP Integration** - Natural language interface for Claude Desktop and Claude Code
 - [x] **21 MCP Tools** - Complete invoice management via AI conversation
 - [x] **Dual Transport Support** - HTTP (Claude Desktop) and stdio (Claude Code)

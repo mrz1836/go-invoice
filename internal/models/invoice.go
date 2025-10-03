@@ -10,22 +10,25 @@ import (
 
 // Invoice represents a complete invoice entity
 type Invoice struct {
-	ID          InvoiceID  `json:"id"`
-	Number      string     `json:"number"`
-	Date        time.Time  `json:"date"`
-	DueDate     time.Time  `json:"due_date"`
-	Client      Client     `json:"client"`
-	WorkItems   []WorkItem `json:"work_items"`
-	Status      string     `json:"status"`
-	Description string     `json:"description,omitempty"`
-	Subtotal    float64    `json:"subtotal"`
-	CryptoFee   float64    `json:"crypto_fee"`
-	TaxRate     float64    `json:"tax_rate"`
-	TaxAmount   float64    `json:"tax_amount"`
-	Total       float64    `json:"total"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
-	Version     int        `json:"version"` // For optimistic locking
+	ID                  InvoiceID  `json:"id"`
+	Number              string     `json:"number"`
+	Date                time.Time  `json:"date"`
+	DueDate             time.Time  `json:"due_date"`
+	Client              Client     `json:"client"`
+	WorkItems           []WorkItem `json:"work_items"`           // Deprecated: kept for backward compatibility
+	LineItems           []LineItem `json:"line_items,omitempty"` // New: flexible line items
+	Status              string     `json:"status"`
+	Description         string     `json:"description,omitempty"`
+	Subtotal            float64    `json:"subtotal"`
+	CryptoFee           float64    `json:"crypto_fee"`
+	TaxRate             float64    `json:"tax_rate"`
+	TaxAmount           float64    `json:"tax_amount"`
+	Total               float64    `json:"total"`
+	USDCAddressOverride *string    `json:"usdc_address_override,omitempty"` // Optional per-invoice USDC address override
+	BSVAddressOverride  *string    `json:"bsv_address_override,omitempty"`  // Optional per-invoice BSV address override
+	CreatedAt           time.Time  `json:"created_at"`
+	UpdatedAt           time.Time  `json:"updated_at"`
+	Version             int        `json:"version"` // For optimistic locking
 }
 
 // WorkItem represents a single work entry on an invoice
@@ -481,4 +484,242 @@ func (i *Invoice) GetAgeInDays() int {
 // GetDaysUntilDue returns the number of days until the due date (negative if overdue)
 func (i *Invoice) GetDaysUntilDue() int {
 	return int(time.Until(i.DueDate).Hours() / 24)
+}
+
+// AddLineItem adds a line item to the invoice and recalculates totals
+func (i *Invoice) AddLineItem(ctx context.Context, item LineItem) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Validate the line item
+	if err := item.Validate(ctx); err != nil {
+		return fmt.Errorf("invalid line item: %w", err)
+	}
+
+	// Add the item
+	i.LineItems = append(i.LineItems, item)
+
+	// Recalculate totals using both WorkItems and LineItems
+	if err := i.RecalculateTotalsWithLineItems(ctx); err != nil {
+		return fmt.Errorf("failed to recalculate totals after adding line item: %w", err)
+	}
+
+	// Update timestamp and version
+	i.UpdatedAt = time.Now()
+	i.Version++
+
+	return nil
+}
+
+// AddLineItemWithoutVersionIncrement adds a line item without incrementing version
+// This is used for bulk operations where version will be handled by storage
+func (i *Invoice) AddLineItemWithoutVersionIncrement(ctx context.Context, item LineItem) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Validate the line item
+	if err := item.Validate(ctx); err != nil {
+		return fmt.Errorf("invalid line item: %w", err)
+	}
+
+	// Add the item
+	i.LineItems = append(i.LineItems, item)
+
+	// Recalculate totals
+	if err := i.RecalculateTotalsWithLineItems(ctx); err != nil {
+		return fmt.Errorf("failed to recalculate totals after adding line item: %w", err)
+	}
+
+	// Update timestamp but NOT version (for bulk operations)
+	i.UpdatedAt = time.Now()
+
+	return nil
+}
+
+// RemoveLineItem removes a line item by ID and recalculates totals
+func (i *Invoice) RemoveLineItem(ctx context.Context, itemID string) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Find and remove the item
+	found := false
+	for idx, item := range i.LineItems {
+		if item.ID == itemID {
+			// Remove item by slicing
+			i.LineItems = append(i.LineItems[:idx], i.LineItems[idx+1:]...)
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("%w: %s", ErrLineItemNotFound, itemID)
+	}
+
+	// Recalculate totals
+	if err := i.RecalculateTotalsWithLineItems(ctx); err != nil {
+		return fmt.Errorf("failed to recalculate totals after removing line item: %w", err)
+	}
+
+	// Update timestamp and version
+	i.UpdatedAt = time.Now()
+	i.Version++
+
+	return nil
+}
+
+// RecalculateTotalsWithLineItems recalculates all financial totals based on both WorkItems and LineItems
+func (i *Invoice) RecalculateTotalsWithLineItems(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Calculate subtotal from both work items and line items
+	subtotal := 0.0
+
+	// Add work items (for backward compatibility)
+	for _, item := range i.WorkItems {
+		subtotal += item.Total
+	}
+
+	// Add line items
+	for _, item := range i.LineItems {
+		subtotal += item.Total
+	}
+
+	// Round to avoid floating point precision issues
+	i.Subtotal = math.Round(subtotal*100) / 100
+
+	// Calculate tax amount on (subtotal + crypto fee)
+	taxableAmount := i.Subtotal + i.CryptoFee
+	i.TaxAmount = math.Round(taxableAmount*i.TaxRate*100) / 100
+
+	// Calculate total (subtotal + crypto fee + tax)
+	i.Total = math.Round((taxableAmount+i.TaxAmount)*100) / 100
+
+	return nil
+}
+
+// MigrateWorkItemsToLineItems converts all WorkItems to LineItems for backward compatibility
+// This is called automatically when an invoice is loaded from storage
+func (i *Invoice) MigrateWorkItemsToLineItems(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Only migrate if we have work items and no line items
+	if len(i.LineItems) == 0 && len(i.WorkItems) > 0 {
+		for _, wi := range i.WorkItems {
+			li, err := ConvertWorkItemToLineItem(ctx, wi)
+			if err != nil {
+				return fmt.Errorf("failed to convert work item %s to line item: %w", wi.ID, err)
+			}
+			i.LineItems = append(i.LineItems, *li)
+		}
+
+		// Clear work items after migration (optional - keep for backward compat)
+		// i.WorkItems = nil
+	}
+
+	return nil
+}
+
+// HasOnlyWorkItems returns true if invoice only has WorkItems (legacy format)
+func (i *Invoice) HasOnlyWorkItems() bool {
+	return len(i.WorkItems) > 0 && len(i.LineItems) == 0
+}
+
+// HasLineItems returns true if invoice has LineItems (new format)
+func (i *Invoice) HasLineItems() bool {
+	return len(i.LineItems) > 0
+}
+
+// GetAllItems returns all items (both WorkItems and LineItems) as a unified list
+func (i *Invoice) GetAllItems() []LineItem {
+	items := make([]LineItem, 0, len(i.WorkItems)+len(i.LineItems))
+
+	// Convert and add work items
+	for _, wi := range i.WorkItems {
+		hours := wi.Hours
+		rate := wi.Rate
+		items = append(items, LineItem{
+			ID:          wi.ID,
+			Type:        LineItemTypeHourly,
+			Date:        wi.Date,
+			Description: wi.Description,
+			Hours:       &hours,
+			Rate:        &rate,
+			Total:       wi.Total,
+			CreatedAt:   wi.CreatedAt,
+		})
+	}
+
+	// Add line items
+	items = append(items, i.LineItems...)
+
+	return items
+}
+
+// TotalHours calculates total hours from all hourly line items
+func (i *Invoice) TotalHours() float64 {
+	total := 0.0
+
+	// Count hours from work items
+	for _, wi := range i.WorkItems {
+		total += wi.Hours
+	}
+
+	// Count hours from hourly line items
+	for _, li := range i.LineItems {
+		if li.Type == LineItemTypeHourly && li.Hours != nil {
+			total += *li.Hours
+		}
+	}
+
+	return total
+}
+
+// GetUSDCAddress returns the USDC address to use for this invoice.
+// If the invoice has a USDC address override, it returns that.
+// Otherwise, it returns the default USDC address from the provided configuration.
+// Returns an empty string if no address is configured.
+func (i *Invoice) GetUSDCAddress(defaultAddress string) string {
+	if i.USDCAddressOverride != nil {
+		return *i.USDCAddressOverride
+	}
+	return defaultAddress
+}
+
+// GetBSVAddress returns the BSV address to use for this invoice.
+// If the invoice has a BSV address override, it returns that.
+// Otherwise, it returns the default BSV address from the provided configuration.
+// Returns an empty string if no address is configured.
+func (i *Invoice) GetBSVAddress(defaultAddress string) string {
+	if i.BSVAddressOverride != nil {
+		return *i.BSVAddressOverride
+	}
+	return defaultAddress
+}
+
+// HasUSDCAddressOverride returns true if this invoice has a custom USDC address override
+func (i *Invoice) HasUSDCAddressOverride() bool {
+	return i.USDCAddressOverride != nil && *i.USDCAddressOverride != ""
+}
+
+// HasBSVAddressOverride returns true if this invoice has a custom BSV address override
+func (i *Invoice) HasBSVAddressOverride() bool {
+	return i.BSVAddressOverride != nil && *i.BSVAddressOverride != ""
 }

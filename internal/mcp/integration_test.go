@@ -365,7 +365,7 @@ func (s *MCPIntegrationTestSuite) TestAllToolsExecution() {
 	// Get all registered tools
 	allTools, err := s.toolRegistry.ListTools(ctx, "")
 	s.Require().NoError(err, "Failed to list all tools")
-	s.Require().Len(allTools, 21, "Expected 21 tools to be registered")
+	s.Require().Len(allTools, 22, "Expected 22 tools to be registered")
 
 	// Test each tool category
 	s.testInvoiceManagementTools(ctx)

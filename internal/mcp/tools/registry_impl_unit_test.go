@@ -18,12 +18,12 @@ func TestRegistrationMetrics(t *testing.T) {
 		uptime := 10 * time.Minute
 
 		metrics := RegistrationMetrics{
-			TotalTools:         21,
+			TotalTools:         22,
 			TotalCategories:    5,
 			InitializationTime: now,
 			Uptime:             uptime,
 			ToolsByCategory: map[CategoryType]int{
-				CategoryInvoiceManagement: 7,
+				CategoryInvoiceManagement: 8,
 				CategoryClientManagement:  5,
 				CategoryDataImport:        3,
 				CategoryDataExport:        3,
@@ -31,14 +31,14 @@ func TestRegistrationMetrics(t *testing.T) {
 			},
 		}
 
-		assert.Equal(t, 21, metrics.TotalTools, "Total tools should be 21")
+		assert.Equal(t, 22, metrics.TotalTools, "Total tools should be 22")
 		assert.Equal(t, 5, metrics.TotalCategories, "Total categories should be 5")
 		assert.Equal(t, now, metrics.InitializationTime, "Initialization time should match")
 		assert.Equal(t, uptime, metrics.Uptime, "Uptime should match")
 		assert.Len(t, metrics.ToolsByCategory, 5, "Should have 5 categories")
 
 		// Verify category counts
-		assert.Equal(t, 7, metrics.ToolsByCategory[CategoryInvoiceManagement], "Invoice management should have 7 tools")
+		assert.Equal(t, 8, metrics.ToolsByCategory[CategoryInvoiceManagement], "Invoice management should have 8 tools")
 		assert.Equal(t, 5, metrics.ToolsByCategory[CategoryClientManagement], "Client management should have 5 tools")
 		assert.Equal(t, 3, metrics.ToolsByCategory[CategoryDataImport], "Data import should have 3 tools")
 		assert.Equal(t, 3, metrics.ToolsByCategory[CategoryDataExport], "Data export should have 3 tools")
@@ -49,7 +49,7 @@ func TestRegistrationMetrics(t *testing.T) {
 		for _, count := range metrics.ToolsByCategory {
 			total += count
 		}
-		assert.Equal(t, 21, total, "Category counts should sum to total tools")
+		assert.Equal(t, 22, total, "Category counts should sum to total tools")
 	})
 
 	t.Run("EmptyMetrics", func(t *testing.T) {
@@ -64,8 +64,8 @@ func TestRegistrationMetrics(t *testing.T) {
 
 	t.Run("MetricsConsistency", func(t *testing.T) {
 		// Test that expected tool counts are consistent with actual implementation
-		expectedTotalTools := 7 + 5 + 3 + 3 + 3 // Sum of all category tools
-		assert.Equal(t, 21, expectedTotalTools, "Expected total should be 21")
+		expectedTotalTools := 8 + 5 + 3 + 3 + 3 // Sum of all category tools
+		assert.Equal(t, 22, expectedTotalTools, "Expected total should be 22")
 
 		expectedCategories := 5
 		categoryTypes := []CategoryType{
@@ -134,7 +134,7 @@ func TestCompleteToolRegistryStructure(t *testing.T) {
 			InitializationTime: initTime,
 			Uptime:             time.Since(initTime),
 			ToolsByCategory: map[CategoryType]int{
-				CategoryInvoiceManagement: 7,
+				CategoryInvoiceManagement: 8,
 				CategoryClientManagement:  5,
 				CategoryDataImport:        3,
 				CategoryDataExport:        3,
@@ -157,7 +157,7 @@ func TestRegistryValidationLogic(t *testing.T) {
 	t.Run("ExpectedToolCounts", func(t *testing.T) {
 		// Test the expected tool counts per category
 		expectedCounts := map[CategoryType]int{
-			CategoryInvoiceManagement: 7,
+			CategoryInvoiceManagement: 8,
 			CategoryClientManagement:  5,
 			CategoryDataImport:        3,
 			CategoryDataExport:        3,
@@ -170,7 +170,7 @@ func TestRegistryValidationLogic(t *testing.T) {
 			totalExpected += count
 		}
 
-		assert.Equal(t, 21, totalExpected, "Total expected tools should be 21")
+		assert.Equal(t, 22, totalExpected, "Total expected tools should be 22")
 		assert.Len(t, expectedCounts, 5, "Should have 5 categories")
 	})
 
@@ -259,12 +259,12 @@ func TestTimingAndMetrics(t *testing.T) {
 		initTime := time.Now()
 
 		metrics1 := RegistrationMetrics{
-			TotalTools:         21,
+			TotalTools:         22,
 			TotalCategories:    5,
 			InitializationTime: initTime,
 			Uptime:             time.Since(initTime),
 			ToolsByCategory: map[CategoryType]int{
-				CategoryInvoiceManagement: 7,
+				CategoryInvoiceManagement: 8,
 				CategoryClientManagement:  5,
 				CategoryDataImport:        3,
 				CategoryDataExport:        3,
@@ -275,12 +275,12 @@ func TestTimingAndMetrics(t *testing.T) {
 		time.Sleep(1 * time.Millisecond)
 
 		metrics2 := RegistrationMetrics{
-			TotalTools:         21,
+			TotalTools:         22,
 			TotalCategories:    5,
 			InitializationTime: initTime,             // Same init time
 			Uptime:             time.Since(initTime), // Updated uptime
 			ToolsByCategory: map[CategoryType]int{
-				CategoryInvoiceManagement: 7,
+				CategoryInvoiceManagement: 8,
 				CategoryClientManagement:  5,
 				CategoryDataImport:        3,
 				CategoryDataExport:        3,
@@ -308,7 +308,7 @@ func TestRegistryExpectations(t *testing.T) {
 		expectedTools := map[CategoryType][]string{
 			CategoryInvoiceManagement: {
 				"invoice_create", "invoice_list", "invoice_show", "invoice_update",
-				"invoice_delete", "invoice_send", "invoice_duplicate",
+				"invoice_delete", "invoice_send", "invoice_duplicate", "invoice_add_line_item",
 			},
 			CategoryClientManagement: {
 				"client_create", "client_list", "client_show", "client_update", "client_delete",
@@ -339,7 +339,7 @@ func TestRegistryExpectations(t *testing.T) {
 			}
 		}
 
-		assert.Equal(t, 21, totalTools, "Should have exactly 21 tools")
+		assert.Equal(t, 22, totalTools, "Should have exactly 22 tools")
 		assert.Len(t, expectedTools, 5, "Should have exactly 5 categories")
 	})
 }
@@ -500,12 +500,12 @@ func TestConcurrentAccess(t *testing.T) {
 
 				// Simulate metrics calculation
 				metrics := RegistrationMetrics{
-					TotalTools:         21,
+					TotalTools:         22,
 					TotalCategories:    5,
 					InitializationTime: initTime,
 					Uptime:             time.Since(initTime),
 					ToolsByCategory: map[CategoryType]int{
-						CategoryInvoiceManagement: 7,
+						CategoryInvoiceManagement: 8,
 						CategoryClientManagement:  5,
 						CategoryDataImport:        3,
 						CategoryDataExport:        3,
@@ -514,7 +514,7 @@ func TestConcurrentAccess(t *testing.T) {
 				}
 
 				// Verify metrics are consistent
-				assert.Equal(t, 21, metrics.TotalTools, "Tool count should be consistent")
+				assert.Equal(t, 22, metrics.TotalTools, "Tool count should be consistent")
 				assert.Equal(t, 5, metrics.TotalCategories, "Category count should be consistent")
 				assert.Greater(t, metrics.Uptime, time.Duration(0), "Uptime should be positive")
 			}()

@@ -342,9 +342,18 @@ func (p *CSVParser) normalizeHeaderName(header string) string {
 	}
 }
 
-// parseDate parses date string in various formats
+// parseDate parses date string in various formats with smart year inference.
+//
+// Supports full year formats (YYYY), 2-digit years (YY), and dates without years.
+// For dates without years, assumes current year unless that would put the date
+// more than 6 months in the future, in which case it uses the previous year.
+// For 2-digit years: 00-50 → 2000-2050, 51-99 → 1951-1999.
 func (p *CSVParser) parseDate(dateStr string) (time.Time, error) {
-	dateFormats := []string{
+	dateStr = strings.TrimSpace(dateStr)
+	now := time.Now()
+
+	// Try formats with full 4-digit years first (most reliable)
+	fullYearFormats := []string{
 		"2006-01-02",          // ISO format
 		"01/02/2006",          // US format
 		"02/01/2006",          // EU format
@@ -354,11 +363,57 @@ func (p *CSVParser) parseDate(dateStr string) (time.Time, error) {
 		"2006-01-02 15:04:05", // ISO with time
 	}
 
-	dateStr = strings.TrimSpace(dateStr)
-
-	for _, format := range dateFormats {
+	for _, format := range fullYearFormats {
 		if date, err := time.Parse(format, dateStr); err == nil {
 			return date, nil
+		}
+	}
+
+	// Try formats with 2-digit years
+	twoDigitYearFormats := []string{
+		"01/02/06", // US format with 2-digit year
+		"02/01/06", // EU format with 2-digit year
+		"1/2/06",   // US format with 2-digit year (no leading zeros)
+		"2/1/06",   // EU format with 2-digit year (no leading zeros)
+		"06-01-02", // ISO-like with 2-digit year
+	}
+
+	for _, format := range twoDigitYearFormats {
+		if parsedDate, err := time.Parse(format, dateStr); err == nil {
+			// Smart 2-digit year handling: 00-50 → 2000-2050, 51-99 → 1951-1999
+			year := parsedDate.Year()
+			if year >= 0 && year <= 50 {
+				parsedDate = parsedDate.AddDate(2000, 0, 0)
+			} else if year >= 51 && year <= 99 {
+				parsedDate = parsedDate.AddDate(1900, 0, 0)
+			}
+			return parsedDate, nil
+		}
+	}
+
+	// Try formats without years (day/month only)
+	noYearFormats := []string{
+		"01/02", // US format M/D
+		"1/2",   // US format M/D (no leading zeros)
+		"Jan 2", // Month name format
+	}
+
+	for _, format := range noYearFormats {
+		if parsedDate, err := time.Parse(format, dateStr); err == nil {
+			// Smart year inference: assume current year unless that puts us >6 months in future
+			month := parsedDate.Month()
+			day := parsedDate.Day()
+
+			// Try current year
+			candidateDate := time.Date(now.Year(), month, day, 0, 0, 0, 0, time.UTC)
+
+			// If more than 6 months in the future, use previous year
+			sixMonthsFromNow := now.AddDate(0, 6, 0)
+			if candidateDate.After(sixMonthsFromNow) {
+				candidateDate = candidateDate.AddDate(-1, 0, 0)
+			}
+
+			return candidateDate, nil
 		}
 	}
 

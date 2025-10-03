@@ -479,6 +479,8 @@ type CreateInvoiceRequest struct {
 	DueDate     time.Time  `json:"due_date"`
 	Description string     `json:"description,omitempty"`
 	WorkItems   []WorkItem `json:"work_items,omitempty"`
+	USDCAddress *string    `json:"usdc_address,omitempty"` // Optional USDC address override for this invoice
+	BSVAddress  *string    `json:"bsv_address,omitempty"`  // Optional BSV address override for this invoice
 }
 
 // Validate validates the create invoice request
@@ -508,6 +510,8 @@ type UpdateInvoiceRequest struct {
 	DueDate     *time.Time `json:"due_date,omitempty"`
 	Status      *string    `json:"status,omitempty"`
 	Description *string    `json:"description,omitempty"`
+	USDCAddress *string    `json:"usdc_address,omitempty"` // Optional USDC address override for this invoice
+	BSVAddress  *string    `json:"bsv_address,omitempty"`  // Optional BSV address override for this invoice
 }
 
 // Validate validates the update invoice request

@@ -105,6 +105,14 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, req models.CreateInv
 		invoice.Description = req.Description
 	}
 
+	// Set crypto address overrides if provided
+	if req.USDCAddress != nil {
+		invoice.USDCAddressOverride = req.USDCAddress
+	}
+	if req.BSVAddress != nil {
+		invoice.BSVAddressOverride = req.BSVAddress
+	}
+
 	// Add work items if provided
 	for _, workItemReq := range req.WorkItems {
 		workItemID, err := s.idGenerator.GenerateWorkItemID(ctx)
@@ -230,6 +238,14 @@ func (s *InvoiceService) UpdateInvoice(ctx context.Context, req models.UpdateInv
 		invoice.Description = *req.Description
 	}
 
+	// Update crypto address overrides if provided
+	if req.USDCAddress != nil {
+		invoice.USDCAddressOverride = req.USDCAddress
+	}
+	if req.BSVAddress != nil {
+		invoice.BSVAddressOverride = req.BSVAddress
+	}
+
 	// Update invoice in storage
 	if err := s.invoiceStorage.UpdateInvoice(ctx, invoice); err != nil {
 		return nil, fmt.Errorf("failed to update invoice in storage: %w", err)
@@ -334,6 +350,53 @@ func (s *InvoiceService) AddWorkItemToInvoice(ctx context.Context, invoiceID mod
 	}
 
 	s.logger.Info("work item added successfully", "invoice_id", invoiceID, "work_item_id", workItemData.ID)
+	return invoice, nil
+}
+
+// AddLineItemToInvoice adds a line item to an existing invoice
+func (s *InvoiceService) AddLineItemToInvoice(ctx context.Context, invoiceID models.InvoiceID, lineItemData models.LineItem) (*models.Invoice, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	s.logger.Info("adding line item to invoice", "invoice_id", invoiceID, "type", lineItemData.Type)
+
+	// Get existing invoice
+	invoice, err := s.invoiceStorage.GetInvoice(ctx, invoiceID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve invoice: %w", err)
+	}
+
+	// Business rule: can only add line items to draft invoices
+	if invoice.Status != models.StatusDraft {
+		return nil, fmt.Errorf("%w, current status: %s", models.ErrCannotAddWorkItemToNonDraft, invoice.Status)
+	}
+
+	// Generate line item ID if not provided
+	if lineItemData.ID == "" {
+		lineItemID, err := s.idGenerator.GenerateWorkItemID(ctx) // Reuse work item ID generator
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate line item ID: %w", err)
+		}
+		lineItemData.ID = lineItemID
+	}
+
+	// Set creation time
+	lineItemData.CreatedAt = time.Now()
+
+	// Add line item to invoice
+	if err := invoice.AddLineItem(ctx, lineItemData); err != nil {
+		return nil, fmt.Errorf("failed to add line item: %w", err)
+	}
+
+	// Update invoice in storage
+	if err := s.invoiceStorage.UpdateInvoice(ctx, invoice); err != nil {
+		return nil, fmt.Errorf("failed to update invoice with new line item: %w", err)
+	}
+
+	s.logger.Info("line item added successfully", "invoice_id", invoiceID, "line_item_id", lineItemData.ID, "type", lineItemData.Type)
 	return invoice, nil
 }
 

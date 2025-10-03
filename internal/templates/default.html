@@ -373,7 +373,11 @@
                     <div class="invoice-dates">
                         <div><strong>Date:</strong> {{formatDate .Date "January 2, 2006"}}</div>
                         <div><strong>Due Date:</strong> {{formatDate .DueDate "January 2, 2006"}}</div>
-                        {{if gt (len .WorkItems) 0}}
+                        {{if gt (len .LineItems) 0}}
+                        <div class="small text-muted" style="margin-top: 10px;">
+                            {{len .LineItems}} line item{{if ne (len .LineItems) 1}}s{{end}}{{if gt .TotalHours 0.0}} • {{formatFloat .TotalHours 2}} hours{{end}}
+                        </div>
+                        {{else if gt (len .WorkItems) 0}}
                         <div class="small text-muted" style="margin-top: 10px;">
                             {{len .WorkItems}} work item{{if ne (len .WorkItems) 1}}s{{end}} • {{formatFloat .TotalHours 2}} hours
                         </div>
@@ -399,7 +403,7 @@
                 </div>
                 <div class="invoice-details">
                     <h3 class="section-title">Invoice Details</h3>
-                    {{if or .Description .Business.PaymentTerms (gt (len .WorkItems) 0)}}
+                    {{if or .Description .Business.PaymentTerms (gt (len .LineItems) 0) (gt (len .WorkItems) 0)}}
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
                         {{if .Description}}
                         <strong>Description:</strong><br>
@@ -409,8 +413,10 @@
 						{{if .Business.PaymentTerms}}
 						<div><strong>Terms:</strong> {{.Business.PaymentTerms}}</div>
 						{{end}}
-						{{if gt (len .WorkItems) 0}}
-						<div><strong>Work Period:</strong> {{formatDate (minDate .WorkItems) "1/2/06"}} to {{formatDate (maxDate .WorkItems) "1/2/06"}}</div>
+						{{if gt (len .LineItems) 0}}
+						<div><strong>Work Period:</strong> {{formatDate (minDate .LineItems) "1/2/2006"}} to {{formatDate (maxDate .LineItems) "1/2/2006"}}</div>
+						{{else if gt (len .WorkItems) 0}}
+						<div><strong>Work Period:</strong> {{formatDate (minDate .WorkItems) "1/2/2006"}} to {{formatDate (maxDate .WorkItems) "1/2/2006"}}</div>
 						{{end}}
                     </div>
                     {{end}}
@@ -418,10 +424,48 @@
                 </div>
             </section>
 
-            <!-- Work Items -->
+            <!-- Work Items / Line Items -->
             <section class="work-items-section">
-                <h3 class="section-title">Work Items</h3>
-                {{if gt (len .WorkItems) 0}}
+                <h3 class="section-title">{{if gt (len .LineItems) 0}}Line Items{{else}}Work Items{{end}}</h3>
+
+                {{/* Display new LineItems if present */}}
+                {{if gt (len .LineItems) 0}}
+                <table class="work-items-table">
+                    <thead>
+                        <tr>
+                            <th class="date-col">Date</th>
+                            <th class="description-col">Description</th>
+                            <th class="hours-col">Details</th>
+                            <th class="amount-col">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{$config := .Config}}{{range .LineItems}}
+                        <tr>
+                            <td class="date-col">{{formatDate .Date "Jan 2"}}</td>
+                            <td class="description-col">
+                                {{.Description}}
+                                {{if eq .Type "hourly"}}<br><small class="text-muted">Hourly</small>{{end}}
+                                {{if eq .Type "fixed"}}<br><small class="text-muted">Fixed</small>{{end}}
+                                {{if eq .Type "quantity"}}<br><small class="text-muted">Quantity</small>{{end}}
+                            </td>
+                            <td class="hours-col">
+                                {{if eq .Type "hourly"}}
+                                    {{if and .Hours .Rate}}{{formatFloat .Hours 2}}h @ {{formatCurrency .Rate $config.Currency}}/h{{end}}
+                                {{else if eq .Type "fixed"}}
+                                    —
+                                {{else if eq .Type "quantity"}}
+                                    {{if and .Quantity .UnitPrice}}{{formatFloat .Quantity 2}} × {{formatCurrency .UnitPrice $config.Currency}}{{end}}
+                                {{end}}
+                            </td>
+                            <td class="amount-col amount-cell">{{formatCurrency .Total $config.Currency}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+
+                {{/* Display old WorkItems for backward compatibility */}}
+                {{else if gt (len .WorkItems) 0}}
                 <table class="work-items-table">
                     <thead>
                         <tr>
@@ -444,15 +488,16 @@
                         {{end}}
                     </tbody>
                 </table>
+
                 {{else}}
                 <div class="empty-work-items">
-                    No work items have been added to this invoice yet.
+                    No items have been added to this invoice yet.
                 </div>
                 {{end}}
             </section>
 
             <!-- Totals -->
-            {{if gt (len .WorkItems) 0}}
+            {{if or (gt (len .WorkItems) 0) (gt (len .LineItems) 0)}}
             <section class="totals-section">
                 <table class="totals-table">
                     <tr>
@@ -501,16 +546,22 @@
                     {{if .Business.BankDetails.SWIFT}}SWIFT: {{.Business.BankDetails.SWIFT}}<br>{{end}}
                     {{end}}
 
-                    {{if and .Business.CryptoPayments.USDCEnabled .Business.CryptoPayments.USDCAddress}}
+                    {{if .Business.CryptoPayments.USDCEnabled}}
+                    {{$usdcAddr := .Invoice.GetUSDCAddress .Business.CryptoPayments.USDCAddress}}
+                    {{if $usdcAddr}}
                     <br><br>
                     <strong>USDC Cryptocurrency:</strong><br>
-                    {{.Business.CryptoPayments.USDCAddress}}
+                    {{$usdcAddr}}
+                    {{end}}
                     {{end}}
 
-                    {{if and .Business.CryptoPayments.BSVEnabled .Business.CryptoPayments.BSVAddress}}
+                    {{if .Business.CryptoPayments.BSVEnabled}}
+                    {{$bsvAddr := .Invoice.GetBSVAddress .Business.CryptoPayments.BSVAddress}}
+                    {{if $bsvAddr}}
                     <br><br>
                     <strong>BSV (Bitcoin SV) Cryptocurrency:</strong><br>
-                    {{.Business.CryptoPayments.BSVAddress}}
+                    {{$bsvAddr}}
+                    {{end}}
                     {{end}}
 
                     {{if .Business.BankDetails.PaymentInstructions}}

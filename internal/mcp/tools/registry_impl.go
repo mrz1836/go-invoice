@@ -43,7 +43,7 @@ var (
 // - Performance-optimized for high-frequency tool access
 //
 // Categories included:
-// - CategoryInvoiceManagement: 7 invoice management tools
+// - CategoryInvoiceManagement: 8 invoice management tools
 // - CategoryClientManagement: 5 client management tools
 // - CategoryDataImport: 3 data import tools
 // - CategoryDataExport: 3 document generation tools
@@ -103,7 +103,7 @@ func NewCompleteToolRegistry(ctx context.Context, validator InputValidator, logg
 	}
 
 	logger.Info("initializing complete tool registry",
-		"expectedTools", 21,
+		"expectedTools", 22,
 		"expectedCategories", 5)
 
 	// Create base registry
@@ -147,7 +147,7 @@ func NewCompleteToolRegistry(ctx context.Context, validator InputValidator, logg
 // - error: Registration error if any category fails to register
 //
 // Side Effects:
-// - Registers all tools in CategoryInvoiceManagement (7 tools)
+// - Registers all tools in CategoryInvoiceManagement (8 tools)
 // - Registers all tools in CategoryClientManagement (5 tools)
 // - Registers all tools in CategoryDataImport (3 tools)
 // - Registers all tools in CategoryDataExport (3 tools)
@@ -168,11 +168,11 @@ func (r *CompleteToolRegistry) registerAllTools(ctx context.Context) error {
 
 	r.logger.Debug("starting tool registration process")
 
-	// Register invoice management tools (7 tools)
+	// Register invoice management tools (8 tools)
 	if err := RegisterInvoiceManagementTools(ctx, r.DefaultToolRegistry); err != nil {
 		return fmt.Errorf("failed to register invoice management tools: %w", err)
 	}
-	r.logger.Debug("invoice management tools registered", "count", 7)
+	r.logger.Debug("invoice management tools registered", "count", 8)
 
 	// Register client management tools (5 tools)
 	if err := RegisterClientManagementTools(ctx, r.DefaultToolRegistry); err != nil {
@@ -218,7 +218,7 @@ func (r *CompleteToolRegistry) registerAllTools(ctx context.Context) error {
 // - Logs validation results for monitoring
 //
 // Notes:
-// - Validates tool count matches expected 21 tools
+// - Validates tool count matches expected 22 tools
 // - Checks all 5 categories are represented
 // - Verifies tool definitions are complete and valid
 // - Provides detailed error information for troubleshooting
@@ -236,8 +236,8 @@ func (r *CompleteToolRegistry) validateRegistration(ctx context.Context) error {
 	}
 
 	r.toolCount = len(allTools)
-	if r.toolCount != 21 {
-		return fmt.Errorf("%w: expected 21, got %d", ErrInvalidToolCount, r.toolCount)
+	if r.toolCount != 22 {
+		return fmt.Errorf("%w: expected 22, got %d", ErrInvalidToolCount, r.toolCount)
 	}
 
 	// Get categories for validation
@@ -285,7 +285,7 @@ func (r *CompleteToolRegistry) validateRegistration(ctx context.Context) error {
 
 	// Validate expected tool counts per category
 	expectedCounts := map[CategoryType]int{
-		CategoryInvoiceManagement: 7,
+		CategoryInvoiceManagement: 8,
 		CategoryClientManagement:  5,
 		CategoryDataImport:        3,
 		CategoryDataExport:        3,
@@ -339,7 +339,7 @@ func (r *CompleteToolRegistry) GetRegistrationMetrics(ctx context.Context) (*Reg
 		InitializationTime: r.initializationTime,
 		Uptime:             time.Since(r.initializationTime),
 		ToolsByCategory: map[CategoryType]int{
-			CategoryInvoiceManagement: 7,
+			CategoryInvoiceManagement: 8,
 			CategoryClientManagement:  5,
 			CategoryDataImport:        3,
 			CategoryDataExport:        3,

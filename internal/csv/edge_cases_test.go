@@ -144,7 +144,7 @@ func (suite *CSVEdgeCasesTestSuite) TestDateFormatEdgeCases() {
 		{"JustYear", "2024", false},
 		{"JustMonth", "01", false},
 		{"UnsupportedDotFormat", "15.01.2024", false}, // Parser doesn't support dots
-		{"ShortYear", "24-01-15", false},              // Not in supported formats
+		{"ShortYear", "24-01-15", true},               // 2-digit year format now supported (YY-MM-DD)
 		{"Mixed", "24/Jan/2024", false},
 		{"SimpleTime", "2024-01-15 10:30", false},
 		{"ISOWithTime", "2024-01-15 15:04:05", true}, // This format IS supported

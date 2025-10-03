@@ -29,6 +29,26 @@ func TestInvoiceTestSuite(t *testing.T) {
 	suite.Run(t, new(InvoiceTestSuite))
 }
 
+// createTestInvoice is a helper function to create a basic test invoice
+func createTestInvoice(t *testing.T, _ context.Context) *Invoice {
+	t.Helper()
+
+	return &Invoice{
+		ID:        "INV-TEST-001",
+		Number:    "TEST-001",
+		Date:      time.Now(),
+		DueDate:   time.Now().AddDate(0, 0, 30),
+		Client:    Client{ID: "CLIENT-001", Name: "Test Client"},
+		Status:    StatusDraft,
+		TaxRate:   0.0,
+		WorkItems: []WorkItem{},
+		LineItems: []LineItem{},
+		Version:   1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+}
+
 func (suite *InvoiceTestSuite) TestNewInvoice() {
 	t := suite.T()
 
@@ -1010,4 +1030,558 @@ func (suite *InvoiceTestSuite) TestRecalculateTotalsWithCryptoFee() {
 			assert.InDelta(t, tt.expectedTotal, invoice.Total, 1e-9, "total mismatch")
 		})
 	}
+}
+
+// TestInvoiceAddLineItem tests adding line items to invoices
+func (suite *InvoiceTestSuite) TestInvoiceAddLineItem() {
+	t := suite.T()
+	ctx := suite.ctx
+
+	t.Run("AddHourlyLineItem", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		hours := 8.0
+		rate := 125.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeHourly,
+			Date:        time.Now(),
+			Description: "Development work",
+			Hours:       &hours,
+			Rate:        &rate,
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+
+		err := invoice.AddLineItem(ctx, lineItem)
+		require.NoError(t, err)
+		assert.Len(t, invoice.LineItems, 1)
+		assert.InDelta(t, 1000.0, invoice.Subtotal, 1e-9)
+	})
+
+	t.Run("AddFixedLineItem", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		amount := 2000.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeFixed,
+			Date:        time.Now(),
+			Description: "Monthly Retainer",
+			Amount:      &amount,
+			Total:       2000.0,
+			CreatedAt:   time.Now(),
+		}
+
+		err := invoice.AddLineItem(ctx, lineItem)
+		require.NoError(t, err)
+		assert.Len(t, invoice.LineItems, 1)
+		assert.InDelta(t, 2000.0, invoice.Subtotal, 1e-9)
+	})
+
+	t.Run("AddQuantityLineItem", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		quantity := 3.0
+		unitPrice := 50.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeQuantity,
+			Date:        time.Now(),
+			Description: "SSL Certificates",
+			Quantity:    &quantity,
+			UnitPrice:   &unitPrice,
+			Total:       150.0,
+			CreatedAt:   time.Now(),
+		}
+
+		err := invoice.AddLineItem(ctx, lineItem)
+		require.NoError(t, err)
+		assert.Len(t, invoice.LineItems, 1)
+		assert.InDelta(t, 150.0, invoice.Subtotal, 1e-9)
+	})
+
+	t.Run("AddMultipleLineItems", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		// Add hourly
+		hours := 8.0
+		rate := 125.0
+		lineItem1 := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeHourly,
+			Date:        time.Now(),
+			Description: "Development",
+			Hours:       &hours,
+			Rate:        &rate,
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		err := invoice.AddLineItem(ctx, lineItem1)
+		require.NoError(t, err)
+
+		// Add fixed
+		amount := 500.0
+		lineItem2 := LineItem{
+			ID:          "line-2",
+			Type:        LineItemTypeFixed,
+			Date:        time.Now(),
+			Description: "Setup Fee",
+			Amount:      &amount,
+			Total:       500.0,
+			CreatedAt:   time.Now(),
+		}
+		err = invoice.AddLineItem(ctx, lineItem2)
+		require.NoError(t, err)
+
+		assert.Len(t, invoice.LineItems, 2)
+		assert.InDelta(t, 1500.0, invoice.Subtotal, 1e-9)
+	})
+
+	t.Run("AddInvalidLineItem", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		// Missing required fields
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeHourly,
+			Date:        time.Now(),
+			Description: "Invalid",
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+
+		err := invoice.AddLineItem(ctx, lineItem)
+		require.Error(t, err)
+	})
+}
+
+// TestInvoiceRemoveLineItem tests removing line items from invoices
+func (suite *InvoiceTestSuite) TestInvoiceRemoveLineItem() {
+	t := suite.T()
+	ctx := suite.ctx
+
+	t.Run("RemoveExistingLineItem", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		// Add line item
+		hours := 8.0
+		rate := 125.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeHourly,
+			Date:        time.Now(),
+			Description: "Development",
+			Hours:       &hours,
+			Rate:        &rate,
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		err := invoice.AddLineItem(ctx, lineItem)
+		require.NoError(t, err)
+
+		// Remove it
+		err = invoice.RemoveLineItem(ctx, "line-1")
+		require.NoError(t, err)
+		assert.Empty(t, invoice.LineItems)
+		assert.InDelta(t, 0.0, invoice.Subtotal, 1e-9)
+	})
+
+	t.Run("RemoveNonExistentLineItem", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		err := invoice.RemoveLineItem(ctx, "non-existent")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrLineItemNotFound)
+	})
+}
+
+// TestInvoiceMigrateWorkItemsToLineItems tests migration from WorkItems to LineItems
+func (suite *InvoiceTestSuite) TestInvoiceMigrateWorkItemsToLineItems() {
+	t := suite.T()
+	ctx := suite.ctx
+
+	t.Run("MigrateWorkItemsSuccessfully", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		// Add work items (old format)
+		workItem := WorkItem{
+			ID:          "work-1",
+			Date:        time.Now(),
+			Hours:       8.0,
+			Rate:        125.0,
+			Description: "Development",
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.WorkItems = append(invoice.WorkItems, workItem)
+
+		// Migrate
+		err := invoice.MigrateWorkItemsToLineItems(ctx)
+		require.NoError(t, err)
+
+		assert.Len(t, invoice.LineItems, 1)
+		assert.Equal(t, workItem.ID, invoice.LineItems[0].ID)
+		assert.Equal(t, LineItemTypeHourly, invoice.LineItems[0].Type)
+		assert.InDelta(t, workItem.Total, invoice.LineItems[0].Total, 1e-9)
+	})
+
+	t.Run("NoMigrationIfLineItemsExist", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		// Add work item
+		workItem := WorkItem{
+			ID:          "work-1",
+			Date:        time.Now(),
+			Hours:       8.0,
+			Rate:        125.0,
+			Description: "Development",
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.WorkItems = append(invoice.WorkItems, workItem)
+
+		// Add line item
+		hours := 4.0
+		rate := 150.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeHourly,
+			Date:        time.Now(),
+			Description: "Other work",
+			Hours:       &hours,
+			Rate:        &rate,
+			Total:       600.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem)
+
+		initialLineItemCount := len(invoice.LineItems)
+
+		// Migrate - should not add anything since LineItems already exist
+		err := invoice.MigrateWorkItemsToLineItems(ctx)
+		require.NoError(t, err)
+
+		assert.Len(t, invoice.LineItems, initialLineItemCount)
+	})
+}
+
+// TestInvoiceRecalculateTotalsWithLineItems tests total calculation with line items
+func (suite *InvoiceTestSuite) TestInvoiceRecalculateTotalsWithLineItems() {
+	t := suite.T()
+	ctx := suite.ctx
+
+	t.Run("CalculateWithOnlyLineItems", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		// Add hourly line item
+		hours := 8.0
+		rate := 125.0
+		lineItem1 := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeHourly,
+			Date:        time.Now(),
+			Description: "Development",
+			Hours:       &hours,
+			Rate:        &rate,
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem1)
+
+		// Add fixed line item
+		amount := 500.0
+		lineItem2 := LineItem{
+			ID:          "line-2",
+			Type:        LineItemTypeFixed,
+			Date:        time.Now(),
+			Description: "Setup",
+			Amount:      &amount,
+			Total:       500.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem2)
+
+		err := invoice.RecalculateTotalsWithLineItems(ctx)
+		require.NoError(t, err)
+
+		assert.InDelta(t, 1500.0, invoice.Subtotal, 1e-9)
+		assert.InDelta(t, 1500.0, invoice.Total, 1e-9)
+	})
+
+	t.Run("CalculateWithBothWorkItemsAndLineItems", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		// Add work item
+		workItem := WorkItem{
+			ID:          "work-1",
+			Date:        time.Now(),
+			Hours:       4.0,
+			Rate:        100.0,
+			Description: "Old work",
+			Total:       400.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.WorkItems = append(invoice.WorkItems, workItem)
+
+		// Add line item
+		hours := 8.0
+		rate := 125.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeHourly,
+			Date:        time.Now(),
+			Description: "New work",
+			Hours:       &hours,
+			Rate:        &rate,
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem)
+
+		err := invoice.RecalculateTotalsWithLineItems(ctx)
+		require.NoError(t, err)
+
+		// Should include both work items and line items
+		assert.InDelta(t, 1400.0, invoice.Subtotal, 1e-9)
+		assert.InDelta(t, 1400.0, invoice.Total, 1e-9)
+	})
+}
+
+// TestInvoiceHelperMethods tests helper methods for line items
+func (suite *InvoiceTestSuite) TestInvoiceHelperMethods() {
+	t := suite.T()
+	ctx := suite.ctx
+
+	t.Run("HasOnlyWorkItems", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+		workItem := WorkItem{
+			ID:          "work-1",
+			Date:        time.Now(),
+			Hours:       8.0,
+			Rate:        125.0,
+			Description: "Development",
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.WorkItems = append(invoice.WorkItems, workItem)
+
+		assert.True(t, invoice.HasOnlyWorkItems())
+		assert.False(t, invoice.HasLineItems())
+	})
+
+	t.Run("HasLineItems", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+		hours := 8.0
+		rate := 125.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeHourly,
+			Date:        time.Now(),
+			Description: "Development",
+			Hours:       &hours,
+			Rate:        &rate,
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem)
+
+		assert.False(t, invoice.HasOnlyWorkItems())
+		assert.True(t, invoice.HasLineItems())
+	})
+
+	t.Run("GetAllItems", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		// Add work item
+		workItem := WorkItem{
+			ID:          "work-1",
+			Date:        time.Now(),
+			Hours:       4.0,
+			Rate:        100.0,
+			Description: "Old work",
+			Total:       400.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.WorkItems = append(invoice.WorkItems, workItem)
+
+		// Add line items
+		hours := 8.0
+		rate := 125.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeHourly,
+			Date:        time.Now(),
+			Description: "New work",
+			Hours:       &hours,
+			Rate:        &rate,
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem)
+
+		allItems := invoice.GetAllItems()
+		assert.Len(t, allItems, 2)
+	})
+
+	t.Run("TotalHours", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		// Add work item
+		workItem := WorkItem{
+			ID:          "work-1",
+			Date:        time.Now(),
+			Hours:       4.0,
+			Rate:        100.0,
+			Description: "Old work",
+			Total:       400.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.WorkItems = append(invoice.WorkItems, workItem)
+
+		// Add hourly line item
+		hours := 8.0
+		rate := 125.0
+		lineItem1 := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeHourly,
+			Date:        time.Now(),
+			Description: "New work",
+			Hours:       &hours,
+			Rate:        &rate,
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem1)
+
+		// Add fixed line item (should not count towards hours)
+		amount := 500.0
+		lineItem2 := LineItem{
+			ID:          "line-2",
+			Type:        LineItemTypeFixed,
+			Date:        time.Now(),
+			Description: "Setup",
+			Amount:      &amount,
+			Total:       500.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem2)
+
+		totalHours := invoice.TotalHours()
+		assert.InDelta(t, 12.0, totalHours, 1e-9) // 4 from work item + 8 from hourly line item
+	})
+}
+
+// TestInvoiceCryptoAddressOverride tests the crypto address override functionality
+func (suite *InvoiceTestSuite) TestInvoiceCryptoAddressOverride() {
+	defaultUSDCAddress := "0xDefaultUSDCAddress123456789"
+	defaultBSVAddress := "DefaultBSVAddress123456789"
+	customUSDCAddress := "0xCustomUSDCAddress987654321"
+	customBSVAddress := "CustomBSVAddress987654321"
+
+	suite.Run("NoOverride_UsesDefault", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// No override set
+		assert.Nil(t, invoice.USDCAddressOverride)
+		assert.Nil(t, invoice.BSVAddressOverride)
+
+		// Should return default addresses
+		assert.Equal(t, defaultUSDCAddress, invoice.GetUSDCAddress(defaultUSDCAddress))
+		assert.Equal(t, defaultBSVAddress, invoice.GetBSVAddress(defaultBSVAddress))
+
+		// Should not have overrides
+		assert.False(t, invoice.HasUSDCAddressOverride())
+		assert.False(t, invoice.HasBSVAddressOverride())
+	})
+
+	suite.Run("WithOverride_UsesCustomAddress", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// Set overrides
+		invoice.USDCAddressOverride = &customUSDCAddress
+		invoice.BSVAddressOverride = &customBSVAddress
+
+		// Should return custom addresses
+		assert.Equal(t, customUSDCAddress, invoice.GetUSDCAddress(defaultUSDCAddress))
+		assert.Equal(t, customBSVAddress, invoice.GetBSVAddress(defaultBSVAddress))
+
+		// Should have overrides
+		assert.True(t, invoice.HasUSDCAddressOverride())
+		assert.True(t, invoice.HasBSVAddressOverride())
+	})
+
+	suite.Run("EmptyStringOverride_UsesEmptyNotDefault", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// Set empty string overrides (different from nil)
+		emptyString := ""
+		invoice.USDCAddressOverride = &emptyString
+		invoice.BSVAddressOverride = &emptyString
+
+		// Should return empty strings, not defaults
+		assert.Empty(t, invoice.GetUSDCAddress(defaultUSDCAddress))
+		assert.Empty(t, invoice.GetBSVAddress(defaultBSVAddress))
+
+		// Should not have overrides (empty string is not considered an override)
+		assert.False(t, invoice.HasUSDCAddressOverride())
+		assert.False(t, invoice.HasBSVAddressOverride())
+	})
+
+	suite.Run("MixedOverride_OnlyUSDC", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// Set only USDC override
+		invoice.USDCAddressOverride = &customUSDCAddress
+
+		// USDC should use custom, BSV should use default
+		assert.Equal(t, customUSDCAddress, invoice.GetUSDCAddress(defaultUSDCAddress))
+		assert.Equal(t, defaultBSVAddress, invoice.GetBSVAddress(defaultBSVAddress))
+
+		assert.True(t, invoice.HasUSDCAddressOverride())
+		assert.False(t, invoice.HasBSVAddressOverride())
+	})
+
+	suite.Run("MixedOverride_OnlyBSV", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// Set only BSV override
+		invoice.BSVAddressOverride = &customBSVAddress
+
+		// USDC should use default, BSV should use custom
+		assert.Equal(t, defaultUSDCAddress, invoice.GetUSDCAddress(defaultUSDCAddress))
+		assert.Equal(t, customBSVAddress, invoice.GetBSVAddress(defaultBSVAddress))
+
+		assert.False(t, invoice.HasUSDCAddressOverride())
+		assert.True(t, invoice.HasBSVAddressOverride())
+	})
+
+	suite.Run("EmptyDefaultWithOverride", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// Set custom override
+		invoice.USDCAddressOverride = &customUSDCAddress
+
+		// Should use custom even when default is empty
+		assert.Equal(t, customUSDCAddress, invoice.GetUSDCAddress(""))
+		assert.True(t, invoice.HasUSDCAddressOverride())
+	})
+
+	suite.Run("EmptyDefaultNoOverride", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// No override set
+		assert.Nil(t, invoice.USDCAddressOverride)
+
+		// Should return empty default
+		assert.Empty(t, invoice.GetUSDCAddress(""))
+		assert.False(t, invoice.HasUSDCAddressOverride())
+	})
 }

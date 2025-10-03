@@ -22,8 +22,8 @@ func (suite *InvoiceToolsTestSuite) SetupTest() {
 func (suite *InvoiceToolsTestSuite) TestCreateInvoiceManagementTools() {
 	tools := CreateInvoiceManagementTools()
 
-	// Verify we get all 7 expected tools
-	suite.Len(tools, 7, "Expected 7 invoice management tools")
+	// Verify we get all 8 expected tools
+	suite.Len(tools, 8, "Expected 8 invoice management tools")
 
 	// Verify tool names are correct
 	expectedNames := []string{
@@ -33,6 +33,7 @@ func (suite *InvoiceToolsTestSuite) TestCreateInvoiceManagementTools() {
 		"invoice_update",
 		"invoice_delete",
 		"invoice_add_item",
+		"invoice_add_line_item",
 		"invoice_remove_item",
 	}
 
@@ -126,7 +127,7 @@ func (suite *InvoiceToolsTestSuite) TestRegisterInvoiceManagementTools() {
 	// Verify tools are in correct category
 	categoryTools, err := registry.ListTools(ctx, CategoryInvoiceManagement)
 	suite.Require().NoError(err, "Should be able to list tools by category")
-	suite.Len(categoryTools, 7, "Should have 7 tools in invoice management category")
+	suite.Len(categoryTools, 8, "Should have 8 tools in invoice management category")
 }
 
 // TestRegisterInvoiceManagementToolsContextCancellation tests context cancellation
