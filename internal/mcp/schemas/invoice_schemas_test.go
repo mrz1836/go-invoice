@@ -207,6 +207,7 @@ func TestGetAllInvoiceSchemas(t *testing.T) {
 		"invoice_update",
 		"invoice_delete",
 		"invoice_add_item",
+		"invoice_add_line_item",
 		"invoice_remove_item",
 	}
 

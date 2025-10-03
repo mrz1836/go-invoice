@@ -306,7 +306,7 @@ func (s *CategoriesTestSuite) TestCategoryMetadata() {
 	s.Run("CategoryToolCount", func() {
 		// Test expected tool distribution across categories
 		expectedToolCounts := map[CategoryType]int{
-			CategoryInvoiceManagement: 7, // Based on invoice_tools.go
+			CategoryInvoiceManagement: 8, // Based on invoice_tools.go
 			CategoryClientManagement:  4, // Expected client management tools
 			CategoryDataImport:        3, // Expected import tools
 			CategoryDataExport:        2, // Expected export/generation tools

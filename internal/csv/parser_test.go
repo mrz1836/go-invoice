@@ -634,3 +634,230 @@ func TestParseRow(t *testing.T) {
 		})
 	}
 }
+
+// TestParseDateFormats tests comprehensive date parsing with various formats
+func TestParseDateFormats(t *testing.T) {
+	logger := &MockLogger{}
+	validator := &MockValidator{}
+	idGenerator := &MockIDGenerator{}
+	parser := NewCSVParser(validator, logger, idGenerator)
+
+	now := time.Now()
+	currentYear := now.Year()
+
+	tests := []struct {
+		name         string
+		dateStr      string
+		wantErr      bool
+		checkYear    bool
+		expectedYear int
+		description  string
+	}{
+		// Full 4-digit year formats (most reliable)
+		{
+			name:         "ISO format YYYY-MM-DD",
+			dateStr:      "2025-09-08",
+			wantErr:      false,
+			checkYear:    true,
+			expectedYear: 2025,
+			description:  "Standard ISO 8601 format",
+		},
+		{
+			name:         "US format MM/DD/YYYY",
+			dateStr:      "09/08/2025",
+			wantErr:      false,
+			checkYear:    true,
+			expectedYear: 2025,
+			description:  "US date format with full year",
+		},
+		{
+			name:         "EU format DD/MM/YYYY",
+			dateStr:      "08/09/2025",
+			wantErr:      false,
+			checkYear:    true,
+			expectedYear: 2025,
+			description:  "European date format with full year",
+		},
+
+		// 2-digit year formats (with smart inference)
+		{
+			name:         "2-digit year 24 → 2024",
+			dateStr:      "9/8/24",
+			wantErr:      false,
+			checkYear:    true,
+			expectedYear: 2024,
+			description:  "2-digit year 00-50 maps to 2000-2050",
+		},
+		{
+			name:         "2-digit year 25 → 2025",
+			dateStr:      "9/8/25",
+			wantErr:      false,
+			checkYear:    true,
+			expectedYear: 2025,
+			description:  "2-digit year 25 maps to 2025",
+		},
+		{
+			name:         "2-digit year 99 → 1999",
+			dateStr:      "9/8/99",
+			wantErr:      false,
+			checkYear:    true,
+			expectedYear: 1999,
+			description:  "2-digit year 51-99 maps to 1951-1999",
+		},
+		{
+			name:         "2-digit year with leading zeros",
+			dateStr:      "01/02/06",
+			wantErr:      false,
+			checkYear:    true,
+			expectedYear: 2006,
+			description:  "Padded format with 2-digit year",
+		},
+
+		// No-year formats (smart current/previous year inference)
+		{
+			name:         "No year - month/day only",
+			dateStr:      "9/8",
+			wantErr:      false,
+			checkYear:    true,
+			expectedYear: currentYear,
+			description:  "Date without year uses current year",
+		},
+		{
+			name:         "No year - with leading zeros",
+			dateStr:      "01/15",
+			wantErr:      false,
+			checkYear:    true,
+			expectedYear: currentYear,
+			description:  "Padded date without year",
+		},
+		{
+			name:         "Month name without year",
+			dateStr:      "Sep 8",
+			wantErr:      false,
+			checkYear:    true,
+			expectedYear: currentYear,
+			description:  "Month name format without year",
+		},
+
+		// Edge cases and invalid formats
+		{
+			name:        "Invalid date format",
+			dateStr:     "not-a-date",
+			wantErr:     true,
+			description: "Completely invalid date string",
+		},
+		{
+			name:        "Empty string",
+			dateStr:     "",
+			wantErr:     true,
+			description: "Empty date string should error",
+		},
+		{
+			name:        "Whitespace only",
+			dateStr:     "   ",
+			wantErr:     true,
+			description: "Whitespace-only string should error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := parser.parseDate(tt.dateStr)
+
+			if tt.wantErr {
+				require.Error(t, err, tt.description)
+				assert.True(t, result.IsZero(), "Error case should return zero time")
+			} else {
+				require.NoError(t, err, tt.description)
+				assert.False(t, result.IsZero(), "Valid date should not be zero time")
+
+				if tt.checkYear {
+					assert.Equal(t, tt.expectedYear, result.Year(),
+						"Year should be %d for input '%s': %s",
+						tt.expectedYear, tt.dateStr, tt.description)
+				}
+			}
+		})
+	}
+}
+
+// TestParseDateFutureInference tests the smart year inference for no-year dates
+func TestParseDateFutureInference(t *testing.T) {
+	logger := &MockLogger{}
+	validator := &MockValidator{}
+	idGenerator := &MockIDGenerator{}
+	parser := NewCSVParser(validator, logger, idGenerator)
+
+	now := time.Now()
+
+	// Test date that would be >6 months in future (should use previous year)
+	// Use a date that's definitely >6 months from now: 8 months from today
+	eightMonthsFromNow := now.AddDate(0, 8, 0)
+	dateStr := fmt.Sprintf("%d/%d", int(eightMonthsFromNow.Month()), eightMonthsFromNow.Day())
+
+	result, err := parser.parseDate(dateStr)
+	require.NoError(t, err)
+
+	// The parser should use current year if <=6 months in future, or previous year if >6 months
+	sixMonthsFromNow := now.AddDate(0, 6, 0)
+	candidateCurrentYear := time.Date(now.Year(), eightMonthsFromNow.Month(), eightMonthsFromNow.Day(), 0, 0, 0, 0, time.UTC)
+
+	// If the date with current year is more than 6 months from now, use previous year
+	if candidateCurrentYear.After(sixMonthsFromNow) {
+		assert.Equal(t, now.Year()-1, result.Year(),
+			"Date >6 months in future should use previous year")
+	} else {
+		assert.Equal(t, now.Year(), result.Year(),
+			"Date <=6 months in future should use current year")
+	}
+}
+
+// TestParseDateWithSpaces tests date parsing with extra whitespace
+func TestParseDateWithSpaces(t *testing.T) {
+	logger := &MockLogger{}
+	validator := &MockValidator{}
+	idGenerator := &MockIDGenerator{}
+	parser := NewCSVParser(validator, logger, idGenerator)
+
+	tests := []struct {
+		name    string
+		dateStr string
+		wantErr bool
+	}{
+		{
+			name:    "Leading spaces",
+			dateStr: "  2025-09-08",
+			wantErr: false,
+		},
+		{
+			name:    "Trailing spaces",
+			dateStr: "2025-09-08  ",
+			wantErr: false,
+		},
+		{
+			name:    "Both leading and trailing",
+			dateStr: "  2025-09-08  ",
+			wantErr: false,
+		},
+		{
+			name:    "Tabs",
+			dateStr: "\t2025-09-08\t",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := parser.parseDate(tt.dateStr)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, 2025, result.Year())
+				assert.Equal(t, time.Month(9), result.Month())
+				assert.Equal(t, 8, result.Day())
+			}
+		})
+	}
+}
