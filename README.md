@@ -76,6 +76,8 @@
 * [Natural Language Interface](#-natural-language-interface)
 * [Features](#-features)
 * [Claude Integration](#-claude-integration)
+* [Flexible Line Items](#-flexible-line-items)
+* [Cryptocurrency Payment Verification](#-cryptocurrency-payment-verification)
 * [Installation](#-installation)
 * [Configuration](#-configuration)
 * [Traditional CLI Usage](#-traditional-cli-usage)
@@ -228,6 +230,14 @@ go-invoice generate invoice INV-2025-001 --output invoice.html
 - Tax calculation and subtotal management
 - Multiple invoice statuses (draft, sent, paid, overdue, voided)
 - **Flexible line items** - Support for hourly, fixed, and quantity-based billing on the same invoice
+
+**💰 Cryptocurrency Payment Verification**
+- On-chain payment verification for USDC (Ethereum)
+- Automatic invoice status updates when payment detected
+- Unique payment addresses per invoice for precise tracking
+- Testnet and mainnet support via Etherscan API
+- BSV support coming soon (architecture ready)
+- Offline testing with mock providers
 
 **⏱️ Time Tracking & Billing**
 - CSV timesheet import from popular time tracking tools
@@ -450,6 +460,126 @@ Line items are intelligently displayed based on type:
 ✅ **Accuracy** - Automatic calculations prevent errors
 ✅ **Professional** - Clean, itemized invoices for clients
 ✅ **Backward Compatible** - Works alongside existing time-based work items
+
+<br/>
+
+## 💰 Cryptocurrency Payment Verification
+
+go-invoice includes **on-chain payment verification** to automatically detect and confirm cryptocurrency payments.
+
+### How It Works
+
+1. **Create invoice** with unique crypto address (or use global default)
+2. **Client pays** the invoice amount to the address
+3. **Verify payment** using the CLI command
+4. **Automatic update** - Invoice status changes to "paid" when verified
+
+### Supported Cryptocurrencies
+
+#### ✅ USDC (Ethereum Mainnet & Testnet)
+- **Exact matching** - $100 invoice = 100 USDC on-chain
+- **Etherscan API** - Free tier supported (5 req/sec)
+- **Instant verification** - Balance checked in real-time
+- **Transaction details** - Hash, block number, confirmation time
+
+#### 🔜 BSV (Coming Soon)
+- Exchange rate conversion
+- Fuzzy matching (±5% tolerance for price fluctuations)
+- Time window validation
+- WhatsOnChain API integration
+
+### CLI Usage
+
+```bash
+# Verify USDC payment for an invoice
+go-invoice payment verify INV-2025-001
+
+# Output:
+# 🔍 Verifying payment for invoice INV-2025-001
+#    Invoice Total: 100.00 USD
+#    Status: sent
+#
+#    Provider: etherscan
+#    Payment Address: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
+#
+# 📊 Verification Results
+# ═══════════════════════
+#
+# ✅ Payment VERIFIED
+#    Amount Received: 100.00 USDC
+#    Transaction: 0xabc123...
+#    Confirmed: 2025-10-03 14:30:22
+#
+# 🎉 Congratulations! Invoice has been marked as PAID!
+
+# Verify payment on testnet (Sepolia)
+go-invoice payment verify INV-2025-001 --testnet
+
+# Check payment without updating invoice status (dry run)
+go-invoice payment verify INV-2025-001 --dry-run
+
+# Use custom Etherscan API key for higher rate limits
+go-invoice payment verify INV-2025-001 --etherscan-api-key "YOUR_API_KEY"
+
+# Verify BSV payment (when implemented)
+go-invoice payment verify INV-2025-001 --method BSV
+```
+
+### Payment Status Results
+
+The verification command returns different statuses:
+
+- **✅ Verified** - Full payment received, invoice marked as paid
+- **✅ Overpaid** - More than required amount received, invoice marked as paid
+- **❌ Not Found** - No payment detected yet
+- **⚠️ Partial** - Partial payment received, shows remaining amount
+- **⏳ Pending** - Payment detected but awaiting confirmation
+
+### Configuration
+
+Enable cryptocurrency payments in your `.env.config`:
+
+```bash
+# Enable USDC payments
+USDC_ENABLED=true
+USDC_ADDRESS="0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+
+# Optional: Etherscan API key for higher rate limits
+# Get free key at: https://etherscan.io/myapikey
+ETHERSCAN_API_KEY=""
+
+# Use testnet for testing
+BLOCKCHAIN_TESTNET=false
+```
+
+### Per-Invoice Addresses (Recommended)
+
+For enhanced payment tracking, use unique addresses per invoice:
+
+```bash
+# Create invoice with custom USDC address
+go-invoice invoice create \
+  --client "Acme Corp" \
+  --usdc-address "0xUNIQUEADDRESS123"
+
+# This enables precise payment tracking - no confusion between invoices!
+```
+
+### Architecture Highlights
+
+- **Mockable** - Full offline testing support
+- **Extensible** - Easy to add new blockchains (Lightning, Polygon, etc.)
+- **Provider abstraction** - Can swap Etherscan for Alchemy, Infura, etc.
+- **Production-ready** - Comprehensive error handling and validation
+- **Future-proof** - BSV provider stub with clear implementation guidance
+
+### Benefits
+
+✅ **Automated Verification** - No manual checking of blockchain explorers
+✅ **Instant Confirmation** - Know immediately when client pays
+✅ **Accurate Tracking** - Unique addresses prevent payment confusion
+✅ **Professional** - Automatic status updates and payment details
+✅ **Testable** - Mock providers for development without internet
 
 <br/>
 
@@ -1583,6 +1713,8 @@ go-invoice [command] --help
 - [x] Cryptocurrency payment methods (USDC, BSV)
 - [x] **Cryptocurrency Service Fee** - Configurable fee for crypto payment processing
 - [x] **Per-Invoice Crypto Address Override** - Custom crypto addresses per invoice for enhanced tracking
+- [x] **Cryptocurrency Payment Verification** - On-chain payment detection for USDC (Ethereum)
+- [x] **Blockchain Provider Architecture** - Extensible, mockable provider system for multiple chains
 - [x] **MCP Integration** - Natural language interface for Claude Desktop and Claude Code
 - [x] **21 MCP Tools** - Complete invoice management via AI conversation
 - [x] **Dual Transport Support** - HTTP (Claude Desktop) and stdio (Claude Code)
@@ -1591,12 +1723,14 @@ go-invoice [command] --help
 - [x] Comprehensive test coverage and documentation
 
 ### v2.0: Enhanced Features (Planned)
+- [ ] **BSV Payment Verification** - Bitcoin SV on-chain verification with exchange rate conversion
 - [ ] PDF generation with customizable templates
 - [ ] Email integration for automated invoice delivery
-- [ ] Payment tracking and reconciliation
+- [ ] Payment tracking and reconciliation dashboard
 - [ ] Recurring invoices and subscription billing
 - [ ] Enhanced multi-currency support
 - [ ] **Advanced MCP Tools** - Additional Claude integration features
+- [ ] **Payment Webhooks** - Automatic payment detection via blockchain webhooks
 
 ### v3.0: Enterprise Features (Future)
 - [ ] Web interface for team collaboration
