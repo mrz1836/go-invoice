@@ -199,18 +199,39 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 		return validateErr
 	}
 
-	// Apply crypto service fee if enabled for this client
+	// Fetch fresh client data first to get latest crypto fee settings
+	clientService := a.createClientService(config.Storage.DataDir)
+	freshClient, err := clientService.GetClient(ctx, invoice.Client.ID)
+	if err != nil {
+		a.logger.Error("failed to get fresh client data", "client_id", invoice.Client.ID, "error", err)
+		// Continue with embedded client data
+		freshClient = &invoice.Client
+	} else {
+		// Update invoice with fresh client data
+		invoice.Client = *freshClient
+		a.logger.Debug("using fresh client data", "client_id", freshClient.ID, "crypto_fee_enabled", freshClient.CryptoFeeEnabled)
+	}
+
+	// Apply crypto service fee if enabled for this client (using fresh client data)
 	cryptoEnabled := config.Business.CryptoPayments.USDCEnabled || config.Business.CryptoPayments.BSVEnabled
-	feeEnabled := invoice.Client.CryptoFeeEnabled
-	feeAmount := invoice.Client.CryptoFeeAmount
+	feeEnabled := freshClient.CryptoFeeEnabled
+	feeAmount := freshClient.CryptoFeeAmount
 
 	// Apply crypto fee if client has it enabled
 	if cryptoErr := invoice.SetCryptoFee(ctx, cryptoEnabled, feeEnabled, feeAmount); cryptoErr != nil {
 		return fmt.Errorf("failed to set crypto fee: %w", cryptoErr)
 	}
 
-	// Create data structure for template with fresh client data
-	invoiceData := a.createInvoiceDataWithFreshClient(ctx, invoice, config, invoiceService)
+	// Save the updated invoice with crypto fee back to storage
+	if updateErr := invoiceService.UpdateInvoiceDirectly(ctx, invoice); updateErr != nil {
+		a.logger.Error("failed to save invoice with crypto fee", "error", updateErr)
+		// Continue anyway - we can still generate the HTML even if save fails
+	} else {
+		a.logger.Debug("invoice updated with crypto fee", "crypto_fee", invoice.CryptoFee, "new_total", invoice.Total)
+	}
+
+	// Create data structure for template (client is already fresh in invoice now)
+	invoiceData := a.createInvoiceData(invoice, config)
 
 	// Generate HTML content using template engine directly to support data
 	html, err := a.renderInvoice(ctx, renderService, invoiceData, options.TemplateName)
@@ -590,34 +611,6 @@ func (a *App) createInvoiceData(invoice *models.Invoice, config *config.Config) 
 		},
 		TotalHours: totalHours,
 	}
-}
-
-func (a *App) createInvoiceDataWithFreshClient(ctx context.Context, invoice *models.Invoice, config *config.Config, _ *services.InvoiceService) *InvoiceData {
-	// Create client service to fetch fresh client data
-	clientService := a.createClientService(config.Storage.DataDir)
-
-	// Initialize storage context to ensure client storage is ready
-	storage := jsonStorage.NewJSONStorage(config.Storage.DataDir, a.logger)
-	if err := storage.Initialize(ctx); err != nil {
-		a.logger.Debug("storage already initialized or initialization failed", "error", err)
-		// Continue anyway as storage might already be initialized
-	}
-
-	// Fetch fresh client data from storage
-	freshClient, err := clientService.GetClient(ctx, invoice.Client.ID)
-	if err != nil {
-		a.logger.Error("failed to get fresh client data, using embedded data", "client_id", invoice.Client.ID, "error", err)
-		// Fall back to embedded client data if we can't fetch fresh data
-		return a.createInvoiceData(invoice, config)
-	}
-
-	// Create invoice copy with fresh client data
-	invoiceWithFreshClient := *invoice
-	invoiceWithFreshClient.Client = *freshClient
-
-	a.logger.Debug("using fresh client data", "client_id", freshClient.ID, "client_name", freshClient.Name)
-
-	return a.createInvoiceData(&invoiceWithFreshClient, config)
 }
 
 func (a *App) renderInvoice(ctx context.Context, renderService render.InvoiceRenderer, data *InvoiceData, templateName string) (string, error) {
