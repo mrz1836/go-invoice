@@ -1471,3 +1471,117 @@ func (suite *InvoiceTestSuite) TestInvoiceHelperMethods() {
 		assert.InDelta(t, 12.0, totalHours, 1e-9) // 4 from work item + 8 from hourly line item
 	})
 }
+
+// TestInvoiceCryptoAddressOverride tests the crypto address override functionality
+func (suite *InvoiceTestSuite) TestInvoiceCryptoAddressOverride() {
+	defaultUSDCAddress := "0xDefaultUSDCAddress123456789"
+	defaultBSVAddress := "DefaultBSVAddress123456789"
+	customUSDCAddress := "0xCustomUSDCAddress987654321"
+	customBSVAddress := "CustomBSVAddress987654321"
+
+	suite.Run("NoOverride_UsesDefault", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// No override set
+		assert.Nil(t, invoice.USDCAddressOverride)
+		assert.Nil(t, invoice.BSVAddressOverride)
+
+		// Should return default addresses
+		assert.Equal(t, defaultUSDCAddress, invoice.GetUSDCAddress(defaultUSDCAddress))
+		assert.Equal(t, defaultBSVAddress, invoice.GetBSVAddress(defaultBSVAddress))
+
+		// Should not have overrides
+		assert.False(t, invoice.HasUSDCAddressOverride())
+		assert.False(t, invoice.HasBSVAddressOverride())
+	})
+
+	suite.Run("WithOverride_UsesCustomAddress", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// Set overrides
+		invoice.USDCAddressOverride = &customUSDCAddress
+		invoice.BSVAddressOverride = &customBSVAddress
+
+		// Should return custom addresses
+		assert.Equal(t, customUSDCAddress, invoice.GetUSDCAddress(defaultUSDCAddress))
+		assert.Equal(t, customBSVAddress, invoice.GetBSVAddress(defaultBSVAddress))
+
+		// Should have overrides
+		assert.True(t, invoice.HasUSDCAddressOverride())
+		assert.True(t, invoice.HasBSVAddressOverride())
+	})
+
+	suite.Run("EmptyStringOverride_UsesEmptyNotDefault", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// Set empty string overrides (different from nil)
+		emptyString := ""
+		invoice.USDCAddressOverride = &emptyString
+		invoice.BSVAddressOverride = &emptyString
+
+		// Should return empty strings, not defaults
+		assert.Empty(t, invoice.GetUSDCAddress(defaultUSDCAddress))
+		assert.Empty(t, invoice.GetBSVAddress(defaultBSVAddress))
+
+		// Should not have overrides (empty string is not considered an override)
+		assert.False(t, invoice.HasUSDCAddressOverride())
+		assert.False(t, invoice.HasBSVAddressOverride())
+	})
+
+	suite.Run("MixedOverride_OnlyUSDC", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// Set only USDC override
+		invoice.USDCAddressOverride = &customUSDCAddress
+
+		// USDC should use custom, BSV should use default
+		assert.Equal(t, customUSDCAddress, invoice.GetUSDCAddress(defaultUSDCAddress))
+		assert.Equal(t, defaultBSVAddress, invoice.GetBSVAddress(defaultBSVAddress))
+
+		assert.True(t, invoice.HasUSDCAddressOverride())
+		assert.False(t, invoice.HasBSVAddressOverride())
+	})
+
+	suite.Run("MixedOverride_OnlyBSV", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// Set only BSV override
+		invoice.BSVAddressOverride = &customBSVAddress
+
+		// USDC should use default, BSV should use custom
+		assert.Equal(t, defaultUSDCAddress, invoice.GetUSDCAddress(defaultUSDCAddress))
+		assert.Equal(t, customBSVAddress, invoice.GetBSVAddress(defaultBSVAddress))
+
+		assert.False(t, invoice.HasUSDCAddressOverride())
+		assert.True(t, invoice.HasBSVAddressOverride())
+	})
+
+	suite.Run("EmptyDefaultWithOverride", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// Set custom override
+		invoice.USDCAddressOverride = &customUSDCAddress
+
+		// Should use custom even when default is empty
+		assert.Equal(t, customUSDCAddress, invoice.GetUSDCAddress(""))
+		assert.True(t, invoice.HasUSDCAddressOverride())
+	})
+
+	suite.Run("EmptyDefaultNoOverride", func() {
+		t := suite.T()
+		invoice := createTestInvoice(t, suite.ctx)
+
+		// No override set
+		assert.Nil(t, invoice.USDCAddressOverride)
+
+		// Should return empty default
+		assert.Empty(t, invoice.GetUSDCAddress(""))
+		assert.False(t, invoice.HasUSDCAddressOverride())
+	})
+}

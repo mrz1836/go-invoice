@@ -546,16 +546,22 @@
                     {{if .Business.BankDetails.SWIFT}}SWIFT: {{.Business.BankDetails.SWIFT}}<br>{{end}}
                     {{end}}
 
-                    {{if and .Business.CryptoPayments.USDCEnabled .Business.CryptoPayments.USDCAddress}}
+                    {{if .Business.CryptoPayments.USDCEnabled}}
+                    {{$usdcAddr := .Invoice.GetUSDCAddress .Business.CryptoPayments.USDCAddress}}
+                    {{if $usdcAddr}}
                     <br><br>
                     <strong>USDC Cryptocurrency:</strong><br>
-                    {{.Business.CryptoPayments.USDCAddress}}
+                    {{$usdcAddr}}
+                    {{end}}
                     {{end}}
 
-                    {{if and .Business.CryptoPayments.BSVEnabled .Business.CryptoPayments.BSVAddress}}
+                    {{if .Business.CryptoPayments.BSVEnabled}}
+                    {{$bsvAddr := .Invoice.GetBSVAddress .Business.CryptoPayments.BSVAddress}}
+                    {{if $bsvAddr}}
                     <br><br>
                     <strong>BSV (Bitcoin SV) Cryptocurrency:</strong><br>
-                    {{.Business.CryptoPayments.BSVAddress}}
+                    {{$bsvAddr}}
+                    {{end}}
                     {{end}}
 
                     {{if .Business.BankDetails.PaymentInstructions}}

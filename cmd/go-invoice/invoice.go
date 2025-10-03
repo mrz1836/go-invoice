@@ -104,6 +104,8 @@ If the specified client doesn't exist and --create-client is used, it will be cr
 	cmd.Flags().String("email", "", "Client email (required when creating new client)")
 	cmd.Flags().String("address", "", "Client address (when creating new client)")
 	cmd.Flags().String("phone", "", "Client phone (when creating new client)")
+	cmd.Flags().String("usdc-address", "", "Override USDC address for this invoice (uses global config if not set)")
+	cmd.Flags().String("bsv-address", "", "Override BSV address for this invoice (uses global config if not set)")
 
 	return cmd
 }
@@ -173,13 +175,25 @@ func (a *App) runInvoiceCreate(cmd *cobra.Command, _ []string) error {
 	// Generate next invoice number
 	nextNumber := a.generateNextInvoiceNumber(ctx, invoiceService, config.Invoice.Prefix, config.Invoice.StartNumber)
 
-	// Create invoice
+	// Get crypto address overrides if provided
+	usdcAddress, _ := cmd.Flags().GetString("usdc-address")
+	bsvAddress, _ := cmd.Flags().GetString("bsv-address")
+
+	// Create invoice request
 	req := models.CreateInvoiceRequest{
 		Number:      nextNumber,
 		Date:        invoiceDate,
 		DueDate:     dueDate,
 		ClientID:    client.ID,
 		Description: description,
+	}
+
+	// Add crypto address overrides if provided
+	if usdcAddress != "" {
+		req.USDCAddress = &usdcAddress
+	}
+	if bsvAddress != "" {
+		req.BSVAddress = &bsvAddress
 	}
 
 	invoice, err := invoiceService.CreateInvoice(ctx, req)
@@ -412,6 +426,10 @@ Work items should be managed through the import command.`,
 	cmd.Flags().String("description", "", "Update description")
 	cmd.Flags().String("notes", "", "Update internal notes")
 	cmd.Flags().Bool("interactive", false, "Interactive mode to select fields to update")
+	cmd.Flags().String("usdc-address", "", "Override USDC address for this invoice")
+	cmd.Flags().String("bsv-address", "", "Override BSV address for this invoice")
+	cmd.Flags().Bool("clear-usdc-address", false, "Clear USDC address override (use global config)")
+	cmd.Flags().Bool("clear-bsv-address", false, "Clear BSV address override (use global config)")
 
 	return cmd
 }
@@ -526,6 +544,32 @@ func (a *App) buildUpdateRequest(cmd *cobra.Command, invoiceID string, cfg *conf
 	if description, _ := cmd.Flags().GetString("description"); description != "" {
 		req.Description = &description
 		hasUpdates = true
+	}
+
+	// Update crypto addresses
+	if usdcAddress, _ := cmd.Flags().GetString("usdc-address"); usdcAddress != "" {
+		req.USDCAddress = &usdcAddress
+		hasUpdates = true
+	}
+	if bsvAddress, _ := cmd.Flags().GetString("bsv-address"); bsvAddress != "" {
+		req.BSVAddress = &bsvAddress
+		hasUpdates = true
+	}
+
+	// Clear crypto address overrides if requested
+	clearUSDC, _ := cmd.Flags().GetBool("clear-usdc-address")
+	clearBSV, _ := cmd.Flags().GetBool("clear-bsv-address")
+	if clearUSDC {
+		emptyString := ""
+		req.USDCAddress = &emptyString
+		hasUpdates = true
+		a.logger.Printf("   Note: USDC address override will be cleared (will use global config)\n")
+	}
+	if clearBSV {
+		emptyString := ""
+		req.BSVAddress = &emptyString
+		hasUpdates = true
+		a.logger.Printf("   Note: BSV address override will be cleared (will use global config)\n")
 	}
 
 	// Handle notes (not yet supported)

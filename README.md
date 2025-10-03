@@ -215,6 +215,7 @@ go-invoice generate invoice INV-2025-001 --output invoice.html
 - Configurable tax rates and payment terms
 - Multi-currency support
 - **Cryptocurrency service fee** - Optional configurable fee for crypto payments
+- **Per-invoice crypto address override** - Custom crypto addresses for enhanced payment tracking
 
 **👥 Client Management**
 - Add, edit, and manage client information
@@ -578,6 +579,135 @@ To add crypto fee to an existing client:
 go-invoice client update "Acme Company" \
   --crypto-fee \
   --crypto-fee-amount 25.00
+```
+
+</details>
+
+<details>
+<summary><strong>🔐 Per-Invoice Crypto Address Override</strong></summary>
+
+### Overview
+
+While cryptocurrency addresses are configured globally in your business settings, you can override them on a per-invoice basis. This is useful when you want a unique payment address for specific invoices or clients.
+
+### How It Works
+
+1. **Default Behavior**: Invoices use the global USDC/BSV addresses from your configuration
+2. **Override Capability**: Set custom addresses when creating or updating an invoice
+3. **Future-Ready**: Architecture supports unique addresses per invoice for enhanced tracking
+
+### CLI Usage
+
+#### Create Invoice with Custom Crypto Address
+
+```bash
+# Override USDC address for this specific invoice
+go-invoice invoice create \
+  --client "Acme Corp" \
+  --usdc-address "0xCustomUSDCAddressForThisInvoice123"
+
+# Override both USDC and BSV addresses
+go-invoice invoice create \
+  --client "Tech Solutions" \
+  --usdc-address "0xCustomUSDCAddress123" \
+  --bsv-address "CustomBSVAddress123"
+
+# Works with all other flags
+go-invoice invoice create \
+  --client "New Client" \
+  --description "January 2025 services" \
+  --usdc-address "0xUniqueAddress123"
+```
+
+#### Update Invoice Crypto Address
+
+```bash
+# Add or change USDC address on existing invoice
+go-invoice invoice update INV-001 \
+  --usdc-address "0xNewUSDCAddress456"
+
+# Clear the override (will use global config address)
+go-invoice invoice update INV-001 \
+  --clear-usdc-address
+
+# Update both addresses
+go-invoice invoice update INV-001 \
+  --usdc-address "0xNewUSDCAddress" \
+  --bsv-address "NewBSVAddress"
+```
+
+### MCP Tool Usage
+
+When using the MCP tools with Claude or other AI assistants:
+
+```javascript
+// Create invoice with custom crypto address
+{
+  "tool": "invoice_create",
+  "parameters": {
+    "client_name": "Acme Corp",
+    "description": "Q1 2025 consulting",
+    "usdc_address": "0xCustomUSDCAddress123",
+    "bsv_address": "CustomBSVAddress456"
+  }
+}
+
+// Update invoice crypto address
+{
+  "tool": "invoice_update",
+  "parameters": {
+    "invoice_id": "INV-001",
+    "usdc_address": "0xNewAddress789"
+  }
+}
+
+// Clear override (set to empty string)
+{
+  "tool": "invoice_update",
+  "parameters": {
+    "invoice_id": "INV-001",
+    "usdc_address": ""
+  }
+}
+```
+
+### Invoice Display
+
+When an invoice has a custom crypto address override:
+- The custom address is displayed in the payment instructions
+- If no override is set, the global address from config is used
+
+### Benefits
+
+- **Enhanced Tracking**: Use unique addresses per invoice to track payments precisely
+- **Client-Specific Addresses**: Assign dedicated addresses to specific clients or projects
+- **Flexible Architecture**: Ready for future features like automatic address generation
+- **No Breaking Changes**: Existing invoices continue using global addresses seamlessly
+
+### Example Workflow
+
+```bash
+# 1. Set global crypto addresses in config
+export USDC_ENABLED=true
+export USDC_ADDRESS="0xYourDefaultUSDCAddress"
+export BSV_ENABLED=true
+export BSV_ADDRESS="YourDefaultBSVAddress"
+
+# 2. Create invoice with global addresses (default behavior)
+go-invoice invoice create --client "Regular Client"
+
+# 3. Create invoice with custom address for special tracking
+go-invoice invoice create \
+  --client "Premium Client" \
+  --usdc-address "0xPremiumClientUniqueAddress"
+
+# 4. Later, update an invoice to use a different address
+go-invoice invoice update INV-002 \
+  --usdc-address "0xUpdatedAddress"
+
+# 5. Clear override to go back to global address
+go-invoice invoice update INV-002 \
+  --clear-usdc-address
 ```
 
 </details>
@@ -1452,6 +1582,7 @@ go-invoice [command] --help
 - [x] Professional HTML generation with comma-separated currency
 - [x] Cryptocurrency payment methods (USDC, BSV)
 - [x] **Cryptocurrency Service Fee** - Configurable fee for crypto payment processing
+- [x] **Per-Invoice Crypto Address Override** - Custom crypto addresses per invoice for enhanced tracking
 - [x] **MCP Integration** - Natural language interface for Claude Desktop and Claude Code
 - [x] **21 MCP Tools** - Complete invoice management via AI conversation
 - [x] **Dual Transport Support** - HTTP (Claude Desktop) and stdio (Claude Code)

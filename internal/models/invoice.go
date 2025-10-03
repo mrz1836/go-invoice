@@ -10,23 +10,25 @@ import (
 
 // Invoice represents a complete invoice entity
 type Invoice struct {
-	ID          InvoiceID  `json:"id"`
-	Number      string     `json:"number"`
-	Date        time.Time  `json:"date"`
-	DueDate     time.Time  `json:"due_date"`
-	Client      Client     `json:"client"`
-	WorkItems   []WorkItem `json:"work_items"`           // Deprecated: kept for backward compatibility
-	LineItems   []LineItem `json:"line_items,omitempty"` // New: flexible line items
-	Status      string     `json:"status"`
-	Description string     `json:"description,omitempty"`
-	Subtotal    float64    `json:"subtotal"`
-	CryptoFee   float64    `json:"crypto_fee"`
-	TaxRate     float64    `json:"tax_rate"`
-	TaxAmount   float64    `json:"tax_amount"`
-	Total       float64    `json:"total"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
-	Version     int        `json:"version"` // For optimistic locking
+	ID                  InvoiceID  `json:"id"`
+	Number              string     `json:"number"`
+	Date                time.Time  `json:"date"`
+	DueDate             time.Time  `json:"due_date"`
+	Client              Client     `json:"client"`
+	WorkItems           []WorkItem `json:"work_items"`           // Deprecated: kept for backward compatibility
+	LineItems           []LineItem `json:"line_items,omitempty"` // New: flexible line items
+	Status              string     `json:"status"`
+	Description         string     `json:"description,omitempty"`
+	Subtotal            float64    `json:"subtotal"`
+	CryptoFee           float64    `json:"crypto_fee"`
+	TaxRate             float64    `json:"tax_rate"`
+	TaxAmount           float64    `json:"tax_amount"`
+	Total               float64    `json:"total"`
+	USDCAddressOverride *string    `json:"usdc_address_override,omitempty"` // Optional per-invoice USDC address override
+	BSVAddressOverride  *string    `json:"bsv_address_override,omitempty"`  // Optional per-invoice BSV address override
+	CreatedAt           time.Time  `json:"created_at"`
+	UpdatedAt           time.Time  `json:"updated_at"`
+	Version             int        `json:"version"` // For optimistic locking
 }
 
 // WorkItem represents a single work entry on an invoice
@@ -688,4 +690,36 @@ func (i *Invoice) TotalHours() float64 {
 	}
 
 	return total
+}
+
+// GetUSDCAddress returns the USDC address to use for this invoice.
+// If the invoice has a USDC address override, it returns that.
+// Otherwise, it returns the default USDC address from the provided configuration.
+// Returns an empty string if no address is configured.
+func (i *Invoice) GetUSDCAddress(defaultAddress string) string {
+	if i.USDCAddressOverride != nil {
+		return *i.USDCAddressOverride
+	}
+	return defaultAddress
+}
+
+// GetBSVAddress returns the BSV address to use for this invoice.
+// If the invoice has a BSV address override, it returns that.
+// Otherwise, it returns the default BSV address from the provided configuration.
+// Returns an empty string if no address is configured.
+func (i *Invoice) GetBSVAddress(defaultAddress string) string {
+	if i.BSVAddressOverride != nil {
+		return *i.BSVAddressOverride
+	}
+	return defaultAddress
+}
+
+// HasUSDCAddressOverride returns true if this invoice has a custom USDC address override
+func (i *Invoice) HasUSDCAddressOverride() bool {
+	return i.USDCAddressOverride != nil && *i.USDCAddressOverride != ""
+}
+
+// HasBSVAddressOverride returns true if this invoice has a custom BSV address override
+func (i *Invoice) HasBSVAddressOverride() bool {
+	return i.BSVAddressOverride != nil && *i.BSVAddressOverride != ""
 }

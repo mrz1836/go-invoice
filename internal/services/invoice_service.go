@@ -105,6 +105,14 @@ func (s *InvoiceService) CreateInvoice(ctx context.Context, req models.CreateInv
 		invoice.Description = req.Description
 	}
 
+	// Set crypto address overrides if provided
+	if req.USDCAddress != nil {
+		invoice.USDCAddressOverride = req.USDCAddress
+	}
+	if req.BSVAddress != nil {
+		invoice.BSVAddressOverride = req.BSVAddress
+	}
+
 	// Add work items if provided
 	for _, workItemReq := range req.WorkItems {
 		workItemID, err := s.idGenerator.GenerateWorkItemID(ctx)
@@ -228,6 +236,14 @@ func (s *InvoiceService) UpdateInvoice(ctx context.Context, req models.UpdateInv
 
 	if req.Description != nil {
 		invoice.Description = *req.Description
+	}
+
+	// Update crypto address overrides if provided
+	if req.USDCAddress != nil {
+		invoice.USDCAddressOverride = req.USDCAddress
+	}
+	if req.BSVAddress != nil {
+		invoice.BSVAddressOverride = req.BSVAddress
 	}
 
 	// Update invoice in storage

@@ -88,6 +88,16 @@ func InvoiceCreateSchema() map[string]interface{} {
 				"pattern":     "^[\\d\\s\\+\\-\\(\\)\\.\\/ext]+$",
 				"examples":    []string{"+1-555-123-4567", "(555) 123-4567"},
 			},
+			"usdc_address": map[string]interface{}{
+				"type":        "string",
+				"description": "Override USDC cryptocurrency address for this specific invoice. If not provided, uses the global USDC address from configuration. Useful when you want a unique payment address for this invoice.",
+				"examples":    []string{"0x1234567890abcdef1234567890abcdef12345678"},
+			},
+			"bsv_address": map[string]interface{}{
+				"type":        "string",
+				"description": "Override BSV cryptocurrency address for this specific invoice. If not provided, uses the global BSV address from configuration. Useful when you want a unique payment address for this invoice.",
+				"examples":    []string{"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"},
+			},
 			"work_items": map[string]interface{}{
 				"type":        "array",
 				"description": "Optional work items to add to the invoice upon creation.",
@@ -277,8 +287,18 @@ func InvoiceUpdateSchema() map[string]interface{} {
 				"description": "Update invoice description.",
 				"examples":    []string{"Updated: January 2025 consulting services", "Q1 2025 development work"},
 			},
+			"usdc_address": map[string]interface{}{
+				"type":        "string",
+				"description": "Override USDC cryptocurrency address for this invoice. Set to empty string to clear override and use global config.",
+				"examples":    []string{"0x1234567890abcdef1234567890abcdef12345678", ""},
+			},
+			"bsv_address": map[string]interface{}{
+				"type":        "string",
+				"description": "Override BSV cryptocurrency address for this invoice. Set to empty string to clear override and use global config.",
+				"examples":    []string{"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", ""},
+			},
 		},
-		"required":             []string{}, // Invoice ID (invoice_id or invoice_number) and at least one update field (status, due_date, or description) required but handled in validation logic
+		"required":             []string{}, // Invoice ID (invoice_id or invoice_number) and at least one update field (status, due_date, description, usdc_address, bsv_address) required but handled in validation logic
 		"additionalProperties": false,
 	}
 }
