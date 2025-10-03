@@ -91,6 +91,7 @@ Key features:
 	rootCmd.AddCommand(a.buildInvoiceCommand())
 	rootCmd.AddCommand(a.buildImportCommand())
 	rootCmd.AddCommand(a.buildGenerateCommand())
+	rootCmd.AddCommand(a.buildMigrateLateFeeCommand())
 
 	return rootCmd
 }

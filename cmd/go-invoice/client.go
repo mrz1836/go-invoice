@@ -39,6 +39,7 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 	var name, email, phone, address, taxID string
 	var cryptoFeeEnabled bool
 	var cryptoFeeAmount float64
+	var lateFeeEnabled bool
 
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -46,7 +47,7 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 		Long:  "Create a new client with contact information",
 		Example: `  go-invoice client create --name "Acme Corp" --email "contact@acme.com"
   go-invoice client create --name "John Smith" --email "john@example.com" --phone "+1-555-123-4567"
-  go-invoice client create --name "Acme Company" --email "billing@acme.com" --crypto-fee --crypto-fee-amount 25.00`,
+  go-invoice client create --name "Acme Company" --email "billing@acme.com" --crypto-fee --crypto-fee-amount 25.00 --late-fee`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -71,6 +72,7 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 				TaxID:            taxID,
 				CryptoFeeEnabled: cryptoFeeEnabled,
 				CryptoFeeAmount:  cryptoFeeAmount,
+				LateFeeEnabled:   lateFeeEnabled,
 			}
 
 			client, err := clientService.CreateClient(ctx, req)
@@ -81,6 +83,9 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 			a.logger.Info("Client created successfully", "name", client.Name, "id", client.ID)
 			if cryptoFeeEnabled {
 				a.logger.Printf("💰 Crypto service fee enabled: $%.2f\n", cryptoFeeAmount)
+			}
+			if lateFeeEnabled {
+				a.logger.Printf("⚠️  Late fee policy enabled (1.5%% per month / 18%% APR)\n")
 			}
 			return nil
 		},
@@ -93,6 +98,7 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&taxID, "tax-id", "", "Tax ID (EIN, VAT number, etc.)")
 	cmd.Flags().BoolVar(&cryptoFeeEnabled, "crypto-fee", false, "Enable cryptocurrency service fee for this client")
 	cmd.Flags().Float64Var(&cryptoFeeAmount, "crypto-fee-amount", 25.00, "Cryptocurrency service fee amount")
+	cmd.Flags().BoolVar(&lateFeeEnabled, "late-fee", true, "Enable late fee policy on invoices (default: true)")
 
 	if err := cmd.MarkFlagRequired("name"); err != nil {
 		return cmd
@@ -336,6 +342,7 @@ func (a *App) buildClientUpdateCommand() *cobra.Command {
 	var activate, deactivate bool
 	var cryptoFeeEnabled bool
 	var cryptoFeeAmount float64
+	var lateFeeEnabled bool
 
 	cmd := &cobra.Command{
 		Use:   "update [client-id or name]",
@@ -424,6 +431,10 @@ func (a *App) buildClientUpdateCommand() *cobra.Command {
 				client.CryptoFeeAmount = cryptoFeeAmount
 				updated = true
 			}
+			if cmd.Flags().Changed("late-fee") {
+				client.LateFeeEnabled = lateFeeEnabled
+				updated = true
+			}
 
 			if !updated {
 				return models.ErrNoUpdatesSpecified
@@ -439,6 +450,11 @@ func (a *App) buildClientUpdateCommand() *cobra.Command {
 			if client.CryptoFeeEnabled {
 				a.logger.Printf("💰 Crypto service fee: $%.2f\n", client.CryptoFeeAmount)
 			}
+			if client.LateFeeEnabled {
+				a.logger.Printf("⚠️  Late fee policy enabled (1.5%% per month / 18%% APR)\n")
+			} else {
+				a.logger.Printf("ℹ️  Late fee policy disabled for this client\n")
+			}
 			return nil
 		},
 	}
@@ -452,6 +468,7 @@ func (a *App) buildClientUpdateCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&deactivate, "deactivate", false, "Deactivate client")
 	cmd.Flags().BoolVar(&cryptoFeeEnabled, "crypto-fee", false, "Enable cryptocurrency service fee for this client")
 	cmd.Flags().Float64Var(&cryptoFeeAmount, "crypto-fee-amount", 25.00, "Cryptocurrency service fee amount")
+	cmd.Flags().BoolVar(&lateFeeEnabled, "late-fee", true, "Enable late fee policy on invoices")
 
 	return cmd
 }

@@ -240,6 +240,7 @@ type CreateClientRequest struct {
 	ApproverContacts string  `json:"approver_contacts,omitempty"`
 	CryptoFeeEnabled bool    `json:"crypto_fee_enabled"`
 	CryptoFeeAmount  float64 `json:"crypto_fee_amount,omitempty"`
+	LateFeeEnabled   bool    `json:"late_fee_enabled"`
 }
 
 // Validate validates the create client request
