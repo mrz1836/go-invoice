@@ -184,7 +184,7 @@ func (tsi *ToolSystemInitializer) Initialize(ctx context.Context) (*ToolSystemCo
 
 	tsi.initStartTime = time.Now()
 	tsi.logger.Info("starting tool system initialization",
-		"expectedTools", 21,
+		"expectedTools", 22,
 		"expectedCategories", 5)
 
 	// Initialize input validator
@@ -334,8 +334,8 @@ func (tsi *ToolSystemInitializer) validateSystemIntegrity(ctx context.Context) e
 		return fmt.Errorf("failed to list tools for validation: %w", err)
 	}
 
-	if len(allTools) != 21 {
-		return fmt.Errorf("%w: expected 21, found %d", ErrInvalidToolCount, len(allTools))
+	if len(allTools) != 22 {
+		return fmt.Errorf("%w: expected 22, found %d", ErrInvalidToolCount, len(allTools))
 	}
 
 	// Validate all categories are represented

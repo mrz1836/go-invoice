@@ -54,6 +54,7 @@ func CreateInvoiceManagementTools() []*MCPTool {
 		createInvoiceUpdateTool(),
 		createInvoiceDeleteTool(),
 		createInvoiceAddItemTool(),
+		createInvoiceAddLineItemTool(),
 		createInvoiceRemoveItemTool(),
 	}
 }
@@ -478,6 +479,106 @@ func createInvoiceAddItemTool() *MCPTool {
 		CLICommand: "go-invoice",
 		CLIArgs:    []string{"import", "--add-to-invoice"},
 		HelpText:   "Adds work items to draft invoices with automatic total recalculation. Supports flexible time entry and maintains billing accuracy. Only works with draft status invoices.",
+		Version:    "1.0.0",
+		Timeout:    25 * time.Second,
+	}
+}
+
+// createInvoiceAddLineItemTool creates the flexible line item addition tool definition.
+//
+// This tool supports adding various types of line items to invoices including hourly work,
+// fixed fees, and quantity-based charges with automatic total recalculation.
+func createInvoiceAddLineItemTool() *MCPTool {
+	return &MCPTool{
+		Name:        "invoice_add_line_item",
+		Description: "Add flexible line items to invoices with support for hourly, fixed, and quantity-based billing. Automatically calculates totals and supports mixed billing types on the same invoice.",
+		InputSchema: schemas.InvoiceAddLineItemSchema(),
+		Examples: []MCPToolExample{
+			{
+				Description: "Add hourly work item to invoice",
+				Input: map[string]interface{}{
+					"invoice_number": "INV-001",
+					"line_items": []map[string]interface{}{
+						{
+							"type":        "hourly",
+							"date":        "2025-08-03",
+							"hours":       8.0,
+							"rate":        125.0,
+							"description": "Development work on authentication module",
+						},
+					},
+				},
+				ExpectedOutput: "Hourly line item added to invoice with totals automatically recalculated",
+				UseCase:        "Adding time-based work to invoices (same as traditional work items)",
+			},
+			{
+				Description: "Add monthly retainer (fixed amount)",
+				Input: map[string]interface{}{
+					"invoice_number": "INV-001",
+					"line_items": []map[string]interface{}{
+						{
+							"type":        "fixed",
+							"date":        "2025-08-01",
+							"amount":      2000.0,
+							"description": "Monthly Retainer - August 2025",
+						},
+					},
+				},
+				ExpectedOutput: "Fixed amount line item added to invoice",
+				UseCase:        "Adding retainers, flat fees, or fixed charges",
+			},
+			{
+				Description: "Add quantity-based items (licenses, materials)",
+				Input: map[string]interface{}{
+					"invoice_number": "INV-001",
+					"line_items": []map[string]interface{}{
+						{
+							"type":        "quantity",
+							"date":        "2025-08-01",
+							"quantity":    3.0,
+							"unit_price":  50.0,
+							"description": "SSL certificates",
+						},
+					},
+				},
+				ExpectedOutput: "Quantity-based line item added with automatic total calculation",
+				UseCase:        "Adding materials, licenses, or other unit-priced items",
+			},
+			{
+				Description: "Mix different billing types on same invoice",
+				Input: map[string]interface{}{
+					"invoice_number": "INV-001",
+					"line_items": []map[string]interface{}{
+						{
+							"type":        "hourly",
+							"date":        "2025-08-01",
+							"hours":       40.0,
+							"rate":        125.0,
+							"description": "Development work - 40 hours",
+						},
+						{
+							"type":        "fixed",
+							"date":        "2025-08-01",
+							"amount":      500.0,
+							"description": "Project setup fee",
+						},
+						{
+							"type":        "quantity",
+							"date":        "2025-08-01",
+							"quantity":    2.0,
+							"unit_price":  25.0,
+							"description": "Hosting licenses",
+						},
+					},
+				},
+				ExpectedOutput: "Multiple line items of different types added with comprehensive total calculation",
+				UseCase:        "Creating invoices with mixed billing models (hourly work + fixed fees + materials)",
+			},
+		},
+		Category:   CategoryInvoiceManagement,
+		CLICommand: "go-invoice invoice add-line-item",
+		CLIArgs:    []string{"invoice", "add-line-item"},
+		HelpText:   "Adds flexible line items to draft invoices supporting hourly, fixed, and quantity-based billing. Enables mixed billing models on the same invoice with automatic total recalculation.",
 		Version:    "1.0.0",
 		Timeout:    25 * time.Second,
 	}

@@ -337,6 +337,53 @@ func (s *InvoiceService) AddWorkItemToInvoice(ctx context.Context, invoiceID mod
 	return invoice, nil
 }
 
+// AddLineItemToInvoice adds a line item to an existing invoice
+func (s *InvoiceService) AddLineItemToInvoice(ctx context.Context, invoiceID models.InvoiceID, lineItemData models.LineItem) (*models.Invoice, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	s.logger.Info("adding line item to invoice", "invoice_id", invoiceID, "type", lineItemData.Type)
+
+	// Get existing invoice
+	invoice, err := s.invoiceStorage.GetInvoice(ctx, invoiceID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve invoice: %w", err)
+	}
+
+	// Business rule: can only add line items to draft invoices
+	if invoice.Status != models.StatusDraft {
+		return nil, fmt.Errorf("%w, current status: %s", models.ErrCannotAddWorkItemToNonDraft, invoice.Status)
+	}
+
+	// Generate line item ID if not provided
+	if lineItemData.ID == "" {
+		lineItemID, err := s.idGenerator.GenerateWorkItemID(ctx) // Reuse work item ID generator
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate line item ID: %w", err)
+		}
+		lineItemData.ID = lineItemID
+	}
+
+	// Set creation time
+	lineItemData.CreatedAt = time.Now()
+
+	// Add line item to invoice
+	if err := invoice.AddLineItem(ctx, lineItemData); err != nil {
+		return nil, fmt.Errorf("failed to add line item: %w", err)
+	}
+
+	// Update invoice in storage
+	if err := s.invoiceStorage.UpdateInvoice(ctx, invoice); err != nil {
+		return nil, fmt.Errorf("failed to update invoice with new line item: %w", err)
+	}
+
+	s.logger.Info("line item added successfully", "invoice_id", invoiceID, "line_item_id", lineItemData.ID, "type", lineItemData.Type)
+	return invoice, nil
+}
+
 // UpdateInvoiceDirectly updates an invoice directly in storage without additional validation
 // This method is used internally by import service to avoid optimistic locking conflicts
 func (s *InvoiceService) UpdateInvoiceDirectly(ctx context.Context, invoice *models.Invoice) error {

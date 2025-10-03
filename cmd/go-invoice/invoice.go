@@ -20,16 +20,20 @@ import (
 
 // Invoice command errors
 var (
-	ErrClientNameRequired        = fmt.Errorf("client name is required (use --client or --interactive)")
-	ErrCannotDeletePaidInvoice   = fmt.Errorf("cannot delete paid invoice")
-	ErrNoUpdatesSpecified        = fmt.Errorf("no updates specified")
-	ErrEmailRequiredForNewClient = fmt.Errorf("email is required when creating a new client")
-	ErrCannotUpdateInvoiceStatus = fmt.Errorf("cannot update invoice with status")
-	ErrInvalidStatus             = fmt.Errorf("invalid status")
-	ErrSpecifyMoreSpecific       = fmt.Errorf("please specify a more specific client name")
-	ErrClientNotFound            = fmt.Errorf("client not found")
-	ErrNoClientsFound            = fmt.Errorf("no clients found matching")
-	ErrMultipleClientsFound      = fmt.Errorf("multiple clients found matching")
+	ErrClientNameRequired          = fmt.Errorf("client name is required (use --client or --interactive)")
+	ErrCannotDeletePaidInvoice     = fmt.Errorf("cannot delete paid invoice")
+	ErrNoUpdatesSpecified          = fmt.Errorf("no updates specified")
+	ErrEmailRequiredForNewClient   = fmt.Errorf("email is required when creating a new client")
+	ErrCannotUpdateInvoiceStatus   = fmt.Errorf("cannot update invoice with status")
+	ErrInvalidStatus               = fmt.Errorf("invalid status")
+	ErrSpecifyMoreSpecific         = fmt.Errorf("please specify a more specific client name")
+	ErrClientNotFound              = fmt.Errorf("client not found")
+	ErrNoClientsFound              = fmt.Errorf("no clients found matching")
+	ErrMultipleClientsFound        = fmt.Errorf("multiple clients found matching")
+	ErrHourlyLineItemRequiresFlags = fmt.Errorf("hourly line items require --hours and --rate flags")
+	ErrFixedLineItemRequiresAmount = fmt.Errorf("fixed line items require --amount flag")
+	ErrQuantityLineItemRequiresAll = fmt.Errorf("quantity line items require --quantity and --unit-price flags")
+	ErrInvalidLineItemType         = fmt.Errorf("invalid line item type (must be hourly, fixed, or quantity)")
 )
 
 // getInvoiceByIDOrNumber is a helper function to get an invoice by ID or number
@@ -62,6 +66,7 @@ func (a *App) buildInvoiceCommand() *cobra.Command {
 	invoiceCmd.AddCommand(a.buildInvoiceShowCommand())
 	invoiceCmd.AddCommand(a.buildInvoiceUpdateCommand())
 	invoiceCmd.AddCommand(a.buildInvoiceDeleteCommand())
+	invoiceCmd.AddCommand(a.buildInvoiceAddLineItemCommand())
 
 	return invoiceCmd
 }
@@ -1343,4 +1348,173 @@ func (a *App) searchClientsByName(ctx context.Context, clientService *services.C
 	}
 
 	return matches, nil
+}
+
+// buildInvoiceAddLineItemCommand creates the invoice add-line-item subcommand
+func (a *App) buildInvoiceAddLineItemCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "add-line-item [invoice-id-or-number]",
+		Short: "Add a custom line item to an invoice",
+		Long: `Add a custom line item to an existing invoice. Supports hourly, fixed, and quantity-based line items.
+
+Line Item Types:
+  hourly   - Time-based billing (hours × rate)
+  fixed    - Flat fee or fixed amount (retainers, setup fees)
+  quantity - Quantity-based billing (quantity × unit price)`,
+		Example: `  # Add hourly work item (default type)
+  go-invoice invoice add-line-item INV-001 --description "Development work" --hours 8 --rate 125
+
+  # Add monthly retainer (fixed amount)
+  go-invoice invoice add-line-item INV-001 --type fixed --description "Monthly Retainer - August" --amount 2000
+
+  # Add flat setup fee
+  go-invoice invoice add-line-item INV-001 --type fixed --description "Project Setup Fee" --amount 500
+
+  # Add quantity-based item (licenses, materials)
+  go-invoice invoice add-line-item INV-001 --type quantity --description "SSL Certificates" --quantity 2 --unit-price 50`,
+		Args: cobra.ExactArgs(1),
+		RunE: a.runInvoiceAddLineItem,
+	}
+
+	// Common flags
+	cmd.Flags().String("type", "hourly", "Line item type: hourly, fixed, or quantity")
+	cmd.Flags().String("description", "", "Line item description (required)")
+	cmd.Flags().String("date", "", "Line item date (default: today)")
+
+	// Hourly flags
+	cmd.Flags().Float64("hours", 0, "Hours worked (for hourly type)")
+	cmd.Flags().Float64("rate", 0, "Hourly rate (for hourly type)")
+
+	// Fixed flags
+	cmd.Flags().Float64("amount", 0, "Fixed amount (for fixed type)")
+
+	// Quantity flags
+	cmd.Flags().Float64("quantity", 0, "Quantity (for quantity type)")
+	cmd.Flags().Float64("unit-price", 0, "Unit price (for quantity type)")
+
+	// Mark description as required
+	_ = cmd.MarkFlagRequired("description")
+
+	return cmd
+}
+
+// runInvoiceAddLineItem executes the invoice add-line-item command
+func (a *App) runInvoiceAddLineItem(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+
+	// Get invoice identifier
+	invoiceIdentifier := args[0]
+
+	// Parse flags
+	lineItemType, _ := cmd.Flags().GetString("type")
+	description, _ := cmd.Flags().GetString("description")
+	dateStr, _ := cmd.Flags().GetString("date")
+
+	// Hourly flags
+	hours, _ := cmd.Flags().GetFloat64("hours")
+	rate, _ := cmd.Flags().GetFloat64("rate")
+
+	// Fixed flags
+	amount, _ := cmd.Flags().GetFloat64("amount")
+
+	// Quantity flags
+	quantity, _ := cmd.Flags().GetFloat64("quantity")
+	unitPrice, _ := cmd.Flags().GetFloat64("unit-price")
+
+	// Parse date
+	var itemDate time.Time
+	if dateStr != "" {
+		var err error
+		itemDate, err = time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			return fmt.Errorf("invalid date format (use YYYY-MM-DD): %w", err)
+		}
+	} else {
+		itemDate = time.Now()
+	}
+
+	// Get config path from flag
+	configPath, _ := cmd.Flags().GetString("config")
+
+	// Load configuration
+	config, err := a.configService.LoadConfig(ctx, configPath)
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Initialize storage and services
+	invoiceStorage, clientStorage := a.createStorageInstances(config.Storage.DataDir)
+	idGen := services.NewUUIDGenerator()
+	invoiceService := services.NewInvoiceService(invoiceStorage, clientStorage, a.logger, idGen)
+
+	// Get invoice
+	invoice, err := a.getInvoiceByIDOrNumber(ctx, invoiceService, invoiceIdentifier)
+	if err != nil {
+		return err
+	}
+
+	// Create line item based on type
+	var lineItem models.LineItem
+
+	switch models.LineItemType(lineItemType) {
+	case models.LineItemTypeHourly:
+		if hours == 0 || rate == 0 {
+			return ErrHourlyLineItemRequiresFlags
+		}
+		lineItem = models.LineItem{
+			Type:        models.LineItemTypeHourly,
+			Date:        itemDate,
+			Description: description,
+			Hours:       &hours,
+			Rate:        &rate,
+			Total:       hours * rate,
+			CreatedAt:   time.Now(),
+		}
+
+	case models.LineItemTypeFixed:
+		if amount == 0 {
+			return ErrFixedLineItemRequiresAmount
+		}
+		lineItem = models.LineItem{
+			Type:        models.LineItemTypeFixed,
+			Date:        itemDate,
+			Description: description,
+			Amount:      &amount,
+			Total:       amount,
+			CreatedAt:   time.Now(),
+		}
+
+	case models.LineItemTypeQuantity:
+		if quantity == 0 || unitPrice == 0 {
+			return ErrQuantityLineItemRequiresAll
+		}
+		lineItem = models.LineItem{
+			Type:        models.LineItemTypeQuantity,
+			Date:        itemDate,
+			Description: description,
+			Quantity:    &quantity,
+			UnitPrice:   &unitPrice,
+			Total:       quantity * unitPrice,
+			CreatedAt:   time.Now(),
+		}
+
+	default:
+		return fmt.Errorf("%w: %s", ErrInvalidLineItemType, lineItemType)
+	}
+
+	// Add line item to invoice
+	updatedInvoice, err := invoiceService.AddLineItemToInvoice(ctx, invoice.ID, lineItem)
+	if err != nil {
+		return fmt.Errorf("failed to add line item: %w", err)
+	}
+
+	// Display success message
+	a.logger.Printf("✅ Line item added to invoice %s\n\n", updatedInvoice.Number)
+	a.logger.Printf("Type:        %s\n", lineItem.Type)
+	a.logger.Printf("Description: %s\n", description)
+	a.logger.Printf("Details:     %s\n", lineItem.GetDetails())
+	a.logger.Printf("Amount:      %s\n\n", lineItem.GetFormattedTotal())
+	a.logger.Printf("Updated Total: $%.2f\n", updatedInvoice.Total)
+
+	return nil
 }

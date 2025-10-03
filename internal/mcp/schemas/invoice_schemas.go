@@ -381,6 +381,124 @@ func InvoiceAddItemSchema() map[string]interface{} {
 	}
 }
 
+// InvoiceAddLineItemSchema defines the JSON schema for adding flexible line items to invoices.
+//
+// This schema supports adding line items with three billing types: hourly, fixed, and quantity.
+// It provides a flexible way to add various types of charges to an invoice beyond simple hourly work.
+func InvoiceAddLineItemSchema() map[string]interface{} {
+	return map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"invoice_id": map[string]interface{}{
+				"type":        "string",
+				"description": "Invoice ID to add line items to.",
+				"minLength":   1,
+				"examples":    []string{"INV-001", "invoice_abc123"},
+			},
+			"invoice_number": map[string]interface{}{
+				"type":        "string",
+				"description": "Invoice number to add line items to (alternative to invoice_id).",
+				"minLength":   1,
+				"examples":    []string{"INV-001", "2025-001"},
+			},
+			"line_items": map[string]interface{}{
+				"type":        "array",
+				"minItems":    1,
+				"description": "Line items to add to the invoice. Supports hourly, fixed, and quantity-based billing.",
+				"items": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"type": map[string]interface{}{
+							"type":        "string",
+							"enum":        []string{"hourly", "fixed", "quantity"},
+							"description": "Type of line item: 'hourly' for time-based billing, 'fixed' for flat fees/retainers, 'quantity' for unit-based pricing.",
+							"default":     "hourly",
+							"examples":    []string{"hourly", "fixed", "quantity"},
+						},
+						"date": map[string]interface{}{
+							"type":        "string",
+							"format":      "date",
+							"description": "Date for this line item (YYYY-MM-DD). Defaults to today if not specified.",
+							"examples":    []string{time.Now().Format("2006-01-02"), "2025-08-01"},
+						},
+						"description": map[string]interface{}{
+							"type":        "string",
+							"minLength":   1,
+							"maxLength":   1000,
+							"description": "Description of the line item (work performed, service provided, item sold, etc.).",
+							"examples":    []string{"Development work", "Monthly retainer - August", "SSL certificates", "Project setup fee"},
+						},
+						// Hourly type fields
+						"hours": map[string]interface{}{
+							"type":        "number",
+							"minimum":     0.01,
+							"maximum":     24.0,
+							"description": "Number of hours worked (required for 'hourly' type). Decimal values allowed (e.g., 1.5 for 1 hour 30 minutes).",
+							"examples":    []interface{}{8.0, 4.5, 2.25},
+						},
+						"rate": map[string]interface{}{
+							"type":        "number",
+							"minimum":     0.01,
+							"maximum":     10000.0,
+							"description": "Hourly rate (required for 'hourly' type).",
+							"examples":    []interface{}{75.0, 125.0, 200.0},
+						},
+						// Fixed type fields
+						"amount": map[string]interface{}{
+							"type":        "number",
+							"minimum":     0.01,
+							"maximum":     1000000.0,
+							"description": "Fixed amount (required for 'fixed' type). Use for retainers, flat fees, setup charges, etc.",
+							"examples":    []interface{}{2000.0, 500.0, 150.0},
+						},
+						// Quantity type fields
+						"quantity": map[string]interface{}{
+							"type":        "number",
+							"minimum":     0.01,
+							"maximum":     10000.0,
+							"description": "Quantity of units (required for 'quantity' type). Use for materials, licenses, subscriptions, etc.",
+							"examples":    []interface{}{2.0, 5.0, 10.0},
+						},
+						"unit_price": map[string]interface{}{
+							"type":        "number",
+							"minimum":     0.01,
+							"maximum":     100000.0,
+							"description": "Price per unit (required for 'quantity' type).",
+							"examples":    []interface{}{50.0, 25.0, 100.0},
+						},
+					},
+					"required": []string{"description"}, // Type defaults to hourly, other fields required based on type
+					"oneOf": []interface{}{
+						// Hourly type validation
+						map[string]interface{}{
+							"properties": map[string]interface{}{
+								"type": map[string]interface{}{"const": "hourly"},
+							},
+							"required": []string{"hours", "rate"},
+						},
+						// Fixed type validation
+						map[string]interface{}{
+							"properties": map[string]interface{}{
+								"type": map[string]interface{}{"const": "fixed"},
+							},
+							"required": []string{"amount"},
+						},
+						// Quantity type validation
+						map[string]interface{}{
+							"properties": map[string]interface{}{
+								"type": map[string]interface{}{"const": "quantity"},
+							},
+							"required": []string{"quantity", "unit_price"},
+						},
+					},
+				},
+			},
+		},
+		"required":             []string{}, // Invoice ID and line items required but handled in validation logic
+		"additionalProperties": false,
+	}
+}
+
 // InvoiceRemoveItemSchema defines the JSON schema for removing work items from invoices.
 //
 // This schema supports removing work items by ID or by matching criteria
@@ -449,13 +567,14 @@ func InvoiceRemoveItemSchema() map[string]interface{} {
 // - Schemas are optimized for Claude natural language interaction
 func GetAllInvoiceSchemas() map[string]map[string]interface{} {
 	return map[string]map[string]interface{}{
-		"invoice_create":      InvoiceCreateSchema(),
-		"invoice_list":        InvoiceListSchema(),
-		"invoice_show":        InvoiceShowSchema(),
-		"invoice_update":      InvoiceUpdateSchema(),
-		"invoice_delete":      InvoiceDeleteSchema(),
-		"invoice_add_item":    InvoiceAddItemSchema(),
-		"invoice_remove_item": InvoiceRemoveItemSchema(),
+		"invoice_create":        InvoiceCreateSchema(),
+		"invoice_list":          InvoiceListSchema(),
+		"invoice_show":          InvoiceShowSchema(),
+		"invoice_update":        InvoiceUpdateSchema(),
+		"invoice_delete":        InvoiceDeleteSchema(),
+		"invoice_add_item":      InvoiceAddItemSchema(),
+		"invoice_add_line_item": InvoiceAddLineItemSchema(),
+		"invoice_remove_item":   InvoiceRemoveItemSchema(),
 	}
 }
 

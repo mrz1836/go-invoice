@@ -50,7 +50,7 @@
         <a href=".github/AGENTS.md">
           <img src="https://img.shields.io/badge/AGENTS.md-found-40b814?style=flat&logo=openai" alt="AI Agent Rules">
         </a><br/>
-        <a href="magefile.go" target="_blank">
+        <a href="magefiles/magefile.go" target="_blank">
           <img src="https://img.shields.io/badge/Magefile-supported-brightgreen?style=flat&logo=probot&logoColor=white" alt="Magefile Supported">
         </a><br/>
       </td>
@@ -226,10 +226,14 @@ go-invoice generate invoice INV-2025-001 --output invoice.html
 - Automatic invoice numbering with configurable prefixes
 - Tax calculation and subtotal management
 - Multiple invoice statuses (draft, sent, paid, overdue, voided)
+- **Flexible line items** - Support for hourly, fixed, and quantity-based billing on the same invoice
 
-**⏱️ Time Tracking**
+**⏱️ Time Tracking & Billing**
 - CSV timesheet import from popular time tracking tools
-- Manual work item entry with hours and rates
+- **Hourly billing** - Traditional time-based work with hours × rate
+- **Fixed fees** - Flat amounts for retainers, setup fees, monthly charges
+- **Quantity-based pricing** - Unit pricing for materials, licenses, subscriptions
+- Mixed billing models on same invoice (e.g., hourly work + monthly retainer + materials)
 - Flexible date formats and validation
 - Work item descriptions with intelligent validation
 
@@ -351,6 +355,100 @@ go-invoice-mcp --transport stdio --list-tools
 For detailed troubleshooting, see our [comprehensive troubleshooting guide](docs/mcp/troubleshooting.md).
 
 </details>
+
+<br/>
+
+## 💰 Flexible Line Items
+
+go-invoice supports **three types of line items** on the same invoice, giving you complete flexibility for any billing scenario:
+
+### Line Item Types
+
+#### 1. ⏱️ Hourly Billing (Time-based)
+Traditional hourly work with automatic calculation: **Hours × Rate = Total**
+
+```bash
+# Via CLI
+go-invoice invoice add-line-item INV-001 \
+  --description "Development work on authentication module" \
+  --hours 8 --rate 125
+
+# Via Claude (natural language)
+# "Add 8 hours of development work at $125/hour to INV-001"
+```
+
+#### 2. 💵 Fixed Amount (Flat Fees)
+One-time charges, retainers, setup fees, monthly charges
+
+```bash
+# Via CLI
+go-invoice invoice add-line-item INV-001 \
+  --type fixed \
+  --description "Monthly Retainer - August 2025" \
+  --amount 2000
+
+# Via Claude (natural language)
+# "Add a $2000 monthly retainer to INV-001"
+```
+
+#### 3. 📦 Quantity-based (Unit Pricing)
+Materials, licenses, subscriptions: **Quantity × Unit Price = Total**
+
+```bash
+# Via CLI
+go-invoice invoice add-line-item INV-001 \
+  --type quantity \
+  --description "SSL certificates" \
+  --quantity 3 --unit-price 50
+
+# Via Claude (natural language)
+# "Add 3 SSL certificates at $50 each to INV-001"
+```
+
+### Real-World Example: Mixed Billing
+
+Create an invoice combining all three billing types:
+
+```bash
+# 1. Start with hourly work
+go-invoice invoice add-line-item INV-001 \
+  --description "Development - 40 hours" \
+  --hours 40 --rate 125
+  # Subtotal: $5,000
+
+# 2. Add project setup fee
+go-invoice invoice add-line-item INV-001 \
+  --type fixed \
+  --description "Project Setup & Configuration" \
+  --amount 500
+  # Subtotal: $5,500
+
+# 3. Add materials/licenses
+go-invoice invoice add-line-item INV-001 \
+  --type quantity \
+  --description "Development licenses (annual)" \
+  --quantity 2 --unit-price 99
+  # Final Total: $5,698
+```
+
+### Invoice Display
+
+Line items are intelligently displayed based on type:
+
+| Date  | Description                                              | Details      | Amount        |
+|-------|----------------------------------------------------------|--------------|---------------|
+| Aug 1 | Development - 40 hours<br><small>Hourly</small>          | 40h @ $125/h | $5,000.00     |
+| Aug 1 | Project Setup & Configuration<br><small>Fixed</small>    | —            | $500.00       |
+| Aug 1 | Development licenses (annual)<br><small>Quantity</small> | 2 × $99      | $198.00       |
+|       |                                                          | **Total**    | **$5,698.00** |
+
+### Benefits
+
+✅ **Flexibility** - Mix different billing models on one invoice
+✅ **Clarity** - Clear display shows exactly what was charged
+✅ **Accuracy** - Automatic calculations prevent errors
+✅ **Professional** - Clean, itemized invoices for clients
+✅ **Backward Compatible** - Works alongside existing time-based work items
 
 <br/>
 
