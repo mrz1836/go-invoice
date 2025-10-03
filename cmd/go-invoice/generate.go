@@ -199,6 +199,16 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 		return validateErr
 	}
 
+	// Apply crypto service fee if enabled for this client
+	cryptoEnabled := config.Business.CryptoPayments.USDCEnabled || config.Business.CryptoPayments.BSVEnabled
+	feeEnabled := invoice.Client.CryptoFeeEnabled
+	feeAmount := invoice.Client.CryptoFeeAmount
+
+	// Apply crypto fee if client has it enabled
+	if cryptoErr := invoice.SetCryptoFee(ctx, cryptoEnabled, feeEnabled, feeAmount); cryptoErr != nil {
+		return fmt.Errorf("failed to set crypto fee: %w", cryptoErr)
+	}
+
 	// Create data structure for template with fresh client data
 	invoiceData := a.createInvoiceDataWithFreshClient(ctx, invoice, config, invoiceService)
 

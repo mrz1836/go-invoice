@@ -767,3 +767,247 @@ func (suite *InvoiceTestSuite) TestGetDaysUntilDue() {
 		})
 	}
 }
+
+func (suite *InvoiceTestSuite) TestSetCryptoFee() {
+	t := suite.T()
+
+	tests := []struct {
+		name                  string
+		cryptoPaymentsEnabled bool
+		feeEnabled            bool
+		feeAmount             float64
+		workItemTotal         float64
+		taxRate               float64
+		expectedCryptoFee     float64
+		expectedSubtotal      float64
+		expectedTaxAmount     float64
+		expectedTotal         float64
+	}{
+		{
+			name:                  "CryptoEnabledAndFeeEnabled",
+			cryptoPaymentsEnabled: true,
+			feeEnabled:            true,
+			feeAmount:             25.00,
+			workItemTotal:         1000.00,
+			taxRate:               0.10,
+			expectedCryptoFee:     25.00,
+			expectedSubtotal:      1000.00,
+			expectedTaxAmount:     102.50,  // Tax on (1000 + 25)
+			expectedTotal:         1127.50, // 1000 + 25 + 102.50
+		},
+		{
+			name:                  "CryptoEnabledButFeeDisabled",
+			cryptoPaymentsEnabled: true,
+			feeEnabled:            false,
+			feeAmount:             25.00,
+			workItemTotal:         1000.00,
+			taxRate:               0.10,
+			expectedCryptoFee:     0.00,
+			expectedSubtotal:      1000.00,
+			expectedTaxAmount:     100.00,  // Tax on 1000 only
+			expectedTotal:         1100.00, // 1000 + 100
+		},
+		{
+			name:                  "CryptoDisabledFeeEnabled",
+			cryptoPaymentsEnabled: false,
+			feeEnabled:            true,
+			feeAmount:             25.00,
+			workItemTotal:         1000.00,
+			taxRate:               0.10,
+			expectedCryptoFee:     0.00,
+			expectedSubtotal:      1000.00,
+			expectedTaxAmount:     100.00,
+			expectedTotal:         1100.00,
+		},
+		{
+			name:                  "BothDisabled",
+			cryptoPaymentsEnabled: false,
+			feeEnabled:            false,
+			feeAmount:             25.00,
+			workItemTotal:         1000.00,
+			taxRate:               0.10,
+			expectedCryptoFee:     0.00,
+			expectedSubtotal:      1000.00,
+			expectedTaxAmount:     100.00,
+			expectedTotal:         1100.00,
+		},
+		{
+			name:                  "ZeroFeeAmount",
+			cryptoPaymentsEnabled: true,
+			feeEnabled:            true,
+			feeAmount:             0.00,
+			workItemTotal:         1000.00,
+			taxRate:               0.10,
+			expectedCryptoFee:     0.00,
+			expectedSubtotal:      1000.00,
+			expectedTaxAmount:     100.00,
+			expectedTotal:         1100.00,
+		},
+		{
+			name:                  "LargeFeeAmount",
+			cryptoPaymentsEnabled: true,
+			feeEnabled:            true,
+			feeAmount:             100.00,
+			workItemTotal:         5000.00,
+			taxRate:               0.10,
+			expectedCryptoFee:     100.00,
+			expectedSubtotal:      5000.00,
+			expectedTaxAmount:     510.00,  // Tax on (5000 + 100)
+			expectedTotal:         5610.00, // 5000 + 100 + 510
+		},
+		{
+			name:                  "NoWorkItemsWithCryptoFee",
+			cryptoPaymentsEnabled: true,
+			feeEnabled:            true,
+			feeAmount:             25.00,
+			workItemTotal:         0.00,
+			taxRate:               0.10,
+			expectedCryptoFee:     25.00,
+			expectedSubtotal:      0.00,
+			expectedTaxAmount:     2.50,  // Tax on 25
+			expectedTotal:         27.50, // 0 + 25 + 2.50
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			// Create invoice with work item
+			invoice := &Invoice{
+				ID:        "INV-001",
+				Number:    "INV-2024-001",
+				Date:      time.Now(),
+				DueDate:   time.Now().AddDate(0, 0, 30),
+				Status:    StatusDraft,
+				TaxRate:   tt.taxRate,
+				WorkItems: []WorkItem{},
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+				Version:   1,
+			}
+
+			// Add work item if specified
+			if tt.workItemTotal > 0 {
+				workItem := WorkItem{
+					ID:          "ITEM-001",
+					Date:        time.Now(),
+					Hours:       8.0,
+					Rate:        tt.workItemTotal / 8.0,
+					Description: "Test work",
+					Total:       tt.workItemTotal,
+					CreatedAt:   time.Now(),
+				}
+				invoice.WorkItems = append(invoice.WorkItems, workItem)
+			}
+
+			// Recalculate base totals first
+			err := invoice.RecalculateTotals(suite.ctx)
+			require.NoError(t, err)
+
+			// Set crypto fee
+			err = invoice.SetCryptoFee(suite.ctx, tt.cryptoPaymentsEnabled, tt.feeEnabled, tt.feeAmount)
+			require.NoError(t, err)
+
+			// Verify results
+			assert.InDelta(t, tt.expectedCryptoFee, invoice.CryptoFee, 1e-9, "crypto fee mismatch")
+			assert.InDelta(t, tt.expectedSubtotal, invoice.Subtotal, 1e-9, "subtotal mismatch")
+			assert.InDelta(t, tt.expectedTaxAmount, invoice.TaxAmount, 1e-9, "tax amount mismatch")
+			assert.InDelta(t, tt.expectedTotal, invoice.Total, 1e-9, "total mismatch")
+		})
+	}
+}
+
+func (suite *InvoiceTestSuite) TestRecalculateTotalsWithCryptoFee() {
+	t := suite.T()
+
+	tests := []struct {
+		name             string
+		workItems        []WorkItem
+		cryptoFee        float64
+		taxRate          float64
+		expectedSubtotal float64
+		expectedTax      float64
+		expectedTotal    float64
+	}{
+		{
+			name: "SingleWorkItemWithCryptoFee",
+			workItems: []WorkItem{
+				{Total: 1000.0},
+			},
+			cryptoFee:        25.00,
+			taxRate:          0.10,
+			expectedSubtotal: 1000.00,
+			expectedTax:      102.50,  // (1000 + 25) * 0.10
+			expectedTotal:    1127.50, // 1000 + 25 + 102.50
+		},
+		{
+			name: "MultipleWorkItemsWithCryptoFee",
+			workItems: []WorkItem{
+				{Total: 1000.0},
+				{Total: 500.0},
+				{Total: 250.0},
+			},
+			cryptoFee:        50.00,
+			taxRate:          0.10,
+			expectedSubtotal: 1750.00,
+			expectedTax:      180.00,  // (1750 + 50) * 0.10
+			expectedTotal:    1980.00, // 1750 + 50 + 180
+		},
+		{
+			name: "ZeroTaxWithCryptoFee",
+			workItems: []WorkItem{
+				{Total: 1000.0},
+			},
+			cryptoFee:        25.00,
+			taxRate:          0.00,
+			expectedSubtotal: 1000.00,
+			expectedTax:      0.00,
+			expectedTotal:    1025.00, // 1000 + 25 + 0
+		},
+		{
+			name: "HighTaxWithCryptoFee",
+			workItems: []WorkItem{
+				{Total: 1000.0},
+			},
+			cryptoFee:        25.00,
+			taxRate:          0.20,
+			expectedSubtotal: 1000.00,
+			expectedTax:      205.00,  // (1000 + 25) * 0.20
+			expectedTotal:    1230.00, // 1000 + 25 + 205
+		},
+		{
+			name:             "NoCryptoFee",
+			workItems:        []WorkItem{{Total: 1000.0}},
+			cryptoFee:        0.00,
+			taxRate:          0.10,
+			expectedSubtotal: 1000.00,
+			expectedTax:      100.00,
+			expectedTotal:    1100.00,
+		},
+		{
+			name:             "CryptoFeeOnlyNoWorkItems",
+			workItems:        []WorkItem{},
+			cryptoFee:        25.00,
+			taxRate:          0.10,
+			expectedSubtotal: 0.00,
+			expectedTax:      2.50,  // 25 * 0.10
+			expectedTotal:    27.50, // 0 + 25 + 2.50
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			invoice := &Invoice{
+				WorkItems: tt.workItems,
+				CryptoFee: tt.cryptoFee,
+				TaxRate:   tt.taxRate,
+			}
+
+			err := invoice.RecalculateTotals(suite.ctx)
+			require.NoError(t, err)
+
+			assert.InDelta(t, tt.expectedSubtotal, invoice.Subtotal, 1e-9, "subtotal mismatch")
+			assert.InDelta(t, tt.expectedTax, invoice.TaxAmount, 1e-9, "tax amount mismatch")
+			assert.InDelta(t, tt.expectedTotal, invoice.Total, 1e-9, "total mismatch")
+		})
+	}
+}

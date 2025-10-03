@@ -19,6 +19,7 @@ type Invoice struct {
 	Status      string     `json:"status"`
 	Description string     `json:"description,omitempty"`
 	Subtotal    float64    `json:"subtotal"`
+	CryptoFee   float64    `json:"crypto_fee"`
 	TaxRate     float64    `json:"tax_rate"`
 	TaxAmount   float64    `json:"tax_amount"`
 	Total       float64    `json:"total"`
@@ -48,6 +49,8 @@ type Client struct {
 	TaxID            string    `json:"tax_id,omitempty"`
 	ApproverContacts string    `json:"approver_contacts,omitempty"`
 	Active           bool      `json:"active"`
+	CryptoFeeEnabled bool      `json:"crypto_fee_enabled"`
+	CryptoFeeAmount  float64   `json:"crypto_fee_amount,omitempty"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
 }
@@ -399,13 +402,33 @@ func (i *Invoice) RecalculateTotals(ctx context.Context) error {
 	// Round to avoid floating point precision issues
 	i.Subtotal = math.Round(subtotal*100) / 100
 
-	// Calculate tax amount
-	i.TaxAmount = math.Round(i.Subtotal*i.TaxRate*100) / 100
+	// Calculate tax amount on (subtotal + crypto fee)
+	taxableAmount := i.Subtotal + i.CryptoFee
+	i.TaxAmount = math.Round(taxableAmount*i.TaxRate*100) / 100
 
-	// Calculate total
-	i.Total = math.Round((i.Subtotal+i.TaxAmount)*100) / 100
+	// Calculate total (subtotal + crypto fee + tax)
+	i.Total = math.Round((taxableAmount+i.TaxAmount)*100) / 100
 
 	return nil
+}
+
+// SetCryptoFee sets the cryptocurrency service fee if applicable
+func (i *Invoice) SetCryptoFee(ctx context.Context, cryptoPaymentsEnabled, feeEnabled bool, feeAmount float64) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Apply crypto service fee if crypto payments are enabled and fee is enabled
+	if cryptoPaymentsEnabled && feeEnabled {
+		i.CryptoFee = feeAmount
+	} else {
+		i.CryptoFee = 0.0
+	}
+
+	// Recalculate totals with the new crypto fee
+	return i.RecalculateTotals(ctx)
 }
 
 // UpdateStatus updates the invoice status with validation

@@ -232,12 +232,14 @@ func (c *Client) HasCompleteInfo() bool {
 
 // CreateClientRequest represents a request to create a new client
 type CreateClientRequest struct {
-	Name             string `json:"name"`
-	Email            string `json:"email"`
-	Phone            string `json:"phone,omitempty"`
-	Address          string `json:"address,omitempty"`
-	TaxID            string `json:"tax_id,omitempty"`
-	ApproverContacts string `json:"approver_contacts,omitempty"`
+	Name             string  `json:"name"`
+	Email            string  `json:"email"`
+	Phone            string  `json:"phone,omitempty"`
+	Address          string  `json:"address,omitempty"`
+	TaxID            string  `json:"tax_id,omitempty"`
+	ApproverContacts string  `json:"approver_contacts,omitempty"`
+	CryptoFeeEnabled bool    `json:"crypto_fee_enabled"`
+	CryptoFeeAmount  float64 `json:"crypto_fee_amount,omitempty"`
 }
 
 // Validate validates the create client request

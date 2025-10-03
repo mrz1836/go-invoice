@@ -37,13 +37,16 @@ func (a *App) buildClientCommand() *cobra.Command {
 // buildClientCreateCommand creates the client create command
 func (a *App) buildClientCreateCommand() *cobra.Command {
 	var name, email, phone, address, taxID string
+	var cryptoFeeEnabled bool
+	var cryptoFeeAmount float64
 
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a new client",
 		Long:  "Create a new client with contact information",
 		Example: `  go-invoice client create --name "Acme Corp" --email "contact@acme.com"
-  go-invoice client create --name "John Smith" --email "john@example.com" --phone "+1-555-123-4567"`,
+  go-invoice client create --name "John Smith" --email "john@example.com" --phone "+1-555-123-4567"
+  go-invoice client create --name "Acme Company" --email "billing@acme.com" --crypto-fee --crypto-fee-amount 25.00`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -61,11 +64,13 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 
 			// Create client request
 			req := models.CreateClientRequest{
-				Name:    name,
-				Email:   email,
-				Phone:   phone,
-				Address: address,
-				TaxID:   taxID,
+				Name:             name,
+				Email:            email,
+				Phone:            phone,
+				Address:          address,
+				TaxID:            taxID,
+				CryptoFeeEnabled: cryptoFeeEnabled,
+				CryptoFeeAmount:  cryptoFeeAmount,
 			}
 
 			client, err := clientService.CreateClient(ctx, req)
@@ -74,6 +79,9 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 			}
 
 			a.logger.Info("Client created successfully", "name", client.Name, "id", client.ID)
+			if cryptoFeeEnabled {
+				a.logger.Printf("💰 Crypto service fee enabled: $%.2f\n", cryptoFeeAmount)
+			}
 			return nil
 		},
 	}
@@ -83,6 +91,8 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&phone, "phone", "", "Client phone number")
 	cmd.Flags().StringVar(&address, "address", "", "Client address")
 	cmd.Flags().StringVar(&taxID, "tax-id", "", "Tax ID (EIN, VAT number, etc.)")
+	cmd.Flags().BoolVar(&cryptoFeeEnabled, "crypto-fee", false, "Enable cryptocurrency service fee for this client")
+	cmd.Flags().Float64Var(&cryptoFeeAmount, "crypto-fee-amount", 25.00, "Cryptocurrency service fee amount")
 
 	if err := cmd.MarkFlagRequired("name"); err != nil {
 		return cmd
@@ -324,6 +334,8 @@ func (a *App) buildClientShowCommand() *cobra.Command {
 func (a *App) buildClientUpdateCommand() *cobra.Command {
 	var name, email, phone, address, taxID string
 	var activate, deactivate bool
+	var cryptoFeeEnabled bool
+	var cryptoFeeAmount float64
 
 	cmd := &cobra.Command{
 		Use:   "update [client-id or name]",
@@ -404,6 +416,14 @@ func (a *App) buildClientUpdateCommand() *cobra.Command {
 				client.Active = false
 				updated = true
 			}
+			if cmd.Flags().Changed("crypto-fee") {
+				client.CryptoFeeEnabled = cryptoFeeEnabled
+				updated = true
+			}
+			if cmd.Flags().Changed("crypto-fee-amount") {
+				client.CryptoFeeAmount = cryptoFeeAmount
+				updated = true
+			}
 
 			if !updated {
 				return models.ErrNoUpdatesSpecified
@@ -416,6 +436,9 @@ func (a *App) buildClientUpdateCommand() *cobra.Command {
 			}
 
 			a.logger.Info("Client updated successfully", "name", client.Name)
+			if client.CryptoFeeEnabled {
+				a.logger.Printf("💰 Crypto service fee: $%.2f\n", client.CryptoFeeAmount)
+			}
 			return nil
 		},
 	}
@@ -427,6 +450,8 @@ func (a *App) buildClientUpdateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&taxID, "tax-id", "", "Update tax ID")
 	cmd.Flags().BoolVar(&activate, "activate", false, "Activate client")
 	cmd.Flags().BoolVar(&deactivate, "deactivate", false, "Deactivate client")
+	cmd.Flags().BoolVar(&cryptoFeeEnabled, "crypto-fee", false, "Enable cryptocurrency service fee for this client")
+	cmd.Flags().Float64Var(&cryptoFeeAmount, "crypto-fee-amount", 25.00, "Cryptocurrency service fee amount")
 
 	return cmd
 }
