@@ -101,6 +101,9 @@ func (s *ClientService) CreateClient(ctx context.Context, req models.CreateClien
 	client.CryptoFeeEnabled = req.CryptoFeeEnabled
 	client.CryptoFeeAmount = req.CryptoFeeAmount
 
+	// Set late fee settings
+	client.LateFeeEnabled = req.LateFeeEnabled
+
 	if req.ApproverContacts != "" {
 		if err := client.UpdateApproverContacts(ctx, req.ApproverContacts); err != nil {
 			return nil, fmt.Errorf("failed to set client approver contacts: %w", err)

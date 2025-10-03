@@ -51,6 +51,7 @@ type Client struct {
 	Active           bool      `json:"active"`
 	CryptoFeeEnabled bool      `json:"crypto_fee_enabled"`
 	CryptoFeeAmount  float64   `json:"crypto_fee_amount,omitempty"`
+	LateFeeEnabled   bool      `json:"late_fee_enabled"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
 }

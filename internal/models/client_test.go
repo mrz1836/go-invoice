@@ -1082,6 +1082,43 @@ func (suite *ClientTestSuite) TestHasCompleteInfo() {
 	}
 }
 
+func (suite *ClientTestSuite) TestLateFeeEnabled() {
+	t := suite.T()
+
+	tests := []struct {
+		name           string
+		lateFeeEnabled bool
+		expected       bool
+	}{
+		{
+			name:           "LateFeeEnabled",
+			lateFeeEnabled: true,
+			expected:       true,
+		},
+		{
+			name:           "LateFeeDisabled",
+			lateFeeEnabled: false,
+			expected:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			client := &Client{
+				ID:             "CLIENT-001",
+				Name:           "Test Client",
+				Email:          "test@example.com",
+				Active:         true,
+				LateFeeEnabled: tt.lateFeeEnabled,
+				CreatedAt:      time.Now(),
+				UpdatedAt:      time.Now(),
+			}
+
+			assert.Equal(t, tt.expected, client.LateFeeEnabled)
+		})
+	}
+}
+
 func (suite *ClientTestSuite) TestCreateClientRequestValidate() {
 	t := suite.T()
 
@@ -1107,6 +1144,15 @@ func (suite *ClientTestSuite) TestCreateClientRequestValidate() {
 				Phone:   "+1-555-123-4567",
 				Address: "123 Main St, City, State 12345",
 				TaxID:   "12-3456789",
+			},
+			expectError: false,
+		},
+		{
+			name: "ValidRequestWithLateFee",
+			request: CreateClientRequest{
+				Name:           "Test Client",
+				Email:          "test@example.com",
+				LateFeeEnabled: true,
 			},
 			expectError: false,
 		},

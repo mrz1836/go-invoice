@@ -530,6 +530,16 @@
             </section>
             {{end}}
 
+            <!-- Late Fee Notice -->
+            {{if .Client.LateFeeEnabled}}
+            <section class="late-fee-notice" style="margin-top: 30px; padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                <h4 style="font-size: 14px; font-weight: 600; color: #856404; margin-bottom: 10px;">Late Payment Policy</h4>
+                <p style="font-size: 12px; color: #856404; line-height: 1.6; margin: 0;">
+                    Invoices not paid within the specified payment terms will accrue interest at a rate of <strong>1.5% per month (18% APR)</strong> from the due date until paid in full. This policy is in place to encourage timely payment per our agreed terms. Thank you for your understanding and cooperation.
+                </p>
+            </section>
+            {{end}}
+
             <!-- Footer -->
             <footer class="invoice-footer">
                 <p>Thank you for your business!</p>
