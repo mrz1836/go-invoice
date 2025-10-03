@@ -10,7 +10,7 @@ import (
 
 // ToolIntegrationTestSuite tests the complete tool registry and discovery integration.
 //
-// This test suite validates that all 21 tools are properly registered and that
+// This test suite validates that all 22 tools are properly registered and that
 // the discovery, validation, and initialization systems work together correctly.
 type ToolIntegrationTestSuite struct {
 	suite.Suite
@@ -43,7 +43,7 @@ func (suite *ToolIntegrationTestSuite) TestCompleteToolSystemInitialization() {
 	// Validate tool count
 	allTools, err := components.Registry.ListTools(ctx, "")
 	suite.Require().NoError(err, "Listing all tools should succeed")
-	suite.Len(allTools, 21, "Should have exactly 21 tools registered")
+	suite.Len(allTools, 22, "Should have exactly 22 tools registered")
 
 	// Validate category count
 	categories, err := components.Registry.GetCategories(ctx)
@@ -109,7 +109,7 @@ func (suite *ToolIntegrationTestSuite) TestCategoryBasedDiscovery() {
 	}
 
 	expectedToolCounts := map[CategoryType]int{
-		CategoryInvoiceManagement: 7,
+		CategoryInvoiceManagement: 8,
 		CategoryClientManagement:  5,
 		CategoryDataImport:        3,
 		CategoryDataExport:        3,
@@ -153,7 +153,7 @@ func (suite *ToolIntegrationTestSuite) TestToolValidationIntegration() {
 	}
 
 	// We should have attempted to validate all tools
-	suite.Equal(21, validationAttempts, "Should validate all 21 tools")
+	suite.Equal(22, validationAttempts, "Should validate all 22 tools")
 
 	// Some tools might have validation errors with empty input
 	suite.T().Logf("Validation attempts: %d, Validation errors: %d", validationAttempts, validationErrors)
@@ -193,13 +193,13 @@ func (suite *ToolIntegrationTestSuite) TestRegistrationMetrics() {
 	metrics, err := suite.components.Registry.GetRegistrationMetrics(ctx)
 	suite.Require().NoError(err, "Getting metrics should succeed")
 
-	suite.Equal(21, metrics.TotalTools, "Should have 21 total tools")
+	suite.Equal(22, metrics.TotalTools, "Should have 22 total tools")
 	suite.Equal(5, metrics.TotalCategories, "Should have 5 total categories")
 	suite.NotZero(metrics.Uptime, "Should have non-zero uptime")
 
 	// Validate tool distribution
 	expectedDistribution := map[CategoryType]int{
-		CategoryInvoiceManagement: 7,
+		CategoryInvoiceManagement: 8,
 		CategoryClientManagement:  5,
 		CategoryDataImport:        3,
 		CategoryDataExport:        3,

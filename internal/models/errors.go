@@ -31,6 +31,13 @@ var (
 	ErrRateExceedsLimit         = fmt.Errorf("rate cannot exceed $10,000 per hour")
 	ErrDescriptionTooLong       = fmt.Errorf("description cannot exceed 1000 characters")
 
+	// Line item-related errors
+	ErrLineItemValidationFailed = fmt.Errorf("line item validation failed")
+	ErrLineItemNotFound         = fmt.Errorf("line item not found")
+	ErrInvalidLineItemType      = fmt.Errorf("invalid line item type")
+	ErrLineItemAmountRequired   = fmt.Errorf("amount is required for fixed line items")
+	ErrLineItemQuantityRequired = fmt.Errorf("quantity and unit price are required for quantity line items")
+
 	// Request validation errors
 	ErrFilterValidationFailed      = fmt.Errorf("filter validation failed")
 	ErrCreateInvoiceRequestInvalid = fmt.Errorf("create invoice request validation failed")
