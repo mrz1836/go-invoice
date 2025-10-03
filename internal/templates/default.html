@@ -459,6 +459,12 @@
                         <td class="label">Subtotal:</td>
                         <td class="amount">{{formatCurrency .Subtotal .Config.Currency}}</td>
                     </tr>
+                    {{if gt .CryptoFee 0.0}}
+                    <tr>
+                        <td class="label">Cryptocurrency Service Fee:</td>
+                        <td class="amount">{{formatCurrency .CryptoFee .Config.Currency}}</td>
+                    </tr>
+                    {{end}}
                     {{if gt .TaxRate 0.0}}
                     <tr>
                         <td class="label">Tax ({{formatFloat (multiply .TaxRate 100) 1}}%):</td>
@@ -510,6 +516,15 @@
                     {{if .Business.BankDetails.PaymentInstructions}}
                     <br><br>
                     {{.Business.BankDetails.PaymentInstructions}}
+                    {{end}}
+
+                    {{if gt .CryptoFee 0.0}}
+                    <br><br>
+                    <div style="padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; color: #856404;">
+                        <strong>💰 Cryptocurrency Service Fee Notice:</strong><br>
+                        A {{formatCurrency .CryptoFee .Config.Currency}} service fee has been applied for cryptocurrency payment processing and conversion.<br>
+                        <em>To avoid this fee, please use ACH Bank Transfer (USD).</em>
+                    </div>
                     {{end}}
                 </div>
             </section>

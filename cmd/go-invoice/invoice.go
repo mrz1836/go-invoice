@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -167,10 +166,7 @@ func (a *App) runInvoiceCreate(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Generate next invoice number
-	nextNumber, err := a.generateNextInvoiceNumber(ctx, invoiceService, config.Invoice.Prefix, config.Invoice.StartNumber)
-	if err != nil {
-		return fmt.Errorf("failed to generate invoice number: %w", err)
-	}
+	nextNumber := a.generateNextInvoiceNumber(ctx, invoiceService, config.Invoice.Prefix, config.Invoice.StartNumber)
 
 	// Create invoice
 	req := models.CreateInvoiceRequest{
@@ -1134,10 +1130,7 @@ func (a *App) runInvoiceCreateInteractive(ctx context.Context, invoiceService *s
 	}
 
 	// Generate invoice number
-	nextNumber, err := a.generateNextInvoiceNumber(ctx, invoiceService, config.Invoice.Prefix, config.Invoice.StartNumber)
-	if err != nil {
-		return fmt.Errorf("failed to generate invoice number: %w", err)
-	}
+	nextNumber := a.generateNextInvoiceNumber(ctx, invoiceService, config.Invoice.Prefix, config.Invoice.StartNumber)
 
 	a.logger.Printf("\n📋 Invoice Summary:\n")
 	a.logger.Printf("   Number: %s\n", nextNumber)
@@ -1324,32 +1317,11 @@ func (a *App) createClientInteractive(ctx context.Context, clientService *servic
 	return client, nil
 }
 
-// generateNextInvoiceNumber generates the next available invoice number
-func (a *App) generateNextInvoiceNumber(ctx context.Context, invoiceService *services.InvoiceService, prefix string, startNumber int) (string, error) {
-	// Get all invoices to find the highest number
-	filter := models.InvoiceFilter{}
-	result, err := invoiceService.ListInvoices(ctx, filter)
-	if err != nil {
-		return "", fmt.Errorf("failed to list invoices: %w", err)
-	}
-
-	// Find the highest invoice number with the same prefix
-	highestNum := startNumber - 1
-	for _, inv := range result.Invoices {
-		if strings.HasPrefix(inv.Number, prefix) {
-			// Extract the numeric part
-			numPart := strings.TrimPrefix(inv.Number, prefix)
-			numPart = strings.TrimPrefix(numPart, "-")
-
-			if num, err := strconv.Atoi(numPart); err == nil && num > highestNum {
-				highestNum = num
-			}
-		}
-	}
-
-	// Generate next number
-	nextNum := highestNum + 1
-	return fmt.Sprintf("%s-%03d", prefix, nextNum), nil
+// generateNextInvoiceNumber generates the next available invoice number using timestamp format
+func (a *App) generateNextInvoiceNumber(_ context.Context, _ *services.InvoiceService, prefix string, _ int) string {
+	// Generate invoice number based on current date and time
+	now := time.Now()
+	return fmt.Sprintf("%s-%s", prefix, now.Format("20060102-150405"))
 }
 
 // searchClientsByName searches for clients by name

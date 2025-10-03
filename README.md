@@ -128,9 +128,9 @@ go-invoice config setup
 go-invoice client create --name "Acme Corp" --email "billing@acme.com" --phone "+1-555-0123"
 
 # Import timesheet data (CSV or JSON) and create invoice
-go-invoice import create timesheet.csv --client-name "Acme Corp" --description "August 2025 Services"
+go-invoice import create timesheet.csv --client "Acme Corp" --description "August 2025 Services"
 # OR for JSON:
-go-invoice import create timesheet.json --client-name "Acme Corp" --description "August 2025 Services"
+go-invoice import create timesheet.json --client "Acme Corp" --description "August 2025 Services"
 
 # Generate HTML from the invoice
 go-invoice generate invoice <invoice-id> --output invoice.html
@@ -181,7 +181,7 @@ Claude: ✅ Generated invoice-2025-001.html in current directory
 ### Traditional CLI (Also Available)
 ```bash
 go-invoice client create --name "Acme Corp" --email "billing@acme.com"
-go-invoice import create timesheet.csv --client-name "Acme Corp" --description "Monthly Services"
+go-invoice import create timesheet.csv --client "Acme Corp" --description "Monthly Services"
 go-invoice invoice update INV-2025-001 --date 2025-08-07  # Auto-calculates due date
 go-invoice generate invoice INV-2025-001 --output invoice.html
 ```
@@ -214,6 +214,7 @@ go-invoice generate invoice INV-2025-001 --output invoice.html
 - Complete business profile setup with contact information
 - Configurable tax rates and payment terms
 - Multi-currency support
+- **Cryptocurrency service fee** - Optional configurable fee for crypto payments
 
 **👥 Client Management**
 - Add, edit, and manage client information
@@ -392,6 +393,98 @@ go-invoice --version
 ## ⚙️ Configuration
 
 <details>
+<summary><strong>💰 Cryptocurrency Service Fee</strong></summary>
+
+### Overview
+
+When cryptocurrency payments are enabled (USDC or BSV), you can optionally apply a service fee to cover the costs of crypto payment processing, exchange fees, and conversion overhead.
+
+### How It Works
+
+The crypto service fee is configured **per-client** basis, giving you fine-grained control over which clients incur the fee.
+
+1. **Client-Level Configuration**: Enable crypto fee when creating or updating a client
+2. **Automatic Application**: When crypto payments are enabled AND the client has crypto fee enabled, the fee is automatically added to invoices
+3. **Separate Line Item**: The fee appears as "Cryptocurrency Service Fee" in the invoice totals
+4. **Taxable Amount**: The fee is added to the subtotal before tax calculation
+5. **Clear Disclaimer**: A notice is displayed on invoices explaining how to avoid the fee
+
+### Invoice Display
+
+The crypto service fee appears in two places on generated invoices:
+
+**Totals Section:**
+```
+Subtotal:                     $5,000.00
+Cryptocurrency Service Fee:      $25.00
+Tax (10%):                      $502.50
+────────────────────────────────────────
+Total:                        $5,527.50
+```
+
+**Payment Section:**
+```
+💰 Cryptocurrency Service Fee Notice:
+A $25.00 service fee has been applied for cryptocurrency
+payment processing and conversion.
+To avoid this fee, please use ACH Bank Transfer (USD).
+```
+
+### Example: Enable for Specific Client
+
+```bash
+# 1. Create a client with crypto service fee enabled
+go-invoice client create \
+  --name "Acme Company" \
+  --email "billing@bsvassociation.com" \
+  --crypto-fee \
+  --crypto-fee-amount 25.00
+
+# 2. Create invoice for this client - fee is automatically applied
+go-invoice invoice create \
+  --client "Acme Company" \
+  --description "Q1 2025 Consulting Services"
+
+# 3. Generate HTML - the $25 crypto fee will be included
+go-invoice generate invoice INV-2025-001
+```
+
+### Enable Crypto Payments Globally
+
+To use crypto service fees, you must first enable cryptocurrency payments in your configuration:
+
+```bash
+# In your .env.config file
+USDC_ENABLED=true
+USDC_ADDRESS="0xYourUSDCWalletAddress"
+# OR
+BSV_ENABLED=true
+BSV_ADDRESS="YourBSVWalletAddress"
+```
+
+Then enable the crypto fee for specific clients using the CLI commands above.
+
+### Benefits
+
+- **Per-Client Control**: Enable crypto fees only for specific clients
+- **Cost Recovery**: Recover cryptocurrency exchange and processing fees
+- **Transparency**: Clearly communicate fees to clients upfront
+- **Flexibility**: Configurable amount per client or use global default
+- **ACH Incentive**: Encourages clients to use fee-free ACH transfers
+
+### Update Existing Client
+
+To add crypto fee to an existing client:
+
+```bash
+go-invoice client update "Acme Company" \
+  --crypto-fee \
+  --crypto-fee-amount 25.00
+```
+
+</details>
+
+<details>
 <summary><strong>🔧 Business Configuration</strong></summary>
 
 ### Initial Setup
@@ -481,13 +574,13 @@ go-invoice client list
 go-invoice client list --active-only --name-search "Acme"
 
 # View client details and invoice history
-go-invoice client show --client-name "Acme Corporation" --include-invoices
+go-invoice client show --client "Acme Corporation" --include-invoices
 
 # Update client information
-go-invoice client update --client-name "Acme Corporation" --email "newbilling@acme.com"
+go-invoice client update --client "Acme Corporation" --email "newbilling@acme.com"
 
 # Deactivate a client (soft delete preserves data)
-go-invoice client delete --client-name "Acme Corporation" --soft-delete
+go-invoice client delete --client "Acme Corporation" --soft-delete
 ```
 
 </details>
@@ -498,9 +591,9 @@ go-invoice client delete --client-name "Acme Corporation" --soft-delete
 ```bash
 # Create a new invoice with optional work items
 go-invoice invoice create \
-  --client-name "Acme Corporation" \
+  --client "Acme Corporation" \
   --description "August 2025 Development Services" \
-  --invoice-date 2025-08-07  # Due date auto-calculated based on net terms
+  --date 2025-08-07  # Due date auto-calculated based on net terms
 
 # Add work items to existing invoice
 go-invoice invoice add-item \
@@ -513,7 +606,7 @@ go-invoice invoice add-item \
 # List all invoices with filters
 go-invoice invoice list
 go-invoice invoice list --status sent --from-date 2025-08-01
-go-invoice invoice list --client-name "Acme" --include-summary
+go-invoice invoice list --client "Acme" --include-summary
 
 # Update invoice (including date which auto-updates due date)
 go-invoice invoice update INV-2025-001 --date 2025-08-07
@@ -604,13 +697,13 @@ date,description,hours,rate
 ```bash
 # Import timesheet (auto-detects CSV or JSON format) and create new invoice
 go-invoice import create timesheet.csv \
-  --client-name "Acme Corporation" \
+  --client "Acme Corporation" \
   --description "August 2025 Services" \
-  --invoice-date 2025-08-07
+  --date 2025-08-07
 
 # Import JSON data with same command (format auto-detected)
 go-invoice import create timesheet.json \
-  --client-name "Acme Corporation" \
+  --client "Acme Corporation" \
   --description "August 2025 Services"
 
 # Append data to existing invoice (CSV or JSON)
@@ -620,7 +713,7 @@ go-invoice import append timesheet.csv \
 
 # Preview import before executing
 go-invoice import preview timesheet.csv \
-  --client-name "Acme Corporation" \
+  --client "Acme Corporation" \
   --show-totals --show-warnings
 
 # Validate format before importing
@@ -628,7 +721,7 @@ go-invoice import validate timesheet.json
 
 # Import with custom configuration
 go-invoice import create timesheet.csv \
-  --client-name "Acme Corporation" \
+  --client "Acme Corporation" \
   --default-rate 125.00 \
   --description "Monthly development work" \
   --currency USD \
@@ -1139,9 +1232,9 @@ EOF
 
 # 4. Import and create invoice (format auto-detected)
 INVOICE_NUMBER=$(go-invoice import create january-timesheet.csv \
-  --client-name "TechCorp Solutions" \
+  --client "TechCorp Solutions" \
   --description "January 2025 Development Services" \
-  --invoice-date 2025-01-31 \
+  --date 2025-01-31 \
   --output json | jq -r '.number')
 
 echo "Created invoice: $INVOICE_NUMBER"
@@ -1184,7 +1277,7 @@ TIMESHEET="timesheets/${MONTH}-timesheet.csv"
 INVOICE_FILE="invoices/${MONTH}-invoice.html"
 
 # Import timesheet and create invoice
-INVOICE_NUMBER=$(go-invoice import create "$TIMESHEET" --client-name "$CLIENT" --description "$MONTH Development Services" --output json | jq -r '.number')
+INVOICE_NUMBER=$(go-invoice import create "$TIMESHEET" --client "$CLIENT" --description "$MONTH Development Services" --output json | jq -r '.number')
 
 # Generate HTML invoice
 go-invoice generate invoice "$INVOICE_NUMBER" --output "$INVOICE_FILE"
@@ -1219,7 +1312,7 @@ go-invoice import validate timesheet.csv
 go-invoice import validate data.json
 
 # Preview import to see what will happen
-go-invoice import preview timesheet.csv --client-name "Acme Corp"
+go-invoice import preview timesheet.csv --client "Acme Corp"
 
 # Check supported import commands
 go-invoice import --help
@@ -1243,7 +1336,7 @@ Enable verbose logging for troubleshooting:
 
 ```bash
 # Enable debug logging
-go-invoice --debug invoice create --client-name "Test Client"
+go-invoice --debug invoice create --client "Test Client"
 
 # Or check specific command help
 go-invoice [command] --help
@@ -1260,6 +1353,7 @@ go-invoice [command] --help
 - [x] CSV and JSON import with validation and preview
 - [x] Professional HTML generation with comma-separated currency
 - [x] Cryptocurrency payment methods (USDC, BSV)
+- [x] **Cryptocurrency Service Fee** - Configurable fee for crypto payment processing
 - [x] **MCP Integration** - Natural language interface for Claude Desktop and Claude Code
 - [x] **21 MCP Tools** - Complete invoice management via AI conversation
 - [x] **Dual Transport Support** - HTTP (Claude Desktop) and stdio (Claude Code)
