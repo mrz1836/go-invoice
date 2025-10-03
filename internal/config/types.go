@@ -36,10 +36,11 @@ type BankDetails struct {
 
 // CryptoPayments contains cryptocurrency payment addresses
 type CryptoPayments struct {
-	USDCAddress string `json:"usdc_address,omitempty"`
-	USDCEnabled bool   `json:"usdc_enabled"`
-	BSVAddress  string `json:"bsv_address,omitempty"`
-	BSVEnabled  bool   `json:"bsv_enabled"`
+	USDCAddress     string `json:"usdc_address,omitempty"`
+	USDCEnabled     bool   `json:"usdc_enabled"`
+	BSVAddress      string `json:"bsv_address,omitempty"`
+	BSVEnabled      bool   `json:"bsv_enabled"`
+	EtherscanAPIKey string `json:"etherscan_api_key,omitempty"`
 }
 
 // InvoiceConfig contains invoice generation settings
