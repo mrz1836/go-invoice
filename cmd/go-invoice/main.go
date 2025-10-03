@@ -92,6 +92,7 @@ Key features:
 	rootCmd.AddCommand(a.buildImportCommand())
 	rootCmd.AddCommand(a.buildGenerateCommand())
 	rootCmd.AddCommand(a.buildMigrateLateFeeCommand())
+	rootCmd.AddCommand(a.buildPaymentCommand())
 
 	return rootCmd
 }
