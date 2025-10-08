@@ -166,9 +166,8 @@ func (s *PaymentService) MarkInvoiceAsPaid(
 	if updateReq.Description != nil {
 		invoice.Description = *updateReq.Description
 	}
-	invoice.Version++
 
-	// Perform update
+	// Perform update (storage layer handles version increment)
 	err = s.invoiceStorage.UpdateInvoice(ctx, invoice)
 	if err != nil {
 		return fmt.Errorf("failed to update invoice status: %w", err)
