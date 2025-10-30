@@ -1,5 +1,4 @@
 //go:build mage
-// +build mage
 
 // Package main provides custom build targets for go-invoice project using mage.
 // This includes targets for building both the main application and MCP server.
