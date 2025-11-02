@@ -665,7 +665,7 @@ To avoid this fee, please use ACH Bank Transfer (USD).
 # 1. Create a client with crypto service fee enabled
 go-invoice client create \
   --name "Acme Company" \
-  --email "billing@bsvassociation.com" \
+  --email "billing@example.com" \
   --crypto-fee \
   --crypto-fee-amount 25.00
 
