@@ -1266,8 +1266,8 @@ func (suite *InvoiceTestSuite) TestInvoiceMigrateWorkItemsToLineItems() {
 	})
 }
 
-// TestInvoiceRecalculateTotalsWithLineItems tests total calculation with line items
-func (suite *InvoiceTestSuite) TestInvoiceRecalculateTotalsWithLineItems() {
+// TestInvoiceRecalculateTotals tests total calculation with all item types (WorkItems and LineItems)
+func (suite *InvoiceTestSuite) TestInvoiceRecalculateTotals() {
 	t := suite.T()
 	ctx := suite.ctx
 
@@ -1302,7 +1302,7 @@ func (suite *InvoiceTestSuite) TestInvoiceRecalculateTotalsWithLineItems() {
 		}
 		invoice.LineItems = append(invoice.LineItems, lineItem2)
 
-		err := invoice.RecalculateTotalsWithLineItems(ctx)
+		err := invoice.RecalculateTotals(ctx)
 		require.NoError(t, err)
 
 		assert.InDelta(t, 1500.0, invoice.Subtotal, 1e-9)
@@ -1339,12 +1339,311 @@ func (suite *InvoiceTestSuite) TestInvoiceRecalculateTotalsWithLineItems() {
 		}
 		invoice.LineItems = append(invoice.LineItems, lineItem)
 
-		err := invoice.RecalculateTotalsWithLineItems(ctx)
+		err := invoice.RecalculateTotals(ctx)
 		require.NoError(t, err)
 
 		// Should include both work items and line items
 		assert.InDelta(t, 1400.0, invoice.Subtotal, 1e-9)
 		assert.InDelta(t, 1400.0, invoice.Total, 1e-9)
+	})
+
+	t.Run("CalculateWithCryptoFee", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+		invoice.TaxRate = 0.005 // 0.5% fee rate
+
+		// Add $5000 fixed line item (simulating the exact bug scenario)
+		amount := 5000.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeFixed,
+			Date:        time.Now(),
+			Description: "Repository Maintenance",
+			Amount:      &amount,
+			Total:       5000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem)
+
+		// Set crypto fee
+		invoice.CryptoFee = 25.0
+
+		err := invoice.RecalculateTotals(ctx)
+		require.NoError(t, err)
+
+		// Should be: subtotal $5000 + crypto fee $25 = $5025 (no tax in this test, but fee is there)
+		// Tax on (subtotal + crypto fee) = (5000 + 25) * 0.005 = 25.125
+		// Total = subtotal + crypto fee + tax = 5000 + 25 + 25.13 = 5050.13
+		assert.InDelta(t, 5000.0, invoice.Subtotal, 0.01, "Subtotal should be $5000")
+		assert.InDelta(t, 25.13, invoice.TaxAmount, 0.01, "Tax on (5000+25) at 0.5% should be $25.13")
+		assert.InDelta(t, 5050.13, invoice.Total, 0.01, "Total should be $5050.13")
+	})
+
+	t.Run("CalculateWithMultipleLineItemTypes", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+		invoice.TaxRate = 0.0 // No tax to simplify
+
+		// Add hourly line item
+		hours := 10.0
+		rate := 150.0
+		hourlyItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeHourly,
+			Date:        time.Now(),
+			Description: "Development",
+			Hours:       &hours,
+			Rate:        &rate,
+			Total:       1500.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, hourlyItem)
+
+		// Add fixed line item
+		fixedAmount := 2000.0
+		fixedItem := LineItem{
+			ID:          "line-2",
+			Type:        LineItemTypeFixed,
+			Date:        time.Now(),
+			Description: "Setup Fee",
+			Amount:      &fixedAmount,
+			Total:       2000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, fixedItem)
+
+		// Add quantity-based line item
+		quantity := 5.0
+		unitPrice := 100.0
+		quantityItem := LineItem{
+			ID:          "line-3",
+			Type:        LineItemTypeQuantity,
+			Date:        time.Now(),
+			Description: "Licenses",
+			Quantity:    &quantity,
+			UnitPrice:   &unitPrice,
+			Total:       500.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, quantityItem)
+
+		err := invoice.RecalculateTotals(ctx)
+		require.NoError(t, err)
+
+		// Total should be 1500 + 2000 + 500 = 4000
+		assert.InDelta(t, 4000.0, invoice.Subtotal, 1e-9, "Subtotal should include all line item types")
+		assert.InDelta(t, 4000.0, invoice.Total, 1e-9, "Total should equal subtotal with no tax")
+	})
+
+	t.Run("CalculateWithEmptyInvoice", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		err := invoice.RecalculateTotals(ctx)
+		require.NoError(t, err)
+
+		assert.InDelta(t, 0.0, invoice.Subtotal, 1e-9)
+		assert.InDelta(t, 0.0, invoice.Total, 1e-9)
+	})
+
+	t.Run("CalculateWithOnlyWorkItems", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+
+		// Add legacy work items only
+		workItem1 := WorkItem{
+			ID:          "work-1",
+			Date:        time.Now(),
+			Hours:       8.0,
+			Rate:        100.0,
+			Description: "Legacy work",
+			Total:       800.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.WorkItems = append(invoice.WorkItems, workItem1)
+
+		workItem2 := WorkItem{
+			ID:          "work-2",
+			Date:        time.Now(),
+			Hours:       4.0,
+			Rate:        150.0,
+			Description: "More legacy work",
+			Total:       600.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.WorkItems = append(invoice.WorkItems, workItem2)
+
+		err := invoice.RecalculateTotals(ctx)
+		require.NoError(t, err)
+
+		// Should still work for backward compatibility
+		assert.InDelta(t, 1400.0, invoice.Subtotal, 1e-9, "Should calculate WorkItems correctly")
+		assert.InDelta(t, 1400.0, invoice.Total, 1e-9)
+	})
+}
+
+// TestInvoiceSetCryptoFee tests the SetCryptoFee method with all item types
+func (suite *InvoiceTestSuite) TestInvoiceSetCryptoFee() {
+	t := suite.T()
+	ctx := suite.ctx
+
+	t.Run("SetCryptoFeeWithLineItems", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+		invoice.TaxRate = 0.0 // No tax to simplify
+
+		// Add $5000 line item (the exact bug scenario)
+		amount := 5000.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeFixed,
+			Date:        time.Now(),
+			Description: "Repository Maintenance",
+			Amount:      &amount,
+			Total:       5000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem)
+
+		// Initially calculate without crypto fee
+		err := invoice.RecalculateTotals(ctx)
+		require.NoError(t, err)
+		assert.InDelta(t, 5000.0, invoice.Subtotal, 0.01)
+		assert.InDelta(t, 5000.0, invoice.Total, 0.01)
+
+		// Now set crypto fee - THIS WAS THE BUG
+		err = invoice.SetCryptoFee(ctx, true, true, 25.0)
+		require.NoError(t, err)
+
+		// After setting crypto fee, subtotal should STILL be $5000 (not $0!)
+		assert.InDelta(t, 5000.0, invoice.Subtotal, 0.01, "Subtotal should remain $5000 after SetCryptoFee")
+		assert.InDelta(t, 25.0, invoice.CryptoFee, 0.01, "Crypto fee should be $25")
+		assert.InDelta(t, 5025.0, invoice.Total, 0.01, "Total should be $5025 (5000+25)")
+	})
+
+	t.Run("SetCryptoFeeWithWorkItems", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+		invoice.TaxRate = 0.0
+
+		// Add work item
+		workItem := WorkItem{
+			ID:          "work-1",
+			Date:        time.Now(),
+			Hours:       10.0,
+			Rate:        100.0,
+			Description: "Development",
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.WorkItems = append(invoice.WorkItems, workItem)
+
+		err := invoice.RecalculateTotals(ctx)
+		require.NoError(t, err)
+
+		// Set crypto fee
+		err = invoice.SetCryptoFee(ctx, true, true, 10.0)
+		require.NoError(t, err)
+
+		assert.InDelta(t, 1000.0, invoice.Subtotal, 0.01, "Subtotal should remain $1000")
+		assert.InDelta(t, 10.0, invoice.CryptoFee, 0.01)
+		assert.InDelta(t, 1010.0, invoice.Total, 0.01, "Total should be $1010")
+	})
+
+	t.Run("SetCryptoFeeWithBothItemTypes", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+		invoice.TaxRate = 0.0
+
+		// Add work item
+		workItem := WorkItem{
+			ID:          "work-1",
+			Date:        time.Now(),
+			Hours:       5.0,
+			Rate:        100.0,
+			Description: "Legacy work",
+			Total:       500.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.WorkItems = append(invoice.WorkItems, workItem)
+
+		// Add line item
+		amount := 1000.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeFixed,
+			Date:        time.Now(),
+			Description: "New work",
+			Amount:      &amount,
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem)
+
+		err := invoice.RecalculateTotals(ctx)
+		require.NoError(t, err)
+		assert.InDelta(t, 1500.0, invoice.Subtotal, 0.01)
+
+		// Set crypto fee
+		err = invoice.SetCryptoFee(ctx, true, true, 15.0)
+		require.NoError(t, err)
+
+		// Must include BOTH WorkItems and LineItems
+		assert.InDelta(t, 1500.0, invoice.Subtotal, 0.01, "Subtotal should include both item types")
+		assert.InDelta(t, 15.0, invoice.CryptoFee, 0.01)
+		assert.InDelta(t, 1515.0, invoice.Total, 0.01, "Total should be $1515")
+	})
+
+	t.Run("DisableCryptoFee", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+		invoice.TaxRate = 0.0
+
+		amount := 1000.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeFixed,
+			Date:        time.Now(),
+			Description: "Work",
+			Amount:      &amount,
+			Total:       1000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem)
+
+		// Set crypto fee first
+		err := invoice.SetCryptoFee(ctx, true, true, 10.0)
+		require.NoError(t, err)
+		assert.InDelta(t, 10.0, invoice.CryptoFee, 0.01)
+
+		// Now disable it
+		err = invoice.SetCryptoFee(ctx, false, false, 0.0)
+		require.NoError(t, err)
+
+		assert.InDelta(t, 1000.0, invoice.Subtotal, 0.01)
+		assert.InDelta(t, 0.0, invoice.CryptoFee, 0.01, "Crypto fee should be zero when disabled")
+		assert.InDelta(t, 1000.0, invoice.Total, 0.01)
+	})
+
+	t.Run("SetCryptoFeeWithTax", func(t *testing.T) {
+		invoice := createTestInvoice(t, ctx)
+		invoice.TaxRate = 0.005 // 0.5% tax
+
+		amount := 5000.0
+		lineItem := LineItem{
+			ID:          "line-1",
+			Type:        LineItemTypeFixed,
+			Date:        time.Now(),
+			Description: "Repository Maintenance",
+			Amount:      &amount,
+			Total:       5000.0,
+			CreatedAt:   time.Now(),
+		}
+		invoice.LineItems = append(invoice.LineItems, lineItem)
+
+		// Set crypto fee
+		err := invoice.SetCryptoFee(ctx, true, true, 25.0)
+		require.NoError(t, err)
+
+		// Tax is calculated on (subtotal + crypto fee)
+		// Tax = (5000 + 25) * 0.005 = 25.125 rounded to 25.13
+		// Total = 5000 + 25 + 25.13 = 5050.13
+		assert.InDelta(t, 5000.0, invoice.Subtotal, 0.01)
+		assert.InDelta(t, 25.0, invoice.CryptoFee, 0.01)
+		assert.InDelta(t, 25.13, invoice.TaxAmount, 0.01, "Tax should be calculated on subtotal+fee")
+		assert.InDelta(t, 5050.13, invoice.Total, 0.01)
 	})
 }
 

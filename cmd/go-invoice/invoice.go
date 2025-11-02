@@ -67,6 +67,7 @@ func (a *App) buildInvoiceCommand() *cobra.Command {
 	invoiceCmd.AddCommand(a.buildInvoiceUpdateCommand())
 	invoiceCmd.AddCommand(a.buildInvoiceDeleteCommand())
 	invoiceCmd.AddCommand(a.buildInvoiceAddLineItemCommand())
+	invoiceCmd.AddCommand(a.buildInvoiceRecalculateCommand())
 
 	return invoiceCmd
 }
@@ -1559,6 +1560,105 @@ func (a *App) runInvoiceAddLineItem(cmd *cobra.Command, args []string) error {
 	a.logger.Printf("Details:     %s\n", lineItem.GetDetails())
 	a.logger.Printf("Amount:      %s\n\n", lineItem.GetFormattedTotal())
 	a.logger.Printf("Updated Total: $%.2f\n", updatedInvoice.Total)
+
+	return nil
+}
+
+// buildInvoiceRecalculateCommand creates the invoice recalculate subcommand
+func (a *App) buildInvoiceRecalculateCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "recalculate [invoice-id-or-number]",
+		Short: "Recalculate invoice totals",
+		Long: `Recalculate all totals for an invoice based on its work items and line items.
+
+This command is useful when invoice totals are out of sync due to data migration,
+bugs, or manual edits. It will:
+  - Recalculate subtotal from all work items and line items
+  - Apply any crypto service fees
+  - Update all total fields
+  - Preserve all other invoice data`,
+		Example: `  # Recalculate totals for an invoice
+  go-invoice invoice recalculate INV-001
+
+  # Recalculate by invoice number
+  go-invoice invoice recalculate INV-20251102-085550`,
+		Args: cobra.ExactArgs(1),
+		RunE: a.runInvoiceRecalculate,
+	}
+
+	return cmd
+}
+
+// runInvoiceRecalculate executes the invoice recalculate command
+func (a *App) runInvoiceRecalculate(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+
+	// Get invoice identifier
+	invoiceIdentifier := args[0]
+
+	// Get config path from flag
+	configPath, _ := cmd.Flags().GetString("config")
+
+	// Load configuration
+	config, err := a.configService.LoadConfig(ctx, configPath)
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %w", err)
+	}
+
+	// Initialize storage and services
+	invoiceStorage, clientStorage := a.createStorageInstances(config.Storage.DataDir)
+	idGen := services.NewUUIDGenerator()
+	invoiceService := services.NewInvoiceService(invoiceStorage, clientStorage, a.logger, idGen)
+
+	// Get invoice
+	invoice, err := a.getInvoiceByIDOrNumber(ctx, invoiceService, invoiceIdentifier)
+	if err != nil {
+		return err
+	}
+
+	// Store original totals for comparison
+	originalSubtotal := invoice.Subtotal
+	originalTotal := invoice.Total
+
+	a.logger.Printf("📊 Recalculating totals for invoice %s\n\n", invoice.Number)
+	a.logger.Printf("Current totals:\n")
+	a.logger.Printf("  Subtotal: $%.2f\n", originalSubtotal)
+	a.logger.Printf("  Total:    $%.2f\n\n", originalTotal)
+
+	// Recalculate totals using the invoice model method
+	if err := invoice.RecalculateTotals(ctx); err != nil {
+		return fmt.Errorf("failed to recalculate invoice totals: %w", err)
+	}
+
+	// Update the invoice in storage
+	invoiceStorage, _ = a.createStorageInstances(config.Storage.DataDir)
+	if err := invoiceStorage.UpdateInvoice(ctx, invoice); err != nil {
+		return fmt.Errorf("failed to save recalculated invoice: %w", err)
+	}
+
+	// Display results
+	a.logger.Printf("✅ Invoice totals recalculated successfully!\n\n")
+	a.logger.Printf("New totals:\n")
+	a.logger.Printf("  Subtotal: $%.2f", invoice.Subtotal)
+	if invoice.Subtotal != originalSubtotal {
+		diff := invoice.Subtotal - originalSubtotal
+		a.logger.Printf(" (%+.2f)", diff)
+	}
+	a.logger.Printf("\n")
+	a.logger.Printf("  Total:    $%.2f", invoice.Total)
+	if invoice.Total != originalTotal {
+		diff := invoice.Total - originalTotal
+		a.logger.Printf(" (%+.2f)", diff)
+	}
+	a.logger.Printf("\n\n")
+
+	// Show breakdown
+	a.logger.Printf("Breakdown:\n")
+	a.logger.Printf("  Work Items:  %d items\n", len(invoice.WorkItems))
+	a.logger.Printf("  Line Items:  %d items\n", len(invoice.LineItems))
+	if invoice.CryptoFee > 0 {
+		a.logger.Printf("  Crypto Fee:  $%.2f\n", invoice.CryptoFee)
+	}
 
 	return nil
 }

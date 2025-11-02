@@ -389,7 +389,8 @@ func (i *Invoice) RemoveWorkItem(ctx context.Context, itemID string) error {
 	return nil
 }
 
-// RecalculateTotals recalculates all financial totals based on work items
+// RecalculateTotals recalculates all financial totals based on all items (WorkItems and LineItems)
+// This method handles both legacy WorkItems and modern LineItems, calculating subtotal, tax, and total
 func (i *Invoice) RecalculateTotals(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
@@ -397,9 +398,16 @@ func (i *Invoice) RecalculateTotals(ctx context.Context) error {
 	default:
 	}
 
-	// Calculate subtotal from work items
+	// Calculate subtotal from both work items and line items
 	subtotal := 0.0
+
+	// Add work items (for backward compatibility)
 	for _, item := range i.WorkItems {
+		subtotal += item.Total
+	}
+
+	// Add line items
+	for _, item := range i.LineItems {
 		subtotal += item.Total
 	}
 
@@ -502,8 +510,8 @@ func (i *Invoice) AddLineItem(ctx context.Context, item LineItem) error {
 	// Add the item
 	i.LineItems = append(i.LineItems, item)
 
-	// Recalculate totals using both WorkItems and LineItems
-	if err := i.RecalculateTotalsWithLineItems(ctx); err != nil {
+	// Recalculate totals
+	if err := i.RecalculateTotals(ctx); err != nil {
 		return fmt.Errorf("failed to recalculate totals after adding line item: %w", err)
 	}
 
@@ -532,7 +540,7 @@ func (i *Invoice) AddLineItemWithoutVersionIncrement(ctx context.Context, item L
 	i.LineItems = append(i.LineItems, item)
 
 	// Recalculate totals
-	if err := i.RecalculateTotalsWithLineItems(ctx); err != nil {
+	if err := i.RecalculateTotals(ctx); err != nil {
 		return fmt.Errorf("failed to recalculate totals after adding line item: %w", err)
 	}
 
@@ -566,47 +574,13 @@ func (i *Invoice) RemoveLineItem(ctx context.Context, itemID string) error {
 	}
 
 	// Recalculate totals
-	if err := i.RecalculateTotalsWithLineItems(ctx); err != nil {
+	if err := i.RecalculateTotals(ctx); err != nil {
 		return fmt.Errorf("failed to recalculate totals after removing line item: %w", err)
 	}
 
 	// Update timestamp and version
 	i.UpdatedAt = time.Now()
 	i.Version++
-
-	return nil
-}
-
-// RecalculateTotalsWithLineItems recalculates all financial totals based on both WorkItems and LineItems
-func (i *Invoice) RecalculateTotalsWithLineItems(ctx context.Context) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-
-	// Calculate subtotal from both work items and line items
-	subtotal := 0.0
-
-	// Add work items (for backward compatibility)
-	for _, item := range i.WorkItems {
-		subtotal += item.Total
-	}
-
-	// Add line items
-	for _, item := range i.LineItems {
-		subtotal += item.Total
-	}
-
-	// Round to avoid floating point precision issues
-	i.Subtotal = math.Round(subtotal*100) / 100
-
-	// Calculate tax amount on (subtotal + crypto fee)
-	taxableAmount := i.Subtotal + i.CryptoFee
-	i.TaxAmount = math.Round(taxableAmount*i.TaxRate*100) / 100
-
-	// Calculate total (subtotal + crypto fee + tax)
-	i.Total = math.Round((taxableAmount+i.TaxAmount)*100) / 100
 
 	return nil
 }
