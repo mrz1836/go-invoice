@@ -116,7 +116,7 @@ go-invoice config setup-claude
 ```
 
 <details>
-<summary><strong>📋 Traditional CLI Quick Start</strong></summary>
+<summary><strong>Traditional CLI Quick Start</strong></summary>
 
 ```bash
 # Install go-invoice
@@ -188,7 +188,7 @@ go-invoice invoice update INV-2025-001 --date 2025-08-07  # Auto-calculates due 
 go-invoice generate invoice INV-2025-001 --output invoice.html
 ```
 
-**🎯 21 MCP Tools Available:** Invoice creation, client management, CSV/JSON import, HTML generation, reporting, and more - all accessible through natural conversation.
+**21 MCP Tools Available:** Invoice creation, client management, CSV/JSON import, HTML generation, reporting, and more - all accessible through natural conversation.
 
 <br/>
 
@@ -319,7 +319,7 @@ go-invoice config setup-claude --code
 </details>
 
 <details>
-<summary><strong>🛠️ Platform Comparison</strong></summary>
+<summary><strong>Platform Comparison</strong></summary>
 
 | Feature               | Claude Desktop         | Claude Code                      |
 |-----------------------|------------------------|----------------------------------|
@@ -334,7 +334,7 @@ go-invoice config setup-claude --code
 </details>
 
 <details>
-<summary><strong>🔧 Troubleshooting Claude Integration</strong></summary>
+<summary><strong>Troubleshooting Claude Integration</strong></summary>
 
 **MCP Server Not Found:**
 ```bash
@@ -586,7 +586,7 @@ go-invoice invoice create \
 ## 📦 Installation
 
 <details>
-<summary><strong>📋 Installation Options</strong></summary>
+<summary><strong>Installation Options</strong></summary>
 
 ### Prerequisites
 - **Go 1.24 or later** – [Download Go](https://golang.org/dl/)
@@ -1456,10 +1456,8 @@ Memory Efficiency: ~1KB per operation
 
 ## 📄 Examples
 
-### 🤖 Natural Language Workflow
-
 <details>
-<summary><strong>📋 Complete MCP Tools Reference</strong></summary>
+<summary><strong>Complete MCP Tools Reference</strong></summary>
 
 #### Client Management Tools
 - **client_create** - Create new clients with full contact details and approver contacts
@@ -1507,8 +1505,6 @@ User: "Show me all unpaid invoices from last month"
 Claude: [Uses invoice_list tool with filters]
 ```
 
-</details>
-
 **Freelancer Monthly Invoice with Claude Desktop:**
 ```
 User: "I need to create an invoice for TechCorp Solutions for January 2025.
@@ -1531,6 +1527,8 @@ Claude: Invoice INV-2025-001 marked as sent
         • INV-2025-001 - TechCorp Solutions ($13,567.50) - Due Feb 30
         • INV-2024-089 - StartupXYZ ($2,400.00) - Due Jan 15 (OVERDUE)
 ```
+
+</details>
 
 <details>
 <summary><strong>Traditional CLI Workflow</strong></summary>
