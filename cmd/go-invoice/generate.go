@@ -584,10 +584,19 @@ func (a *App) loadBuiltInTemplates(ctx context.Context, engine render.TemplateEn
 }
 
 func (a *App) createInvoiceData(invoice *models.Invoice, config *config.Config) *InvoiceData {
-	// Calculate total hours
+	// Calculate total hours from all item types
 	totalHours := 0.0
+
+	// Count hours from legacy WorkItems
 	for _, item := range invoice.WorkItems {
 		totalHours += item.Hours
+	}
+
+	// Count hours from modern LineItems (only hourly types)
+	for _, item := range invoice.LineItems {
+		if item.Type == models.LineItemTypeHourly && item.Hours != nil {
+			totalHours += *item.Hours
+		}
 	}
 
 	return &InvoiceData{
