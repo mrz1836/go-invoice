@@ -216,7 +216,7 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotals() {
 				suite.InDelta(tc.expectedSubtotal, result.Subtotal, 0.01)
 				suite.InDelta(tc.expectedTax, result.TaxAmount, 0.01)
 				suite.InDelta(tc.expectedTotal, result.Total, 0.01)
-				suite.Equal(3, result.WorkItemCount)
+				suite.Equal(3, result.WorkItemCount, "Should have 3 work items (no line items in this test)")
 				suite.InDelta(18.5, result.TotalHours, 0.01)
 			}
 		})
@@ -789,6 +789,229 @@ func (suite *CalculatorTestSuite) createTestInvoice() *models.Invoice {
 		UpdatedAt: time.Now(),
 		Version:   1,
 	}
+}
+
+// TestCalculateInvoiceTotalsWithLineItems tests that LineItems are included in subtotal calculation
+func (suite *CalculatorTestSuite) TestCalculateInvoiceTotalsWithLineItems() {
+	ctx := context.Background()
+
+	suite.Run("InvoiceWithOnlyLineItems", func() {
+		// Create an invoice with ONLY line items (no work items)
+		amount := 5000.0
+		invoice := &models.Invoice{
+			ID:     models.InvoiceID("test_line_items"),
+			Number: "TEST-LINEITEMS-001",
+			Date:   time.Now(),
+			LineItems: []models.LineItem{
+				{
+					ID:          "line_001",
+					Type:        models.LineItemTypeFixed,
+					Date:        time.Now(),
+					Description: "Repository Maintenance",
+					Amount:      &amount,
+					Total:       5000.0,
+				},
+			},
+			WorkItems: []models.WorkItem{}, // No work items
+			Status:    models.StatusDraft,
+			Version:   1,
+		}
+
+		options := &CalculationOptions{
+			TaxRate:       0.0,
+			Currency:      "USD",
+			DecimalPlaces: 2,
+			RoundingMode:  "round",
+		}
+
+		result, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
+
+		suite.Require().NoError(err)
+		suite.NotNil(result)
+		suite.InDelta(5000.0, result.Subtotal, 0.01, "Subtotal should include LineItems")
+		suite.InDelta(0.0, result.TaxAmount, 0.01)
+		suite.InDelta(5000.0, result.Total, 0.01)
+		suite.Equal(1, result.WorkItemCount, "WorkItemCount should include LineItems")
+	})
+
+	suite.Run("InvoiceWithLineItemsAndCryptoFee", func() {
+		// Test the specific bug scenario: $5000 line item + $25 crypto fee = $5025 total
+		amount := 5000.0
+		invoice := &models.Invoice{
+			ID:     models.InvoiceID("test_crypto_fee"),
+			Number: "TEST-CRYPTO-001",
+			Date:   time.Now(),
+			LineItems: []models.LineItem{
+				{
+					ID:          "line_001",
+					Type:        models.LineItemTypeFixed,
+					Date:        time.Now(),
+					Description: "Repository Maintenance",
+					Amount:      &amount,
+					Total:       5000.0,
+				},
+			},
+			WorkItems: []models.WorkItem{},
+			Status:    models.StatusDraft,
+			Version:   1,
+		}
+
+		// Crypto fee is 0.5% of subtotal, which would be $25 for $5000
+		options := &CalculationOptions{
+			TaxRate:       0.005, // 0.5% fee
+			Currency:      "USD",
+			DecimalPlaces: 2,
+			RoundingMode:  "round",
+		}
+
+		result, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
+
+		suite.Require().NoError(err)
+		suite.NotNil(result)
+		suite.InDelta(5000.0, result.Subtotal, 0.01, "Subtotal should be $5000")
+		suite.InDelta(25.0, result.TaxAmount, 0.01, "Fee should be $25")
+		suite.InDelta(5025.0, result.Total, 0.01, "Total should be $5025")
+	})
+
+	suite.Run("InvoiceWithBothWorkItemsAndLineItems", func() {
+		// Create an invoice with BOTH work items AND line items
+		amount := 5000.0
+		invoice := &models.Invoice{
+			ID:     models.InvoiceID("test_mixed"),
+			Number: "TEST-MIXED-001",
+			Date:   time.Now(),
+			LineItems: []models.LineItem{
+				{
+					ID:          "line_001",
+					Type:        models.LineItemTypeFixed,
+					Date:        time.Now(),
+					Description: "Repository Maintenance",
+					Amount:      &amount,
+					Total:       5000.0,
+				},
+			},
+			WorkItems: []models.WorkItem{
+				{
+					ID:          "work_001",
+					Date:        time.Now(),
+					Hours:       8.0,
+					Rate:        125.0,
+					Description: "Development work",
+					Total:       1000.0,
+				},
+			},
+			Status:  models.StatusDraft,
+			Version: 1,
+		}
+
+		options := &CalculationOptions{
+			TaxRate:       0.0,
+			Currency:      "USD",
+			DecimalPlaces: 2,
+			RoundingMode:  "round",
+		}
+
+		result, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
+
+		suite.Require().NoError(err)
+		suite.NotNil(result)
+		suite.InDelta(6000.0, result.Subtotal, 0.01, "Subtotal should include both WorkItems ($1000) and LineItems ($5000)")
+		suite.InDelta(0.0, result.TaxAmount, 0.01)
+		suite.InDelta(6000.0, result.Total, 0.01)
+		suite.Equal(2, result.WorkItemCount, "WorkItemCount should include both types")
+		suite.InDelta(8.0, result.TotalHours, 0.01, "TotalHours should only count WorkItems")
+	})
+
+	suite.Run("InvoiceWithMultipleLineItemTypes", func() {
+		// Test different types of line items: fixed, hourly, quantity
+		fixedAmount := 5000.0
+		hourlyRate := 125.0
+		hourlyHours := 8.0
+		quantity := 10.0
+		unitPrice := 50.0
+
+		invoice := &models.Invoice{
+			ID:     models.InvoiceID("test_multiple_types"),
+			Number: "TEST-TYPES-001",
+			Date:   time.Now(),
+			LineItems: []models.LineItem{
+				{
+					ID:          "line_fixed",
+					Type:        models.LineItemTypeFixed,
+					Date:        time.Now(),
+					Description: "Fixed amount",
+					Amount:      &fixedAmount,
+					Total:       5000.0,
+				},
+				{
+					ID:          "line_hourly",
+					Type:        models.LineItemTypeHourly,
+					Date:        time.Now(),
+					Description: "Hourly work",
+					Quantity:    &hourlyHours,
+					UnitPrice:   &hourlyRate,
+					Total:       1000.0,
+				},
+				{
+					ID:          "line_quantity",
+					Type:        models.LineItemTypeQuantity,
+					Date:        time.Now(),
+					Description: "Quantity-based",
+					Quantity:    &quantity,
+					UnitPrice:   &unitPrice,
+					Total:       500.0,
+				},
+			},
+			WorkItems: []models.WorkItem{},
+			Status:    models.StatusDraft,
+			Version:   1,
+		}
+
+		options := &CalculationOptions{
+			TaxRate:       0.1, // 10% tax
+			Currency:      "USD",
+			DecimalPlaces: 2,
+			RoundingMode:  "round",
+		}
+
+		result, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
+
+		suite.Require().NoError(err)
+		suite.NotNil(result)
+		suite.InDelta(6500.0, result.Subtotal, 0.01, "Subtotal should include all LineItem types: $5000 + $1000 + $500")
+		suite.InDelta(650.0, result.TaxAmount, 0.01, "Tax should be 10% of $6500")
+		suite.InDelta(7150.0, result.Total, 0.01, "Total should be $6500 + $650")
+		suite.Equal(3, result.WorkItemCount, "Should count all 3 LineItems")
+	})
+
+	suite.Run("EmptyInvoice", func() {
+		// Test invoice with no work items or line items
+		invoice := &models.Invoice{
+			ID:        models.InvoiceID("test_empty"),
+			Number:    "TEST-EMPTY-001",
+			Date:      time.Now(),
+			LineItems: []models.LineItem{},
+			WorkItems: []models.WorkItem{},
+			Status:    models.StatusDraft,
+			Version:   1,
+		}
+
+		options := &CalculationOptions{
+			TaxRate:       0.1,
+			Currency:      "USD",
+			DecimalPlaces: 2,
+			RoundingMode:  "round",
+		}
+
+		result, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
+
+		suite.Require().NoError(err)
+		suite.NotNil(result)
+		suite.InDelta(0.0, result.Subtotal, 0.01, "Empty invoice should have $0 subtotal")
+		suite.InDelta(0.0, result.TaxAmount, 0.01)
+		suite.InDelta(0.0, result.Total, 0.01)
+		suite.Equal(0, result.WorkItemCount)
+	})
 }
 
 // Run the test suite

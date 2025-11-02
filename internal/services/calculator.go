@@ -119,12 +119,17 @@ func (c *InvoiceCalculator) CalculateInvoiceTotals(ctx context.Context, invoice 
 
 	start := time.Now()
 
-	c.logger.Debug("calculating invoice totals", "invoice_id", invoice.ID, "work_items", len(invoice.WorkItems))
+	c.logger.Debug("calculating invoice totals", "invoice_id", invoice.ID, "work_items", len(invoice.WorkItems), "line_items", len(invoice.LineItems))
 
 	// Calculate subtotal from work items
 	subtotal, totalHours, workItemCalcs, err := c.calculateWorkItemTotals(ctx, invoice.WorkItems, options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate work item totals: %w", err)
+	}
+
+	// Add line items to subtotal
+	for _, lineItem := range invoice.LineItems {
+		subtotal += lineItem.Total
 	}
 
 	// Calculate tax
@@ -150,7 +155,7 @@ func (c *InvoiceCalculator) CalculateInvoiceTotals(ctx context.Context, invoice 
 		TaxAmount:         taxAmount,
 		Total:             total,
 		TaxRate:           options.TaxRate,
-		WorkItemCount:     len(invoice.WorkItems),
+		WorkItemCount:     len(invoice.WorkItems) + len(invoice.LineItems),
 		TotalHours:        totalHours,
 		AverageHourlyRate: averageRate,
 		CalculatedAt:      time.Now(),
