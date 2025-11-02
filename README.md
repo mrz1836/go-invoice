@@ -152,15 +152,15 @@ open invoice.html
 ### Talk to Claude Desktop
 ```
 User: "Create an invoice for Acme Corp for website redesign, 40 hours at $125/hour"
-Claude: ✅ Created invoice INV-2025-001 for Acme Corp
-        📊 Total: $5,000.00 (40 hours × $125.00)
+Claude: Created invoice INV-2025-001 for Acme Corp
+        Total: $5,000.00 (40 hours × $125.00)
 
 User: "Import my timesheet.csv and generate the final HTML invoice"
-Claude: ✅ Imported 14 work items totaling 112 hours
-        📄 Generated invoice-2025-001.html
+Claude: Imported 14 work items totaling 112 hours
+        Generated invoice-2025-001.html
 
 User: "Show me all unpaid invoices from last month"
-Claude: 📋 Found 3 unpaid invoices:
+Claude: Found 3 unpaid invoices:
         • INV-2024-015 - TechCorp ($2,400) - Due Jan 31
         • INV-2024-018 - StartupXYZ ($1,800) - Due Feb 5
         • INV-2024-021 - Consulting LLC ($3,200) - Due Feb 10
@@ -169,15 +169,15 @@ Claude: 📋 Found 3 unpaid invoices:
 ### Use Claude Code with Natural Language
 ```
 User: Create an invoice for Acme Corp for 40 hours at $125/hour
-Claude: ✅ Created invoice INV-2025-001 for Acme Corp
-        📊 Total: $5,000.00 (40 hours × $125.00)
+Claude: Created invoice INV-2025-001 for Acme Corp
+        Total: $5,000.00 (40 hours × $125.00)
 
 User: Import timesheet.csv and add it to @invoice:INV-2025-001
-Claude: ✅ Imported 14 work items into invoice INV-2025-001
-        📊 Updated total: $6,750.00 (54 hours total)
+Claude: Imported 14 work items into invoice INV-2025-001
+        Updated total: $6,750.00 (54 hours total)
 
 User: Generate the HTML for @invoice:INV-2025-001
-Claude: ✅ Generated invoice-2025-001.html in current directory
+Claude: Generated invoice-2025-001.html in current directory
 ```
 
 ### Traditional CLI (Also Available)
@@ -194,44 +194,44 @@ go-invoice generate invoice INV-2025-001 --output invoice.html
 
 ## ✨ Features
 
-**🤖 Natural Language Interface**
+**Natural Language Interface**
 - Manage invoices through conversation with Claude Desktop and Claude Code
 - 21 MCP tools accessible via natural language commands
 - Resource mentions in Claude Code (@invoice:, @client:, @timesheet:)
 - Dual transport support (HTTP for Desktop, stdio for Code)
 
-**⚡ Production Performance**
+**Production Performance**
 - Sub-microsecond response times (0.0008ms average)
 - >1.4M operations per second throughput capability
 - 100+ concurrent requests supported
 - Efficient memory usage (~1KB per operation)
 
-**🛡️ Security First**
+**Security First**
 - Local-only operation (no external network dependencies)
 - 64 security test cases covering injection prevention
 - Comprehensive command sandboxing and validation
 - Complete audit trail for all operations
 
-**🏢 Business Management**
+**Business Management**
 - Complete business profile setup with contact information
 - Configurable tax rates and payment terms
 - Multi-currency support
 - **Cryptocurrency service fee** - Optional configurable fee for crypto payments
 - **Per-invoice crypto address override** - Custom crypto addresses for enhanced payment tracking
 
-**👥 Client Management**
+**Client Management**
 - Add, edit, and manage client information
 - Client contact details and billing addresses
 - Client activity tracking and soft delete
 
-**📄 Invoice Generation**
+**Invoice Generation**
 - Professional HTML invoice generation
 - Automatic invoice numbering with configurable prefixes
 - Tax calculation and subtotal management
 - Multiple invoice statuses (draft, sent, paid, overdue, voided)
 - **Flexible line items** - Support for hourly, fixed, and quantity-based billing on the same invoice
 
-**💰 Cryptocurrency Payment Verification**
+**Cryptocurrency Payment Verification**
 - On-chain payment verification for USDC (Ethereum)
 - Automatic invoice status updates when payment detected
 - Unique payment addresses per invoice for precise tracking
@@ -239,7 +239,7 @@ go-invoice generate invoice INV-2025-001 --output invoice.html
 - BSV support coming soon (architecture ready)
 - Offline testing with mock providers
 
-**⏱️ Time Tracking & Billing**
+**Time Tracking & Billing**
 - CSV timesheet import from popular time tracking tools
 - **Hourly billing** - Traditional time-based work with hours × rate
 - **Fixed fees** - Flat amounts for retainers, setup fees, monthly charges
@@ -248,7 +248,7 @@ go-invoice generate invoice INV-2025-001 --output invoice.html
 - Flexible date formats and validation
 - Work item descriptions with intelligent validation
 
-**🔧 Developer-Friendly**
+**Developer-Friendly**
 - Context-first design throughout the application
 - Comprehensive test coverage with security and performance validation
 - Clean architecture with dependency injection
@@ -260,7 +260,7 @@ go-invoice generate invoice INV-2025-001 --output invoice.html
 ## 🎯 Claude Integration
 
 <details>
-<summary><strong>🖥️ Claude Desktop Setup (HTTP Transport)</strong></summary>
+<summary><strong>Claude Desktop Setup (HTTP Transport)</strong></summary>
 
 ```bash
 # Run the setup command
@@ -290,7 +290,7 @@ go-invoice config setup-claude --desktop
 </details>
 
 <details>
-<summary><strong>💻 Claude Code Setup (stdio Transport)</strong></summary>
+<summary><strong>Claude Code Setup (stdio Transport)</strong></summary>
 
 ```bash
 # Setup for current project
@@ -375,7 +375,7 @@ go-invoice supports **three types of line items** on the same invoice, giving yo
 
 ### Line Item Types
 
-#### 1. ⏱️ Hourly Billing (Time-based)
+#### 1. Hourly Billing (Time-based)
 Traditional hourly work with automatic calculation: **Hours × Rate = Total**
 
 ```bash
@@ -388,7 +388,7 @@ go-invoice invoice add-line-item INV-001 \
 # "Add 8 hours of development work at $125/hour to INV-001"
 ```
 
-#### 2. 💵 Fixed Amount (Flat Fees)
+#### 2. Fixed Amount (Flat Fees)
 One-time charges, retainers, setup fees, monthly charges
 
 ```bash
@@ -402,7 +402,7 @@ go-invoice invoice add-line-item INV-001 \
 # "Add a $2000 monthly retainer to INV-001"
 ```
 
-#### 3. 📦 Quantity-based (Unit Pricing)
+#### 3. Quantity-based (Unit Pricing)
 Materials, licenses, subscriptions: **Quantity × Unit Price = Total**
 
 ```bash
@@ -455,11 +455,11 @@ Line items are intelligently displayed based on type:
 
 ### Benefits
 
-✅ **Flexibility** - Mix different billing models on one invoice
-✅ **Clarity** - Clear display shows exactly what was charged
-✅ **Accuracy** - Automatic calculations prevent errors
-✅ **Professional** - Clean, itemized invoices for clients
-✅ **Backward Compatible** - Works alongside existing time-based work items
+**Flexibility** - Mix different billing models on one invoice
+**Clarity** - Clear display shows exactly what was charged
+**Accuracy** - Automatic calculations prevent errors
+**Professional** - Clean, itemized invoices for clients
+**Backward Compatible** - Works alongside existing time-based work items
 
 <br/>
 
@@ -476,13 +476,13 @@ go-invoice includes **on-chain payment verification** to automatically detect an
 
 ### Supported Cryptocurrencies
 
-#### ✅ USDC (Ethereum Mainnet & Testnet)
+#### USDC (Ethereum Mainnet & Testnet)
 - **Exact matching** - $100 invoice = 100 USDC on-chain
 - **Etherscan API** - Free tier supported (5 req/sec)
 - **Instant verification** - Balance checked in real-time
 - **Transaction details** - Hash, block number, confirmation time
 
-#### 🔜 BSV (Coming Soon)
+#### BSV (Coming Soon)
 - Exchange rate conversion
 - Fuzzy matching (±5% tolerance for price fluctuations)
 - Time window validation
@@ -502,15 +502,15 @@ go-invoice payment verify INV-2025-001
 #    Provider: etherscan
 #    Payment Address: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
 #
-# 📊 Verification Results
+# Verification Results
 # ═══════════════════════
 #
-# ✅ Payment VERIFIED
+#    Payment VERIFIED
 #    Amount Received: 100.00 USDC
 #    Transaction: 0xabc123...
 #    Confirmed: 2025-10-03 14:30:22
 #
-# 🎉 Congratulations! Invoice has been marked as PAID!
+# Congratulations! Invoice has been marked as PAID!
 
 # Verify payment on testnet (Sepolia)
 go-invoice payment verify INV-2025-001 --testnet
@@ -529,11 +529,11 @@ go-invoice payment verify INV-2025-001 --method BSV
 
 The verification command returns different statuses:
 
-- **✅ Verified** - Full payment received, invoice marked as paid
-- **✅ Overpaid** - More than required amount received, invoice marked as paid
-- **❌ Not Found** - No payment detected yet
-- **⚠️ Partial** - Partial payment received, shows remaining amount
-- **⏳ Pending** - Payment detected but awaiting confirmation
+- **Verified** - Full payment received, invoice marked as paid
+- **Overpaid** - More than required amount received, invoice marked as paid
+- **Not Found** - No payment detected yet
+- **Partial** - Partial payment received, shows remaining amount
+- **Pending** - Payment detected but awaiting confirmation
 
 ### Configuration
 
@@ -542,7 +542,7 @@ Enable cryptocurrency payments in your `.env.config`:
 ```bash
 # Enable USDC payments
 USDC_ENABLED=true
-USDC_ADDRESS="0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+USDC_ADDRESS="0x742d35Cc6634C0......"
 
 # Optional: Etherscan API key for higher rate limits
 # Get free key at: https://etherscan.io/myapikey
@@ -575,11 +575,11 @@ go-invoice invoice create \
 
 ### Benefits
 
-✅ **Automated Verification** - No manual checking of blockchain explorers
-✅ **Instant Confirmation** - Know immediately when client pays
-✅ **Accurate Tracking** - Unique addresses prevent payment confusion
-✅ **Professional** - Automatic status updates and payment details
-✅ **Testable** - Mock providers for development without internet
+**Automated Verification** - No manual checking of blockchain explorers
+**Instant Confirmation** - Know immediately when client pays
+**Accurate Tracking** - Unique addresses prevent payment confusion
+**Professional** - Automatic status updates and payment details
+**Testable** - Mock providers for development without internet
 
 <br/>
 
@@ -622,7 +622,7 @@ go-invoice --version
 ## ⚙️ Configuration
 
 <details>
-<summary><strong>💰 Cryptocurrency Service Fee</strong></summary>
+<summary><strong>Cryptocurrency Service Fee</strong></summary>
 
 ### Overview
 
@@ -653,7 +653,7 @@ Total:                        $5,527.50
 
 **Payment Section:**
 ```
-💰 Cryptocurrency Service Fee Notice:
+Cryptocurrency Service Fee Notice:
 A $25.00 service fee has been applied for cryptocurrency
 payment processing and conversion.
 To avoid this fee, please use ACH Bank Transfer (USD).
@@ -714,7 +714,7 @@ go-invoice client update "Acme Company" \
 </details>
 
 <details>
-<summary><strong>🔐 Per-Invoice Crypto Address Override</strong></summary>
+<summary><strong>Per-Invoice Crypto Address Override</strong></summary>
 
 ### Overview
 
@@ -843,7 +843,7 @@ go-invoice invoice update INV-002 \
 </details>
 
 <details>
-<summary><strong>🔧 Business Configuration</strong></summary>
+<summary><strong>Business Configuration</strong></summary>
 
 ### Initial Setup
 
@@ -915,7 +915,7 @@ AUTO_BACKUP=true
 ## 🖥️ Traditional CLI Usage
 
 <details>
-<summary><strong>👥 Client Management</strong></summary>
+<summary><strong>Client Management</strong></summary>
 
 ```bash
 # Add a new client with all details
@@ -944,7 +944,7 @@ go-invoice client delete --client "Acme Corporation" --soft-delete
 </details>
 
 <details>
-<summary><strong>📄 Invoice Management</strong></summary>
+<summary><strong>Invoice Management</strong></summary>
 
 ```bash
 # Create a new invoice with optional work items
@@ -982,7 +982,7 @@ go-invoice generate invoice INV-2025-001 --template professional --open
 </details>
 
 <details>
-<summary><strong>📦 Batch Operations</strong></summary>
+<summary><strong>Batch Operations</strong></summary>
 
 ```bash
 # Send all draft invoices
@@ -1002,7 +1002,7 @@ go-invoice export invoices --format json --output invoices-backup.json
 ## 📊 CSV Import
 
 <details>
-<summary><strong>📁 CSV Import Features</strong></summary>
+<summary><strong>CSV Import Features</strong></summary>
 
 go-invoice supports importing timesheet data from popular time tracking applications.
 
@@ -1110,7 +1110,7 @@ go-invoice import create timesheet.csv \
 ## 🎨 Templates
 
 <details>
-<summary><strong>🎨 Template Customization</strong></summary>
+<summary><strong>Template Customization</strong></summary>
 
 ### Default Template
 
@@ -1204,24 +1204,24 @@ go-invoice generate templates
 **Production-Grade Performance Metrics:**
 
 ```
-🚀 Response Times
+Response Times
   Simple operations: 0.0008ms average (sub-microsecond)
   Complex operations: < 100ms average
   MCP tool execution: < 2s average
 
-📈 Throughput
+Throughput
   Operations per second: >1.4M sustained
   Concurrent requests: 100+ supported
   Memory per operation: ~1KB efficient
 
-🔒 Security Validation
+Security Validation
   Test cases passed: 64/64 security tests
   Attack vectors blocked: Command injection, path traversal, privilege escalation
   Sandboxing: Comprehensive command and file access restrictions
 ```
 
 <details>
-<summary><strong>🔍 Performance Testing Details</strong></summary>
+<summary><strong>Performance Testing Details</strong></summary>
 
 ### Benchmark Results
 ```bash
@@ -1255,7 +1255,7 @@ BenchmarkResponseTimeValidation/response_time_under_target-10  1480423    884.0 
 ## 🛠️ Development
 
 <details>
-<summary><strong>🏗️ Project Architecture</strong></summary>
+<summary><strong>Project Architecture</strong></summary>
 
 ### Project Structure
 
@@ -1384,7 +1384,7 @@ magex bench
 ## 🧪 Testing
 
 <details>
-<summary><strong>🧪 Comprehensive Test Suite</strong></summary>
+<summary><strong>Comprehensive Test Suite</strong></summary>
 
 ### Test Coverage
 
@@ -1433,28 +1433,24 @@ go tool cover -html=coverage.out -o coverage.html
 
 ### Security Test Results
 ```
-✅ Command Injection Prevention: 15/15 tests passed
-✅ Path Traversal Protection: 12/12 tests passed
-✅ Sandbox Enforcement: 18/18 tests passed
-✅ Environment Security: 8/8 tests passed
-✅ File Handler Security: 11/11 tests passed
-✅ Total Security Tests: 64/64 passed
+Command Injection Prevention: 15/15 tests passed
+Path Traversal Protection: 12/12 tests passed
+Sandbox Enforcement: 18/18 tests passed
+Environment Security: 8/8 tests passed
+File Handler Security: 11/11 tests passed
+Total Security Tests: 64/64 passed
 ```
 
 ### Performance Test Results
 ```
-✅ Simple Operations: 0.0008ms (target: <100ms)
-✅ Complex Operations: <100ms (target: <2s)
-✅ Concurrent Requests: 100+ (target: minimum 5)
-✅ Throughput: >1.4M ops/sec (target: 50 ops/sec)
-✅ Memory Efficiency: ~1KB per operation
+Simple Operations: 0.0008ms (target: <100ms)
+Complex Operations: <100ms (target: <2s)
+Concurrent Requests: 100+ (target: minimum 5)
+Throughput: >1.4M ops/sec (target: 50 ops/sec)
+Memory Efficiency: ~1KB per operation
 ```
 
 </details>
-
-<br/>
-
-
 
 <br/>
 
@@ -1518,26 +1514,26 @@ Claude: [Uses invoice_list tool with filters]
 User: "I need to create an invoice for TechCorp Solutions for January 2025.
       I worked 85 hours at $135/hour on web development."
 
-Claude: ✅ Created invoice INV-2025-001 for TechCorp Solutions
-        📊 Total: $11,475.00 (85 hours × $135.00)
-        📄 Generated invoice-2025-001.html
+Claude: Created invoice INV-2025-001 for TechCorp Solutions
+        Total: $11,475.00 (85 hours × $135.00)
+        Generated invoice-2025-001.html
 
 User: "Import additional hours from my january-timesheet.csv file"
 
-Claude: ✅ Imported 12 additional work items (15.5 hours)
-        📊 Updated total: $13,567.50 (100.5 hours total)
-        📄 Regenerated invoice-2025-001.html
+Claude: Imported 12 additional work items (15.5 hours)
+        Updated total: $13,567.50 (100.5 hours total)
+        Regenerated invoice-2025-001.html
 
 User: "Send the invoice and show me all unpaid invoices"
 
-Claude: ✅ Invoice INV-2025-001 marked as sent
-        📋 Unpaid invoices:
+Claude: Invoice INV-2025-001 marked as sent
+        Unpaid invoices:
         • INV-2025-001 - TechCorp Solutions ($13,567.50) - Due Feb 30
         • INV-2024-089 - StartupXYZ ($2,400.00) - Due Jan 15 (OVERDUE)
 ```
 
 <details>
-<summary><strong>📋 Traditional CLI Workflow</strong></summary>
+<summary><strong>Traditional CLI Workflow</strong></summary>
 
 ### Complete Workflow Example
 
@@ -1707,7 +1703,7 @@ go-invoice [command] --help
 
 ## 📊 Roadmap
 
-### v1.0: Core Features ✅
+### v1.0: Core Features
 - [x] CLI interface with comprehensive commands
 - [x] Client management with approver contacts and tax IDs
 - [x] Invoice creation with automatic due date calculation
