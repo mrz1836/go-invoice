@@ -971,6 +971,9 @@ go-invoice invoice update INV-2025-001 --date 2025-08-07
 go-invoice invoice update INV-2025-001 --status sent
 go-invoice invoice update INV-2025-001 --status paid
 
+# Recalculate invoice totals (useful after data migration or bug fixes)
+go-invoice invoice recalculate INV-2025-001
+
 # Generate HTML invoice
 go-invoice generate invoice INV-2025-001 --output invoice-august.html
 go-invoice generate invoice INV-2025-001 --template professional --open
