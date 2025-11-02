@@ -313,6 +313,171 @@ func (suite *InvoiceServiceTestSuite) TestAddWorkItemToInvoice() {
 		assert.Equal(t, "WORK-001", updatedInvoice.WorkItems[0].ID)
 		assert.InEpsilon(t, 800.0, updatedInvoice.WorkItems[0].Total, 1e-9)
 	})
+
+	// Version handling - ensures version is NOT incremented by service layer
+	suite.Run("VersionNotIncrementedByServiceLayer", func() {
+		invoiceWithVersion := &models.Invoice{
+			ID:        "INV-VERSION-TEST",
+			Number:    "INV-2024-002",
+			Status:    models.StatusDraft,
+			WorkItems: []models.WorkItem{},
+			Version:   1,
+			Client: models.Client{
+				ID:        "CLIENT-001",
+				Name:      "Test Client",
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+			Date:      time.Now(),
+			DueDate:   time.Now().AddDate(0, 0, 30),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-VERSION-TEST")).Return(invoiceWithVersion, nil).Once()
+		suite.idGen.On("GenerateWorkItemID", suite.ctx).Return("WORK-002", nil).Once()
+
+		// Verify that the invoice passed to UpdateInvoice still has version 1
+		// (not incremented to 2 by AddWorkItem)
+		suite.storage.On("UpdateInvoice", suite.ctx, mock.MatchedBy(func(inv *models.Invoice) bool {
+			// The version should still be 1 because AddWorkItemWithoutVersionIncrement is used
+			// Storage layer will handle the increment
+			return inv.Version == 1
+		})).Return(nil).Once()
+
+		updatedInvoice, err := suite.service.AddWorkItemToInvoice(suite.ctx, "INV-VERSION-TEST", newWorkItem)
+
+		require.NoError(t, err)
+		require.NotNil(t, updatedInvoice)
+		assert.Equal(t, 1, updatedInvoice.Version) // Version should still be 1
+	})
+}
+
+func (suite *InvoiceServiceTestSuite) TestAddLineItemToInvoice() {
+	t := suite.T()
+
+	invoice := &models.Invoice{
+		ID:        "INV-001",
+		Number:    "INV-2024-001",
+		Status:    models.StatusDraft,
+		LineItems: []models.LineItem{},
+		Version:   1,
+		Client: models.Client{
+			ID:        "CLIENT-001",
+			Name:      "Test Client",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+		Date:      time.Now(),
+		DueDate:   time.Now().AddDate(0, 0, 30),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	amount := 5000.0
+	newLineItem := models.LineItem{
+		Type:        models.LineItemTypeFixed,
+		Date:        time.Now(),
+		Description: "Repository Maintenance",
+		Amount:      &amount,
+		Total:       5000.0,
+	}
+
+	// Success case
+	suite.Run("Success", func() {
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(invoice, nil).Once()
+		suite.idGen.On("GenerateWorkItemID", suite.ctx).Return("LINE-001", nil).Once()
+		suite.storage.On("UpdateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(nil).Once()
+
+		updatedInvoice, err := suite.service.AddLineItemToInvoice(suite.ctx, "INV-001", newLineItem)
+
+		require.NoError(t, err)
+		require.NotNil(t, updatedInvoice)
+		assert.Len(t, updatedInvoice.LineItems, 1)
+		assert.Equal(t, "LINE-001", updatedInvoice.LineItems[0].ID)
+		assert.Equal(t, models.LineItemTypeFixed, updatedInvoice.LineItems[0].Type)
+		require.NotNil(t, updatedInvoice.LineItems[0].Amount)
+		assert.InEpsilon(t, 5000.0, *updatedInvoice.LineItems[0].Amount, 1e-9)
+	})
+
+	// Version handling - ensures version is NOT incremented by service layer
+	// This is a regression test for the bug where AddLineItem() was incrementing version
+	suite.Run("VersionNotIncrementedByServiceLayer", func() {
+		invoiceWithVersion := &models.Invoice{
+			ID:        "INV-VERSION-TEST",
+			Number:    "INV-2024-002",
+			Status:    models.StatusDraft,
+			LineItems: []models.LineItem{},
+			Version:   1,
+			Client: models.Client{
+				ID:        "CLIENT-001",
+				Name:      "Test Client",
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+			Date:      time.Now(),
+			DueDate:   time.Now().AddDate(0, 0, 30),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-VERSION-TEST")).Return(invoiceWithVersion, nil).Once()
+		suite.idGen.On("GenerateWorkItemID", suite.ctx).Return("LINE-002", nil).Once()
+
+		// Verify that the invoice passed to UpdateInvoice still has version 1
+		// (not incremented to 2 by AddLineItem)
+		suite.storage.On("UpdateInvoice", suite.ctx, mock.MatchedBy(func(inv *models.Invoice) bool {
+			// The version should still be 1 because AddLineItemWithoutVersionIncrement is used
+			// Storage layer will handle the increment
+			return inv.Version == 1
+		})).Return(nil).Once()
+
+		updatedInvoice, err := suite.service.AddLineItemToInvoice(suite.ctx, "INV-VERSION-TEST", newLineItem)
+
+		require.NoError(t, err)
+		require.NotNil(t, updatedInvoice)
+		assert.Equal(t, 1, updatedInvoice.Version) // Version should still be 1
+	})
+
+	// Invoice not found
+	suite.Run("InvoiceNotFound", func() {
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-MISSING")).Return(nil, storage.NewNotFoundError("invoice", "INV-MISSING")).Once()
+
+		updatedInvoice, err := suite.service.AddLineItemToInvoice(suite.ctx, "INV-MISSING", newLineItem)
+
+		require.Error(t, err)
+		assert.Nil(t, updatedInvoice)
+		assert.Contains(t, err.Error(), "failed to retrieve invoice")
+	})
+
+	// Cannot add to non-draft invoice
+	suite.Run("CannotAddToNonDraft", func() {
+		sentInvoice := &models.Invoice{
+			ID:        "INV-SENT",
+			Number:    "INV-2024-003",
+			Status:    models.StatusSent,
+			LineItems: []models.LineItem{},
+			Version:   1,
+			Client: models.Client{
+				ID:        "CLIENT-001",
+				Name:      "Test Client",
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+			Date:      time.Now(),
+			DueDate:   time.Now().AddDate(0, 0, 30),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-SENT")).Return(sentInvoice, nil).Once()
+
+		updatedInvoice, err := suite.service.AddLineItemToInvoice(suite.ctx, "INV-SENT", newLineItem)
+
+		require.Error(t, err)
+		assert.Nil(t, updatedInvoice)
+		assert.Contains(t, err.Error(), "can only add work items to draft invoices")
+	})
 }
 
 func (suite *InvoiceServiceTestSuite) TestSendInvoice() {

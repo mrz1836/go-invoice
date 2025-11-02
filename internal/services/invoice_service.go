@@ -340,7 +340,7 @@ func (s *InvoiceService) AddWorkItemToInvoice(ctx context.Context, invoiceID mod
 	workItemData.CreatedAt = time.Now()
 
 	// Add work item to invoice
-	if err := invoice.AddWorkItem(ctx, workItemData); err != nil {
+	if err := invoice.AddWorkItemWithoutVersionIncrement(ctx, workItemData); err != nil {
 		return nil, fmt.Errorf("failed to add work item: %w", err)
 	}
 
@@ -387,7 +387,7 @@ func (s *InvoiceService) AddLineItemToInvoice(ctx context.Context, invoiceID mod
 	lineItemData.CreatedAt = time.Now()
 
 	// Add line item to invoice
-	if err := invoice.AddLineItem(ctx, lineItemData); err != nil {
+	if err := invoice.AddLineItemWithoutVersionIncrement(ctx, lineItemData); err != nil {
 		return nil, fmt.Errorf("failed to add line item: %w", err)
 	}
 
