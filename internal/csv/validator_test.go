@@ -6,11 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mrz/go-invoice/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/mrz/go-invoice/internal/models"
 )
 
 // WorkItemValidatorTestSuite defines the test suite for work item validator functionality
