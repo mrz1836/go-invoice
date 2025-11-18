@@ -6,11 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/mrz/go-invoice/internal/csv"
 	"github.com/mrz/go-invoice/internal/models"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 )
 
 // AdditionalImportServiceTestSuite provides additional test coverage for ImportService

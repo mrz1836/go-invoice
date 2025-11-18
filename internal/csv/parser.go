@@ -365,6 +365,11 @@ func (p *CSVParser) parseDate(dateStr string) (time.Time, error) {
 
 	for _, format := range fullYearFormats {
 		if date, err := time.Parse(format, dateStr); err == nil {
+			// Reject dates that are the zero time (year 1)
+			// These will fail downstream validation and indicate invalid input
+			if date.IsZero() {
+				return time.Time{}, ErrUnsupportedDateFormat
+			}
 			return date, nil
 		}
 	}

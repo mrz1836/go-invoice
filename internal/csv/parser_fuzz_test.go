@@ -343,9 +343,9 @@ func FuzzParseDate(f *testing.F) {
 
 		// Test invariants
 		if err == nil {
-			// Valid date should not be zero unless input was specifically zero time
-			// Exception: Some dates like "01/01/0001" might parse but result in edge cases
-			if date.IsZero() && dateStr != "" && dateStr != "01/01/0001" {
+			// Valid date should not be zero for non-empty input
+			// Year 1 dates (IsZero() == true) are now rejected by parseDate
+			if date.IsZero() && dateStr != "" {
 				t.Errorf("Valid date should not be zero for non-empty input: %q", dateStr)
 			}
 

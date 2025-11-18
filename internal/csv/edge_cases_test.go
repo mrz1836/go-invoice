@@ -8,9 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
-
 	"github.com/mrz/go-invoice/internal/models"
+	"github.com/stretchr/testify/suite"
 )
 
 // CSVEdgeCasesTestSuite tests edge cases and boundary conditions

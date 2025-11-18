@@ -3,10 +3,9 @@ package services
 import (
 	"context"
 
-	"github.com/stretchr/testify/mock"
-
 	"github.com/mrz/go-invoice/internal/models"
 	"github.com/mrz/go-invoice/internal/storage"
+	"github.com/stretchr/testify/mock"
 )
 
 // MockInvoiceStorage is a mock implementation of the invoice storage interface

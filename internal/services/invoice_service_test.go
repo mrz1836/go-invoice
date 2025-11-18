@@ -6,13 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mrz/go-invoice/internal/models"
+	"github.com/mrz/go-invoice/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/mrz/go-invoice/internal/models"
-	"github.com/mrz/go-invoice/internal/storage"
 )
 
 var errConnectionTimeout = errors.New("connection timeout")

@@ -11,12 +11,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mrz/go-invoice/internal/models"
+	storageTypes "github.com/mrz/go-invoice/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/mrz/go-invoice/internal/models"
-	storageTypes "github.com/mrz/go-invoice/internal/storage"
 )
 
 // MockLogger implements the Logger interface for testing
