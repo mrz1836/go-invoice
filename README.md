@@ -84,7 +84,7 @@
   </tr>
   <tr>
     <td align="center">
-      🤖&nbsp;<a href="#-ai-compliance"><code>AI&nbsp;Compliance</code></a>
+      🤖&nbsp;<a href="#-ai-usage--assistant-guidelines"><code>AI&nbsp;Usage</code></a>
     </td>
     <td align="center">
        ⚖️&nbsp;<a href="#-license"><code>License</code></a>
@@ -1743,15 +1743,8 @@ go-invoice [command] --help
 
 <br/>
 
-## 🤖 AI Compliance
-
-go-invoice includes comprehensive AI assistant guidelines and native Claude integration:
-
-- **[AGENTS.md](.github/AGENTS.md)** — Complete rules for coding style, workflows, and best practices
-- **[CLAUDE.md](.github/CLAUDE.md)** — Guidelines for AI assistant integration
-- **[.cursorrules](.cursorrules)** — Machine-readable policies for Cursor and similar tools
-- **[sweep.yaml](.github/sweep.yaml)** — Configuration for Sweep AI code review
-- **[docs/mcp/](docs/mcp)** — Complete MCP integration documentation for Claude Desktop and Claude Code
+## 🤖 AI Usage & Assistant Guidelines
+Read the [AI Usage & Assistant Guidelines](.github/tech-conventions/ai-compliance.md) for details on how AI is used in this project and how to interact with the AI assistants.
 
 ### Native Claude Integration Features
 - **MCP Protocol Compliance**: Full MCP 2024-11-05 specification support
