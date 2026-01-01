@@ -642,7 +642,17 @@ func TestParseDateFormats(t *testing.T) {
 	parser := NewCSVParser(validator, logger, idGenerator)
 
 	now := time.Now()
-	currentYear := now.Year()
+
+	// Helper function to calculate expected year for no-year date formats
+	// This mirrors the parser's logic: use current year unless >6 months in future
+	expectedYearForNoYearDate := func(month time.Month, day int) int {
+		candidateDate := time.Date(now.Year(), month, day, 0, 0, 0, 0, time.UTC)
+		sixMonthsFromNow := now.AddDate(0, 6, 0)
+		if candidateDate.After(sixMonthsFromNow) {
+			return now.Year() - 1
+		}
+		return now.Year()
+	}
 
 	tests := []struct {
 		name         string
@@ -718,15 +728,15 @@ func TestParseDateFormats(t *testing.T) {
 			dateStr:      "9/8",
 			wantErr:      false,
 			checkYear:    true,
-			expectedYear: currentYear,
-			description:  "Date without year uses current year",
+			expectedYear: expectedYearForNoYearDate(time.September, 8),
+			description:  "Date without year uses current year unless >6 months in future",
 		},
 		{
 			name:         "No year - with leading zeros",
 			dateStr:      "01/15",
 			wantErr:      false,
 			checkYear:    true,
-			expectedYear: currentYear,
+			expectedYear: expectedYearForNoYearDate(time.January, 15),
 			description:  "Padded date without year",
 		},
 		{
@@ -734,8 +744,8 @@ func TestParseDateFormats(t *testing.T) {
 			dateStr:      "Sep 8",
 			wantErr:      false,
 			checkYear:    true,
-			expectedYear: currentYear,
-			description:  "Month name format without year",
+			expectedYear: expectedYearForNoYearDate(time.September, 8),
+			description:  "Month name format without year uses smart inference",
 		},
 
 		// Edge cases and invalid formats
