@@ -111,20 +111,34 @@ func (suite *CSVEdgeCasesTestSuite) TestMalformedCSVData() {
 
 // TestDateFormatEdgeCases tests various date format edge cases
 func (suite *CSVEdgeCasesTestSuite) TestDateFormatEdgeCases() {
+	// Calculate dynamic dates for boundary testing
+	now := time.Now()
+	recentPast := now.AddDate(-1, 0, 0).Format("2006-01-02") // 1 year ago (within 2 year limit)
+	tomorrow := now.AddDate(0, 0, 1).Format("2006-01-02")    // Tomorrow (within 1 week limit)
+	// Use a date in the recent past (7 days ago) for valid format tests to avoid future date validation
+	validTestDate := now.AddDate(0, 0, -7)
+	validDate := validTestDate.Format("2006-01-02")           // ISO format
+	validUSDate := validTestDate.Format("01/02/2006")         // US format
+	validEUDate := validTestDate.Format("02/01/2006")         // EU format
+	validAltISO := validTestDate.Format("2006/01/02")         // Alternative ISO
+	validMonthName := validTestDate.Format("Jan 2, 2006")     // Month name format
+	validFullMonth := validTestDate.Format("January 2, 2006") // Full month name
+	validWithTime := validTestDate.Format("2006-01-02") + " 15:04:05"
+
 	tests := []struct {
 		name      string
 		dateValue string
 		valid     bool
 	}{
 		// Valid formats (based on parser.go parseDate implementation)
-		{"ISO8601", "2024-01-15", true},
-		{"USFormat", "01/15/2024", true},
-		{"EUFormat", "15/01/2024", true}, // Parser uses "/" not "."
-		{"AlternativeISO", "2024/01/15", true},
-		{"MonthName", "Jan 15, 2024", true},
-		{"FullMonthName", "January 15, 2024", true},
+		{"ISO8601", validDate, true},
+		{"USFormat", validUSDate, true},
+		{"EUFormat", validEUDate, true}, // Parser uses "/" not "."
+		{"AlternativeISO", validAltISO, true},
+		{"MonthName", validMonthName, true},
+		{"FullMonthName", validFullMonth, true},
 
-		// Edge cases
+		// Edge cases (using fixed years for specific tests)
 		{"LeapYear", "2024-02-29", true},
 		{"NonLeapYear", "2023-02-29", false},
 		{"InvalidMonth", "2024-13-01", false},
@@ -135,8 +149,8 @@ func (suite *CSVEdgeCasesTestSuite) TestDateFormatEdgeCases() {
 		// Boundary dates (based on validator rules: 2 years past, 1 week future)
 		{"FarPast", "1900-01-01", false},   // More than 2 years ago
 		{"FarFuture", "2100-01-01", false}, // More than 1 week from now
-		{"RecentPast", "2024-01-01", true}, // Within 2 years
-		{"Tomorrow", "2025-08-03", true},   // Within 1 week of now
+		{"RecentPast", recentPast, true},   // Within 2 years (dynamically calculated)
+		{"Tomorrow", tomorrow, true},       // Within 1 week of now (dynamically calculated)
 
 		// Malformed dates
 		{"Empty", "", false},
@@ -146,7 +160,7 @@ func (suite *CSVEdgeCasesTestSuite) TestDateFormatEdgeCases() {
 		{"ShortYear", "24-01-15", true},               // 2-digit year format now supported (YY-MM-DD)
 		{"Mixed", "24/Jan/2024", false},
 		{"SimpleTime", "2024-01-15 10:30", false},
-		{"ISOWithTime", "2024-01-15 15:04:05", true}, // This format IS supported
+		{"ISOWithTime", validWithTime, true}, // This format IS supported
 		{"Timezone", "2024-01-15T10:30Z", false},
 	}
 
