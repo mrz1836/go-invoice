@@ -34,6 +34,7 @@ type LineItem struct {
 	ID          string       `json:"id"`
 	Type        LineItemType `json:"type"`
 	Date        time.Time    `json:"date"`
+	EndDate     *time.Time   `json:"end_date,omitempty"` // Optional end date for date ranges (e.g., monthly retainers)
 	Description string       `json:"description"`
 
 	// For hourly items (Type == LineItemTypeHourly)
@@ -150,6 +151,13 @@ func (l *LineItem) Validate(ctx context.Context) error {
 		AddMaxLength("description", l.Description, 1000).
 		AddNonNegative("total", l.Total).
 		AddTimeRequired("created_at", l.CreatedAt)
+
+	// Validate optional EndDate if provided
+	if l.EndDate != nil {
+		if l.EndDate.Before(l.Date) {
+			builder.AddCustom("end_date", "cannot be before date", l.EndDate)
+		}
+	}
 
 	// Validate type-specific fields
 	switch l.Type {
