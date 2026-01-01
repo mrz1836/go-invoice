@@ -386,6 +386,7 @@ Traditional hourly work with automatic calculation: **Hours × Rate = Total**
 # Via CLI
 go-invoice invoice add-line-item INV-001 \
   --description "Development work on authentication module" \
+  --date 2025-08-01 \
   --hours 8 --rate 125
 
 # Via Claude (natural language)
@@ -396,15 +397,19 @@ go-invoice invoice add-line-item INV-001 \
 One-time charges, retainers, setup fees, monthly charges
 
 ```bash
-# Via CLI
+# Via CLI - Monthly retainer with date range
 go-invoice invoice add-line-item INV-001 \
   --type fixed \
   --description "Monthly Retainer - August 2025" \
+  --date 2025-08-01 \
+  --end-date 2025-08-31 \
   --amount 2000
 
 # Via Claude (natural language)
 # "Add a $2000 monthly retainer to INV-001"
 ```
+
+> **Note:** The `--end-date` flag is optional. When provided, the Work Period on the invoice shows the full date range (e.g., "8/1/2025 to 8/31/2025"). Without it, the work period shows the same date for start and end.
 
 #### 3. Quantity-based (Unit Pricing)
 Materials, licenses, subscriptions: **Quantity × Unit Price = Total**
@@ -414,6 +419,7 @@ Materials, licenses, subscriptions: **Quantity × Unit Price = Total**
 go-invoice invoice add-line-item INV-001 \
   --type quantity \
   --description "SSL certificates" \
+  --date 2025-08-01 \
   --quantity 3 --unit-price 50
 
 # Via Claude (natural language)
@@ -428,6 +434,7 @@ Create an invoice combining all three billing types:
 # 1. Start with hourly work
 go-invoice invoice add-line-item INV-001 \
   --description "Development - 40 hours" \
+  --date 2025-08-01 \
   --hours 40 --rate 125
   # Subtotal: $5,000
 
@@ -435,6 +442,7 @@ go-invoice invoice add-line-item INV-001 \
 go-invoice invoice add-line-item INV-001 \
   --type fixed \
   --description "Project Setup & Configuration" \
+  --date 2025-08-01 \
   --amount 500
   # Subtotal: $5,500
 
@@ -442,6 +450,7 @@ go-invoice invoice add-line-item INV-001 \
 go-invoice invoice add-line-item INV-001 \
   --type quantity \
   --description "Development licenses (annual)" \
+  --date 2025-08-01 \
   --quantity 2 --unit-price 99
   # Final Total: $5,698
 ```
