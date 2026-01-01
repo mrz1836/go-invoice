@@ -590,10 +590,18 @@ func getMaxDateFromWorkItems(workItems interface{}) time.Time {
 		if len(items) == 0 {
 			return time.Time{}
 		}
+		// Use EndDate if available, otherwise use Date
 		maxDate := items[0].Date
+		if items[0].EndDate != nil {
+			maxDate = *items[0].EndDate
+		}
 		for _, item := range items[1:] {
-			if item.Date.After(maxDate) {
-				maxDate = item.Date
+			compareDate := item.Date
+			if item.EndDate != nil {
+				compareDate = *item.EndDate
+			}
+			if compareDate.After(maxDate) {
+				maxDate = compareDate
 			}
 		}
 		return maxDate
