@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/mrz/go-invoice/internal/models"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -765,4 +768,481 @@ func BenchmarkTemplateParsingAndExecution(b *testing.B) {
 
 		_, _ = template.ExecuteToString(ctx, invoice)
 	}
+}
+
+// Additional tests for coverage improvement
+
+// TestGetCurrencySymbol tests the getCurrencySymbol helper function
+func TestGetCurrencySymbol(t *testing.T) {
+	tests := []struct {
+		name     string
+		currency string
+		want     string
+	}{
+		{"USD", "USD", "$"},
+		{"EUR", "EUR", "€"},
+		{"GBP", "GBP", "£"},
+		{"CAD", "CAD", "C$"},
+		{"AUD", "AUD", "A$"},
+		{"Unknown currency", "JPY", "JPY"},
+		{"Empty string", "", ""},
+		{"Lowercase (no match)", "usd", "usd"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getCurrencySymbol(tt.currency)
+			if got != tt.want {
+				t.Errorf("getCurrencySymbol(%q) = %q, want %q", tt.currency, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestGetMinDateFromWorkItems tests the getMinDateFromWorkItems helper function
+func TestGetMinDateFromWorkItems(t *testing.T) {
+	date1 := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	date2 := time.Date(2024, 1, 10, 0, 0, 0, 0, time.UTC)
+	date3 := time.Date(2024, 1, 20, 0, 0, 0, 0, time.UTC)
+
+	t.Run("EmptyWorkItemSlice", func(t *testing.T) {
+		result := getMinDateFromWorkItems([]models.WorkItem{})
+		if !result.IsZero() {
+			t.Errorf("Expected zero time for empty slice, got %v", result)
+		}
+	})
+
+	t.Run("SingleWorkItem", func(t *testing.T) {
+		items := []models.WorkItem{{Date: date1}}
+		result := getMinDateFromWorkItems(items)
+		if !result.Equal(date1) {
+			t.Errorf("Expected %v, got %v", date1, result)
+		}
+	})
+
+	t.Run("MultipleWorkItems", func(t *testing.T) {
+		items := []models.WorkItem{
+			{Date: date1},
+			{Date: date2}, // Earliest
+			{Date: date3},
+		}
+		result := getMinDateFromWorkItems(items)
+		if !result.Equal(date2) {
+			t.Errorf("Expected %v (earliest), got %v", date2, result)
+		}
+	})
+
+	t.Run("EmptyLineItemSlice", func(t *testing.T) {
+		result := getMinDateFromWorkItems([]models.LineItem{})
+		if !result.IsZero() {
+			t.Errorf("Expected zero time for empty slice, got %v", result)
+		}
+	})
+
+	t.Run("SingleLineItem", func(t *testing.T) {
+		items := []models.LineItem{{Date: date1}}
+		result := getMinDateFromWorkItems(items)
+		if !result.Equal(date1) {
+			t.Errorf("Expected %v, got %v", date1, result)
+		}
+	})
+
+	t.Run("MultipleLineItems", func(t *testing.T) {
+		items := []models.LineItem{
+			{Date: date1},
+			{Date: date2}, // Earliest
+			{Date: date3},
+		}
+		result := getMinDateFromWorkItems(items)
+		if !result.Equal(date2) {
+			t.Errorf("Expected %v (earliest), got %v", date2, result)
+		}
+	})
+
+	t.Run("UnsupportedType", func(t *testing.T) {
+		result := getMinDateFromWorkItems("invalid")
+		if !result.IsZero() {
+			t.Errorf("Expected zero time for unsupported type, got %v", result)
+		}
+	})
+
+	t.Run("NilInput", func(t *testing.T) {
+		result := getMinDateFromWorkItems(nil)
+		if !result.IsZero() {
+			t.Errorf("Expected zero time for nil input, got %v", result)
+		}
+	})
+}
+
+// TestGetMaxDateFromWorkItems tests the getMaxDateFromWorkItems helper function
+func TestGetMaxDateFromWorkItems(t *testing.T) {
+	date1 := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	date2 := time.Date(2024, 1, 10, 0, 0, 0, 0, time.UTC)
+	date3 := time.Date(2024, 1, 20, 0, 0, 0, 0, time.UTC)
+	date4 := time.Date(2024, 1, 25, 0, 0, 0, 0, time.UTC)
+
+	t.Run("EmptyWorkItemSlice", func(t *testing.T) {
+		result := getMaxDateFromWorkItems([]models.WorkItem{})
+		if !result.IsZero() {
+			t.Errorf("Expected zero time for empty slice, got %v", result)
+		}
+	})
+
+	t.Run("SingleWorkItem", func(t *testing.T) {
+		items := []models.WorkItem{{Date: date1}}
+		result := getMaxDateFromWorkItems(items)
+		if !result.Equal(date1) {
+			t.Errorf("Expected %v, got %v", date1, result)
+		}
+	})
+
+	t.Run("MultipleWorkItems", func(t *testing.T) {
+		items := []models.WorkItem{
+			{Date: date1},
+			{Date: date2},
+			{Date: date3}, // Latest
+		}
+		result := getMaxDateFromWorkItems(items)
+		if !result.Equal(date3) {
+			t.Errorf("Expected %v (latest), got %v", date3, result)
+		}
+	})
+
+	t.Run("EmptyLineItemSlice", func(t *testing.T) {
+		result := getMaxDateFromWorkItems([]models.LineItem{})
+		if !result.IsZero() {
+			t.Errorf("Expected zero time for empty slice, got %v", result)
+		}
+	})
+
+	t.Run("LineItemWithEndDate", func(t *testing.T) {
+		items := []models.LineItem{
+			{Date: date1, EndDate: &date4}, // EndDate is latest
+			{Date: date2},
+			{Date: date3},
+		}
+		result := getMaxDateFromWorkItems(items)
+		if !result.Equal(date4) {
+			t.Errorf("Expected %v (EndDate), got %v", date4, result)
+		}
+	})
+
+	t.Run("LineItemWithNilEndDate", func(t *testing.T) {
+		items := []models.LineItem{
+			{Date: date1, EndDate: nil},
+			{Date: date3}, // Latest Date when no EndDate
+		}
+		result := getMaxDateFromWorkItems(items)
+		if !result.Equal(date3) {
+			t.Errorf("Expected %v, got %v", date3, result)
+		}
+	})
+
+	t.Run("MixedEndDates", func(t *testing.T) {
+		items := []models.LineItem{
+			{Date: date1, EndDate: &date2},
+			{Date: date2, EndDate: &date4}, // EndDate is latest overall
+			{Date: date3, EndDate: nil},
+		}
+		result := getMaxDateFromWorkItems(items)
+		if !result.Equal(date4) {
+			t.Errorf("Expected %v (latest EndDate), got %v", date4, result)
+		}
+	})
+
+	t.Run("UnsupportedType", func(t *testing.T) {
+		result := getMaxDateFromWorkItems("invalid")
+		if !result.IsZero() {
+			t.Errorf("Expected zero time for unsupported type, got %v", result)
+		}
+	})
+}
+
+// RenderDataTestSuite tests the RenderData method
+type RenderDataTestSuite struct {
+	suite.Suite
+
+	logger     *MockLogger
+	fileReader *MockFileReader
+	engine     *HTMLTemplateEngine
+	cache      *MockTemplateCache
+	validator  *MockTemplateValidator
+}
+
+func (s *RenderDataTestSuite) SetupTest() {
+	s.logger = &MockLogger{}
+	s.fileReader = NewMockFileReader()
+	s.engine = NewHTMLTemplateEngine(s.fileReader, s.logger)
+	s.cache = NewMockTemplateCache()
+	s.validator = NewMockTemplateValidator()
+}
+
+func (s *RenderDataTestSuite) TestRenderDataSuccess() {
+	ctx := context.Background()
+
+	// Setup template
+	templateContent := `<h1>{{.Title}}</h1><p>{{.Content}}</p>`
+	err := s.engine.ParseTemplateString(ctx, "data_template", templateContent)
+	s.Require().NoError(err)
+
+	template, err := s.engine.GetTemplate(ctx, "data_template")
+	s.Require().NoError(err)
+	s.cache.templates["data_template"] = template
+
+	renderer := NewTemplateRenderer(s.engine, s.cache, s.validator, s.logger, nil)
+
+	data := map[string]interface{}{
+		"Title":   "Test Title",
+		"Content": "Test Content",
+	}
+
+	result, err := renderer.RenderData(ctx, data, "data_template")
+	s.Require().NoError(err)
+	s.Contains(result, "Test Title")
+	s.Contains(result, "Test Content")
+}
+
+func (s *RenderDataTestSuite) TestRenderDataContextCanceled() {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	renderer := NewTemplateRenderer(s.engine, s.cache, s.validator, s.logger, nil)
+
+	data := map[string]interface{}{"key": "value"}
+	result, err := renderer.RenderData(ctx, data, "test")
+	s.Require().Error(err)
+	s.Empty(result)
+	s.ErrorIs(err, context.Canceled)
+}
+
+func (s *RenderDataTestSuite) TestRenderDataTemplateNotFound() {
+	ctx := context.Background()
+	renderer := NewTemplateRenderer(s.engine, s.cache, s.validator, s.logger, nil)
+
+	data := map[string]interface{}{"key": "value"}
+	result, err := renderer.RenderData(ctx, data, "nonexistent")
+	s.Require().Error(err)
+	s.Empty(result)
+	s.Contains(err.Error(), "failed to get template")
+}
+
+func (s *RenderDataTestSuite) TestRenderDataDefaultTemplate() {
+	ctx := context.Background()
+
+	// Setup default template
+	templateContent := `<p>Default: {{.Value}}</p>`
+	err := s.engine.ParseTemplateString(ctx, "default", templateContent)
+	s.Require().NoError(err)
+
+	template, err := s.engine.GetTemplate(ctx, "default")
+	s.Require().NoError(err)
+	s.cache.templates["default"] = template
+
+	renderer := NewTemplateRenderer(s.engine, s.cache, s.validator, s.logger, &RendererOptions{
+		DefaultTemplate: "default",
+		MaxRenderTime:   30 * time.Second,
+	})
+
+	data := map[string]interface{}{"Value": "test"}
+	result, err := renderer.RenderData(ctx, data, "") // Empty template name uses default
+	s.Require().NoError(err)
+	s.Contains(result, "Default: test")
+}
+
+func TestRenderDataTestSuite(t *testing.T) {
+	suite.Run(t, new(RenderDataTestSuite))
+}
+
+// TestTemplateFunctions tests the template helper functions through template execution
+func TestTemplateFunctions(t *testing.T) {
+	logger := &MockLogger{}
+	fileReader := NewMockFileReader()
+	engine := NewHTMLTemplateEngine(fileReader, logger)
+
+	tests := []struct {
+		name     string
+		template string
+		data     map[string]interface{}
+		want     string
+	}{
+		{
+			name:     "formatDate with empty format",
+			template: `{{formatDate .Date ""}}`,
+			data:     map[string]interface{}{"Date": time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)},
+			want:     "2024-01-15",
+		},
+		{
+			name:     "formatDate with custom format",
+			template: `{{formatDate .Date "Jan 02, 2006"}}`,
+			data:     map[string]interface{}{"Date": time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)},
+			want:     "Jan 15, 2024",
+		},
+		{
+			name:     "formatFloat with int precision",
+			template: `{{formatFloat .Value 3}}`,
+			data:     map[string]interface{}{"Value": 3.14159},
+			want:     "3.142",
+		},
+		{
+			name:     "formatFloat with float64 precision",
+			template: `{{formatFloat .Value 2.0}}`,
+			data:     map[string]interface{}{"Value": 3.14159},
+			want:     "3.14",
+		},
+		{
+			name:     "formatFloat with unknown precision type defaults to 2",
+			template: `{{formatFloat .Value "invalid"}}`,
+			data:     map[string]interface{}{"Value": 3.14159},
+			want:     "3.14",
+		},
+		{
+			name:     "default function with nil value",
+			template: `{{default "fallback" .Missing}}`,
+			data:     map[string]interface{}{"Other": "value"},
+			want:     "fallback",
+		},
+		{
+			name:     "default function with empty string",
+			template: `{{default "fallback" .Empty}}`,
+			data:     map[string]interface{}{"Empty": ""},
+			want:     "fallback",
+		},
+		{
+			name:     "default function with actual value",
+			template: `{{default "fallback" .Actual}}`,
+			data:     map[string]interface{}{"Actual": "real value"},
+			want:     "real value",
+		},
+		{
+			name:     "add function",
+			template: `{{add .A .B}}`,
+			data:     map[string]interface{}{"A": 1.5, "B": 2.5},
+			want:     "4",
+		},
+		{
+			name:     "multiply function",
+			template: `{{multiply .A .B}}`,
+			data:     map[string]interface{}{"A": 2.0, "B": 3.0},
+			want:     "6",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			templateName := "test_" + tt.name
+			err := engine.ParseTemplateString(ctx, templateName, tt.template)
+			require.NoError(t, err)
+
+			tmpl, err := engine.GetTemplate(ctx, templateName)
+			require.NoError(t, err)
+
+			result, err := tmpl.ExecuteToString(ctx, tt.data)
+			require.NoError(t, err)
+			assert.Contains(t, result, tt.want)
+		})
+	}
+}
+
+// TestListAvailableTemplatesContextCanceled tests context cancellation handling
+func TestListAvailableTemplatesContextCanceled(t *testing.T) {
+	logger := &MockLogger{}
+	fileReader := NewMockFileReader()
+	engine := NewHTMLTemplateEngine(fileReader, logger)
+	cache := NewMockTemplateCache()
+	validator := NewMockTemplateValidator()
+
+	renderer := NewTemplateRenderer(engine, cache, validator, logger, nil)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	templates, err := renderer.ListAvailableTemplates(ctx)
+	require.Error(t, err)
+	assert.Nil(t, templates)
+	assert.ErrorIs(t, err, context.Canceled)
+}
+
+// TestGoTemplateValidate tests the GoTemplate Validate method
+func TestGoTemplateValidate(t *testing.T) {
+	t.Run("context canceled", func(t *testing.T) {
+		tmpl := &GoTemplate{
+			template: template.New("test"),
+			info:     &TemplateInfo{Name: "test"},
+			content:  "{{.Value}}",
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		err := tmpl.Validate(ctx)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, context.Canceled)
+	})
+
+	t.Run("syntax error", func(t *testing.T) {
+		tmpl := &GoTemplate{
+			template: template.New("test"),
+			info:     &TemplateInfo{Name: "broken"},
+			content:  "{{.Value",
+		}
+
+		ctx := context.Background()
+		err := tmpl.Validate(ctx)
+		require.Error(t, err)
+
+		var templateErr *TemplateError
+		require.ErrorAs(t, err, &templateErr)
+		assert.Equal(t, "syntax", templateErr.Type)
+	})
+
+	t.Run("valid template", func(t *testing.T) {
+		tmpl := &GoTemplate{
+			template: template.New("test"),
+			info:     &TemplateInfo{Name: "valid"},
+			content:  "{{.Value}}",
+		}
+
+		ctx := context.Background()
+		err := tmpl.Validate(ctx)
+		assert.NoError(t, err)
+	})
+}
+
+// TestGoTemplateExecuteContextCanceled tests context cancellation in Execute
+func TestGoTemplateExecuteContextCanceled(t *testing.T) {
+	parsed, err := template.New("test").Parse("{{.Value}}")
+	require.NoError(t, err)
+
+	tmpl := &GoTemplate{
+		template: parsed,
+		info:     &TemplateInfo{Name: "test"},
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(ctx, map[string]interface{}{"Value": "test"}, &buf)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, context.Canceled)
+}
+
+// TestGoTemplateExecuteToStringContextCanceled tests context cancellation in ExecuteToString
+func TestGoTemplateExecuteToStringContextCanceled(t *testing.T) {
+	parsed, err := template.New("test").Parse("{{.Value}}")
+	require.NoError(t, err)
+
+	tmpl := &GoTemplate{
+		template: parsed,
+		info:     &TemplateInfo{Name: "test"},
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	result, err := tmpl.ExecuteToString(ctx, map[string]interface{}{"Value": "test"})
+	require.Error(t, err)
+	assert.Empty(t, result)
+	assert.ErrorIs(t, err, context.Canceled)
 }
