@@ -34,6 +34,7 @@ var (
 	ErrFixedLineItemRequiresAmount = fmt.Errorf("fixed line items require --amount flag")
 	ErrQuantityLineItemRequiresAll = fmt.Errorf("quantity line items require --quantity and --unit-price flags")
 	ErrInvalidLineItemType         = fmt.Errorf("invalid line item type (must be hourly, fixed, or quantity)")
+	ErrEndDateBeforeDate           = fmt.Errorf("end-date cannot be before date")
 )
 
 // getInvoiceByIDOrNumber is a helper function to get an invoice by ID or number
@@ -1424,7 +1425,8 @@ Line Item Types:
 	// Common flags
 	cmd.Flags().String("type", "hourly", "Line item type: hourly, fixed, or quantity")
 	cmd.Flags().String("description", "", "Line item description (required)")
-	cmd.Flags().String("date", "", "Line item date (default: today)")
+	cmd.Flags().String("date", "", "Line item date (required, format: YYYY-MM-DD)")
+	cmd.Flags().String("end-date", "", "Line item end date (optional, for date ranges like monthly retainers)")
 
 	// Hourly flags
 	cmd.Flags().Float64("hours", 0, "Hours worked (for hourly type)")
@@ -1437,8 +1439,9 @@ Line Item Types:
 	cmd.Flags().Float64("quantity", 0, "Quantity (for quantity type)")
 	cmd.Flags().Float64("unit-price", 0, "Unit price (for quantity type)")
 
-	// Mark description as required
+	// Mark required flags
 	_ = cmd.MarkFlagRequired("description")
+	_ = cmd.MarkFlagRequired("date")
 
 	return cmd
 }
@@ -1466,16 +1469,25 @@ func (a *App) runInvoiceAddLineItem(cmd *cobra.Command, args []string) error {
 	quantity, _ := cmd.Flags().GetFloat64("quantity")
 	unitPrice, _ := cmd.Flags().GetFloat64("unit-price")
 
-	// Parse date
-	var itemDate time.Time
-	if dateStr != "" {
-		var err error
-		itemDate, err = time.Parse("2006-01-02", dateStr)
+	// Parse date (required flag, so dateStr is always set)
+	itemDate, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return fmt.Errorf("invalid date format (use YYYY-MM-DD): %w", err)
+	}
+
+	// Parse optional end date
+	endDateStr, _ := cmd.Flags().GetString("end-date")
+	var endDate *time.Time
+	if endDateStr != "" {
+		var parsed time.Time
+		parsed, err = time.Parse("2006-01-02", endDateStr)
 		if err != nil {
-			return fmt.Errorf("invalid date format (use YYYY-MM-DD): %w", err)
+			return fmt.Errorf("invalid end-date format (use YYYY-MM-DD): %w", err)
 		}
-	} else {
-		itemDate = time.Now()
+		if parsed.Before(itemDate) {
+			return ErrEndDateBeforeDate
+		}
+		endDate = &parsed
 	}
 
 	// Get config path from flag
@@ -1509,6 +1521,7 @@ func (a *App) runInvoiceAddLineItem(cmd *cobra.Command, args []string) error {
 		lineItem = models.LineItem{
 			Type:        models.LineItemTypeHourly,
 			Date:        itemDate,
+			EndDate:     endDate,
 			Description: description,
 			Hours:       &hours,
 			Rate:        &rate,
@@ -1523,6 +1536,7 @@ func (a *App) runInvoiceAddLineItem(cmd *cobra.Command, args []string) error {
 		lineItem = models.LineItem{
 			Type:        models.LineItemTypeFixed,
 			Date:        itemDate,
+			EndDate:     endDate,
 			Description: description,
 			Amount:      &amount,
 			Total:       amount,
@@ -1536,6 +1550,7 @@ func (a *App) runInvoiceAddLineItem(cmd *cobra.Command, args []string) error {
 		lineItem = models.LineItem{
 			Type:        models.LineItemTypeQuantity,
 			Date:        itemDate,
+			EndDate:     endDate,
 			Description: description,
 			Quantity:    &quantity,
 			UnitPrice:   &unitPrice,
