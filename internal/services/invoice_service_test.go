@@ -827,6 +827,87 @@ func (suite *InvoiceServiceTestSuite) TestGetInvoiceStatistics() {
 	})
 }
 
+// TestGetInvoiceByNumber tests the GetInvoiceByNumber method
+func (suite *InvoiceServiceTestSuite) TestGetInvoiceByNumber() {
+	t := suite.T()
+
+	testInvoice := &models.Invoice{
+		ID:        "INV-001",
+		Number:    "INV-2024-001",
+		Status:    models.StatusDraft,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Version:   1,
+	}
+
+	suite.Run("Success", func() {
+		suite.storage.On("ListInvoices", suite.ctx, mock.MatchedBy(func(filter models.InvoiceFilter) bool {
+			return true
+		})).Return(&storage.InvoiceListResult{
+			Invoices: []*models.Invoice{testInvoice},
+		}, nil).Once()
+
+		invoice, err := suite.service.GetInvoiceByNumber(suite.ctx, "INV-2024-001")
+
+		require.NoError(t, err)
+		require.NotNil(t, invoice)
+		assert.Equal(t, "INV-2024-001", invoice.Number)
+	})
+
+	suite.Run("EmptyNumber", func() {
+		invoice, err := suite.service.GetInvoiceByNumber(suite.ctx, "")
+
+		require.Error(t, err)
+		assert.Nil(t, invoice)
+		assert.ErrorIs(t, err, ErrInvoiceNumberEmpty)
+	})
+
+	suite.Run("WhitespaceOnlyNumber", func() {
+		invoice, err := suite.service.GetInvoiceByNumber(suite.ctx, "   ")
+
+		require.Error(t, err)
+		assert.Nil(t, invoice)
+		assert.ErrorIs(t, err, ErrInvoiceNumberEmpty)
+	})
+
+	suite.Run("NotFound", func() {
+		suite.storage.On("ListInvoices", suite.ctx, mock.MatchedBy(func(filter models.InvoiceFilter) bool {
+			return true
+		})).Return(&storage.InvoiceListResult{
+			Invoices: []*models.Invoice{testInvoice},
+		}, nil).Once()
+
+		invoice, err := suite.service.GetInvoiceByNumber(suite.ctx, "NONEXISTENT")
+
+		require.Error(t, err)
+		assert.Nil(t, invoice)
+		assert.ErrorIs(t, err, ErrInvoiceNumberNotFound)
+	})
+
+	suite.Run("StorageError", func() {
+		suite.storage.On("ListInvoices", suite.ctx, mock.MatchedBy(func(filter models.InvoiceFilter) bool {
+			return true
+		})).Return(nil, errConnectionTimeout).Once()
+
+		invoice, err := suite.service.GetInvoiceByNumber(suite.ctx, "INV-2024-001")
+
+		require.Error(t, err)
+		assert.Nil(t, invoice)
+		assert.Contains(t, err.Error(), "failed to search for invoice")
+	})
+
+	suite.Run("ContextCanceled", func() {
+		canceledCtx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		invoice, err := suite.service.GetInvoiceByNumber(canceledCtx, "INV-2024-001")
+
+		require.Error(t, err)
+		assert.Nil(t, invoice)
+		assert.ErrorIs(t, err, context.Canceled)
+	})
+}
+
 // Helper function
 func ptrString(s string) *string {
 	return &s

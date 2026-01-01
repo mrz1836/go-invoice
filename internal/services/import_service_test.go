@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -18,6 +19,7 @@ var (
 	errTestParseError      = fmt.Errorf("parse error")
 	errTestValidationError = fmt.Errorf("validation error")
 	errTestClientNotFound  = fmt.Errorf("client not found")
+	errTestNotFound        = errors.New("not found")
 )
 
 // Define interfaces for testing
@@ -968,4 +970,331 @@ func (suite *ImportServiceTestSuite) TestHelperMethods() {
 		suite.Require().False(suite.service.workItemsAreSimilar(item1, item3))
 		suite.Require().False(suite.service.workItemsAreSimilar(item1, item4))
 	})
+}
+
+// RealImportServiceTestSuite tests the actual ImportService implementation
+type RealImportServiceTestSuite struct {
+	suite.Suite
+
+	csvParser      *MockTimesheetParser
+	validator      *MockCSVValidator
+	invoiceStorage *MockInvoiceStorage
+	clientStorage  *MockClientStorage
+	logger         *MockLogger
+	idGen          *MockIDGenerator
+	invoiceService *InvoiceService
+	clientService  *ClientService
+	importService  *ImportService
+}
+
+func (suite *RealImportServiceTestSuite) SetupTest() {
+	suite.csvParser = new(MockTimesheetParser)
+	suite.validator = new(MockCSVValidator)
+	suite.invoiceStorage = new(MockInvoiceStorage)
+	suite.clientStorage = new(MockClientStorage)
+	suite.logger = new(MockLogger)
+	suite.idGen = new(MockIDGenerator)
+
+	suite.invoiceService = NewInvoiceService(
+		suite.invoiceStorage,
+		suite.clientStorage,
+		suite.logger,
+		suite.idGen,
+	)
+	suite.clientService = NewClientService(
+		suite.clientStorage,
+		suite.invoiceStorage,
+		suite.logger,
+		suite.idGen,
+	)
+	suite.importService = NewImportService(
+		suite.csvParser,
+		suite.invoiceService,
+		suite.clientService,
+		suite.validator,
+		suite.logger,
+		suite.idGen,
+	)
+}
+
+func TestRealImportServiceTestSuite(t *testing.T) {
+	suite.Run(t, new(RealImportServiceTestSuite))
+}
+
+func (suite *RealImportServiceTestSuite) TestGetParserCSV() {
+	parser := suite.importService.getParser("csv")
+	suite.NotNil(parser)
+	suite.Equal(suite.csvParser, parser)
+}
+
+func (suite *RealImportServiceTestSuite) TestGetParserJSON() {
+	parser := suite.importService.getParser("json")
+	suite.NotNil(parser)
+	// JSON parser is different from CSV parser
+	suite.NotEqual(suite.csvParser, parser)
+}
+
+func (suite *RealImportServiceTestSuite) TestGetParserCaseInsensitive() {
+	parser := suite.importService.getParser("JSON")
+	suite.NotNil(parser)
+	suite.NotEqual(suite.csvParser, parser)
+
+	parser = suite.importService.getParser("CSV")
+	suite.NotNil(parser)
+	suite.Equal(suite.csvParser, parser)
+}
+
+func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceContextCanceled() {
+	canceledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	req := ImportToNewInvoiceRequest{
+		ClientID: "CLIENT-001",
+		Format:   "csv",
+	}
+
+	result, err := suite.importService.ImportToNewInvoice(canceledCtx, strings.NewReader(""), req)
+	suite.Require().ErrorIs(err, context.Canceled)
+	suite.Nil(result)
+}
+
+func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceParseError() {
+	ctx := context.Background()
+	suite.csvParser.On("ParseTimesheet", ctx, mock.Anything, mock.Anything).
+		Return(nil, errTestParseError).Once()
+
+	req := ImportToNewInvoiceRequest{
+		ClientID: "CLIENT-001",
+		Format:   "csv",
+	}
+
+	result, err := suite.importService.ImportToNewInvoice(ctx, strings.NewReader("test,data"), req)
+	suite.Require().Error(err)
+	suite.Nil(result)
+	suite.Contains(err.Error(), "parsing failed")
+}
+
+func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceEmptyResult() {
+	ctx := context.Background()
+	suite.csvParser.On("ParseTimesheet", ctx, mock.Anything, mock.Anything).
+		Return(&csv.ParseResult{WorkItems: []models.WorkItem{}}, nil).Once()
+
+	req := ImportToNewInvoiceRequest{
+		ClientID: "CLIENT-001",
+		Format:   "csv",
+	}
+
+	result, err := suite.importService.ImportToNewInvoice(ctx, strings.NewReader(""), req)
+	suite.Require().NoError(err)
+	suite.NotNil(result)
+	suite.Equal(0, result.WorkItemsAdded)
+}
+
+func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceValidationError() {
+	ctx := context.Background()
+	workItems := []models.WorkItem{
+		{ID: "WORK-001", Hours: 8.0, Rate: 100.0, Total: 800.0},
+	}
+	suite.csvParser.On("ParseTimesheet", ctx, mock.Anything, mock.Anything).
+		Return(&csv.ParseResult{WorkItems: workItems}, nil).Once()
+	suite.validator.On("ValidateBatch", ctx, workItems).
+		Return(errTestValidationError).Once()
+
+	req := ImportToNewInvoiceRequest{
+		ClientID: "CLIENT-001",
+		Format:   "csv",
+	}
+
+	result, err := suite.importService.ImportToNewInvoice(ctx, strings.NewReader("test"), req)
+	suite.Require().Error(err)
+	suite.Nil(result)
+	suite.ErrorIs(err, ErrBatchValidationFailed)
+}
+
+func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceDryRun() {
+	ctx := context.Background()
+	workItems := []models.WorkItem{
+		{ID: "WORK-001", Hours: 8.0, Rate: 100.0, Total: 800.0},
+	}
+	suite.csvParser.On("ParseTimesheet", ctx, mock.Anything, mock.Anything).
+		Return(&csv.ParseResult{WorkItems: workItems}, nil).Once()
+	suite.validator.On("ValidateBatch", ctx, workItems).Return(nil).Once()
+
+	req := ImportToNewInvoiceRequest{
+		ClientID: "CLIENT-001",
+		Format:   "csv",
+		DryRun:   true,
+	}
+
+	result, err := suite.importService.ImportToNewInvoice(ctx, strings.NewReader("test"), req)
+	suite.Require().NoError(err)
+	suite.NotNil(result)
+	suite.True(result.DryRun)
+	suite.Equal(1, result.WorkItemsAdded)
+}
+
+func (suite *RealImportServiceTestSuite) TestAppendToInvoiceContextCanceled() {
+	canceledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	req := AppendToInvoiceRequest{
+		InvoiceID: "INV-001",
+	}
+
+	result, err := suite.importService.AppendToInvoice(canceledCtx, strings.NewReader(""), req)
+	suite.Require().ErrorIs(err, context.Canceled)
+	suite.Nil(result)
+}
+
+func (suite *RealImportServiceTestSuite) TestAppendToInvoiceParseError() {
+	ctx := context.Background()
+	suite.csvParser.On("ParseTimesheet", ctx, mock.Anything, mock.Anything).
+		Return(nil, errTestParseError).Once()
+
+	req := AppendToInvoiceRequest{
+		InvoiceID: "INV-001",
+		Format:    "csv",
+	}
+
+	result, err := suite.importService.AppendToInvoice(ctx, strings.NewReader("test"), req)
+	suite.Require().Error(err)
+	suite.Nil(result)
+}
+
+func (suite *RealImportServiceTestSuite) TestAppendToInvoiceEmptyResult() {
+	ctx := context.Background()
+	suite.csvParser.On("ParseTimesheet", ctx, mock.Anything, mock.Anything).
+		Return(&csv.ParseResult{WorkItems: []models.WorkItem{}}, nil).Once()
+
+	req := AppendToInvoiceRequest{
+		InvoiceID: "INV-001",
+		Format:    "csv",
+	}
+
+	result, err := suite.importService.AppendToInvoice(ctx, strings.NewReader(""), req)
+	suite.Require().NoError(err)
+	suite.NotNil(result)
+	suite.Equal(0, result.WorkItemsAdded)
+	suite.Equal("INV-001", result.InvoiceID)
+}
+
+func (suite *RealImportServiceTestSuite) TestBatchImportContextCanceled() {
+	canceledCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	req := csv.BatchImportRequest{
+		Requests: []csv.ImportRequest{
+			{ClientID: "CLIENT-001", Reader: strings.NewReader("test")},
+		},
+	}
+
+	result, err := suite.importService.BatchImport(canceledCtx, req)
+	suite.Require().ErrorIs(err, context.Canceled)
+	suite.Nil(result)
+}
+
+func (suite *RealImportServiceTestSuite) TestBatchImportEmptyRequests() {
+	ctx := context.Background()
+	req := csv.BatchImportRequest{
+		Requests: []csv.ImportRequest{},
+	}
+
+	result, err := suite.importService.BatchImport(ctx, req)
+	suite.Require().NoError(err)
+	suite.NotNil(result)
+	suite.Equal(0, result.TotalRequests)
+}
+
+func (suite *RealImportServiceTestSuite) TestBatchImportAppendSuccess() {
+	ctx := context.Background()
+	now := time.Now()
+	workItems := []models.WorkItem{
+		{ID: "WORK-001", Hours: 8.0, Rate: 100.0, Total: 800.0, Date: now, Description: "Development", CreatedAt: now},
+	}
+	existingInvoice := &models.Invoice{
+		ID:        "INV-001",
+		Number:    "INV-2024-001",
+		Status:    models.StatusDraft,
+		WorkItems: []models.WorkItem{},
+	}
+
+	suite.csvParser.On("ParseTimesheet", ctx, mock.Anything, mock.Anything).
+		Return(&csv.ParseResult{WorkItems: workItems}, nil).Once()
+	suite.validator.On("ValidateBatch", ctx, workItems).Return(nil).Once()
+	suite.invoiceStorage.On("GetInvoice", ctx, models.InvoiceID("INV-001")).Return(existingInvoice, nil).Twice()
+	suite.idGen.On("GenerateWorkItemID", ctx).Return("WORK-GEN-001", nil).Once()
+	suite.invoiceStorage.On("UpdateInvoice", ctx, mock.Anything).Return(nil).Once()
+
+	req := csv.BatchImportRequest{
+		Requests: []csv.ImportRequest{
+			{InvoiceID: "INV-001", Reader: strings.NewReader("test")},
+		},
+	}
+
+	result, err := suite.importService.BatchImport(ctx, req)
+	suite.Require().NoError(err)
+	suite.NotNil(result)
+	suite.Equal(1, result.TotalRequests)
+	suite.Equal(1, result.SuccessRequests)
+}
+
+func (suite *RealImportServiceTestSuite) TestBatchImportFailStopsOnError() {
+	ctx := context.Background()
+	suite.csvParser.On("ParseTimesheet", ctx, mock.Anything, mock.Anything).
+		Return(nil, errTestParseError).Once()
+
+	req := csv.BatchImportRequest{
+		Requests: []csv.ImportRequest{
+			{ClientID: "CLIENT-001", Reader: strings.NewReader("test1")},
+			{ClientID: "CLIENT-002", Reader: strings.NewReader("test2")},
+		},
+		Options: csv.BatchOptions{ContinueOnError: false},
+	}
+
+	result, err := suite.importService.BatchImport(ctx, req)
+	suite.Require().Error(err)
+	suite.Nil(result)
+	suite.Contains(err.Error(), "batch import failed at request 1")
+}
+
+func (suite *RealImportServiceTestSuite) TestDetectDuplicates() {
+	ctx := context.Background()
+	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+	existingInvoice := &models.Invoice{
+		ID:     "INV-001",
+		Number: "INV-2024-001",
+		WorkItems: []models.WorkItem{
+			{ID: "WORK-001", Date: date, Hours: 8.0},
+		},
+	}
+
+	suite.invoiceStorage.On("GetInvoice", ctx, models.InvoiceID("INV-001")).Return(existingInvoice, nil).Once()
+
+	newWorkItems := []models.WorkItem{
+		{ID: "WORK-NEW-001", Date: date, Hours: 8.0},                  // Same date and hours - duplicate
+		{ID: "WORK-NEW-002", Date: date.AddDate(0, 0, 1), Hours: 8.0}, // Different date - not duplicate
+	}
+
+	warnings, err := suite.importService.detectDuplicates(ctx, "INV-001", newWorkItems)
+	suite.Require().NoError(err)
+	suite.Len(warnings, 1)
+	suite.Equal("duplicate", warnings[0].Type)
+}
+
+func (suite *RealImportServiceTestSuite) TestDetectDuplicatesInvoiceNotFound() {
+	ctx := context.Background()
+	suite.invoiceStorage.On("GetInvoice", ctx, models.InvoiceID("NONEXISTENT")).Return(nil, errTestNotFound).Once()
+
+	warnings, err := suite.importService.detectDuplicates(ctx, "NONEXISTENT", []models.WorkItem{})
+	suite.Require().Error(err)
+	suite.Nil(warnings)
+	suite.Contains(err.Error(), "failed to get invoice for duplicate detection")
+}
+
+func (suite *RealImportServiceTestSuite) TestIDGeneratorAdapter() {
+	suite.idGen.On("GenerateWorkItemID", mock.Anything).Return("WORK-ID-001", nil).Once()
+
+	adapter := &idGeneratorAdapter{gen: suite.idGen}
+	id := adapter.GenerateID()
+	suite.Equal("WORK-ID-001", id)
 }
