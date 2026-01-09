@@ -518,7 +518,7 @@ func (b *CLIBridge) buildInvoiceListArgs(input map[string]interface{}) ([]string
 }
 
 func (b *CLIBridge) buildInvoiceShowArgs(input map[string]interface{}) ([]string, error) {
-	var args []string
+	args := make([]string, 0, 4)
 
 	// Either invoice_id or invoice_number is required
 	invoiceID, hasID := input["invoice_id"].(string)
