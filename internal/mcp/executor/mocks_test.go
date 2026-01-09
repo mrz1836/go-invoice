@@ -12,25 +12,29 @@ type MockLogger struct {
 }
 
 func (m *MockLogger) Debug(msg string, keysAndValues ...interface{}) {
-	args := []interface{}{msg}
+	args := make([]interface{}, 0, 1+len(keysAndValues))
+	args = append(args, msg)
 	args = append(args, keysAndValues...)
 	m.Called(args...)
 }
 
 func (m *MockLogger) Info(msg string, keysAndValues ...interface{}) {
-	args := []interface{}{msg}
+	args := make([]interface{}, 0, 1+len(keysAndValues))
+	args = append(args, msg)
 	args = append(args, keysAndValues...)
 	m.Called(args...)
 }
 
 func (m *MockLogger) Warn(msg string, keysAndValues ...interface{}) {
-	args := []interface{}{msg}
+	args := make([]interface{}, 0, 1+len(keysAndValues))
+	args = append(args, msg)
 	args = append(args, keysAndValues...)
 	m.Called(args...)
 }
 
 func (m *MockLogger) Error(msg string, keysAndValues ...interface{}) {
-	args := []interface{}{msg}
+	args := make([]interface{}, 0, 1+len(keysAndValues))
+	args = append(args, msg)
 	args = append(args, keysAndValues...)
 	m.Called(args...)
 }

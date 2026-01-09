@@ -115,8 +115,8 @@ func (suite *CSVEdgeCasesTestSuite) TestDateFormatEdgeCases() {
 	now := time.Now()
 	recentPast := now.AddDate(-1, 0, 0).Format("2006-01-02") // 1 year ago (within 2 year limit)
 	tomorrow := now.AddDate(0, 0, 1).Format("2006-01-02")    // Tomorrow (within 1 week limit)
-	// Use a date in the recent past (7 days ago) for valid format tests to avoid future date validation
-	validTestDate := now.AddDate(0, 0, -7)
+	// Use day 15 of the previous month to avoid EU/US date format ambiguity (day must be > 12)
+	validTestDate := time.Date(now.Year(), now.Month(), 15, 0, 0, 0, 0, time.UTC).AddDate(0, -1, 0)
 	validDate := validTestDate.Format("2006-01-02")           // ISO format
 	validUSDate := validTestDate.Format("01/02/2006")         // US format
 	validEUDate := validTestDate.Format("02/01/2006")         // EU format
@@ -480,7 +480,7 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 
 	suite.Run("BatchValidationConsistency", func() {
 		// Create work items with inconsistent rates
-		workItems := []models.WorkItem{}
+		workItems := make([]models.WorkItem, 0, 4)
 
 		item1, _ := models.NewWorkItem(ctx, "test1", time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC), 8.0, 100.0, "Work 1")
 		item2, _ := models.NewWorkItem(ctx, "test2", time.Date(2024, 1, 16, 0, 0, 0, 0, time.UTC), 8.0, 200.0, "Work 2")
