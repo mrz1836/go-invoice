@@ -456,7 +456,7 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 		suite.validator.AddCustomRule(customRule)
 
 		// Test weekend work (should fail)
-		weekendWork, err := models.NewWorkItem(ctx, "test", time.Date(2024, 1, 13, 0, 0, 0, 0, time.UTC), 8.0, 100.0, "Weekend work") // Saturday
+		weekendWork, err := models.NewWorkItem(ctx, "test", time.Date(2025, 1, 11, 0, 0, 0, 0, time.UTC), 8.0, 100.0, "Weekend work") // Saturday
 		suite.Require().NoError(err)
 
 		err = suite.validator.ValidateWorkItem(ctx, weekendWork)
@@ -464,7 +464,7 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 		suite.Contains(err.Error(), "weekends")
 
 		// Test weekday work (should pass)
-		weekdayWork, err := models.NewWorkItem(ctx, "test", time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC), 8.0, 100.0, "Weekday work") // Monday
+		weekdayWork, err := models.NewWorkItem(ctx, "test", time.Date(2025, 1, 13, 0, 0, 0, 0, time.UTC), 8.0, 100.0, "Weekday work") // Monday
 		suite.Require().NoError(err)
 
 		err = suite.validator.ValidateWorkItem(ctx, weekdayWork)
@@ -482,10 +482,10 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 		// Create work items with inconsistent rates
 		workItems := make([]models.WorkItem, 0, 4)
 
-		item1, _ := models.NewWorkItem(ctx, "test1", time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC), 8.0, 100.0, "Work 1")
-		item2, _ := models.NewWorkItem(ctx, "test2", time.Date(2024, 1, 16, 0, 0, 0, 0, time.UTC), 8.0, 200.0, "Work 2")
-		item3, _ := models.NewWorkItem(ctx, "test3", time.Date(2024, 1, 17, 0, 0, 0, 0, time.UTC), 8.0, 150.0, "Work 3")
-		item4, _ := models.NewWorkItem(ctx, "test4", time.Date(2024, 1, 18, 0, 0, 0, 0, time.UTC), 8.0, 250.0, "Work 4")
+		item1, _ := models.NewWorkItem(ctx, "test1", time.Date(2025, 1, 13, 0, 0, 0, 0, time.UTC), 8.0, 100.0, "Work 1")
+		item2, _ := models.NewWorkItem(ctx, "test2", time.Date(2025, 1, 14, 0, 0, 0, 0, time.UTC), 8.0, 200.0, "Work 2")
+		item3, _ := models.NewWorkItem(ctx, "test3", time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC), 8.0, 150.0, "Work 3")
+		item4, _ := models.NewWorkItem(ctx, "test4", time.Date(2025, 1, 16, 0, 0, 0, 0, time.UTC), 8.0, 250.0, "Work 4")
 
 		// Need more than 3 different rates to trigger warning
 		workItems = append(workItems, *item1, *item2, *item3, *item4)
