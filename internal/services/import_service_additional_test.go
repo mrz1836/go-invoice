@@ -134,7 +134,7 @@ func (suite *AdditionalImportServiceTestSuite) TestValidateImport() {
 
 		workItems := []models.WorkItem{
 			{
-				Date:        time.Date(2024, 1, 13, 0, 0, 0, 0, time.UTC), // Saturday
+				Date:        time.Date(2025, 1, 11, 0, 0, 0, 0, time.UTC), // Saturday
 				Hours:       12.0,                                         // High hours
 				Rate:        125.0,
 				Total:       1500.0,
@@ -384,21 +384,21 @@ func (suite *AdditionalImportServiceTestSuite) TestHelperFunctions() {
 
 		workItems := []models.WorkItem{
 			{
-				Date:        time.Date(2024, 1, 13, 0, 0, 0, 0, time.UTC), // Saturday
+				Date:        time.Date(2025, 1, 11, 0, 0, 0, 0, time.UTC), // Saturday
 				Hours:       12.0,                                         // High hours
 				Rate:        125.0,
 				Total:       1500.0,
 				Description: "Weekend overtime",
 			},
 			{
-				Date:        time.Date(2024, 1, 14, 0, 0, 0, 0, time.UTC), // Sunday
+				Date:        time.Date(2025, 1, 12, 0, 0, 0, 0, time.UTC), // Sunday
 				Hours:       6.0,                                          // Normal hours
 				Rate:        125.0,
 				Total:       750.0,
 				Description: "Sunday work",
 			},
 			{
-				Date:        time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC), // Monday
+				Date:        time.Date(2025, 1, 13, 0, 0, 0, 0, time.UTC), // Monday
 				Hours:       8.0,                                          // Normal hours
 				Rate:        125.0,
 				Total:       1000.0,

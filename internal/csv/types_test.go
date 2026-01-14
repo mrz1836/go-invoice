@@ -73,12 +73,12 @@ func (suite *CSVTypesTestSuite) TestParseOptionsJSONMarshaling() {
 func (suite *CSVTypesTestSuite) TestParseResultJSONMarshaling() {
 	workItem := models.WorkItem{
 		ID:          "test-1",
-		Date:        time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC),
+		Date:        time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
 		Hours:       8.5,
 		Rate:        75.0,
 		Description: "Software development",
 		Total:       637.50,
-		CreatedAt:   time.Date(2023, 1, 15, 10, 0, 0, 0, time.UTC),
+		CreatedAt:   time.Date(2025, 1, 15, 10, 0, 0, 0, time.UTC),
 	}
 
 	parseError := ParseError{
@@ -87,7 +87,7 @@ func (suite *CSVTypesTestSuite) TestParseResultJSONMarshaling() {
 		Value:      "invalid",
 		Message:    "Invalid number format",
 		Suggestion: "Use decimal format like 8.5",
-		Row:        []string{"2023-01-15", "invalid", "75.0", "Test work"},
+		Row:        []string{"2025-01-15", "invalid", "75.0", "Test work"},
 	}
 
 	result := ParseResult{
@@ -662,7 +662,7 @@ func (suite *CSVTypesTestSuite) TestFormatDetectionResultJSONMarshaling() {
 func (suite *CSVTypesTestSuite) TestDuplicateWorkItemJSONMarshaling() {
 	importedItem := &models.WorkItem{
 		ID:          "imported-1",
-		Date:        time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC),
+		Date:        time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
 		Hours:       8.0,
 		Rate:        75.0,
 		Description: "Software development",
@@ -671,7 +671,7 @@ func (suite *CSVTypesTestSuite) TestDuplicateWorkItemJSONMarshaling() {
 
 	existingItem := &models.WorkItem{
 		ID:          "existing-1",
-		Date:        time.Date(2023, 1, 15, 0, 0, 0, 0, time.UTC),
+		Date:        time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
 		Hours:       8.0,
 		Rate:        75.0,
 		Description: "Software development work",
