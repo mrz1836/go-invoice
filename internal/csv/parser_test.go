@@ -111,10 +111,16 @@ func (suite *CSVParserTestSuite) TestNewCSVParser() {
 
 // TestParseTimesheetValidCSV tests parsing valid CSV data
 func (suite *CSVParserTestSuite) TestParseTimesheetValidCSV() {
-	csvData := `Date,Hours,Rate,Description
-2024-01-15,8.0,100.00,Development work
-2024-01-16,6.5,100.00,Bug fixes and testing
-2024-01-17,4.0,100.00,Code review`
+	// Generate valid dates for test data
+	validDate := time.Now().AddDate(-1, 0, 0)
+	date1 := validDate.Format("2006-01-02")
+	date2 := validDate.AddDate(0, 0, 1).Format("2006-01-02")
+	date3 := validDate.AddDate(0, 0, 2).Format("2006-01-02")
+
+	csvData := fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.00,Development work
+%s,6.5,100.00,Bug fixes and testing
+%s,4.0,100.00,Code review`, date1, date2, date3)
 
 	reader := strings.NewReader(csvData)
 	options := ParseOptions{
@@ -135,8 +141,10 @@ func (suite *CSVParserTestSuite) TestParseTimesheetValidCSV() {
 
 	// Verify first work item
 	firstItem := result.WorkItems[0]
-	expectedDate := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
-	suite.Equal(expectedDate, firstItem.Date)
+	expectedDate := validDate
+	suite.Equal(expectedDate.Year(), firstItem.Date.Year())
+	suite.Equal(expectedDate.Month(), firstItem.Date.Month())
+	suite.Equal(expectedDate.Day(), firstItem.Date.Day())
 	suite.InEpsilon(8.0, firstItem.Hours, 0.001)
 	suite.InEpsilon(100.0, firstItem.Rate, 0.001)
 	suite.Equal("Development work", firstItem.Description)
@@ -145,8 +153,9 @@ func (suite *CSVParserTestSuite) TestParseTimesheetValidCSV() {
 
 // TestParseTimesheetContextCancellation tests context cancellation
 func (suite *CSVParserTestSuite) TestParseTimesheetContextCancellation() {
-	csvData := `Date,Hours,Rate,Description
-2024-01-15,8.0,100.00,Development work`
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+	csvData := fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.00,Development work`, validDate)
 
 	reader := strings.NewReader(csvData)
 	options := ParseOptions{Format: "standard"}
@@ -176,8 +185,9 @@ func (suite *CSVParserTestSuite) TestParseTimesheetEmptyCSV() {
 
 // TestParseTimesheetInvalidCSV tests parsing malformed CSV data
 func (suite *CSVParserTestSuite) TestParseTimesheetInvalidCSV() {
-	csvData := `Date,Hours,Rate,Description
-2024-01-15,invalid_hours,100.00,Development work`
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+	csvData := fmt.Sprintf(`Date,Hours,Rate,Description
+%s,invalid_hours,100.00,Development work`, validDate)
 
 	reader := strings.NewReader(csvData)
 	options := ParseOptions{
@@ -195,10 +205,15 @@ func (suite *CSVParserTestSuite) TestParseTimesheetInvalidCSV() {
 
 // TestParseTimesheetContinueOnError tests parsing with error continuation
 func (suite *CSVParserTestSuite) TestParseTimesheetContinueOnError() {
-	csvData := `Date,Hours,Rate,Description
-2024-01-15,8.0,100.00,Development work
-2024-01-16,invalid_hours,100.00,Bug fixes
-2024-01-17,4.0,100.00,Code review`
+	validDate := time.Now().AddDate(-1, 0, 0)
+	date1 := validDate.Format("2006-01-02")
+	date2 := validDate.AddDate(0, 0, 1).Format("2006-01-02")
+	date3 := validDate.AddDate(0, 0, 2).Format("2006-01-02")
+
+	csvData := fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.00,Development work
+%s,invalid_hours,100.00,Bug fixes
+%s,4.0,100.00,Code review`, date1, date2, date3)
 
 	reader := strings.NewReader(csvData)
 	options := ParseOptions{
@@ -225,8 +240,9 @@ func (suite *CSVParserTestSuite) TestParseTimesheetContinueOnError() {
 
 // TestParseTimesheetValidationError tests parsing with validation errors
 func (suite *CSVParserTestSuite) TestParseTimesheetValidationError() {
-	csvData := `Date,Hours,Rate,Description
-2024-01-15,8.0,100.00,Development work`
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+	csvData := fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.00,Development work`, validDate)
 
 	// Mock validator to return error
 	suite.validator.validateWorkItemFunc = func(_ context.Context, _ *models.WorkItem) error {
@@ -249,6 +265,8 @@ func (suite *CSVParserTestSuite) TestParseTimesheetValidationError() {
 
 // TestParseTimesheetDifferentFormats tests parsing different CSV formats
 func (suite *CSVParserTestSuite) TestParseTimesheetDifferentFormats() {
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+
 	tests := []struct {
 		name     string
 		csvData  string
@@ -258,21 +276,21 @@ func (suite *CSVParserTestSuite) TestParseTimesheetDifferentFormats() {
 		{
 			name: "TabSeparatedValues",
 			csvData: "Date\tHours\tRate\tDescription\n" +
-				"2024-01-15\t8.0\t100.00\tDevelopment work",
+				validDate + "\t8.0\t100.00\tDevelopment work",
 			format:   "tab",
 			expected: 1,
 		},
 		{
 			name: "SemicolonSeparated",
 			csvData: "Date;Hours;Rate;Description\n" +
-				"2024-01-15;8.0;100.00;Development work",
+				validDate + ";8.0;100.00;Development work",
 			format:   "semicolon",
 			expected: 1,
 		},
 		{
 			name: "ExcelFormat",
-			csvData: `Date,Hours,Rate,Description
-"2024-01-15","8.0","100.00","Development work"`,
+			csvData: fmt.Sprintf(`Date,Hours,Rate,Description
+"%s","8.0","100.00","Development work"`, validDate),
 			format:   "excel",
 			expected: 1,
 		},
@@ -294,6 +312,8 @@ func (suite *CSVParserTestSuite) TestParseTimesheetDifferentFormats() {
 
 // TestParseTimesheetHeaderVariations tests different header name variations
 func (suite *CSVParserTestSuite) TestParseTimesheetHeaderVariations() {
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+
 	tests := []struct {
 		name    string
 		headers string
@@ -323,7 +343,7 @@ func (suite *CSVParserTestSuite) TestParseTimesheetHeaderVariations() {
 
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
-			csvData := tt.headers + "\n2024-01-15,8.0,100.00,Development work"
+			csvData := tt.headers + "\n" + validDate + ",8.0,100.00,Development work"
 			reader := strings.NewReader(csvData)
 			options := ParseOptions{Format: "standard"}
 
@@ -343,6 +363,8 @@ func (suite *CSVParserTestSuite) TestParseTimesheetHeaderVariations() {
 
 // TestDetectFormat tests format detection functionality
 func (suite *CSVParserTestSuite) TestDetectFormat() {
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+
 	tests := []struct {
 		name           string
 		csvData        string
@@ -351,19 +373,19 @@ func (suite *CSVParserTestSuite) TestDetectFormat() {
 	}{
 		{
 			name:           "StandardCSV",
-			csvData:        "Date,Hours,Rate,Description\n2024-01-15,8.0,100.00,Work",
+			csvData:        "Date,Hours,Rate,Description\n" + validDate + ",8.0,100.00,Work",
 			expectedFormat: "standard",
 			expectedDelim:  ',',
 		},
 		{
 			name:           "TabSeparated",
-			csvData:        "Date\tHours\tRate\tDescription\n2024-01-15\t8.0\t100.00\tWork",
+			csvData:        "Date\tHours\tRate\tDescription\n" + validDate + "\t8.0\t100.00\tWork",
 			expectedFormat: "tab",
 			expectedDelim:  '\t',
 		},
 		{
 			name:           "SemicolonSeparated",
-			csvData:        "Date;Hours;Rate;Description\n2024-01-15;8.0;100.00;Work",
+			csvData:        "Date;Hours;Rate;Description\n" + validDate + ";8.0;100.00;Work",
 			expectedFormat: "semicolon",
 			expectedDelim:  ';',
 		},
@@ -432,17 +454,26 @@ func (suite *CSVParserTestSuite) TestValidateFormatContextCancellation() {
 
 // TestParseDateFormats tests various date format parsing
 func (suite *CSVParserTestSuite) TestParseDateFormats() {
+	// Generate valid date for test data (using day 15 to avoid ambiguity)
+	validDate := time.Date(time.Now().Year(), time.Now().Month(), 15, 0, 0, 0, 0, time.UTC).AddDate(-1, 0, 0)
+	isoDate := validDate.Format("2006-01-02")
+	usDate := validDate.Format("01/02/2006")
+	euDate := validDate.Format("02/01/2006")
+	monthName := validDate.Format("Jan 2, 2006")
+	fullMonth := validDate.Format("January 2, 2006")
+	withTime := validDate.Format("2006-01-02 15:04:05")
+
 	tests := []struct {
 		name        string
 		dateStr     string
 		expectError bool
 	}{
-		{"ISO8601", "2024-01-15", false},
-		{"USFormat", "01/15/2024", false},
-		{"EUFormat", "15/01/2024", false},
-		{"MonthName", "Jan 15, 2024", false},
-		{"FullMonthName", "January 15, 2024", false},
-		{"WithTime", "2024-01-15 14:30:00", false},
+		{"ISO8601", isoDate, false},
+		{"USFormat", usDate, false},
+		{"EUFormat", euDate, false},
+		{"MonthName", monthName, false},
+		{"FullMonthName", fullMonth, false},
+		{"WithTime", withTime, false},
 		{"InvalidFormat", "2024/15/01", true},
 		{"EmptyString", "", true},
 	}
@@ -490,12 +521,13 @@ func (suite *CSVParserTestSuite) TestNormalizeHeaderName() {
 // TestParseTimesheetLargeFile tests parsing a large CSV file with context checks
 func (suite *CSVParserTestSuite) TestParseTimesheetLargeFile() {
 	// Create a large CSV with many rows
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
 	var csvBuilder strings.Builder
 	csvBuilder.WriteString("Date,Hours,Rate,Description\n")
 
 	// Add 100 rows
 	for i := 1; i <= 100; i++ {
-		csvBuilder.WriteString("2024-01-15,8.0,100.00,Work item ")
+		csvBuilder.WriteString(validDate + ",8.0,100.00,Work item ")
 		csvBuilder.WriteRune(rune('0' + i%10))
 		csvBuilder.WriteString("\n")
 	}
@@ -514,8 +546,9 @@ func (suite *CSVParserTestSuite) TestParseTimesheetLargeFile() {
 
 // TestParseTimesheetMissingFields tests parsing CSV with missing fields
 func (suite *CSVParserTestSuite) TestParseTimesheetMissingFields() {
-	csvData := `Date,Hours,Rate,Description
-2024-01-15,,100.00,Development work`
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+	csvData := fmt.Sprintf(`Date,Hours,Rate,Description
+%s,,100.00,Development work`, validDate)
 
 	reader := strings.NewReader(csvData)
 	options := ParseOptions{
@@ -536,8 +569,9 @@ func (suite *CSVParserTestSuite) TestParseTimesheetMissingFields() {
 
 // TestParseTimesheetLogging tests that logging works correctly
 func (suite *CSVParserTestSuite) TestParseTimesheetLogging() {
-	csvData := `Date,Hours,Rate,Description
-2024-01-15,8.0,100.00,Development work`
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+	csvData := fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.00,Development work`, validDate)
 
 	reader := strings.NewReader(csvData)
 	options := ParseOptions{Format: "standard"}
@@ -568,6 +602,7 @@ func TestCSVParserTestSuite(t *testing.T) {
 
 // TestParseRow tests individual row parsing functionality
 func TestParseRow(t *testing.T) {
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
 	logger := &MockLogger{}
 	validator := &MockValidator{}
 	idGenerator := &MockIDGenerator{}
@@ -588,7 +623,7 @@ func TestParseRow(t *testing.T) {
 	}{
 		{
 			name:    "ValidRow",
-			row:     []string{"2024-01-15", "8.0", "100.00", "Development work"},
+			row:     []string{validDate, "8.0", "100.00", "Development work"},
 			lineNum: 1,
 			wantErr: false,
 		},
@@ -600,13 +635,13 @@ func TestParseRow(t *testing.T) {
 		},
 		{
 			name:    "InvalidHours",
-			row:     []string{"2024-01-15", "invalid", "100.00", "Development work"},
+			row:     []string{validDate, "invalid", "100.00", "Development work"},
 			lineNum: 1,
 			wantErr: true,
 		},
 		{
 			name:    "InvalidRate",
-			row:     []string{"2024-01-15", "8.0", "invalid", "Development work"},
+			row:     []string{validDate, "8.0", "invalid", "Development work"},
 			lineNum: 1,
 			wantErr: true,
 		},

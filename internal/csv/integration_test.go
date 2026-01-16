@@ -2,8 +2,10 @@ package csv
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -31,6 +33,13 @@ func TestCSVIntegrationTestSuite(t *testing.T) {
 
 // TestEndToEndParsing tests complete parsing workflow
 func (suite *CSVIntegrationTestSuite) TestEndToEndParsing() {
+	// Generate valid dates for test data
+	validDate := time.Now().AddDate(-1, 0, 0)
+	date1 := validDate.Format("2006-01-02")
+	date2 := validDate.AddDate(0, 0, 1).Format("2006-01-02")
+	date3 := validDate.AddDate(0, 0, 2).Format("2006-01-02")
+	date4 := validDate.AddDate(0, 0, 3).Format("2006-01-02")
+
 	tests := []struct {
 		name         string
 		csvData      string
@@ -40,38 +49,38 @@ func (suite *CSVIntegrationTestSuite) TestEndToEndParsing() {
 	}{
 		{
 			name: "ValidCSVWithStandardFormat",
-			csvData: `Date,Hours,Rate,Description
-2024-01-15,8.0,100.0,Development work
-2024-01-16,6.5,100.0,Testing
-2024-01-17,4.0,125.0,Code review`,
+			csvData: fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.0,Development work
+%s,6.5,100.0,Testing
+%s,4.0,125.0,Code review`, date1, date2, date3),
 			expected: 3,
 			hasError: false,
 		},
 		{
 			name: "ValidCSVWithTabDelimiter",
 			csvData: "Date\tHours\tRate\tDescription\n" +
-				"2024-01-15\t8.0\t100.0\tDevelopment work\n" +
-				"2024-01-16\t6.5\t100.0\tTesting",
+				date1 + "\t8.0\t100.0\tDevelopment work\n" +
+				date2 + "\t6.5\t100.0\tTesting",
 			expected:     2,
 			hasError:     false,
 			useTabFormat: true,
 		},
 		{
 			name: "CSVWithValidationErrors",
-			csvData: `Date,Hours,Rate,Description
-2024-01-15,8.0,100.0,Development work
-2024-01-16,-5.0,100.0,Invalid hours
-2024-01-17,8.0,-50.0,Invalid rate`,
+			csvData: fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.0,Development work
+%s,-5.0,100.0,Invalid hours
+%s,8.0,-50.0,Invalid rate`, date1, date2, date3),
 			expected: 1, // Only first row is valid
 			hasError: true,
 		},
 		{
 			name: "CSVWithMixedValidation",
-			csvData: `Date,Hours,Rate,Description
-2024-01-15,8.0,100.0,Development work
+			csvData: fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.0,Development work
 invalid-date,8.0,100.0,Bad date
-2024-01-17,abc,100.0,Bad hours
-2024-01-18,8.0,100.0,Good work`,
+%s,abc,100.0,Bad hours
+%s,8.0,100.0,Good work`, date1, date3, date4),
 			expected: 2, // First and last rows are valid
 			hasError: true,
 		},
@@ -109,6 +118,8 @@ invalid-date,8.0,100.0,Bad date
 
 // TestFormatDetectionIntegration tests format detection with parsing
 func (suite *CSVIntegrationTestSuite) TestFormatDetectionIntegration() {
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+
 	tests := []struct {
 		name      string
 		csvData   string
@@ -117,22 +128,22 @@ func (suite *CSVIntegrationTestSuite) TestFormatDetectionIntegration() {
 	}{
 		{
 			name: "StandardCommaDelimited",
-			csvData: `Date,Hours,Rate,Description
-2024-01-15,8.0,100.0,Development work`,
+			csvData: fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.0,Development work`, validDate),
 			expectFmt: "standard",
 			expectDel: ',',
 		},
 		{
 			name: "TabDelimited",
 			csvData: "Date\tHours\tRate\tDescription\n" +
-				"2024-01-15\t8.0\t100.0\tDevelopment work",
+				validDate + "\t8.0\t100.0\tDevelopment work",
 			expectFmt: "tab",
 			expectDel: '\t',
 		},
 		{
 			name: "SemicolonDelimited",
-			csvData: `Date;Hours;Rate;Description
-2024-01-15;8.0;100.0;Development work`,
+			csvData: fmt.Sprintf(`Date;Hours;Rate;Description
+%s;8.0;100.0;Development work`, validDate),
 			expectFmt: "semicolon",
 			expectDel: ';',
 		},
@@ -167,11 +178,17 @@ func (suite *CSVIntegrationTestSuite) TestFormatDetectionIntegration() {
 // TestErrorHandlingIntegration tests how errors flow between components
 func (suite *CSVIntegrationTestSuite) TestErrorHandlingIntegration() {
 	suite.Run("ValidationErrorsWithContinue", func() {
-		csvData := `Date,Hours,Rate,Description
-2024-01-15,8.0,100.0,Valid work
-2024-01-16,-1.0,100.0,Negative hours
-2024-01-17,25.0,100.0,Too many hours
-2024-01-18,8.0,-10.0,Negative rate`
+		validDate := time.Now().AddDate(-1, 0, 0)
+		date1 := validDate.Format("2006-01-02")
+		date2 := validDate.AddDate(0, 0, 1).Format("2006-01-02")
+		date3 := validDate.AddDate(0, 0, 2).Format("2006-01-02")
+		date4 := validDate.AddDate(0, 0, 3).Format("2006-01-02")
+
+		csvData := fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.0,Valid work
+%s,-1.0,100.0,Negative hours
+%s,25.0,100.0,Too many hours
+%s,8.0,-10.0,Negative rate`, date1, date2, date3, date4)
 
 		ctx := context.Background()
 		reader := strings.NewReader(csvData)
@@ -195,9 +212,13 @@ func (suite *CSVIntegrationTestSuite) TestErrorHandlingIntegration() {
 	})
 
 	suite.Run("ValidationErrorsWithoutContinue", func() {
-		csvData := `Date,Hours,Rate,Description
-2024-01-15,8.0,100.0,Valid work
-2024-01-16,-1.0,100.0,Negative hours`
+		validDate := time.Now().AddDate(-1, 0, 0)
+		date1 := validDate.Format("2006-01-02")
+		date2 := validDate.AddDate(0, 0, 1).Format("2006-01-02")
+
+		csvData := fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.0,Valid work
+%s,-1.0,100.0,Negative hours`, date1, date2)
 
 		ctx := context.Background()
 		reader := strings.NewReader(csvData)
@@ -217,10 +238,16 @@ func (suite *CSVIntegrationTestSuite) TestErrorHandlingIntegration() {
 // TestComplexDataScenarios tests real-world data scenarios
 func (suite *CSVIntegrationTestSuite) TestComplexDataScenarios() {
 	suite.Run("MixedDateFormats", func() {
-		csvData := `Date,Hours,Rate,Description
-2024-01-15,8.0,100.0,ISO format
-01/16/2024,7.5,100.0,US format
-15/01/2024,6.0,100.0,EU format`
+		// Use day 15 to avoid US/EU ambiguity (day must be > 12)
+		validDate := time.Date(time.Now().Year(), time.Now().Month(), 15, 0, 0, 0, 0, time.UTC).AddDate(-1, 0, 0)
+		isoDate := validDate.Format("2006-01-02")
+		usDate := validDate.AddDate(0, 0, 1).Format("01/02/2006")
+		euDate := validDate.Format("02/01/2006")
+
+		csvData := fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.0,ISO format
+%s,7.5,100.0,US format
+%s,6.0,100.0,EU format`, isoDate, usDate, euDate)
 
 		ctx := context.Background()
 		reader := strings.NewReader(csvData)
@@ -235,9 +262,13 @@ func (suite *CSVIntegrationTestSuite) TestComplexDataScenarios() {
 	})
 
 	suite.Run("QuotedFieldsWithDelimiters", func() {
-		csvData := `Date,Hours,Rate,Description
-2024-01-15,8.0,100.0,"Work with, comma"
-2024-01-16,7.0,100.0,"Testing ""quotes"" handling"`
+		validDate := time.Now().AddDate(-1, 0, 0)
+		date1 := validDate.Format("2006-01-02")
+		date2 := validDate.AddDate(0, 0, 1).Format("2006-01-02")
+
+		csvData := fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.0,"Work with, comma"
+%s,7.0,100.0,"Testing ""quotes"" handling"`, date1, date2)
 
 		ctx := context.Background()
 		reader := strings.NewReader(csvData)
@@ -252,9 +283,13 @@ func (suite *CSVIntegrationTestSuite) TestComplexDataScenarios() {
 	})
 
 	suite.Run("EmptyRowsAndWhitespace", func() {
-		csvData := `Date,Hours,Rate,Description
-2024-01-15,8.0,100.0,Valid work
-2024-01-16,7.0,100.0,Another valid work`
+		validDate := time.Now().AddDate(-1, 0, 0)
+		date1 := validDate.Format("2006-01-02")
+		date2 := validDate.AddDate(0, 0, 1).Format("2006-01-02")
+
+		csvData := fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.0,Valid work
+%s,7.0,100.0,Another valid work`, date1, date2)
 
 		ctx := context.Background()
 		reader := strings.NewReader(csvData)
@@ -271,10 +306,11 @@ func (suite *CSVIntegrationTestSuite) TestComplexDataScenarios() {
 // TestContextCancellation tests cancellation during parsing
 func (suite *CSVIntegrationTestSuite) TestContextCancellation() {
 	// Create large CSV data
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
 	var csvBuilder strings.Builder
 	csvBuilder.WriteString("Date,Hours,Rate,Description\n")
 	for i := 0; i < 10000; i++ {
-		csvBuilder.WriteString("2024-01-15,8.0,100.0,Work item\n")
+		csvBuilder.WriteString(validDate + ",8.0,100.0,Work item\n")
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -300,10 +336,11 @@ func (suite *CSVIntegrationTestSuite) TestContextCancellation() {
 // TestLargeFileHandling tests memory usage with large files
 func (suite *CSVIntegrationTestSuite) TestLargeFileHandling() {
 	// Create moderately large CSV (1000 rows)
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
 	var csvBuilder strings.Builder
 	csvBuilder.WriteString("Date,Hours,Rate,Description\n")
 	for i := 0; i < 1000; i++ {
-		csvBuilder.WriteString("2024-01-15,8.0,100.0,Development work\n")
+		csvBuilder.WriteString(validDate + ",8.0,100.0,Development work\n")
 	}
 
 	ctx := context.Background()
@@ -355,7 +392,8 @@ func (suite *CSVIntegrationTestSuite) TestHeaderVariations() {
 
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
-			csvData := tt.headers + "\n2024-01-15,8.0,100.0,Development work"
+			validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+			csvData := tt.headers + "\n" + validDate + ",8.0,100.0,Development work"
 
 			ctx := context.Background()
 			reader := strings.NewReader(csvData)

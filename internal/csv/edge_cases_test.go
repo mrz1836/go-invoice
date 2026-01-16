@@ -35,6 +35,11 @@ func TestCSVEdgeCasesTestSuite(t *testing.T) {
 
 // TestMalformedCSVData tests handling of malformed CSV data
 func (suite *CSVEdgeCasesTestSuite) TestMalformedCSVData() {
+	// Generate valid date for test data
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+	nextDay := time.Now().AddDate(-1, 0, 1).Format("2006-01-02")
+	dayAfter := time.Now().AddDate(-1, 0, 2).Format("2006-01-02")
+
 	tests := []struct {
 		name        string
 		csvData     string
@@ -43,24 +48,24 @@ func (suite *CSVEdgeCasesTestSuite) TestMalformedCSVData() {
 	}{
 		{
 			name: "UnquotedCommasInFields",
-			csvData: `Date,Hours,Rate,Description
-2024-01-15,8.0,100.0,Work with, unquoted comma`,
+			csvData: fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.0,Work with, unquoted comma`, validDate),
 			expectError: true, // CSV parser correctly rejects unquoted commas
 			expectRows:  0,
 		},
 		{
 			name: "MismatchedQuotes",
-			csvData: `Date,Hours,Rate,Description
-2024-01-15,8.0,100.0,"Unmatched quote`,
+			csvData: fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.0,"Unmatched quote`, validDate),
 			expectError: true,
 			expectRows:  0,
 		},
 		{
 			name: "InconsistentFieldCount",
-			csvData: `Date,Hours,Rate,Description
-2024-01-15,8.0,100.0,Normal work
-2024-01-16,7.0,Extra field,100.0,Too many fields
-2024-01-17,6.0,Missing field`,
+			csvData: fmt.Sprintf(`Date,Hours,Rate,Description
+%s,8.0,100.0,Normal work
+%s,7.0,Extra field,100.0,Too many fields
+%s,6.0,Missing field`, validDate, nextDay, dayAfter),
 			expectError: true, // Should error with continue off
 			expectRows:  0,    // No rows processed due to error
 		},
@@ -157,7 +162,7 @@ func (suite *CSVEdgeCasesTestSuite) TestDateFormatEdgeCases() {
 		{"JustYear", "2024", false},
 		{"JustMonth", "01", false},
 		{"UnsupportedDotFormat", "15.01.2024", false}, // Parser doesn't support dots
-		{"ShortYear", "24-01-15", true},               // 2-digit year format now supported (YY-MM-DD)
+		{"ShortYear", "25-01-15", true},               // 2-digit year format now supported (YY-MM-DD)
 		{"Mixed", "24/Jan/2024", false},
 		{"SimpleTime", "2024-01-15 10:30", false},
 		{"ISOWithTime", validWithTime, true}, // This format IS supported
@@ -247,7 +252,8 @@ func (suite *CSVEdgeCasesTestSuite) TestNumericFieldEdgeCases() {
 
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
-			csvData := fmt.Sprintf("Date,Hours,Rate,Description\n2024-01-15,%s,%s,Test work", tt.hours, tt.rate)
+			validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+			csvData := fmt.Sprintf("Date,Hours,Rate,Description\n%s,%s,%s,Test work", validDate, tt.hours, tt.rate)
 
 			ctx := context.Background()
 			reader := strings.NewReader(csvData)
@@ -303,8 +309,9 @@ func (suite *CSVEdgeCasesTestSuite) TestFloatingPointPrecision() {
 
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
-			csvData := fmt.Sprintf("Date,Hours,Rate,Description,Total\n2024-01-15,%.6f,%.2f,Test work,%.2f",
-				tt.hours, tt.rate, tt.total)
+			validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+			csvData := fmt.Sprintf("Date,Hours,Rate,Description,Total\n%s,%.6f,%.2f,Test work,%.2f",
+				validDate, tt.hours, tt.rate, tt.total)
 
 			ctx := context.Background()
 			reader := strings.NewReader(csvData)
@@ -350,13 +357,14 @@ func (suite *CSVEdgeCasesTestSuite) TestDescriptionEdgeCases() {
 
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
+			validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
 			// Need to properly escape the description for CSV
 			escapedDesc := strings.ReplaceAll(tt.description, `"`, `""`)
 			if strings.ContainsAny(tt.description, ",\n\r\"") {
 				escapedDesc = `"` + escapedDesc + `"`
 			}
 
-			csvData := fmt.Sprintf("Date,Hours,Rate,Description\n2024-01-15,8.0,100.0,%s", escapedDesc)
+			csvData := fmt.Sprintf("Date,Hours,Rate,Description\n%s,8.0,100.0,%s", validDate, escapedDesc)
 
 			ctx := context.Background()
 			reader := strings.NewReader(csvData)
@@ -379,6 +387,10 @@ func (suite *CSVEdgeCasesTestSuite) TestDescriptionEdgeCases() {
 
 // TestFormatDetectionEdgeCases tests edge cases in format detection
 func (suite *CSVEdgeCasesTestSuite) TestFormatDetectionEdgeCases() {
+	// Generate valid date for test data
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+	validDateQuoted := time.Now().AddDate(-1, 0, 0).Format("2006,01,02")
+
 	tests := []struct {
 		name        string
 		csvData     string
@@ -387,8 +399,8 @@ func (suite *CSVEdgeCasesTestSuite) TestFormatDetectionEdgeCases() {
 	}{
 		{
 			name: "MixedDelimiters",
-			csvData: `Date,Hours;Rate,Description
-2024-01-15,8.0;100.0,Work`,
+			csvData: fmt.Sprintf(`Date,Hours;Rate,Description
+%s,8.0;100.0,Work`, validDate),
 			expectError: true, // Ambiguous format
 		},
 		{
@@ -399,8 +411,8 @@ func (suite *CSVEdgeCasesTestSuite) TestFormatDetectionEdgeCases() {
 		},
 		{
 			name: "OnlyCommasInQuotes",
-			csvData: `"Date,Time","Hours","Rate","Description"
-"2024,01,15","8.0","100.0","Work"`,
+			csvData: fmt.Sprintf(`"Date,Time","Hours","Rate","Description"
+"%s","8.0","100.0","Work"`, validDateQuoted),
 			expectError: false,
 			expectFmt:   "standard",
 		},
@@ -510,9 +522,10 @@ func (suite *CSVEdgeCasesTestSuite) TestValidatorEdgeCases() {
 func (suite *CSVEdgeCasesTestSuite) TestMemoryAndPerformance() {
 	suite.Run("VeryLargeFields", func() {
 		// Create work item with very large description
+		validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
 		largeDesc := strings.Repeat("Very long description ", 1000) // ~22KB description
 
-		csvData := fmt.Sprintf("Date,Hours,Rate,Description\n2024-01-15,8.0,100.0,\"%s\"", largeDesc)
+		csvData := fmt.Sprintf("Date,Hours,Rate,Description\n%s,8.0,100.0,\"%s\"", validDate, largeDesc)
 
 		ctx := context.Background()
 		reader := strings.NewReader(csvData)
@@ -534,11 +547,12 @@ func (suite *CSVEdgeCasesTestSuite) TestMemoryAndPerformance() {
 
 	suite.Run("ManySmallRows", func() {
 		// Create many small rows to test memory allocation patterns
+		validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
 		var csvBuilder strings.Builder
 		csvBuilder.WriteString("Date,Hours,Rate,Description\n")
 
 		for i := 0; i < 100; i++ {
-			csvBuilder.WriteString(fmt.Sprintf("2024-01-15,1.0,100.0,Work %d\n", i))
+			csvBuilder.WriteString(fmt.Sprintf("%s,1.0,100.0,Work %d\n", validDate, i))
 		}
 
 		ctx := context.Background()
@@ -554,6 +568,9 @@ func (suite *CSVEdgeCasesTestSuite) TestMemoryAndPerformance() {
 
 // TestErrorMessageQuality tests the quality and usefulness of error messages
 func (suite *CSVEdgeCasesTestSuite) TestErrorMessageQuality() {
+	// Generate valid date for test data
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+
 	tests := []struct {
 		name               string
 		csvData            string
@@ -568,19 +585,19 @@ func (suite *CSVEdgeCasesTestSuite) TestErrorMessageQuality() {
 		},
 		{
 			name:               "NegativeHours",
-			csvData:            "Date,Hours,Rate,Description\n2024-01-15,-5.0,100.0,Work",
+			csvData:            fmt.Sprintf("Date,Hours,Rate,Description\n%s,-5.0,100.0,Work", validDate),
 			expectedInMsg:      []string{"hours", "-5"},
 			expectedSuggestion: false,
 		},
 		{
 			name:               "InvalidRate",
-			csvData:            "Date,Hours,Rate,Description\n2024-01-15,8.0,abc,Work",
+			csvData:            fmt.Sprintf("Date,Hours,Rate,Description\n%s,8.0,abc,Work", validDate),
 			expectedInMsg:      []string{"rate", "abc"},
 			expectedSuggestion: false,
 		},
 		{
 			name:               "MissingHeader",
-			csvData:            "Date,Hours,Description\n2024-01-15,8.0,Work", // Missing Rate
+			csvData:            fmt.Sprintf("Date,Hours,Description\n%s,8.0,Work", validDate), // Missing Rate
 			expectedInMsg:      []string{"rate", "not found"},
 			expectedSuggestion: false,
 		},

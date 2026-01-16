@@ -14,6 +14,13 @@ import (
 
 // FuzzValidateWorkItem fuzzes work item validation
 func FuzzValidateWorkItem(f *testing.F) {
+	// Generate valid dates for seed data
+	validDate := time.Now().AddDate(-1, 0, 0)
+	date1 := validDate.Format("2006-01-02")
+	date2 := validDate.AddDate(0, 0, 1).Format("2006-01-02")
+	date3 := validDate.AddDate(0, 0, 2).Format("2006-01-02")
+	date4 := validDate.AddDate(0, 0, 3).Format("2006-01-02")
+
 	// Seed with various work item examples
 	seedItems := []struct {
 		id          string
@@ -22,24 +29,24 @@ func FuzzValidateWorkItem(f *testing.F) {
 		rate        float64
 		description string
 	}{
-		{"test-1", "2024-01-15", 8.0, 100.0, "Development work"},
-		{"test-2", "2024-01-16", 4.5, 125.5, "Bug fixes"},
-		{"test-3", "2024-01-17", 0.25, 200.0, "Quick consultation"},
-		{"test-4", "2024-01-18", 12.0, 75.0, "Extended development session"},
-		{"", "2024-01-15", 8.0, 100.0, "No ID"},                          // Empty ID
-		{"test-5", "", 8.0, 100.0, "Development work"},                   // Empty date
-		{"test-6", "2024-01-15", -1.0, 100.0, "Negative hours"},          // Negative hours
-		{"test-7", "2024-01-15", 8.0, -50.0, "Negative rate"},            // Negative rate
-		{"test-8", "2024-01-15", 8.0, 100.0, ""},                         // Empty description
-		{"test-9", "2024-01-15", 25.0, 100.0, "Too many hours"},          // Hours > 24
-		{"test-10", "2024-01-15", 8.0, 5000.0, "Very high rate"},         // Very high rate
-		{"test-11", "2024-01-15", 8.0, 0.1, "Very low rate"},             // Very low rate
-		{"test-12", "2024-01-15", 0.0, 100.0, "Zero hours"},              // Zero hours
-		{"test-13", "2024-01-15", 8.0, 0.0, "Zero rate"},                 // Zero rate
-		{"test-14", "2050-01-15", 8.0, 100.0, "Future date"},             // Far future date
-		{"test-15", "1900-01-15", 8.0, 100.0, "Past date"},               // Far past date
-		{"test-16", "2024-01-15", 8.0, 100.0, "A"},                       // Very short description
-		{"test-17", "2024-01-15", 8.0, 100.0, strings.Repeat("A", 1001)}, // Very long description
+		{"test-1", date1, 8.0, 100.0, "Development work"},
+		{"test-2", date2, 4.5, 125.5, "Bug fixes"},
+		{"test-3", date3, 0.25, 200.0, "Quick consultation"},
+		{"test-4", date4, 12.0, 75.0, "Extended development session"},
+		{"", date1, 8.0, 100.0, "No ID"},                          // Empty ID
+		{"test-5", "", 8.0, 100.0, "Development work"},            // Empty date
+		{"test-6", date1, -1.0, 100.0, "Negative hours"},          // Negative hours
+		{"test-7", date1, 8.0, -50.0, "Negative rate"},            // Negative rate
+		{"test-8", date1, 8.0, 100.0, ""},                         // Empty description
+		{"test-9", date1, 25.0, 100.0, "Too many hours"},          // Hours > 24
+		{"test-10", date1, 8.0, 5000.0, "Very high rate"},         // Very high rate
+		{"test-11", date1, 8.0, 0.1, "Very low rate"},             // Very low rate
+		{"test-12", date1, 0.0, 100.0, "Zero hours"},              // Zero hours
+		{"test-13", date1, 8.0, 0.0, "Zero rate"},                 // Zero rate
+		{"test-14", "2050-01-15", 8.0, 100.0, "Future date"},      // Far future date (testing validation)
+		{"test-15", "1900-01-15", 8.0, 100.0, "Past date"},        // Far past date (testing validation)
+		{"test-16", date1, 8.0, 100.0, "A"},                       // Very short description
+		{"test-17", date1, 8.0, 100.0, strings.Repeat("A", 1001)}, // Very long description
 	}
 
 	for _, seed := range seedItems {
@@ -133,18 +140,23 @@ func FuzzValidateWorkItem(f *testing.F) {
 
 // FuzzValidateRow fuzzes raw CSV row validation
 func FuzzValidateRow(f *testing.F) {
+	// Generate valid dates for seed data
+	validDate := time.Now().AddDate(-1, 0, 0)
+	date1 := validDate.Format("2006-01-02")
+	date2 := validDate.AddDate(0, 0, 1).Format("2006-01-02")
+
 	// Seed with various row examples
 	seedRows := [][]string{
-		{"2024-01-15", "8.0", "100.00", "Development work"},
-		{"2024-01-16", "4.5", "125.50", "Bug fixes"},
-		{},                              // Empty row
-		{"", "", "", ""},                // Row with empty fields
-		{"2024-01-15"},                  // Too few fields
-		{"2024-01-15", "8.0"},           // Too few fields
-		{"2024-01-15", "8.0", "100.00"}, // Too few fields
+		{date1, "8.0", "100.00", "Development work"},
+		{date2, "4.5", "125.50", "Bug fixes"},
+		{},                       // Empty row
+		{"", "", "", ""},         // Row with empty fields
+		{date1},                  // Too few fields
+		{date1, "8.0"},           // Too few fields
+		{date1, "8.0", "100.00"}, // Too few fields
 		{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u"}, // Too many fields
-		{"   ", "   ", "   ", "   "},                                 // Whitespace only
-		{"2024-01-15", "8.0", "100.00", "Development work", "extra"}, // Extra field
+		{"   ", "   ", "   ", "   "},                          // Whitespace only
+		{date1, "8.0", "100.00", "Development work", "extra"}, // Extra field
 	}
 
 	// Convert to proper format for fuzzer

@@ -10,16 +10,22 @@ import (
 
 // FuzzParseTimesheet fuzzes the complete CSV parsing pipeline
 func FuzzParseTimesheet(f *testing.F) {
+	// Generate valid dates for seed data (using day 15 to avoid US/EU ambiguity)
+	validDate := time.Date(time.Now().Year(), time.Now().Month(), 15, 0, 0, 0, 0, time.UTC).AddDate(-1, 0, 0)
+	isoDate := validDate.Format("2006-01-02")
+	usDate := validDate.Format("01/02/2006")
+	euDate := validDate.Format("02/01/2006")
+
 	// Seed with known good examples
 	seeds := []string{
-		"Date,Hours,Rate,Description\n2024-01-15,8.0,100.00,Development work",
-		"Date\tHours\tRate\tDescription\n2024-01-15\t8.0\t100.00\tDevelopment work",
-		"Date;Hours;Rate;Description\n2024-01-15;8.0;100.00;Development work",
-		"Date,Hours,Rate,Description\n2024-01-15,8.0,100.00,Work",
-		"Date,Hours,Rate,Description\n01/15/2024,8.5,125.50,Bug fixes",
-		"Date,Hours,Rate,Description\n15/01/2024,4.0,80.00,Code review",
-		"DATE,DURATION,HOURLY_RATE,TASK\n2024-01-15,8.0,100.00,Development",
-		"Work_Date,Time,Billing_Rate,Notes\n2024-01-15,8.0,100.00,Work",
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,100.00,Development work",
+		"Date\tHours\tRate\tDescription\n" + isoDate + "\t8.0\t100.00\tDevelopment work",
+		"Date;Hours;Rate;Description\n" + isoDate + ";8.0;100.00;Development work",
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,100.00,Work",
+		"Date,Hours,Rate,Description\n" + usDate + ",8.5,125.50,Bug fixes",
+		"Date,Hours,Rate,Description\n" + euDate + ",4.0,80.00,Code review",
+		"DATE,DURATION,HOURLY_RATE,TASK\n" + isoDate + ",8.0,100.00,Development",
+		"Work_Date,Time,Billing_Rate,Notes\n" + isoDate + ",8.0,100.00,Work",
 	}
 
 	// Add seeds to fuzzer
@@ -32,15 +38,15 @@ func FuzzParseTimesheet(f *testing.F) {
 		"",                              // Empty file
 		"Date,Hours,Rate,Description",   // Header only
 		"Date,Hours,Rate,Description\n", // Header with newline
-		"Date,Hours,Rate,Description\n2024-01-15,8.0,100.00",                      // Missing field
-		"Date,Hours,Rate,Description\n2024-01-15,8.0,100.00,Work,Extra",           // Extra field
-		"Date,Hours,Rate,Description\n,,,",                                        // Empty fields
-		"Date,Hours,Rate,Description\n2024-01-15,,100.00,Work",                    // Missing hours
-		"Date,Hours,Rate,Description\n2024-01-15,8.0,,Work",                       // Missing rate
-		"Date,Hours,Rate,Description\n,8.0,100.00,Work",                           // Missing date
-		"Date,Hours,Rate,Description\n2024-01-15,8.0,100.00,",                     // Missing description
-		"Date,Hours,Rate,Description\n\"2024-01-15\",\"8.0\",\"100.00\",\"Work\"", // Quoted fields
-		"Date,Hours,Rate,Description\n2024-01-15,8.0,100.00,\"Work, with comma\"", // Quoted description with comma
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,100.00",                      // Missing field
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,100.00,Work,Extra",           // Extra field
+		"Date,Hours,Rate,Description\n,,,",                                             // Empty fields
+		"Date,Hours,Rate,Description\n" + isoDate + ",,100.00,Work",                    // Missing hours
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,,Work",                       // Missing rate
+		"Date,Hours,Rate,Description\n,8.0,100.00,Work",                                // Missing date
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,100.00,",                     // Missing description
+		"Date,Hours,Rate,Description\n\"" + isoDate + "\",\"8.0\",\"100.00\",\"Work\"", // Quoted fields
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,100.00,\"Work, with comma\"", // Quoted description with comma
 	}
 
 	for _, edge := range edgeCases {
@@ -139,6 +145,8 @@ func FuzzParseTimesheet(f *testing.F) {
 
 // FuzzDetectFormat fuzzes the CSV format detection
 func FuzzDetectFormat(f *testing.F) {
+	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
+
 	// Seed with various format examples
 	seeds := []string{
 		"Date,Hours,Rate,Description",
@@ -150,7 +158,7 @@ func FuzzDetectFormat(f *testing.F) {
 		"a,b,c,d",
 		"a\tb\tc\td",
 		"a;b;c;d",
-		"Date,Hours,Rate,Description\n2024-01-15,8.0,100.00,Work",
+		"Date,Hours,Rate,Description\n" + validDate + ",8.0,100.00,Work",
 		"",
 		"\n",
 		"\t\t\t",
@@ -293,16 +301,27 @@ func FuzzAnalyzeFormat(f *testing.F) {
 
 // FuzzParseDate fuzzes the date parsing functionality
 func FuzzParseDate(f *testing.F) {
+	// Generate valid dates for seed data (using day 15 to avoid US/EU ambiguity)
+	validDate := time.Date(time.Now().Year(), time.Now().Month(), 15, 0, 0, 0, 0, time.UTC).AddDate(-1, 0, 0)
+	isoDate := validDate.Format("2006-01-02")
+	usDate := validDate.Format("01/02/2006")
+	euDate := validDate.Format("02/01/2006")
+	slashDate := validDate.Format("2006/01/02")
+	monthName := validDate.Format("Jan 2, 2006")
+	fullMonth := validDate.Format("January 2, 2006")
+	withTime := validDate.Format("2006-01-02 15:04:05")
+	withTimeISO := validDate.Format("2006-01-02T15:04:05Z")
+
 	// Seed with various date formats
 	seeds := []string{
-		"2024-01-15",
-		"01/15/2024",
-		"15/01/2024",
-		"2024/01/15",
-		"Jan 15, 2024",
-		"January 15, 2024",
-		"2024-01-15 14:30:00",
-		"2024-01-15T14:30:00Z",
+		isoDate,
+		usDate,
+		euDate,
+		slashDate,
+		monthName,
+		fullMonth,
+		withTime,
+		withTimeISO,
 		"2024-1-1",
 		"1/1/2024",
 		"1/1/24",

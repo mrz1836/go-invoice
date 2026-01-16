@@ -203,10 +203,13 @@ func (suite *IntegrationTestSuite) TestBasicInvoiceCreation() {
 func (suite *IntegrationTestSuite) TestCSVParsingWorkflow() {
 	ctx := context.Background()
 
-	// Create CSV test data
-	csvContent := `date,description,hours,rate
-2024-01-15,Website Design,8.5,95.00
-2024-01-16,Frontend Development,7.25,110.00`
+	// Create CSV test data with current dates
+	now := time.Now()
+	date1 := now.AddDate(0, 0, -5).Format("2006-01-02")
+	date2 := now.AddDate(0, 0, -4).Format("2006-01-02")
+	csvContent := fmt.Sprintf(`date,description,hours,rate
+%s,Website Design,8.5,95.00
+%s,Frontend Development,7.25,110.00`, date1, date2)
 
 	csvFile := filepath.Join(suite.tempDir, "test_timesheet.csv")
 	err := os.WriteFile(csvFile, []byte(csvContent), 0o600)
@@ -377,11 +380,15 @@ func (suite *IntegrationTestSuite) TestCompleteWorkflow() {
 	client, err := suite.clientService.CreateClient(ctx, clientReq)
 	suite.Require().NoError(err)
 
-	// Step 2: Create CSV data and parse it
-	csvContent := `date,description,hours,rate
-2024-01-15,Initial Setup and Configuration,4.0,120.00
-2024-01-16,Frontend Development and UI Design,6.5,120.00
-2024-01-17,Unit Testing and Bug Fixes,2.0,100.00`
+	// Step 2: Create CSV data and parse it with current dates
+	now := time.Now()
+	date1 := now.AddDate(0, 0, -5).Format("2006-01-02")
+	date2 := now.AddDate(0, 0, -4).Format("2006-01-02")
+	date3 := now.AddDate(0, 0, -3).Format("2006-01-02")
+	csvContent := fmt.Sprintf(`date,description,hours,rate
+%s,Initial Setup and Configuration,4.0,120.00
+%s,Frontend Development and UI Design,6.5,120.00
+%s,Unit Testing and Bug Fixes,2.0,100.00`, date1, date2, date3)
 
 	csvFile := filepath.Join(suite.tempDir, "workflow_timesheet.csv")
 	err = os.WriteFile(csvFile, []byte(csvContent), 0o600)
@@ -405,7 +412,6 @@ func (suite *IntegrationTestSuite) TestCompleteWorkflow() {
 	suite.Len(parseResult.WorkItems, 3)
 
 	// Step 3: Create invoice with parsed work items
-	now := time.Now()
 	invoiceReq := models.CreateInvoiceRequest{
 		Number:    "WF-001",
 		ClientID:  client.ID,
