@@ -150,6 +150,13 @@
             margin-bottom: 10px;
         }
 
+        .client-address {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 10px;
+            white-space: pre-line;  /* Preserves line breaks in address */
+        }
+
         .client-details {
             color: #666;
             line-height: 1.8;
@@ -392,10 +399,10 @@
                     <h3 class="section-title">Bill To</h3>
                     <div class="client-info">
                         <div class="client-name">{{.Client.Name}}</div>
+                        {{if .Client.Address}}<div class="client-address">{{.Client.Address}}</div>{{end}}
                         <div class="client-details">
                             {{if .Client.Email}}{{.Client.Email}}<br>{{end}}
                             {{if .Client.Phone}}{{.Client.Phone}}<br>{{end}}
-                            {{if .Client.Address}}{{.Client.Address}}<br>{{end}}
                             {{if .Client.ApproverContacts}}<div style="margin-top: 10px;"><strong>Approver Contacts:</strong><br> {{.Client.ApproverContacts}}</div>{{end}}
                             {{if .Client.TaxID}}<small class="text-muted">Tax ID: {{.Client.TaxID}}</small>{{end}}
                         </div>
