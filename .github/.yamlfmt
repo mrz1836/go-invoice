@@ -76,5 +76,3 @@ exclude:
 
   # Environment files
   - "**/env/**"
-  - "**/.env.base"
-  - "**/.env.custom"
