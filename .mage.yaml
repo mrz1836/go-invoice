@@ -16,6 +16,6 @@ build:
   output: "./cmd/go-invoice"
 
 test:
-  # Match CI timeout configuration (TEST_TIMEOUT_RACE_COVER in .github/env/)
+  # Match CI timeout configuration (TEST_TIMEOUT_RACE_COVER in .env.base)
   # Default magex timeout is 10m which was killing tests prematurely
   timeout: 30m
