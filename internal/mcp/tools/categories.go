@@ -338,13 +338,13 @@ func (cm *CategoryManager) GenerateNaturalLanguageDescription(ctx context.Contex
 	var description strings.Builder
 
 	// Start with category name and description
-	description.WriteString(fmt.Sprintf("**%s**: %s", metadata.Name, metadata.Description))
+	fmt.Fprintf(&description, "**%s**: %s", metadata.Name, metadata.Description)
 
 	// Add use cases
 	if len(metadata.UseCases) > 0 {
 		description.WriteString("\n\nCommon use cases include:")
 		for _, useCase := range metadata.UseCases {
-			description.WriteString(fmt.Sprintf("\n• %s", useCase))
+			fmt.Fprintf(&description, "\n• %s", useCase)
 		}
 	}
 
@@ -352,7 +352,7 @@ func (cm *CategoryManager) GenerateNaturalLanguageDescription(ctx context.Contex
 	if len(metadata.Prerequisites) > 0 {
 		description.WriteString("\n\nPrerequisites:")
 		for _, prereq := range metadata.Prerequisites {
-			description.WriteString(fmt.Sprintf("\n• %s", prereq))
+			fmt.Fprintf(&description, "\n• %s", prereq)
 		}
 	}
 
@@ -370,11 +370,11 @@ func (cm *CategoryManager) GenerateNaturalLanguageDescription(ctx context.Contex
 
 			for i := 0; i < maxTools; i++ {
 				tool := tools[i]
-				description.WriteString(fmt.Sprintf("\n• **%s**: %s", tool.Name, tool.Description))
+				fmt.Fprintf(&description, "\n• **%s**: %s", tool.Name, tool.Description)
 			}
 
 			if len(tools) > maxTools {
-				description.WriteString(fmt.Sprintf("\n• ...and %d more tools", len(tools)-maxTools))
+				fmt.Fprintf(&description, "\n• ...and %d more tools", len(tools)-maxTools)
 			}
 		}
 	}

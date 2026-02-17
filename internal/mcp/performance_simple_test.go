@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mrz1836/go-invoice/internal/mcp/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mrz1836/go-invoice/internal/mcp/types"
 )
 
 // BenchmarkSimpleServerOperations tests basic server operations without complex tool initialization

@@ -3,12 +3,13 @@ package main
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/mrz1836/go-invoice/internal/blockchain"
 	"github.com/mrz1836/go-invoice/internal/cli"
 	"github.com/mrz1836/go-invoice/internal/config"
 	"github.com/mrz1836/go-invoice/internal/models"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCreateBlockchainProvider(t *testing.T) {
@@ -281,12 +282,12 @@ func TestEtherscanProviderAPIKeyConfiguration(t *testing.T) {
 		apiKey  string
 		testnet bool
 	}{
-		{
+		{ //nolint:gosec // G101: test credential, not a real API key
 			name:    "mainnet with API key",
 			apiKey:  "my-api-key-123",
 			testnet: false,
 		},
-		{
+		{ //nolint:gosec // G101: test credential, not a real API key
 			name:    "testnet with API key",
 			apiKey:  "my-testnet-key",
 			testnet: true,

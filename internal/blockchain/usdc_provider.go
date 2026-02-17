@@ -108,7 +108,7 @@ func (e *EtherscanProvider) GetBalance(ctx context.Context, address string, toke
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	resp, err := e.httpClient.Do(req)
+	resp, err := e.httpClient.Do(req) //nolint:gosec // G704: URL is constructed from known Etherscan API endpoint, not user-controlled
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch balance: %w", err)
 	}
@@ -202,7 +202,7 @@ func (e *EtherscanProvider) GetTransactions(ctx context.Context, query Transacti
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	resp, err := e.httpClient.Do(req)
+	resp, err := e.httpClient.Do(req) //nolint:gosec // G704: URL is constructed from known Etherscan API endpoint, not user-controlled
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch transactions: %w", err)
 	}

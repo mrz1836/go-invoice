@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mrz1836/go-invoice/internal/models"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 type UUIDGeneratorTestSuite struct {
@@ -382,11 +383,11 @@ func (suite *UUIDGeneratorTestSuite) parseHexByte(hexStr string) uint8 {
 	for _, char := range hexStr {
 		result <<= 4
 		if char >= '0' && char <= '9' {
-			result |= uint8(char - '0')
+			result |= uint8(char - '0') //nolint:gosec // G115: rune difference is always 0-9, fits in uint8
 		} else if char >= 'a' && char <= 'f' {
-			result |= uint8(char - 'a' + 10)
+			result |= uint8(char - 'a' + 10) //nolint:gosec // G115: rune difference is always 0-5, fits in uint8
 		} else if char >= 'A' && char <= 'F' {
-			result |= uint8(char - 'A' + 10)
+			result |= uint8(char - 'A' + 10) //nolint:gosec // G115: rune difference is always 0-5, fits in uint8
 		}
 	}
 	return result

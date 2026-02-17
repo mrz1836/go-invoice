@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mrz1836/go-invoice/internal/csv"
-	"github.com/mrz1836/go-invoice/internal/models"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/mrz1836/go-invoice/internal/csv"
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 var (

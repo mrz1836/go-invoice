@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mrz1836/go-invoice/internal/blockchain"
-	"github.com/mrz1836/go-invoice/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mrz1836/go-invoice/internal/blockchain"
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 func TestPaymentService_VerifyPayment(t *testing.T) {

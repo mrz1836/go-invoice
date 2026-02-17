@@ -269,25 +269,25 @@ func (s *PaymentService) determinePaymentStatus(verification *models.PaymentVeri
 func (s *PaymentService) buildPaymentNotes(verification *models.PaymentVerification) string {
 	var notes strings.Builder
 
-	notes.WriteString(fmt.Sprintf("Payment Method: %s\n", verification.Method))
-	notes.WriteString(fmt.Sprintf("Amount: %.2f %s\n", verification.ReceivedAmount, verification.Currency))
-	notes.WriteString(fmt.Sprintf("Wallet: %s\n", verification.WalletAddress))
+	fmt.Fprintf(&notes, "Payment Method: %s\n", verification.Method)
+	fmt.Fprintf(&notes, "Amount: %.2f %s\n", verification.ReceivedAmount, verification.Currency)
+	fmt.Fprintf(&notes, "Wallet: %s\n", verification.WalletAddress)
 
 	if verification.TransactionHash != "" {
-		notes.WriteString(fmt.Sprintf("Transaction: %s\n", verification.TransactionHash))
+		fmt.Fprintf(&notes, "Transaction: %s\n", verification.TransactionHash)
 	}
 
 	if verification.ConfirmedAt != nil {
-		notes.WriteString(fmt.Sprintf("Confirmed: %s\n", verification.ConfirmedAt.Format("2006-01-02 15:04:05")))
+		fmt.Fprintf(&notes, "Confirmed: %s\n", verification.ConfirmedAt.Format("2006-01-02 15:04:05"))
 	}
 
-	notes.WriteString(fmt.Sprintf("Verified: %s via %s\n",
+	fmt.Fprintf(&notes, "Verified: %s via %s\n",
 		verification.VerifiedAt.Format("2006-01-02 15:04:05"),
-		verification.VerifiedBy))
+		verification.VerifiedBy)
 
 	if verification.Status == models.PaymentStatusOverpaid {
 		overpayment := verification.ReceivedAmount - verification.ExpectedAmount
-		notes.WriteString(fmt.Sprintf("Note: Overpaid by %.2f %s\n", overpayment, verification.Currency))
+		fmt.Fprintf(&notes, "Note: Overpaid by %.2f %s\n", overpayment, verification.Currency)
 	}
 
 	return notes.String()

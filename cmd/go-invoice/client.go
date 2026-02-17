@@ -9,11 +9,11 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/mrz1836/go-invoice/internal/models"
-	"github.com/mrz1836/go-invoice/internal/services"
-
 	// removed unused imports
 	"github.com/spf13/cobra"
+
+	"github.com/mrz1836/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/services"
 )
 
 // buildClientCommand creates the client command with all subcommands

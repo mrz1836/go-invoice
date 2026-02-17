@@ -3,8 +3,9 @@ package builder
 import (
 	"testing"
 
-	"github.com/mrz1836/go-invoice/magefiles/internal/builder/mocks"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/mrz1836/go-invoice/magefiles/internal/builder/mocks"
 )
 
 func TestLDFlagsBuilder_Build_Success(t *testing.T) {

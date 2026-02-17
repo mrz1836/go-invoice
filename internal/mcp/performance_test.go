@@ -34,11 +34,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mrz1836/go-invoice/internal/mcp/tools"
-	"github.com/mrz1836/go-invoice/internal/mcp/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/mrz1836/go-invoice/internal/mcp/tools"
+	"github.com/mrz1836/go-invoice/internal/mcp/types"
 )
 
 // Performance targets for validation
@@ -451,7 +452,7 @@ func (s *PerformanceTestSuite) benchmarkHTTPTransport(b *testing.B, request *typ
 		req, err := http.NewRequestWithContext(context.Background(), "POST", s.httpServer.URL+"/mcp", strings.NewReader(string(jsonData)))
 		require.NoError(b, err)
 		req.Header.Set("Content-Type", "application/json")
-		resp, err := client.Do(req)
+		resp, err := client.Do(req) //nolint:gosec // G704: URL is the local test HTTP server, not user-controlled
 		require.NoError(b, err)
 
 		body, err := io.ReadAll(resp.Body)

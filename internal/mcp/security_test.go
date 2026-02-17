@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/mrz1836/go-invoice/internal/mcp/executor"
 	"github.com/mrz1836/go-invoice/internal/mcp/tools"
-	"github.com/stretchr/testify/suite"
 )
 
 // SecurityTestSuite provides comprehensive security testing for the MCP server implementation.

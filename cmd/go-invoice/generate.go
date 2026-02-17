@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/mrz1836/go-invoice/internal/cli"
 	"github.com/mrz1836/go-invoice/internal/config"
 	"github.com/mrz1836/go-invoice/internal/models"
@@ -16,7 +18,6 @@ import (
 	"github.com/mrz1836/go-invoice/internal/services"
 	jsonStorage "github.com/mrz1836/go-invoice/internal/storage/json"
 	"github.com/mrz1836/go-invoice/internal/templates"
-	"github.com/spf13/cobra"
 )
 
 // buildGenerateCommand creates the generate command with subcommands
