@@ -11,9 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mrz1836/go-invoice/internal/models"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 // Logger defines the interface for logging operations

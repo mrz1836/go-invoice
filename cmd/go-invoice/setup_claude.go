@@ -11,8 +11,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/mrz1836/go-invoice/internal/cli"
 	"github.com/spf13/cobra"
+
+	"github.com/mrz1836/go-invoice/internal/cli"
 )
 
 // Define static errors for better error handling

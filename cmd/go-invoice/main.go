@@ -10,12 +10,13 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/spf13/cobra"
+
 	"github.com/mrz1836/go-invoice/internal/cli"
 	"github.com/mrz1836/go-invoice/internal/config"
 	"github.com/mrz1836/go-invoice/internal/storage"
 	jsonStorage "github.com/mrz1836/go-invoice/internal/storage/json"
 	"github.com/mrz1836/go-invoice/internal/templates"
-	"github.com/spf13/cobra"
 )
 
 // Version information set by build process

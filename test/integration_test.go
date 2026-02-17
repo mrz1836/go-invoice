@@ -9,13 +9,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/mrz1836/go-invoice/internal/cli"
 	"github.com/mrz1836/go-invoice/internal/config"
 	"github.com/mrz1836/go-invoice/internal/csv"
 	"github.com/mrz1836/go-invoice/internal/models"
 	"github.com/mrz1836/go-invoice/internal/services"
 	"github.com/mrz1836/go-invoice/internal/storage/json"
-	"github.com/stretchr/testify/suite"
 )
 
 // SimpleIDGenerator provides a simple ID generator for tests

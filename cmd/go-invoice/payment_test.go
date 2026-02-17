@@ -3,12 +3,13 @@ package main
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/mrz1836/go-invoice/internal/blockchain"
 	"github.com/mrz1836/go-invoice/internal/cli"
 	"github.com/mrz1836/go-invoice/internal/config"
 	"github.com/mrz1836/go-invoice/internal/models"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCreateBlockchainProvider(t *testing.T) {

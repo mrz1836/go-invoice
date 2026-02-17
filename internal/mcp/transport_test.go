@@ -13,9 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mrz1836/go-invoice/internal/mcp/types"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/mrz1836/go-invoice/internal/mcp/types"
 )
 
 // Test errors

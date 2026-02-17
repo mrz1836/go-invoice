@@ -9,13 +9,14 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/mrz1836/go-invoice/internal/cli"
 	"github.com/mrz1836/go-invoice/internal/config"
 	"github.com/mrz1836/go-invoice/internal/models"
 	"github.com/mrz1836/go-invoice/internal/services"
 	"github.com/mrz1836/go-invoice/internal/storage"
 	jsonStorage "github.com/mrz1836/go-invoice/internal/storage/json"
-	"github.com/spf13/cobra"
 )
 
 // Invoice command errors
