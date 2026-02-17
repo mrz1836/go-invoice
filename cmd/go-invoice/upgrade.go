@@ -286,7 +286,7 @@ func (a *App) upgradeBinary(latestVersion string) error {
 	}
 
 	// Replace with new binary
-	if err := os.Rename(extractedBinary, currentBinary); err != nil {
+	if err := os.Rename(extractedBinary, currentBinary); err != nil { //nolint:gosec // G703: paths are constructed from the current executable path and temp dir
 		// Restore backup on failure
 		_ = os.Rename(backupFile, currentBinary)
 		return fmt.Errorf("could not replace binary: %w", err)
@@ -309,7 +309,7 @@ func (a *App) fetchExpectedChecksum(client *http.Client, checksumsURL, filename 
 		return "", fmt.Errorf("creating checksums request: %w", err)
 	}
 
-	resp, err := client.Do(req)
+	resp, err := client.Do(req) //nolint:gosec // G704: URL is a constructed GitHub release URL, not user-controlled
 	if err != nil {
 		return "", fmt.Errorf("downloading checksums: %w", err)
 	}
@@ -349,7 +349,7 @@ func (a *App) downloadFile(client *http.Client, url, destPath string) error {
 		return fmt.Errorf("creating download request: %w", err)
 	}
 
-	resp, err := client.Do(req)
+	resp, err := client.Do(req) //nolint:gosec // G704: URL is a constructed GitHub release URL, not user-controlled
 	if err != nil {
 		return fmt.Errorf("downloading file: %w", err)
 	}

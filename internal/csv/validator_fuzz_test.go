@@ -166,7 +166,7 @@ func FuzzValidateRow(f *testing.F) {
 		fields := make([]string, 10)
 		for j, field := range row {
 			if j < 10 {
-				fields[j] = field
+				fields[j] = field //nolint:gosec // G602: j < 10 guard ensures index is within bounds of fields (size 10)
 			}
 		}
 		f.Add(fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], fields[6], fields[7], fields[8], fields[9], len(row), i+1)

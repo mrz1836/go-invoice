@@ -282,12 +282,12 @@ func TestEtherscanProviderAPIKeyConfiguration(t *testing.T) {
 		apiKey  string
 		testnet bool
 	}{
-		{
+		{ //nolint:gosec // G101: test credential, not a real API key
 			name:    "mainnet with API key",
 			apiKey:  "my-api-key-123",
 			testnet: false,
 		},
-		{
+		{ //nolint:gosec // G101: test credential, not a real API key
 			name:    "testnet with API key",
 			apiKey:  "my-testnet-key",
 			testnet: true,

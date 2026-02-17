@@ -693,12 +693,12 @@ func (suite *JSONParserTestSuite) TestParseTimesheetLargeFile() {
 		if i > 0 {
 			builder.WriteString(",")
 		}
-		builder.WriteString(fmt.Sprintf(`{
+		fmt.Fprintf(&builder, `{
 			"date": "2024-01-%02d",
 			"hours": 8.0,
 			"rate": 100.00,
 			"description": "Work item %d"
-		}`, (i%28)+1, i+1))
+		}`, (i%28)+1, i+1)
 	}
 	builder.WriteString("]")
 

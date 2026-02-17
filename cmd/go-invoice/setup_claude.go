@@ -385,13 +385,13 @@ func (a *App) setupClaudeDesktop(ctx context.Context, prompter *cli.Prompter, pr
 	}
 
 	// Check if Claude Desktop is installed
-	if _, err := os.Stat(configDir); os.IsNotExist(err) {
+	if _, err := os.Stat(configDir); os.IsNotExist(err) { //nolint:gosec // G703: configDir is derived from known system paths
 		return fmt.Errorf("claude Desktop configuration directory not found at %s: %w", configDir, os.ErrNotExist)
 	}
 
 	// Backup existing configuration
 	mcpServersPath := filepath.Join(configDir, "mcp_servers.json")
-	if _, err := os.Stat(mcpServersPath); err == nil {
+	if _, err := os.Stat(mcpServersPath); err == nil { //nolint:gosec // G703: mcpServersPath is derived from a known system config directory
 		backupPath := mcpServersPath + ".backup"
 		if err := a.copyFile(mcpServersPath, backupPath); err != nil {
 			a.logger.Printf("⚠️  Could not backup existing configuration: %v\n", err)
@@ -417,7 +417,7 @@ func (a *App) setupClaudeDesktop(ctx context.Context, prompter *cli.Prompter, pr
 
 	// Check if we should merge with existing config
 	var finalConfig map[string]interface{}
-	if existingData, err := os.ReadFile(filepath.Clean(mcpServersPath)); err == nil && len(existingData) > 0 {
+	if existingData, err := os.ReadFile(filepath.Clean(mcpServersPath)); err == nil && len(existingData) > 0 { //nolint:gosec // G703: mcpServersPath is derived from known system config paths
 		// Parse existing config
 		if err := json.Unmarshal(existingData, &finalConfig); err != nil {
 			a.logger.Printf("⚠️  Could not parse existing configuration, will replace it\n")
@@ -444,7 +444,7 @@ func (a *App) setupClaudeDesktop(ctx context.Context, prompter *cli.Prompter, pr
 		return fmt.Errorf("failed to marshal configuration: %w", err)
 	}
 
-	if err := os.WriteFile(mcpServersPath, configData, 0o600); err != nil {
+	if err := os.WriteFile(mcpServersPath, configData, 0o600); err != nil { //nolint:gosec // G703: mcpServersPath is derived from known system config paths
 		return fmt.Errorf("failed to write configuration: %w", err)
 	}
 
@@ -568,7 +568,7 @@ func (a *App) setupClaudeCode(ctx context.Context, prompter *cli.Prompter, proje
 	_ = removeCmd.Run() // Explicitly ignore output and errors
 
 	// Execute the command
-	cmd := exec.CommandContext(ctx, "claude", args...) // #nosec G204 - args are controlled by our code
+	cmd := exec.CommandContext(ctx, "claude", args...) // #nosec G204,G702 - args are controlled by our code
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 

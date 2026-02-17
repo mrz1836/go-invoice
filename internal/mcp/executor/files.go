@@ -304,13 +304,13 @@ func (f *DefaultFileHandler) CreateTempFile(ctx context.Context, pattern string,
 
 	// Set restrictive permissions
 	if err := tmpFile.Chmod(0o600); err != nil {
-		_ = os.Remove(tmpFile.Name())
+		_ = os.Remove(tmpFile.Name()) //nolint:gosec // G703: tmpFile.Name() is OS-generated temp path
 		return "", fmt.Errorf("failed to set file permissions: %w", err)
 	}
 
 	// Write content
 	if _, err := tmpFile.Write(content); err != nil {
-		_ = os.Remove(tmpFile.Name())
+		_ = os.Remove(tmpFile.Name()) //nolint:gosec // G703: tmpFile.Name() is OS-generated temp path
 		return "", fmt.Errorf("failed to write content: %w", err)
 	}
 

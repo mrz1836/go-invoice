@@ -158,7 +158,7 @@ func (c *Client) GetLatestRelease(ctx context.Context, owner, repo string) (*Git
 	req.Header.Set("User-Agent", c.userAgent)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req) //nolint:gosec // G704: URL is a constructed GitHub API URL, not user-controlled
 	if err != nil {
 		return nil, fmt.Errorf("fetching release: %w", err)
 	}

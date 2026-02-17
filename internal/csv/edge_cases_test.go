@@ -553,7 +553,7 @@ func (suite *CSVEdgeCasesTestSuite) TestMemoryAndPerformance() {
 		csvBuilder.WriteString("Date,Hours,Rate,Description\n")
 
 		for i := 0; i < 100; i++ {
-			csvBuilder.WriteString(fmt.Sprintf("%s,1.0,100.0,Work %d\n", validDate, i))
+			fmt.Fprintf(&csvBuilder, "%s,1.0,100.0,Work %d\n", validDate, i)
 		}
 
 		ctx := context.Background()

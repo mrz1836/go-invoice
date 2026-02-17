@@ -236,7 +236,7 @@ func (p *Prompter) PromptMultiSelect(ctx context.Context, prompt string, options
 		index, err := strconv.Atoi(part)
 		if err == nil && index > 0 && index <= len(options) {
 			indices = append(indices, index-1)
-			selected = append(selected, options[index-1])
+			selected = append(selected, options[index-1]) //nolint:gosec // G602: index bounds are validated above (index > 0 && index <= len(options))
 		}
 	}
 

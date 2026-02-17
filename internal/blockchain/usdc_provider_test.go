@@ -503,7 +503,7 @@ func TestEtherscanProvider_APIKeyHandling(t *testing.T) {
 		apiKey         string
 		expectKeyParam bool
 	}{
-		{
+		{ //nolint:gosec // G101: test credential, not a real API key
 			name:           "with api key",
 			apiKey:         "my-api-key-123",
 			expectKeyParam: true,
