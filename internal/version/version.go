@@ -116,6 +116,18 @@ func GetLatestRelease(ctx context.Context, owner, repo string) (*GitHubRelease, 
 	return defaultClient.GetLatestRelease(ctx, owner, repo)
 }
 
+// SetDefaultClient replaces the package-level default client.
+// Intended for use in tests to inject a custom client (e.g. pointing at a test server).
+func SetDefaultClient(c *Client) {
+	defaultClient = c
+}
+
+// ResetDefaultClient restores the package-level default client to its original value.
+// Call this in test cleanup (e.g. defer versionpkg.ResetDefaultClient()).
+func ResetDefaultClient() {
+	defaultClient = NewClient()
+}
+
 // validateOwnerRepo validates the owner and repo parameters
 func validateOwnerRepo(owner, repo string) error {
 	if owner == "" {
