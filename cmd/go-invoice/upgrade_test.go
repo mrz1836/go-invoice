@@ -3,9 +3,14 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
@@ -293,6 +298,131 @@ func TestGetInvoiceBinaryLocation(_ *testing.T) {
 	_, _ = getInvoiceBinaryLocation()
 }
 
+// --- verifyFileChecksum tests ---
+
+func TestVerifyFileChecksum_Match(t *testing.T) {
+	// Create a temp file with known content
+	content := []byte("hello world")
+	tmpFile, err := os.CreateTemp(t.TempDir(), "checksum-test-*")
+	require.NoError(t, err)
+	_, err = tmpFile.Write(content)
+	require.NoError(t, err)
+	require.NoError(t, tmpFile.Close())
+
+	// Compute expected SHA256
+	sum := sha256.Sum256(content)
+	expectedHex := hex.EncodeToString(sum[:])
+
+	err = verifyFileChecksum(tmpFile.Name(), expectedHex)
+	assert.NoError(t, err)
+}
+
+func TestVerifyFileChecksum_Mismatch(t *testing.T) {
+	tmpFile, err := os.CreateTemp(t.TempDir(), "checksum-test-*")
+	require.NoError(t, err)
+	_, err = tmpFile.WriteString("hello world")
+	require.NoError(t, err)
+	require.NoError(t, tmpFile.Close())
+
+	err = verifyFileChecksum(tmpFile.Name(), "deadbeef")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrChecksumMismatch)
+}
+
+func TestVerifyFileChecksum_FileNotFound(t *testing.T) {
+	err := verifyFileChecksum("/nonexistent/path/file.txt", "deadbeef")
+	require.Error(t, err)
+}
+
+// --- fetchExpectedChecksum tests ---
+
+func TestFetchExpectedChecksum_Found(t *testing.T) {
+	// Serve a mock checksums file
+	checksumsContent := "abc123def456  go-invoice_1.0.0_darwin_arm64.tar.gz\n" +
+		"deadbeef1234  go-invoice_1.0.0_linux_amd64.tar.gz\n"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(checksumsContent))
+	}))
+	defer server.Close()
+
+	app := newTestApp()
+	client := &http.Client{Timeout: 5 * time.Second}
+
+	hash, err := app.fetchExpectedChecksum(client, server.URL+"/checksums.txt", "go-invoice_1.0.0_darwin_arm64.tar.gz")
+	require.NoError(t, err)
+	assert.Equal(t, "abc123def456", hash)
+}
+
+func TestFetchExpectedChecksum_NotFound(t *testing.T) {
+	checksumsContent := "abc123def456  go-invoice_1.0.0_linux_amd64.tar.gz\n"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(checksumsContent))
+	}))
+	defer server.Close()
+
+	app := newTestApp()
+	client := &http.Client{Timeout: 5 * time.Second}
+
+	_, err := app.fetchExpectedChecksum(client, server.URL+"/checksums.txt", "go-invoice_1.0.0_darwin_arm64.tar.gz")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "checksum not found")
+}
+
+func TestFetchExpectedChecksum_HTTPError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	app := newTestApp()
+	client := &http.Client{Timeout: 5 * time.Second}
+
+	_, err := app.fetchExpectedChecksum(client, server.URL+"/checksums.txt", "go-invoice_1.0.0_darwin_arm64.tar.gz")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrChecksumsDownloadFailed)
+}
+
+// --- downloadFile tests ---
+
+func TestDownloadFile_Success(t *testing.T) {
+	content := []byte("binary content here")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(content)
+	}))
+	defer server.Close()
+
+	app := newTestApp()
+	client := &http.Client{Timeout: 5 * time.Second}
+	destPath := filepath.Join(t.TempDir(), "downloaded.tar.gz")
+
+	err := app.downloadFile(client, server.URL+"/file.tar.gz", destPath)
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(destPath) //nolint:gosec // destPath is constructed safely via t.TempDir()
+	require.NoError(t, err)
+	assert.Equal(t, content, data)
+}
+
+func TestDownloadFile_HTTPError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	app := newTestApp()
+	client := &http.Client{Timeout: 5 * time.Second}
+	destPath := filepath.Join(t.TempDir(), "downloaded.tar.gz")
+
+	err := app.downloadFile(client, server.URL+"/file.tar.gz", destPath)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrArchiveDownloadFailed)
+}
+
 // --- Error sentinel tests ---
 
 func TestErrSentinels(t *testing.T) {
@@ -300,4 +430,8 @@ func TestErrSentinels(t *testing.T) {
 	require.Error(t, ErrVersionParseFailed)
 	require.Error(t, ErrDownloadFailed)
 	require.Error(t, ErrBinaryNotFoundInArchive)
+	require.Error(t, ErrChecksumMismatch)
+	require.Error(t, ErrChecksumNotFound)
+	require.Error(t, ErrChecksumsDownloadFailed)
+	require.Error(t, ErrArchiveDownloadFailed)
 }

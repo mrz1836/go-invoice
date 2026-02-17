@@ -4,6 +4,8 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -34,6 +36,14 @@ var (
 	ErrDownloadFailed = errors.New("failed to download binary")
 	// ErrBinaryNotFoundInArchive is returned when the binary is not found in the archive
 	ErrBinaryNotFoundInArchive = errors.New("go-invoice binary not found in archive")
+	// ErrChecksumMismatch is returned when the downloaded file's checksum doesn't match
+	ErrChecksumMismatch = errors.New("checksum mismatch: downloaded file may be corrupted or tampered")
+	// ErrChecksumNotFound is returned when the checksum for the target file is not in checksums.txt
+	ErrChecksumNotFound = errors.New("checksum not found in checksums file")
+	// ErrChecksumsDownloadFailed is returned when the checksums file cannot be downloaded
+	ErrChecksumsDownloadFailed = errors.New("checksums download failed")
+	// ErrArchiveDownloadFailed is returned when the release archive cannot be downloaded
+	ErrArchiveDownloadFailed = errors.New("archive download failed")
 )
 
 // upgradeConfig holds configuration for the upgrade command
@@ -219,31 +229,13 @@ func (a *App) upgradeBinary(latestVersion string) error {
 		return fmt.Errorf("could not determine current binary location: %w", err)
 	}
 
-	// Construct download URL for compressed archive
-	downloadURL := fmt.Sprintf("https://github.com/mrz1836/go-invoice/releases/download/v%s/go-invoice_%s_%s_%s.tar.gz",
-		latestVersion, latestVersion, runtime.GOOS, runtime.GOARCH)
+	archiveName := fmt.Sprintf("go-invoice_%s_%s_%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 
-	a.logger.Printf("ℹ️  Downloading binary from: %s\n", downloadURL)
-
-	// Download the binary with context
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrDownloadFailed, err)
-	}
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrDownloadFailed, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%w: HTTP %d", ErrDownloadFailed, resp.StatusCode)
-	}
+	// Construct download URLs
+	downloadURL := fmt.Sprintf("https://github.com/mrz1836/go-invoice/releases/download/v%s/%s",
+		latestVersion, archiveName)
+	checksumsURL := fmt.Sprintf("https://github.com/mrz1836/go-invoice/releases/download/v%s/go-invoice_%s_checksums.txt",
+		latestVersion, latestVersion)
 
 	// Create temporary directory
 	tempDir, err := os.MkdirTemp("", "go-invoice-upgrade-*")
@@ -252,8 +244,37 @@ func (a *App) upgradeBinary(latestVersion string) error {
 	}
 	defer func() { _ = os.RemoveAll(tempDir) }()
 
+	client := &http.Client{Timeout: 30 * time.Second}
+
+	// Download checksums file for verification
+	a.logger.Printf("ℹ️  Downloading checksums from: %s\n", checksumsURL)
+	expectedChecksum, err := a.fetchExpectedChecksum(client, checksumsURL, archiveName)
+	if err != nil {
+		return fmt.Errorf("could not fetch checksums: %w", err)
+	}
+
+	// Download the archive
+	a.logger.Printf("ℹ️  Downloading binary from: %s\n", downloadURL)
+	archivePath := filepath.Join(tempDir, archiveName)
+	if err = a.downloadFile(client, downloadURL, archivePath); err != nil {
+		return fmt.Errorf("%w: %w", ErrDownloadFailed, err)
+	}
+
+	// Verify checksum
+	a.logger.Println("ℹ️  Verifying checksum...")
+	if err = verifyFileChecksum(archivePath, expectedChecksum); err != nil {
+		return err
+	}
+	a.logger.Println("✅ Checksum verified")
+
 	// Extract binary from tar.gz archive
-	extractedBinary, err := extractInvoiceBinaryFromArchive(resp.Body, tempDir)
+	archiveFile, err := os.Open(archivePath) //nolint:gosec // Path is constructed safely in temp dir
+	if err != nil {
+		return fmt.Errorf("could not open archive: %w", err)
+	}
+	defer func() { _ = archiveFile.Close() }()
+
+	extractedBinary, err := extractInvoiceBinaryFromArchive(archiveFile, tempDir)
 	if err != nil {
 		return fmt.Errorf("could not extract binary: %w", err)
 	}
@@ -275,6 +296,105 @@ func (a *App) upgradeBinary(latestVersion string) error {
 	_ = os.Remove(backupFile)
 
 	a.logger.Println("ℹ️  Binary upgrade completed successfully")
+	return nil
+}
+
+// fetchExpectedChecksum downloads the checksums file and returns the SHA256 for the given filename.
+func (a *App) fetchExpectedChecksum(client *http.Client, checksumsURL, filename string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, checksumsURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("creating checksums request: %w", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("downloading checksums: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("%w: HTTP %d", ErrChecksumsDownloadFailed, resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
+	if err != nil {
+		return "", fmt.Errorf("reading checksums: %w", err)
+	}
+
+	// Parse checksums file (format: "<sha256>  <filename>")
+	for _, line := range strings.Split(string(body), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) == 2 && fields[1] == filename {
+			return fields[0], nil
+		}
+	}
+
+	return "", fmt.Errorf("%w: %s", ErrChecksumNotFound, filename)
+}
+
+// downloadFile downloads a URL to a local file path.
+func (a *App) downloadFile(client *http.Client, url, destPath string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return fmt.Errorf("creating download request: %w", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("downloading file: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("%w: HTTP %d", ErrArchiveDownloadFailed, resp.StatusCode)
+	}
+
+	file, err := os.Create(destPath) //nolint:gosec // Path is constructed safely in temp dir
+	if err != nil {
+		return fmt.Errorf("creating file: %w", err)
+	}
+
+	_, copyErr := io.Copy(file, resp.Body)
+	closeErr := file.Close()
+
+	if copyErr != nil {
+		return fmt.Errorf("writing file: %w", copyErr)
+	}
+	if closeErr != nil {
+		return fmt.Errorf("closing file: %w", closeErr)
+	}
+
+	return nil
+}
+
+// verifyFileChecksum calculates the SHA256 of a file and compares it to the expected hash.
+func verifyFileChecksum(filePath, expectedHex string) error {
+	file, err := os.Open(filePath) //nolint:gosec // Path is constructed safely in temp dir
+	if err != nil {
+		return fmt.Errorf("opening file for checksum: %w", err)
+	}
+	defer func() { _ = file.Close() }()
+
+	hasher := sha256.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return fmt.Errorf("computing checksum: %w", err)
+	}
+
+	actual := hex.EncodeToString(hasher.Sum(nil))
+	if actual != expectedHex {
+		return fmt.Errorf("%w: expected %s, got %s", ErrChecksumMismatch, expectedHex, actual)
+	}
+
 	return nil
 }
 
