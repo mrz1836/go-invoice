@@ -21,7 +21,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/mcp/schemas"
+	"github.com/mrz1836/go-invoice/internal/mcp/schemas"
 )
 
 // CreateDataImportTools creates all data import MCP tool definitions.

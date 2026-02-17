@@ -7,8 +7,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/csv"
-	"github.com/mrz/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/csv"
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 // JSON parsing errors

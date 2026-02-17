@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/mrz/go-invoice/internal/blockchain"
-	"github.com/mrz/go-invoice/internal/config"
-	"github.com/mrz/go-invoice/internal/models"
-	"github.com/mrz/go-invoice/internal/services"
+	"github.com/mrz1836/go-invoice/internal/blockchain"
+	"github.com/mrz1836/go-invoice/internal/config"
+	"github.com/mrz1836/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/services"
 	"github.com/spf13/cobra"
 )
 

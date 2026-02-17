@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/models"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )

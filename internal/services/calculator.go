@@ -7,7 +7,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 // Calculator service errors

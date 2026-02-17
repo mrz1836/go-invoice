@@ -19,7 +19,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/mcp/schemas"
+	"github.com/mrz1836/go-invoice/internal/mcp/schemas"
 )
 
 // CreateConfigurationManagementTools creates all configuration management MCP tool definitions.

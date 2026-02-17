@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/mrz/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 // Storage error types for comprehensive error handling

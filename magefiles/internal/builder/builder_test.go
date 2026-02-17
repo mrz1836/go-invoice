@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/mrz/go-invoice/magefiles/internal/builder/mocks"
+	"github.com/mrz1836/go-invoice/magefiles/internal/builder/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

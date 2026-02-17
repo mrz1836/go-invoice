@@ -15,7 +15,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/mcp/tools"
+	"github.com/mrz1836/go-invoice/internal/mcp/tools"
 )
 
 // ExampleUsage demonstrates the complete MCP tool system functionality.

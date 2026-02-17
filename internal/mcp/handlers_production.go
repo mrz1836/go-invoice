@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mrz/go-invoice/internal/mcp/executor"
-	"github.com/mrz/go-invoice/internal/mcp/tools"
-	"github.com/mrz/go-invoice/internal/mcp/types"
+	"github.com/mrz1836/go-invoice/internal/mcp/executor"
+	"github.com/mrz1836/go-invoice/internal/mcp/tools"
+	"github.com/mrz1836/go-invoice/internal/mcp/types"
 )
 
 // ProductionMCPHandler implements MCPHandler with Phase 3 executor integration.

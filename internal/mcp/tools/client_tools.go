@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/mcp/schemas"
+	"github.com/mrz1836/go-invoice/internal/mcp/schemas"
 )
 
 // CreateClientManagementTools creates all client management MCP tool definitions.

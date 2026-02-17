@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/mrz/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 // UUIDGenerator generates unique IDs using random UUIDs
