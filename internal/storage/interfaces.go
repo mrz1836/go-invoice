@@ -3,7 +3,7 @@ package storage
 import (
 	"context"
 
-	"github.com/mrz/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 // InvoiceStorage defines the interface for invoice persistence operations

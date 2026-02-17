@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/models"
-	"github.com/mrz/go-invoice/internal/storage"
+	"github.com/mrz1836/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/storage"
 )
 
 // Invoice storage errors

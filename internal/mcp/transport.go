@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/mcp/types"
+	"github.com/mrz1836/go-invoice/internal/mcp/types"
 )
 
 // TransportError represents transport-related errors.

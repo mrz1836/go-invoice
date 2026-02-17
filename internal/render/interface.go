@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/mrz/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 // InvoiceRenderer defines the interface for rendering invoices to HTML

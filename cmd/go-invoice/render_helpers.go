@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/render"
+	"github.com/mrz1836/go-invoice/internal/render"
 )
 
 var ErrTemplateNotFoundInCache = fmt.Errorf("template not found in cache")

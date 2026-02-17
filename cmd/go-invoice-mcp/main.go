@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/mcp"
+	"github.com/mrz1836/go-invoice/internal/mcp"
 )
 
 func main() {

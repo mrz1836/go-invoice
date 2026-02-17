@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/mrz/go-invoice/internal/cli"
+	"github.com/mrz1836/go-invoice/internal/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -221,7 +221,7 @@ func (a *App) getProjectRoot() (string, error) {
 		if _, statErr := os.Stat(modPath); statErr == nil {
 			// Check if this is the go-invoice project
 			modContent, readErr := os.ReadFile(modPath) //nolint:gosec // Path is validated
-			if readErr == nil && strings.Contains(string(modContent), "github.com/mrz/go-invoice") {
+			if readErr == nil && strings.Contains(string(modContent), "github.com/mrz1836/go-invoice") {
 				return dir, nil
 			}
 		}

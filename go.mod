@@ -1,4 +1,4 @@
-module github.com/mrz/go-invoice
+module github.com/mrz1836/go-invoice
 
 go 1.24.0
 

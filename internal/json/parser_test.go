@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/csv"
-	"github.com/mrz/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/csv"
+	"github.com/mrz1836/go-invoice/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

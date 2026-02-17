@@ -10,11 +10,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/mrz/go-invoice/internal/cli"
-	"github.com/mrz/go-invoice/internal/config"
-	"github.com/mrz/go-invoice/internal/storage"
-	jsonStorage "github.com/mrz/go-invoice/internal/storage/json"
-	"github.com/mrz/go-invoice/internal/templates"
+	"github.com/mrz1836/go-invoice/internal/cli"
+	"github.com/mrz1836/go-invoice/internal/config"
+	"github.com/mrz1836/go-invoice/internal/storage"
+	jsonStorage "github.com/mrz1836/go-invoice/internal/storage/json"
+	"github.com/mrz1836/go-invoice/internal/templates"
 	"github.com/spf13/cobra"
 )
 

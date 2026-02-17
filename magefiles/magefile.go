@@ -5,7 +5,7 @@
 package magefiles
 
 import (
-	"github.com/mrz/go-invoice/magefiles/internal/builder"
+	"github.com/mrz1836/go-invoice/magefiles/internal/builder"
 )
 
 // Default target when no target is specified

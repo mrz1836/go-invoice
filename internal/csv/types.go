@@ -3,7 +3,7 @@ package csv
 import (
 	"context"
 
-	"github.com/mrz/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 // ParseOptions defines options for CSV parsing

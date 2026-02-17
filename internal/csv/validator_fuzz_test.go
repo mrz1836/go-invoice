@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 // FuzzValidateWorkItem fuzzes work item validation

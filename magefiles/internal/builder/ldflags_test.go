@@ -3,7 +3,7 @@ package builder
 import (
 	"testing"
 
-	"github.com/mrz/go-invoice/magefiles/internal/builder/mocks"
+	"github.com/mrz1836/go-invoice/magefiles/internal/builder/mocks"
 	"github.com/stretchr/testify/assert"
 )
 

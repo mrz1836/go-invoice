@@ -9,8 +9,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/models"
-	"github.com/mrz/go-invoice/internal/services"
+	"github.com/mrz1836/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/services"
 
 	// removed unused imports
 	"github.com/spf13/cobra"

@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mrz/go-invoice/internal/cli"
-	"github.com/mrz/go-invoice/internal/config"
-	"github.com/mrz/go-invoice/internal/csv"
-	"github.com/mrz/go-invoice/internal/models"
-	"github.com/mrz/go-invoice/internal/services"
-	"github.com/mrz/go-invoice/internal/storage/json"
+	"github.com/mrz1836/go-invoice/internal/cli"
+	"github.com/mrz1836/go-invoice/internal/config"
+	"github.com/mrz1836/go-invoice/internal/csv"
+	"github.com/mrz1836/go-invoice/internal/models"
+	"github.com/mrz1836/go-invoice/internal/services"
+	"github.com/mrz1836/go-invoice/internal/storage/json"
 	"github.com/stretchr/testify/suite"
 )
 
