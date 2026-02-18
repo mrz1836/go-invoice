@@ -1788,22 +1788,6 @@ We welcome contributions from the community! Please read our [contributing guide
 6. **Push** to the branch (`git push origin feature/amazing-feature`)
 7. **Open** a Pull Request
 
-### Development Setup
-
-```bash
-# Clone your fork
-git clone https://github.com/yourusername/go-invoice.git
-cd go-invoice
-
-# Install dependencies
-go mod download
-
-# Run tests to verify setup
-magex test
-
-# Start developing!
-```
-
 ### How Can I Help?
 
 All kinds of contributions are welcome! :raised_hands:
