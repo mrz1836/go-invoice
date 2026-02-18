@@ -119,13 +119,13 @@ func TestIsLikelyCommitHash(t *testing.T) {
 // --- getCurrentVersion tests ---
 
 func TestGetCurrentVersion(t *testing.T) {
-	original := Version
-	defer func() { Version = original }()
+	original := version
+	defer func() { version = original }()
 
-	Version = "1.2.3"
+	version = "1.2.3"
 	assert.Equal(t, "1.2.3", getCurrentVersion())
 
-	Version = "dev"
+	version = "dev"
 	assert.Equal(t, "dev", getCurrentVersion())
 }
 
@@ -154,9 +154,9 @@ func makeUpgradeCmd(ctx context.Context) *cobra.Command {
 }
 
 func TestRunUpgrade_DevVersionNoForce(t *testing.T) {
-	original := Version
-	defer func() { Version = original }()
-	Version = "dev"
+	original := version
+	defer func() { version = original }()
+	version = "dev"
 
 	app := newTestApp()
 	cmd := makeUpgradeCmd(context.Background())
@@ -167,9 +167,9 @@ func TestRunUpgrade_DevVersionNoForce(t *testing.T) {
 }
 
 func TestRunUpgrade_DevVersionCheckOnlyDoesNotError(t *testing.T) {
-	original := Version
-	defer func() { Version = original }()
-	Version = "dev"
+	original := version
+	defer func() { version = original }()
+	version = "dev"
 
 	server := setupMockGitHubServer(t)
 	defer server.Close()
@@ -189,9 +189,9 @@ func TestRunUpgrade_DevVersionCheckOnlyDoesNotError(t *testing.T) {
 }
 
 func TestRunUpgrade_CheckOnlyNewerAvailable(t *testing.T) {
-	original := Version
-	defer func() { Version = original }()
-	Version = "1.0.0"
+	original := version
+	defer func() { version = original }()
+	version = "1.0.0"
 
 	server := setupMockGitHubServer(t)
 	defer server.Close()
@@ -210,9 +210,9 @@ func TestRunUpgrade_CheckOnlyNewerAvailable(t *testing.T) {
 }
 
 func TestRunUpgrade_CheckOnlyAlreadyLatest(t *testing.T) {
-	original := Version
-	defer func() { Version = original }()
-	Version = "2.0.0"
+	original := version
+	defer func() { version = original }()
+	version = "2.0.0"
 
 	server := setupMockGitHubServer(t)
 	defer server.Close()
@@ -231,9 +231,9 @@ func TestRunUpgrade_CheckOnlyAlreadyLatest(t *testing.T) {
 }
 
 func TestRunUpgrade_AlreadyLatestNoForce(t *testing.T) {
-	original := Version
-	defer func() { Version = original }()
-	Version = "2.0.0"
+	original := version
+	defer func() { version = original }()
+	version = "2.0.0"
 
 	server := setupMockGitHubServer(t)
 	defer server.Close()
@@ -255,9 +255,9 @@ func TestRunUpgrade_AlreadyLatestNoForce(t *testing.T) {
 func TestRunUpgrade_DevVersionWithForce_CheckOnly(t *testing.T) {
 	// Verify that Force=true bypasses the dev version guard even in check-only mode.
 	// We use CheckOnly to avoid triggering real go install in tests.
-	original := Version
-	defer func() { Version = original }()
-	Version = "dev"
+	original := version
+	defer func() { version = original }()
+	version = "dev"
 
 	server := setupMockGitHubServer(t)
 	defer server.Close()

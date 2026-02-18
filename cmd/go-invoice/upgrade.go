@@ -201,7 +201,7 @@ func formatVersion(v string) string {
 
 // getCurrentVersion returns the current version of go-invoice
 func getCurrentVersion() string {
-	return Version
+	return version
 }
 
 // upgradeGoInstall upgrades using go install command (primary method)

@@ -19,11 +19,14 @@ import (
 	"github.com/mrz1836/go-invoice/internal/templates"
 )
 
-// Version information set by build process
+// Version information set by build process via ldflags.
+// These match goreleaser's default ldflags: -X main.version, -X main.commit, -X main.buildDate
+//
+//nolint:gochecknoglobals // Required for ldflags injection
 var (
-	Version = "dev"     //nolint:gochecknoglobals // Build-time version information
-	Commit  = "unknown" //nolint:gochecknoglobals // Build-time commit information
-	Date    = "unknown" //nolint:gochecknoglobals // Build-time date information
+	version   = "dev"
+	commit    = "unknown"
+	buildDate = "unknown"
 )
 
 // App represents the main application with dependency injection
@@ -63,7 +66,7 @@ Key features:
 - Local JSON storage (no database required)
 - Customizable business configuration
 - Printer-optimized output`,
-		Version: fmt.Sprintf("%s (%s, built %s)", Version, Commit, Date),
+		Version: fmt.Sprintf("%s (%s, built %s)", version, commit, buildDate),
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			// Get debug flag from command
 			debug, _ := cmd.Flags().GetBool("debug")
