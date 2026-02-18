@@ -912,11 +912,11 @@ func (a *App) promptForMerge(ctx context.Context, prompter *cli.Prompter, servic
 
 // copyFile copies a file from src to dst
 func (a *App) copyFile(src, dst string) error {
-	input, err := os.ReadFile(filepath.Clean(src))
+	input, err := os.ReadFile(filepath.Clean(src)) //nolint:gosec // G703: paths are application-constructed config file paths, not user input
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(dst, input, 0o600)
+	return os.WriteFile(filepath.Clean(dst), input, 0o600) //nolint:gosec // G703: paths are application-constructed config file paths, not user input
 }
 
 // mustGetwd returns the current working directory or panics
