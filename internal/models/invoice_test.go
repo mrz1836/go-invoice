@@ -725,7 +725,7 @@ func (suite *InvoiceTestSuite) TestGetAgeInDays() {
 		{
 			name:     "LastMonth",
 			date:     time.Now().AddDate(0, -1, 0),
-			expected: 30, // approximately
+			expected: 30, // approximately (varies 28-31 depending on month)
 		},
 	}
 
@@ -735,8 +735,8 @@ func (suite *InvoiceTestSuite) TestGetAgeInDays() {
 				Date: tt.date,
 			}
 			age := invoice.GetAgeInDays()
-			// Allow for small differences due to exact timing
-			assert.InDelta(t, tt.expected, age, 1)
+			// Allow for differences due to timing and varying month lengths (28-31 days)
+			assert.InDelta(t, tt.expected, age, 3)
 		})
 	}
 }

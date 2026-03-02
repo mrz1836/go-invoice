@@ -145,7 +145,8 @@ func (suite *CSVEdgeCasesTestSuite) TestDateFormatEdgeCases() {
 		{"FullMonthName", validFullMonth, true},
 
 		// Edge cases (using fixed years for specific tests)
-		{"LeapYear", "2024-02-29", true},
+		// 2024-02-29 is a valid leap day but falls outside the 2-year past boundary after 2026-02-29
+		{"LeapYear", "2024-02-29", false},
 		{"NonLeapYear", "2023-02-29", false},
 		{"InvalidMonth", "2024-13-01", false},
 		{"InvalidDay", "2024-01-32", false},
