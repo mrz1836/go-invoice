@@ -287,7 +287,7 @@ func (s *ServerTestSuite) TestHTTPTransportHandler() {
 		"method": "ping"
 	}`
 
-	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader(reqBody))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/mcp", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 
 	// Create response recorder
@@ -312,7 +312,7 @@ func (s *ServerTestSuite) TestHTTPTransportHandler() {
 }
 
 func (s *ServerTestSuite) TestHTTPTransportInvalidMethod() {
-	req := httptest.NewRequest(http.MethodGet, "/mcp", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/mcp", nil)
 	w := httptest.NewRecorder()
 
 	defaultServer := s.server.(*DefaultServer)
@@ -322,7 +322,7 @@ func (s *ServerTestSuite) TestHTTPTransportInvalidMethod() {
 }
 
 func (s *ServerTestSuite) TestHTTPTransportInvalidJSON() {
-	req := httptest.NewRequest(http.MethodPost, "/mcp", strings.NewReader("invalid json"))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/mcp", strings.NewReader("invalid json"))
 	w := httptest.NewRecorder()
 
 	defaultServer := s.server.(*DefaultServer)

@@ -250,7 +250,7 @@ func (a *App) setupClaudeDirectories(goInvoiceHome string) error {
 	a.logger.Println("📁 Setting up directory structure...")
 
 	// First ensure the home directory exists with correct permissions
-	if err := os.MkdirAll(goInvoiceHome, 0o700); err != nil {
+	if err := os.MkdirAll(goInvoiceHome, 0o700); err != nil { //nolint:gosec // G703: goInvoiceHome is derived from known system config paths
 		return fmt.Errorf("failed to create home directory %s: %w", goInvoiceHome, err)
 	}
 
@@ -268,7 +268,7 @@ func (a *App) setupClaudeDirectories(goInvoiceHome string) error {
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0o750); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil { //nolint:gosec // G703: dir is derived from known system config paths
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
@@ -347,7 +347,7 @@ func (a *App) deploySharedConfig(projectRoot, goInvoiceHome string) error {
 
 	// Create default go-invoice config if not exists
 	goInvoiceConfig := filepath.Join(goInvoiceHome, "config.json")
-	if _, err := os.Stat(goInvoiceConfig); os.IsNotExist(err) {
+	if _, err := os.Stat(goInvoiceConfig); os.IsNotExist(err) { //nolint:gosec // G703: goInvoiceConfig is derived from known system config paths
 		defaultConfig := `{
   "storage_path": "~/.go-invoice/data",
   "invoice_defaults": {
@@ -359,7 +359,7 @@ func (a *App) deploySharedConfig(projectRoot, goInvoiceHome string) error {
     "invoice": "~/.go-invoice/templates/invoice.html"
   }
 }`
-		if err := os.WriteFile(goInvoiceConfig, []byte(defaultConfig), 0o600); err != nil {
+		if err := os.WriteFile(goInvoiceConfig, []byte(defaultConfig), 0o600); err != nil { //nolint:gosec // G703: goInvoiceConfig is derived from known system config paths
 			return fmt.Errorf("failed to create default config: %w", err)
 		}
 	}
@@ -417,7 +417,7 @@ func (a *App) setupClaudeDesktop(ctx context.Context, prompter *cli.Prompter, pr
 
 	// Check if we should merge with existing config
 	var finalConfig map[string]interface{}
-	if existingData, err := os.ReadFile(filepath.Clean(mcpServersPath)); err == nil && len(existingData) > 0 { //nolint:gosec // G703: mcpServersPath is derived from known system config paths
+	if existingData, err := os.ReadFile(filepath.Clean(mcpServersPath)); err == nil && len(existingData) > 0 {
 		// Parse existing config
 		if err := json.Unmarshal(existingData, &finalConfig); err != nil {
 			a.logger.Printf("⚠️  Could not parse existing configuration, will replace it\n")
@@ -748,7 +748,7 @@ func (a *App) updateGitignore() error {
 
 	// Append entries
 	newContent := contentStr + "\n" + strings.Join(ignoreEntries, "\n")
-	return os.WriteFile(".gitignore", []byte(newContent), 0o600)
+	return os.WriteFile(".gitignore", []byte(newContent), 0o600) //nolint:gosec // G703: .gitignore is a fixed filename in the project root
 }
 
 // createProjectInvoiceConfig creates project-specific go-invoice configuration

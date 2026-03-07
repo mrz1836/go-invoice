@@ -437,7 +437,7 @@ func (s *HealthTestSuite) TestHealthHandler() {
 				tt.setupChecker(s.checker)
 			}
 
-			req := httptest.NewRequest(tt.method, "/health", nil)
+			req := httptest.NewRequestWithContext(context.Background(), tt.method, "/health", nil)
 			w := httptest.NewRecorder()
 
 			handler.ServeHTTP(w, req)
