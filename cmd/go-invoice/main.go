@@ -456,7 +456,7 @@ func (a *App) runConfigSetup(ctx context.Context, configPath string) error {
 	)
 
 	// Write the configuration file
-	if err := os.WriteFile(configPath, []byte(configContent), 0o600); err != nil { //nolint:gosec // G703: configPath is constructed and validated by the setup wizard
+	if err := os.WriteFile(configPath, []byte(configContent), 0o600); err != nil {
 		return fmt.Errorf("failed to write configuration file: %w", err)
 	}
 
