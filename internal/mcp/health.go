@@ -268,7 +268,7 @@ func (h *DefaultHealthChecker) checkCLIAvailability(ctx context.Context) HealthC
 	defer cancel()
 
 	// #nosec G204 -- CLI path comes from validated configuration
-	cmd := exec.CommandContext(cmdCtx, h.cliPath, "--version")
+	cmd := exec.CommandContext(cmdCtx, h.cliPath, "--version") //nolint:gosec // G702: cliPath comes from validated configuration
 	output, err := cmd.Output()
 	if err != nil {
 		check.Message = fmt.Sprintf("CLI check failed: %v", err)
@@ -304,11 +304,11 @@ func (h *DefaultHealthChecker) checkStorageHealth(_ context.Context) HealthCheck
 	}()
 
 	// Check if storage directory exists
-	info, err := os.Stat(h.storagePath)
+	info, err := os.Stat(h.storagePath) //nolint:gosec // G703: storagePath comes from validated configuration
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Try to create it
-			if mkdirErr := os.MkdirAll(h.storagePath, 0o750); mkdirErr != nil {
+			if mkdirErr := os.MkdirAll(h.storagePath, 0o750); mkdirErr != nil { //nolint:gosec // G703: storagePath comes from validated configuration
 				check.Message = fmt.Sprintf("Cannot create storage directory: %v", mkdirErr)
 				return check
 			}
@@ -328,13 +328,13 @@ func (h *DefaultHealthChecker) checkStorageHealth(_ context.Context) HealthCheck
 
 	// Check write permissions by creating a test file
 	testFile := filepath.Join(h.storagePath, ".health-check")
-	if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil { //nolint:gosec // G703: testFile is constructed from validated storagePath
 		check.Message = fmt.Sprintf("Storage not writable: %v", err)
 		return check
 	}
 
 	// Clean up test file
-	_ = os.Remove(testFile)
+	_ = os.Remove(testFile) //nolint:gosec // G703: testFile is constructed from validated storagePath
 
 	// Check available space (simplified check)
 	check.Status = "healthy"

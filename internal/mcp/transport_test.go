@@ -395,7 +395,7 @@ func (s *TransportTestSuite) TestHTTPTransportHandleMCPRequest() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			req := httptest.NewRequest(tt.method, "/mcp", strings.NewReader(tt.body))
+			req := httptest.NewRequestWithContext(context.Background(), tt.method, "/mcp", strings.NewReader(tt.body))
 			req.Header.Set("Content-Type", tt.contentType)
 			w := httptest.NewRecorder()
 
@@ -447,7 +447,7 @@ func (s *TransportTestSuite) TestHTTPTransportHandleHealthCheck() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			req := httptest.NewRequest(tt.method, "/health", nil)
+			req := httptest.NewRequestWithContext(context.Background(), tt.method, "/health", nil)
 			w := httptest.NewRecorder()
 
 			transport.handleHealthCheck(w, req)
@@ -478,7 +478,7 @@ func (s *TransportTestSuite) TestHTTPTransportMessageSizeLimit() {
 
 	// Create a request larger than the limit
 	largeBody := strings.Repeat("x", 20)
-	req := httptest.NewRequest("POST", "/mcp", strings.NewReader(largeBody))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/mcp", strings.NewReader(largeBody))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -704,7 +704,7 @@ func (s *TransportTestSuite) TestHTTPTransportSecurity() {
 			name: "XSSAttempt",
 			setupRequest: func() *http.Request {
 				body := `{"jsonrpc":"2.0","id":"<script>alert('xss')</script>","method":"ping"}`
-				req := httptest.NewRequest("POST", "/mcp", strings.NewReader(body))
+				req := httptest.NewRequestWithContext(context.Background(), "POST", "/mcp", strings.NewReader(body))
 				req.Header.Set("Content-Type", "application/json")
 				return req
 			},
@@ -715,7 +715,7 @@ func (s *TransportTestSuite) TestHTTPTransportSecurity() {
 			name: "SQLInjectionAttempt",
 			setupRequest: func() *http.Request {
 				body := `{"jsonrpc":"2.0","id":"1' OR '1'='1","method":"ping"}`
-				req := httptest.NewRequest("POST", "/mcp", strings.NewReader(body))
+				req := httptest.NewRequestWithContext(context.Background(), "POST", "/mcp", strings.NewReader(body))
 				req.Header.Set("Content-Type", "application/json")
 				return req
 			},
@@ -728,7 +728,7 @@ func (s *TransportTestSuite) TestHTTPTransportSecurity() {
 				// This should be rejected due to size limits
 				largePayload := strings.Repeat("A", int(s.config.MaxMessageSize)+1)
 				body := fmt.Sprintf(`{"jsonrpc":"2.0","id":1,"method":"ping","data":"%s"}`, largePayload)
-				req := httptest.NewRequest("POST", "/mcp", strings.NewReader(body))
+				req := httptest.NewRequestWithContext(context.Background(), "POST", "/mcp", strings.NewReader(body))
 				req.Header.Set("Content-Type", "application/json")
 				return req
 			},
@@ -758,7 +758,7 @@ func (s *TransportTestSuite) TestTransportErrorHandling() {
 
 	transport := NewHTTPTransport(s.logger, s.config, handler)
 
-	req := httptest.NewRequest("POST", "/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"ping"}`))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/mcp", strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"ping"}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
