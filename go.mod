@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/joho/godotenv v1.6.0-pre.2
-	github.com/magefile/mage v1.16.0
+	github.com/magefile/mage v1.16.1
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/text v0.34.0
