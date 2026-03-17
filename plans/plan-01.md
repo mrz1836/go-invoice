@@ -1079,7 +1079,7 @@ The MCP integration prioritizes security through local-only operation and compre
 **Prerequisites:**
 - go-invoice CLI installed and configured
 - Claude Code with MCP support
-- Go 1.24+ for building from source
+- Go 1.25+ for building from source
 
 **Quick Setup:**
 ```bash
@@ -1178,7 +1178,7 @@ Total estimated time: 15.5-21.5 hours across 7 focused sessions
 - **Concurrent Access**: Supports multiple simultaneous read operations
 
 ### Compatibility
-- **Go Version**: Compatible with Go 1.24+
+- **Go Version**: Compatible with Go 1.25+
 - **Platform Support**: Runs on Linux, macOS, and Windows
 - **CSV Formats**: Accepts Excel, Google Sheets, and standard RFC 4180 CSV
 - **Output Format**: Generates HTML5 compliant output with CSS3 styling

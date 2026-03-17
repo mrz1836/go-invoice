@@ -602,7 +602,7 @@ go-invoice invoice create \
 <summary><strong>Installation Options</strong></summary>
 
 ### Prerequisites
-- **Go 1.24 or later** – [Download Go](https://golang.org/dl/)
+- **Go 1.25 or later** – [Download Go](https://golang.org/dl/)
 - **Git** – For version control
 
 ### Install from Source

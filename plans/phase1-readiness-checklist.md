@@ -9,7 +9,7 @@
 - [x] **Error Handling**: Comprehensive wrapping patterns defined with operation context
 
 ### Development Environment
-- [x] **Go Version**: Go 1.24+ confirmed in go.mod
+- [x] **Go Version**: Go 1.25+ confirmed in go.mod
 - [x] **Dependencies**: stretchr/testify v1.10.0 available for testing
 - [x] **Build Tools**: Makefile structure understood and compatible
 - [x] **Existing Patterns**: Current codebase patterns analyzed and documented
@@ -154,7 +154,7 @@ timeout 5s go test -run TestMCPContextCancellation ./internal/mcp/...
 - **Concurrent Access**: Mitigation through context-aware design
 
 ### Dependencies Ready
-- [x] **Go Runtime**: Version 1.24+ confirmed
+- [x] **Go Runtime**: Version 1.25+ confirmed
 - [x] **Testing Framework**: testify v1.10.0 available
 - [x] **CLI Foundation**: Existing go-invoice CLI working
 - [x] **Build Infrastructure**: Makefile and tooling ready

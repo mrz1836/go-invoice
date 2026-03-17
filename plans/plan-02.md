@@ -1283,7 +1283,7 @@ This document provides comprehensive guidance for using go-invoice with Claude D
 ### Prerequisites
 - go-invoice CLI installed and configured
 - Claude Desktop application
-- Go 1.24+ for building from source
+- Go 1.25+ for building from source
 
 ### Setup Steps
 1. Build the MCP server: `go build -o go-invoice-mcp ./cmd/go-invoice-mcp`
