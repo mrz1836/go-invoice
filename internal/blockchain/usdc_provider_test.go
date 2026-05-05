@@ -201,7 +201,7 @@ func TestEtherscanProvider_GetBalance(t *testing.T) {
 
 			// Execute
 			ctx := context.Background()
-			result, err := provider.GetBalance(ctx, "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1", tt.token)
+			result, err := provider.GetBalance(ctx, testUSDCAddress, tt.token)
 
 			// Assert
 			if tt.expectedError != "" {
@@ -214,7 +214,7 @@ func TestEtherscanProvider_GetBalance(t *testing.T) {
 			assert.NotNil(t, result)
 			assert.InDelta(t, tt.expectedAmount, result.Balance, 0.000001)
 			assert.Equal(t, TokenTypeUSDC, result.Token)
-			assert.Equal(t, "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1", result.Address)
+			assert.Equal(t, testUSDCAddress, result.Address)
 			if tt.testnet {
 				assert.Equal(t, "etherscan-sepolia", result.Provider)
 			} else {
@@ -242,7 +242,7 @@ func TestEtherscanProvider_GetBalance_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
-	_, err := provider.GetBalance(ctx, "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1", TokenTypeUSDC)
+	_, err := provider.GetBalance(ctx, testUSDCAddress, TokenTypeUSDC)
 	require.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
 }
@@ -265,7 +265,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 		{
 			name: "successful transaction query",
 			query: TransactionQuery{
-				Address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+				Address: testUSDCAddress,
 				Token:   TokenTypeUSDC,
 			},
 			apiResponse: EtherscanTxListResponse{
@@ -277,7 +277,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 						TimeStamp:   "1640000000",
 						Hash:        "0xabc123",
 						From:        "0xsender",
-						To:          "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+						To:          testUSDCAddress,
 						Value:       "100000000", // 100 USDC
 					},
 				},
@@ -287,7 +287,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 			validateFirstTx: func(t *testing.T, tx Transaction) {
 				assert.Equal(t, "0xabc123", tx.Hash)
 				assert.Equal(t, "0xsender", tx.From)
-				assert.Equal(t, "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1", tx.To)
+				assert.Equal(t, testUSDCAddress, tx.To)
 				assert.InDelta(t, 100.00, tx.Amount, 0.01)
 				assert.Equal(t, TokenTypeUSDC, tx.Token)
 				assert.Equal(t, int64(12345678), tx.BlockNumber)
@@ -297,7 +297,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 		{
 			name: "filter by minimum amount",
 			query: TransactionQuery{
-				Address:   "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+				Address:   testUSDCAddress,
 				Token:     TokenTypeUSDC,
 				MinAmount: &minAmount,
 			},
@@ -310,7 +310,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 						TimeStamp:   "1640000000",
 						Hash:        "0x1",
 						From:        "0xsender",
-						To:          "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+						To:          testUSDCAddress,
 						Value:       "25000000", // 25 USDC - filtered out
 					},
 					{
@@ -318,7 +318,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 						TimeStamp:   "1640000100",
 						Hash:        "0x2",
 						From:        "0xsender",
-						To:          "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+						To:          testUSDCAddress,
 						Value:       "75000000", // 75 USDC - included
 					},
 				},
@@ -333,7 +333,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 		{
 			name: "filter by time range",
 			query: TransactionQuery{
-				Address:   "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+				Address:   testUSDCAddress,
 				Token:     TokenTypeUSDC,
 				StartTime: &startTime,
 				EndTime:   &endTime,
@@ -347,7 +347,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 						TimeStamp:   "1000000000", // Old - filtered out
 						Hash:        "0x1",
 						From:        "0xsender",
-						To:          "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+						To:          testUSDCAddress,
 						Value:       "50000000",
 					},
 					{
@@ -355,7 +355,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 						TimeStamp:   fmt.Sprintf("%d", time.Now().Unix()),
 						Hash:        "0x2",
 						From:        "0xsender",
-						To:          "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+						To:          testUSDCAddress,
 						Value:       "75000000",
 					},
 				},
@@ -369,7 +369,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 		{
 			name: "filter outgoing transactions",
 			query: TransactionQuery{
-				Address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+				Address: testUSDCAddress,
 				Token:   TokenTypeUSDC,
 			},
 			apiResponse: EtherscanTxListResponse{
@@ -380,7 +380,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 						BlockNumber: "1",
 						TimeStamp:   "1640000000",
 						Hash:        "0x1",
-						From:        "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+						From:        testUSDCAddress,
 						To:          "0xrecipient", // Outgoing - filtered
 						Value:       "50000000",
 					},
@@ -389,7 +389,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 						TimeStamp:   "1640000100",
 						Hash:        "0x2",
 						From:        "0xsender",
-						To:          "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1", // Incoming
+						To:          testUSDCAddress, // Incoming
 						Value:       "75000000",
 					},
 				},
@@ -403,7 +403,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 		{
 			name: "no transactions found",
 			query: TransactionQuery{
-				Address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+				Address: testUSDCAddress,
 				Token:   TokenTypeUSDC,
 			},
 			apiResponse: EtherscanTxListResponse{
@@ -417,7 +417,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 		{
 			name: "unsupported token",
 			query: TransactionQuery{
-				Address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+				Address: testUSDCAddress,
 				Token:   TokenTypeBSV,
 			},
 			expectedError: "etherscan provider only supports USDC",
@@ -425,7 +425,7 @@ func TestEtherscanProvider_GetTransactions(t *testing.T) {
 		{
 			name: "api error",
 			query: TransactionQuery{
-				Address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+				Address: testUSDCAddress,
 				Token:   TokenTypeUSDC,
 			},
 			apiResponse: EtherscanTxListResponse{
@@ -488,7 +488,7 @@ func TestEtherscanProvider_GetTransactions_ContextCancellation(t *testing.T) {
 	cancel() // Cancel immediately
 
 	query := TransactionQuery{
-		Address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+		Address: testUSDCAddress,
 		Token:   TokenTypeUSDC,
 	}
 
@@ -538,7 +538,7 @@ func TestEtherscanProvider_APIKeyHandling(t *testing.T) {
 			provider.apiURL = server.URL
 
 			ctx := context.Background()
-			_, _ = provider.GetBalance(ctx, "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1", TokenTypeUSDC)
+			_, _ = provider.GetBalance(ctx, testUSDCAddress, TokenTypeUSDC)
 		})
 	}
 }
@@ -558,7 +558,7 @@ func TestEtherscanProvider_NoAPIKeyErrorMessage(t *testing.T) {
 	provider.apiURL = server.URL
 
 	ctx := context.Background()
-	_, err := provider.GetBalance(ctx, "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1", TokenTypeUSDC)
+	_, err := provider.GetBalance(ctx, testUSDCAddress, TokenTypeUSDC)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "missing or invalid API key")
