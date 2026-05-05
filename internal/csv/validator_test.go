@@ -39,7 +39,7 @@ func (suite *WorkItemValidatorTestSuite) TestNewWorkItemValidator() {
 func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemSuccess() {
 	ctx := context.Background()
 	validDate := time.Now().AddDate(-1, 0, 0)
-	workItem, err := models.NewWorkItem(ctx, "test-123", validDate, 8.0, 100.0, "Development work")
+	workItem, err := models.NewWorkItem(ctx, "test-123", validDate, 8.0, 100.0, testDevWork)
 	suite.Require().NoError(err)
 
 	err = suite.validator.ValidateWorkItem(ctx, workItem)
@@ -49,7 +49,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemSuccess() {
 // TestValidateWorkItemContextCancellation tests context cancellation
 func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemContextCancellation() {
 	validDate := time.Now().AddDate(-1, 0, 0)
-	workItem, err := models.NewWorkItem(context.Background(), "test-123", validDate, 8.0, 100.0, "Development work")
+	workItem, err := models.NewWorkItem(context.Background(), "test-123", validDate, 8.0, 100.0, testDevWork)
 	suite.Require().NoError(err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -118,14 +118,14 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemDateValidation() {
 					Date:        tt.date,
 					Hours:       8.0,
 					Rate:        100.0,
-					Description: "Development work",
+					Description: testDevWork,
 					Total:       800.0,
 					CreatedAt:   time.Now(),
 				}
 			} else {
 				// Use models.NewWorkItem for valid dates
 				var err error
-				workItem, err = models.NewWorkItem(ctx, "test-123", tt.date, 8.0, 100.0, "Development work")
+				workItem, err = models.NewWorkItem(ctx, "test-123", tt.date, 8.0, 100.0, testDevWork)
 				suite.Require().NoError(err)
 			}
 
@@ -195,7 +195,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemHoursValidation() {
 				Date:        time.Now().AddDate(-1, 0, 0),
 				Hours:       tt.hours,
 				Rate:        100.0,
-				Description: "Development work",
+				Description: testDevWork,
 				Total:       tt.hours * 100.0,
 				CreatedAt:   time.Now(),
 			}
@@ -266,7 +266,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemRateValidation() {
 				Date:        time.Now().AddDate(-1, 0, 0),
 				Hours:       8.0,
 				Rate:        tt.rate,
-				Description: "Development work",
+				Description: testDevWork,
 				Total:       8.0 * tt.rate,
 				CreatedAt:   time.Now(),
 			}
@@ -413,7 +413,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemTotalValidation() {
 				Date:        time.Now().AddDate(-1, 0, 0),
 				Hours:       tt.hours,
 				Rate:        tt.rate,
-				Description: "Development work",
+				Description: testDevWork,
 				Total:       tt.total,
 				CreatedAt:   time.Now(),
 			}
@@ -436,7 +436,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateWorkItemTotalValidation() {
 func (suite *WorkItemValidatorTestSuite) TestValidateRowSuccess() {
 	ctx := context.Background()
 	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
-	row := []string{validDate, "8.0", "100.00", "Development work"}
+	row := []string{validDate, testHours8_0, testRate100_00, testDevWork}
 
 	err := suite.validator.ValidateRow(ctx, row, 1)
 	suite.Require().NoError(err)
@@ -445,7 +445,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateRowSuccess() {
 // TestValidateRowContextCancellation tests row validation with context cancellation
 func (suite *WorkItemValidatorTestSuite) TestValidateRowContextCancellation() {
 	validDate := time.Now().AddDate(-1, 0, 0).Format("2006-01-02")
-	row := []string{validDate, "8.0", "100.00", "Development work"}
+	row := []string{validDate, testHours8_0, testRate100_00, testDevWork}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
@@ -466,7 +466,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateRowErrors() {
 	}{
 		{
 			name:    "ValidRow",
-			row:     []string{validDate, "8.0", "100.00", "Development work"},
+			row:     []string{validDate, testHours8_0, testRate100_00, testDevWork},
 			wantErr: false,
 		},
 		{
@@ -489,13 +489,13 @@ func (suite *WorkItemValidatorTestSuite) TestValidateRowErrors() {
 		},
 		{
 			name:    "TooFewFields",
-			row:     []string{validDate, "8.0"},
+			row:     []string{validDate, testHours8_0},
 			wantErr: true,
 			errMsg:  "has 2 fields, expected at least 4",
 		},
 		{
 			name:    "TooManyFields",
-			row:     append([]string{validDate, "8.0", "100.00", "Development work"}, make([]string, 21)...), // 25 fields total
+			row:     append([]string{validDate, testHours8_0, testRate100_00, testDevWork}, make([]string, 21)...), // 25 fields total
 			wantErr: true,
 			errMsg:  "has 25 fields, which seems excessive",
 		},
@@ -523,11 +523,11 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchSuccess() {
 	ctx := context.Background()
 	workItems := []models.WorkItem{
 		{
-			ID:          "test-1",
+			ID:          testWorkID1,
 			Date:        time.Now().AddDate(-1, 0, 0),
 			Hours:       8.0,
 			Rate:        100.0,
-			Description: "Development work",
+			Description: testDevWork,
 			Total:       800.0,
 			CreatedAt:   time.Now(),
 		},
@@ -550,11 +550,11 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchSuccess() {
 func (suite *WorkItemValidatorTestSuite) TestValidateBatchContextCancellation() {
 	workItems := []models.WorkItem{
 		{
-			ID:          "test-1",
+			ID:          testWorkID1,
 			Date:        time.Now().AddDate(-1, 0, 0),
 			Hours:       8.0,
 			Rate:        100.0,
-			Description: "Development work",
+			Description: testDevWork,
 			Total:       800.0,
 			CreatedAt:   time.Now(),
 		},
@@ -590,7 +590,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchErrors() {
 					Date:        time.Now().AddDate(-1, 0, 0),
 					Hours:       8.0,
 					Rate:        100.0,
-					Description: "Development work",
+					Description: testDevWork,
 					Total:       800.0,
 					CreatedAt:   time.Now(),
 				},
@@ -602,11 +602,11 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchErrors() {
 			name: "ZeroTotalHours",
 			workItems: []models.WorkItem{
 				{
-					ID:          "test-1",
+					ID:          testWorkID1,
 					Date:        time.Now().AddDate(-1, 0, 0),
 					Hours:       0.0, // Zero hours
 					Rate:        100.0,
-					Description: "Development work",
+					Description: testDevWork,
 					Total:       0.0,
 					CreatedAt:   time.Now(),
 				},
@@ -642,7 +642,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidateBatchDateRange() {
 	baseDate := time.Now().AddDate(-1, -6, 0) // 1.5 years ago (within individual validation limit)
 	workItems := []models.WorkItem{
 		{
-			ID:          "test-1",
+			ID:          testWorkID1,
 			Date:        baseDate, // 1.5 years ago
 			Hours:       8.0,
 			Rate:        100.0,
@@ -685,7 +685,7 @@ func (suite *WorkItemValidatorTestSuite) TestCustomRules() {
 	// Test that the custom rule is applied
 	ctx := context.Background()
 	workItem := &models.WorkItem{
-		ID:          "test-1",
+		ID:          testWorkID1,
 		Date:        time.Now().AddDate(-1, 0, 0),
 		Hours:       8.0,
 		Rate:        100.0,
@@ -741,11 +741,11 @@ func (suite *WorkItemValidatorTestSuite) TestValidatorLogging() {
 	ctx := context.Background()
 	workItems := []models.WorkItem{
 		{
-			ID:          "test-1",
+			ID:          testWorkID1,
 			Date:        time.Now().AddDate(-1, 0, 0),
 			Hours:       8.0,
 			Rate:        100.0,
-			Description: "Development work",
+			Description: testDevWork,
 			Total:       800.0,
 			CreatedAt:   time.Now(),
 		},
@@ -772,7 +772,7 @@ func (suite *WorkItemValidatorTestSuite) TestValidatorLogging() {
 func (suite *WorkItemValidatorTestSuite) TestHighHoursWarning() {
 	ctx := context.Background()
 	workItem := &models.WorkItem{
-		ID:          "test-1",
+		ID:          testWorkID1,
 		Date:        time.Now().AddDate(-1, 0, 0),
 		Hours:       15.0, // High hours
 		Rate:        100.0,
@@ -799,7 +799,7 @@ func (suite *WorkItemValidatorTestSuite) TestHighHoursWarning() {
 func (suite *WorkItemValidatorTestSuite) TestHighRateWarning() {
 	ctx := context.Background()
 	workItem := &models.WorkItem{
-		ID:          "test-1",
+		ID:          testWorkID1,
 		Date:        time.Now().AddDate(-1, 0, 0),
 		Hours:       8.0,
 		Rate:        600.0, // High rate
@@ -843,7 +843,7 @@ func TestValidateRateConsistency(t *testing.T) {
 			Date:        baseDate.AddDate(0, 0, i),
 			Hours:       8.0,
 			Rate:        float64(100 + i*10), // Different rates: 100, 110, 120, 130, 140
-			Description: "Development work",
+			Description: testDevWork,
 			Total:       8.0 * float64(100+i*10),
 			CreatedAt:   time.Now(),
 		}
@@ -878,7 +878,7 @@ func TestValidateTotalHoursWarning(t *testing.T) {
 			Date:        baseDate.AddDate(0, 0, i),
 			Hours:       8.0,
 			Rate:        100.0,
-			Description: "Development work",
+			Description: testDevWork,
 			Total:       800.0,
 			CreatedAt:   time.Now(),
 		}

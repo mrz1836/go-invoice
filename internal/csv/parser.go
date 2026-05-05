@@ -12,6 +12,16 @@ import (
 	"github.com/mrz1836/go-invoice/internal/models"
 )
 
+// Field name constants used in CSV parsing
+const (
+	fieldDate        = "date"
+	fieldDescription = "description"
+	fieldHours       = "hours"
+	fieldRate        = "rate"
+	formatStandard   = "standard"
+	formatTab        = "tab"
+)
+
 // CSV parsing errors
 var (
 	ErrCSVFileEmpty          = fmt.Errorf("CSV file is empty")
@@ -226,22 +236,22 @@ func (p *CSVParser) parseRow(ctx context.Context, row []string, headerMap map[st
 	}
 
 	// Extract required fields using header mapping
-	dateStr, err := p.getFieldValue(row, headerMap, "date", lineNum)
+	dateStr, err := p.getFieldValue(row, headerMap, fieldDate, lineNum)
 	if err != nil {
 		return nil, err
 	}
 
-	hoursStr, err := p.getFieldValue(row, headerMap, "hours", lineNum)
+	hoursStr, err := p.getFieldValue(row, headerMap, fieldHours, lineNum)
 	if err != nil {
 		return nil, err
 	}
 
-	rateStr, err := p.getFieldValue(row, headerMap, "rate", lineNum)
+	rateStr, err := p.getFieldValue(row, headerMap, fieldRate, lineNum)
 	if err != nil {
 		return nil, err
 	}
 
-	description, err := p.getFieldValue(row, headerMap, "description", lineNum)
+	description, err := p.getFieldValue(row, headerMap, fieldDescription, lineNum)
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +302,7 @@ func (p *CSVParser) processHeader(_ context.Context, rows [][]string, _ ParseOpt
 	}
 
 	// Validate required fields are present
-	requiredFields := []string{"date", "hours", "rate", "description"}
+	requiredFields := []string{fieldDate, fieldHours, fieldRate, fieldDescription}
 	for _, field := range requiredFields {
 		if _, exists := headerMap[field]; !exists {
 			return nil, 0, fmt.Errorf("%w: %s", ErrRequiredFieldMissing, field)
@@ -330,13 +340,13 @@ func (p *CSVParser) normalizeHeaderName(header string) string {
 	// Handle common variations
 	switch normalized {
 	case "date", "work_date", "day":
-		return "date"
-	case "hours", "time", "duration", "hours_worked":
-		return "hours"
-	case "rate", "hourly_rate", "hour_rate", "billing_rate":
-		return "rate"
+		return fieldDate
+	case fieldHours, "time", "duration", "hours_worked":
+		return fieldHours
+	case fieldRate, "hourly_rate", "hour_rate", "billing_rate":
+		return fieldRate
 	case "description", "desc", "task", "work_description", "notes":
-		return "description"
+		return fieldDescription
 	default:
 		return normalized
 	}
@@ -428,9 +438,9 @@ func (p *CSVParser) parseDate(dateStr string) (time.Time, error) {
 // configureReader configures CSV reader based on format
 func (p *CSVParser) configureReader(reader *csv.Reader, format string) {
 	switch format {
-	case "standard", "rfc4180":
+	case formatStandard, "rfc4180":
 		reader.Comma = ','
-	case "tab", "tsv":
+	case formatTab, "tsv":
 		reader.Comma = '\t'
 	case "semicolon":
 		reader.Comma = ';'
@@ -506,19 +516,19 @@ func (p *CSVParser) analyzeFormat(content string) (*FormatInfo, error) {
 
 	// Determine most likely delimiter
 	if tabCount > commaCount && tabCount > semicolonCount {
-		return &FormatInfo{Name: "tab", Delimiter: '\t'}, nil
+		return &FormatInfo{Name: formatTab, Delimiter: '\t'}, nil
 	}
 	if semicolonCount > commaCount && semicolonCount > tabCount {
 		return &FormatInfo{Name: "semicolon", Delimiter: ';'}, nil
 	}
 
 	// Default to comma (standard CSV)
-	return &FormatInfo{Name: "standard", Delimiter: ','}, nil
+	return &FormatInfo{Name: formatStandard, Delimiter: ','}, nil
 }
 
 // isSupportedFormat checks if the detected format is supported
 func (p *CSVParser) isSupportedFormat(format *FormatInfo) bool {
-	supportedFormats := []string{"standard", "rfc4180", "tab", "tsv", "semicolon", "excel"}
+	supportedFormats := []string{formatStandard, "rfc4180", formatTab, "tsv", "semicolon", "excel"}
 
 	for _, supported := range supportedFormats {
 		if format.Name == supported {

@@ -96,7 +96,7 @@ invalid-date,8.0,100.0,Bad date
 				SkipEmptyRows:   true,
 			}
 			if tt.useTabFormat {
-				options.Format = "tab"
+				options.Format = formatTab
 			}
 
 			result, err := suite.parser.ParseTimesheet(ctx, reader, options)
@@ -130,14 +130,14 @@ func (suite *CSVIntegrationTestSuite) TestFormatDetectionIntegration() {
 			name: "StandardCommaDelimited",
 			csvData: fmt.Sprintf(`Date,Hours,Rate,Description
 %s,8.0,100.0,Development work`, validDate),
-			expectFmt: "standard",
+			expectFmt: formatStandard,
 			expectDel: ',',
 		},
 		{
 			name: "TabDelimited",
 			csvData: "Date\tHours\tRate\tDescription\n" +
 				validDate + "\t8.0\t100.0\tDevelopment work",
-			expectFmt: "tab",
+			expectFmt: formatTab,
 			expectDel: '\t',
 		},
 		{
@@ -206,9 +206,9 @@ func (suite *CSVIntegrationTestSuite) TestErrorHandlingIntegration() {
 
 		// Check error details
 		errors := result.Errors
-		suite.Contains(errors[0].Message, "hours")
-		suite.Contains(errors[1].Message, "hours")
-		suite.Contains(errors[2].Message, "rate")
+		suite.Contains(errors[0].Message, fieldHours)
+		suite.Contains(errors[1].Message, fieldHours)
+		suite.Contains(errors[2].Message, fieldRate)
 	})
 
 	suite.Run("ValidationErrorsWithoutContinue", func() {
@@ -226,7 +226,7 @@ func (suite *CSVIntegrationTestSuite) TestErrorHandlingIntegration() {
 
 		result, err := suite.parser.ParseTimesheet(ctx, reader, options)
 		suite.Require().Error(err)
-		suite.Contains(err.Error(), "hours")
+		suite.Contains(err.Error(), fieldHours)
 
 		// Result may be nil when error occurs early
 		if result != nil {

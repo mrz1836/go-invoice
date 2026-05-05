@@ -29,12 +29,12 @@ func FuzzValidateWorkItem(f *testing.F) {
 		rate        float64
 		description string
 	}{
-		{"test-1", date1, 8.0, 100.0, "Development work"},
+		{testWorkID1, date1, 8.0, 100.0, testDevWork},
 		{"test-2", date2, 4.5, 125.5, "Bug fixes"},
 		{"test-3", date3, 0.25, 200.0, "Quick consultation"},
 		{"test-4", date4, 12.0, 75.0, "Extended development session"},
 		{"", date1, 8.0, 100.0, "No ID"},                          // Empty ID
-		{"test-5", "", 8.0, 100.0, "Development work"},            // Empty date
+		{"test-5", "", 8.0, 100.0, testDevWork},                   // Empty date
 		{"test-6", date1, -1.0, 100.0, "Negative hours"},          // Negative hours
 		{"test-7", date1, 8.0, -50.0, "Negative rate"},            // Negative rate
 		{"test-8", date1, 8.0, 100.0, ""},                         // Empty description
@@ -147,16 +147,16 @@ func FuzzValidateRow(f *testing.F) {
 
 	// Seed with various row examples
 	seedRows := [][]string{
-		{date1, "8.0", "100.00", "Development work"},
+		{date1, testHours8_0, testRate100_00, testDevWork},
 		{date2, "4.5", "125.50", "Bug fixes"},
-		{},                       // Empty row
-		{"", "", "", ""},         // Row with empty fields
-		{date1},                  // Too few fields
-		{date1, "8.0"},           // Too few fields
-		{date1, "8.0", "100.00"}, // Too few fields
+		{},                                    // Empty row
+		{"", "", "", ""},                      // Row with empty fields
+		{date1},                               // Too few fields
+		{date1, testHours8_0},                 // Too few fields
+		{date1, testHours8_0, testRate100_00}, // Too few fields
 		{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u"}, // Too many fields
-		{"   ", "   ", "   ", "   "},                          // Whitespace only
-		{date1, "8.0", "100.00", "Development work", "extra"}, // Extra field
+		{"   ", "   ", "   ", "   "},                                // Whitespace only
+		{date1, testHours8_0, testRate100_00, testDevWork, "extra"}, // Extra field
 	}
 
 	// Convert to proper format for fuzzer
@@ -367,7 +367,7 @@ func FuzzValidationRules(f *testing.F) {
 		description string
 		dateOffset  int // Days from now
 	}{
-		{8.0, 100.0, "Development work", 0},
+		{8.0, 100.0, testDevWork, 0},
 		{-1.0, 100.0, "Negative hours", 0},       // Invalid hours
 		{8.0, -50.0, "Negative rate", 0},         // Invalid rate
 		{8.0, 100.0, "", 0},                      // Empty description
@@ -378,8 +378,8 @@ func FuzzValidationRules(f *testing.F) {
 		{8.0, 0.5, "Very low rate", 0},           // Very low rate
 		{8.0, 100.0, "x", 0},                     // Very short description
 		{8.0, 100.0, "work", 0},                  // Generic description
-		{8.0, 100.0, "Development work", 10},     // Future date
-		{8.0, 100.0, "Development work", -1000},  // Far past date
+		{8.0, 100.0, testDevWork, 10},            // Future date
+		{8.0, 100.0, testDevWork, -1000},         // Far past date
 		{math.NaN(), 100.0, "NaN hours", 0},      // NaN hours
 		{8.0, math.Inf(1), "Inf rate", 0},        // Infinite rate
 		{8.333333333, 100.0, "Precise hours", 0}, // High precision hours
