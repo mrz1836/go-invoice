@@ -42,13 +42,13 @@ func (suite *CSVTypesTestSuite) TestParseOptionsJSONMarshaling() {
 		{
 			name: "MinimalParseOptions",
 			options: ParseOptions{
-				Format: "standard",
+				Format: formatStandard,
 			},
 		},
 		{
 			name: "CustomDateFormat",
 			options: ParseOptions{
-				Format:          "tab",
+				Format:          formatTab,
 				ContinueOnError: false,
 				SkipEmptyRows:   false,
 				DateFormat:      "01/02/2006",
@@ -73,7 +73,7 @@ func (suite *CSVTypesTestSuite) TestParseOptionsJSONMarshaling() {
 // TestParseResultJSONMarshaling tests JSON marshaling/unmarshaling for ParseResult
 func (suite *CSVTypesTestSuite) TestParseResultJSONMarshaling() {
 	workItem := models.WorkItem{
-		ID:          "test-1",
+		ID:          testWorkID1,
 		Date:        time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC),
 		Hours:       8.5,
 		Rate:        75.0,
@@ -98,7 +98,7 @@ func (suite *CSVTypesTestSuite) TestParseResultJSONMarshaling() {
 		ErrorRows:   1,
 		Errors:      []ParseError{parseError},
 		HeaderMap:   map[string]int{"Date": 0, "Hours": 1, "Rate": 2, "Description": 3},
-		Format:      "standard",
+		Format:      formatStandard,
 	}
 
 	jsonData, err := json.Marshal(result)
@@ -180,7 +180,7 @@ func (suite *CSVTypesTestSuite) TestFormatInfoJSONMarshaling() {
 		{
 			name: "StandardCSVFormat",
 			format: FormatInfo{
-				Name:      "standard",
+				Name:      formatStandard,
 				Delimiter: ',',
 				HasHeader: true,
 				Encoding:  "UTF-8",
@@ -189,7 +189,7 @@ func (suite *CSVTypesTestSuite) TestFormatInfoJSONMarshaling() {
 		{
 			name: "TabDelimitedFormat",
 			format: FormatInfo{
-				Name:      "tab",
+				Name:      formatTab,
 				Delimiter: '\t',
 				HasHeader: true,
 				Encoding:  "UTF-8",
@@ -254,7 +254,7 @@ func (suite *CSVTypesTestSuite) TestValidationRuleJSONMarshaling() {
 // TestImportRequestJSONMarshaling tests JSON marshaling/unmarshaling for ImportRequest
 func (suite *CSVTypesTestSuite) TestImportRequestJSONMarshaling() {
 	options := ParseOptions{
-		Format:          "standard",
+		Format:          formatStandard,
 		ContinueOnError: true,
 		SkipEmptyRows:   true,
 		DateFormat:      "2006-01-02",
@@ -290,7 +290,7 @@ func (suite *CSVTypesTestSuite) TestImportResultJSONMarshaling() {
 		TotalRows:   5,
 		SuccessRows: 4,
 		ErrorRows:   1,
-		Format:      "standard",
+		Format:      formatStandard,
 	}
 
 	warnings := []ImportWarning{
@@ -407,7 +407,7 @@ func (suite *CSVTypesTestSuite) TestValidationResultJSONMarshaling() {
 		TotalRows:   10,
 		SuccessRows: 8,
 		ErrorRows:   2,
-		Format:      "standard",
+		Format:      formatStandard,
 	}
 
 	warnings := []ImportWarning{
@@ -439,7 +439,7 @@ func (suite *CSVTypesTestSuite) TestValidationResultJSONMarshaling() {
 func (suite *CSVTypesTestSuite) TestBatchImportRequestJSONMarshaling() {
 	requests := []ImportRequest{
 		{
-			Options:   ParseOptions{Format: "standard"},
+			Options:   ParseOptions{Format: formatStandard},
 			ClientID:  "client-1",
 			InvoiceID: "invoice-1",
 		},
@@ -617,7 +617,7 @@ func (suite *CSVTypesTestSuite) TestProgressReportJSONMarshaling() {
 // TestFormatDetectionResultJSONMarshaling tests JSON marshaling/unmarshaling for FormatDetectionResult
 func (suite *CSVTypesTestSuite) TestFormatDetectionResultJSONMarshaling() {
 	primaryFormat := &FormatInfo{
-		Name:      "standard",
+		Name:      formatStandard,
 		Delimiter: ',',
 		HasHeader: true,
 		Encoding:  "UTF-8",
@@ -631,7 +631,7 @@ func (suite *CSVTypesTestSuite) TestFormatDetectionResultJSONMarshaling() {
 			Encoding:  "UTF-8",
 		},
 		{
-			Name:      "tab",
+			Name:      formatTab,
 			Delimiter: '\t',
 			HasHeader: false,
 			Encoding:  "UTF-8",
@@ -836,7 +836,7 @@ func (m *mockCSVValidator) ValidateBatch(ctx context.Context, items []models.Wor
 // TestJSONFieldNames tests that JSON field names match expectations for CSV types
 func (suite *CSVTypesTestSuite) TestJSONFieldNames() {
 	parseOptions := ParseOptions{
-		Format:          "standard",
+		Format:          formatStandard,
 		ContinueOnError: true,
 		SkipEmptyRows:   true,
 		DateFormat:      "2006-01-02",
@@ -948,7 +948,7 @@ func (suite *CSVTypesTestSuite) TestEmptyStructSerialization() {
 func TestRuneJSONSerialization(t *testing.T) {
 	formats := []FormatInfo{
 		{Name: "comma", Delimiter: ','},
-		{Name: "tab", Delimiter: '\t'},
+		{Name: formatTab, Delimiter: '\t'},
 		{Name: "semicolon", Delimiter: ';'},
 		{Name: "pipe", Delimiter: '|'},
 		{Name: "space", Delimiter: ' '},

@@ -147,9 +147,9 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotals() {
 			name: "NoTax",
 			options: &CalculationOptions{
 				TaxRate:       0.0,
-				Currency:      "USD",
+				Currency:      currencyUSD,
 				DecimalPlaces: 2,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expectedSubtotal: 2312.50,
 			expectedTax:      0.00,
@@ -159,9 +159,9 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotals() {
 			name: "WithTax",
 			options: &CalculationOptions{
 				TaxRate:       0.10,
-				Currency:      "USD",
+				Currency:      currencyUSD,
 				DecimalPlaces: 2,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expectedSubtotal: 2312.50,
 			expectedTax:      231.25,
@@ -173,7 +173,7 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotals() {
 				TaxRate:       0.25,
 				Currency:      "EUR",
 				DecimalPlaces: 2,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expectedSubtotal: 2312.50,
 			expectedTax:      578.13,
@@ -183,7 +183,7 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotals() {
 			name: "RoundingModeFloor",
 			options: &CalculationOptions{
 				TaxRate:       0.10,
-				Currency:      "USD",
+				Currency:      currencyUSD,
 				DecimalPlaces: 2,
 				RoundingMode:  "floor",
 			},
@@ -195,9 +195,9 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotals() {
 			name: "HighTaxRate",
 			options: &CalculationOptions{
 				TaxRate:       1.5, // > 1.0 but valid for demonstration
-				Currency:      "USD",
+				Currency:      currencyUSD,
 				DecimalPlaces: 2,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expectedSubtotal: 2312.50,
 			expectedTax:      3468.75, // 2312.50 * 1.5
@@ -231,9 +231,9 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotalsWithBreakdown() {
 
 	options := &CalculationOptions{
 		TaxRate:          0.10,
-		Currency:         "USD",
+		Currency:         currencyUSD,
 		DecimalPlaces:    2,
-		RoundingMode:     "round",
+		RoundingMode:     roundingModeRound,
 		IncludeBreakdown: true,
 		TaxType:          "VAT",
 	}
@@ -244,7 +244,7 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotalsWithBreakdown() {
 	suite.NotNil(result.Breakdown)
 	suite.Len(result.Breakdown.WorkItemTotals, 3)
 	suite.Equal("VAT", result.Breakdown.TaxCalculation.TaxType)
-	suite.Equal("USD", result.Breakdown.CurrencyDetails.Currency)
+	suite.Equal(currencyUSD, result.Breakdown.CurrencyDetails.Currency)
 	suite.Equal("$", result.Breakdown.CurrencyDetails.Symbol)
 }
 
@@ -263,9 +263,9 @@ func (suite *CalculatorTestSuite) TestValidateCalculation() {
 			invoice: suite.createTestInvoice(),
 			options: &CalculationOptions{
 				TaxRate:       0.10,
-				Currency:      "USD",
+				Currency:      currencyUSD,
 				DecimalPlaces: 2,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 		},
 		{
@@ -285,9 +285,9 @@ func (suite *CalculatorTestSuite) TestValidateCalculation() {
 			invoice: suite.createTestInvoice(),
 			options: &CalculationOptions{
 				TaxRate:       -0.1,
-				Currency:      "USD",
+				Currency:      currencyUSD,
 				DecimalPlaces: 2,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expectError: true,
 		},
@@ -296,9 +296,9 @@ func (suite *CalculatorTestSuite) TestValidateCalculation() {
 			invoice: suite.createTestInvoice(),
 			options: &CalculationOptions{
 				TaxRate:       0.10,
-				Currency:      "USD",
+				Currency:      currencyUSD,
 				DecimalPlaces: -1,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expectError: true,
 		},
@@ -307,7 +307,7 @@ func (suite *CalculatorTestSuite) TestValidateCalculation() {
 			invoice: suite.createTestInvoice(),
 			options: &CalculationOptions{
 				TaxRate:       0.10,
-				Currency:      "USD",
+				Currency:      currencyUSD,
 				DecimalPlaces: 2,
 				RoundingMode:  "invalid",
 			},
@@ -405,9 +405,9 @@ func (suite *CalculatorTestSuite) TestContextCancellation() {
 	invoice := suite.createTestInvoice()
 	options := &CalculationOptions{
 		TaxRate:       0.10,
-		Currency:      "USD",
+		Currency:      currencyUSD,
 		DecimalPlaces: 2,
-		RoundingMode:  "round",
+		RoundingMode:  roundingModeRound,
 	}
 
 	// Test that canceled context is handled properly
@@ -435,7 +435,7 @@ func (suite *CalculatorTestSuite) TestRoundAmount() {
 			amount: 123.456,
 			options: &CalculationOptions{
 				DecimalPlaces: -1,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expected: 123.46, // Default 2 decimal places
 		},
@@ -462,7 +462,7 @@ func (suite *CalculatorTestSuite) TestRoundAmount() {
 			amount: 123.456,
 			options: &CalculationOptions{
 				DecimalPlaces: 2,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expected: 123.46,
 		},
@@ -480,7 +480,7 @@ func (suite *CalculatorTestSuite) TestRoundAmount() {
 			amount: 123.4567,
 			options: &CalculationOptions{
 				DecimalPlaces: 3,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expected: 123.457,
 		},
@@ -489,7 +489,7 @@ func (suite *CalculatorTestSuite) TestRoundAmount() {
 			amount: 123.456,
 			options: &CalculationOptions{
 				DecimalPlaces: 0,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expected: 123.0,
 		},
@@ -510,7 +510,7 @@ func (suite *CalculatorTestSuite) TestGetCurrencySymbol() {
 		currency       string
 		expectedSymbol string
 	}{
-		{"USD", "USD", "$"},
+		{currencyUSD, currencyUSD, "$"},
 		{"EUR", "EUR", "€"},
 		{"GBP", "GBP", "£"},
 		{"CAD", "CAD", "C$"},
@@ -584,9 +584,9 @@ func (suite *CalculatorTestSuite) TestCalculateWorkItemTotalsErrorCases() {
 	ctx := context.Background()
 	options := &CalculationOptions{
 		TaxRate:          0.10,
-		Currency:         "USD",
+		Currency:         currencyUSD,
 		DecimalPlaces:    2,
-		RoundingMode:     "round",
+		RoundingMode:     roundingModeRound,
 		IncludeBreakdown: false,
 	}
 
@@ -655,9 +655,9 @@ func (suite *CalculatorTestSuite) TestCalculateWorkItemTotalsErrorCases() {
 	suite.Run("WithBreakdownEnabled", func() {
 		optionsWithBreakdown := &CalculationOptions{
 			TaxRate:          0.10,
-			Currency:         "USD",
+			Currency:         currencyUSD,
 			DecimalPlaces:    2,
-			RoundingMode:     "round",
+			RoundingMode:     roundingModeRound,
 			IncludeBreakdown: true,
 		}
 
@@ -693,7 +693,7 @@ func (suite *CalculatorTestSuite) TestCalculateTaxEdgeCases() {
 			options: &CalculationOptions{
 				TaxRate:       0.10,
 				DecimalPlaces: 2,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expected: 0.0,
 		},
@@ -703,7 +703,7 @@ func (suite *CalculatorTestSuite) TestCalculateTaxEdgeCases() {
 			options: &CalculationOptions{
 				TaxRate:       0.0,
 				DecimalPlaces: 2,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expected: 0.0,
 		},
@@ -719,7 +719,7 @@ func (suite *CalculatorTestSuite) TestCalculateTaxEdgeCases() {
 			options: &CalculationOptions{
 				TaxRate:       0.10,
 				DecimalPlaces: 2,
-				RoundingMode:  "round",
+				RoundingMode:  roundingModeRound,
 			},
 			expected: 0.00, // Rounds to 0
 		},
@@ -769,8 +769,8 @@ func (suite *CalculatorTestSuite) createTestInvoice() *models.Invoice {
 
 	client := models.Client{
 		ID:     models.ClientID("test_client"),
-		Name:   "Test Client",
-		Email:  "test@example.com",
+		Name:   testClientName,
+		Email:  testClientEmail,
 		Active: true,
 	}
 
@@ -820,9 +820,9 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotalsWithLineItems() {
 
 		options := &CalculationOptions{
 			TaxRate:       0.0,
-			Currency:      "USD",
+			Currency:      currencyUSD,
 			DecimalPlaces: 2,
-			RoundingMode:  "round",
+			RoundingMode:  roundingModeRound,
 		}
 
 		result, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
@@ -860,9 +860,9 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotalsWithLineItems() {
 		// Crypto fee is 0.5% of subtotal, which would be $25 for $5000
 		options := &CalculationOptions{
 			TaxRate:       0.005, // 0.5% fee
-			Currency:      "USD",
+			Currency:      currencyUSD,
 			DecimalPlaces: 2,
-			RoundingMode:  "round",
+			RoundingMode:  roundingModeRound,
 		}
 
 		result, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
@@ -907,9 +907,9 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotalsWithLineItems() {
 
 		options := &CalculationOptions{
 			TaxRate:       0.0,
-			Currency:      "USD",
+			Currency:      currencyUSD,
 			DecimalPlaces: 2,
-			RoundingMode:  "round",
+			RoundingMode:  roundingModeRound,
 		}
 
 		result, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
@@ -970,9 +970,9 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotalsWithLineItems() {
 
 		options := &CalculationOptions{
 			TaxRate:       0.1, // 10% tax
-			Currency:      "USD",
+			Currency:      currencyUSD,
 			DecimalPlaces: 2,
-			RoundingMode:  "round",
+			RoundingMode:  roundingModeRound,
 		}
 
 		result, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
@@ -999,9 +999,9 @@ func (suite *CalculatorTestSuite) TestCalculateInvoiceTotalsWithLineItems() {
 
 		options := &CalculationOptions{
 			TaxRate:       0.1,
-			Currency:      "USD",
+			Currency:      currencyUSD,
 			DecimalPlaces: 2,
-			RoundingMode:  "round",
+			RoundingMode:  roundingModeRound,
 		}
 
 		result, err := suite.calculator.CalculateInvoiceTotals(ctx, invoice, options)
@@ -1046,9 +1046,9 @@ func BenchmarkCalculateInvoiceTotals(b *testing.B) {
 
 	options := &CalculationOptions{
 		TaxRate:       0.10,
-		Currency:      "USD",
+		Currency:      currencyUSD,
 		DecimalPlaces: 2,
-		RoundingMode:  "round",
+		RoundingMode:  roundingModeRound,
 	}
 
 	b.ResetTimer()

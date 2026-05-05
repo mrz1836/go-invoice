@@ -61,7 +61,7 @@ func (s *ConfigToolsTestSuite) TestConfigValidationTool() {
 	var configValidateTool *MCPTool
 
 	for _, tool := range tools {
-		if strings.Contains(tool.Name, "validate") {
+		if strings.Contains(tool.Name, strValidate) {
 			configValidateTool = tool
 			break
 		}
@@ -73,9 +73,9 @@ func (s *ConfigToolsTestSuite) TestConfigValidationTool() {
 	}
 
 	s.Run("BasicStructure", func() {
-		s.Contains(strings.ToLower(configValidateTool.Name), "validate")
+		s.Contains(strings.ToLower(configValidateTool.Name), strValidate)
 		s.NotEmpty(configValidateTool.Description)
-		s.Contains(strings.ToLower(configValidateTool.Description), "validate")
+		s.Contains(strings.ToLower(configValidateTool.Description), strValidate)
 		s.Equal(CategoryConfiguration, configValidateTool.Category)
 		s.NotEmpty(configValidateTool.Version)
 		s.Greater(configValidateTool.Timeout, time.Duration(0))
@@ -83,10 +83,10 @@ func (s *ConfigToolsTestSuite) TestConfigValidationTool() {
 
 	s.Run("Schema", func() {
 		s.NotNil(configValidateTool.InputSchema)
-		s.Equal("object", configValidateTool.InputSchema["type"])
+		s.Equal(keyObject, configValidateTool.InputSchema[keyType])
 
 		// Verify expected properties exist
-		properties, hasProperties := configValidateTool.InputSchema["properties"]
+		properties, hasProperties := configValidateTool.InputSchema[keyProperties]
 		s.True(hasProperties, "Should have properties in schema")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
@@ -115,7 +115,7 @@ func (s *ConfigToolsTestSuite) TestConfigValidationTool() {
 
 			// Verify example demonstrates validation scenarios
 			exampleText := strings.ToLower(example.Description + " " + example.UseCase)
-			validationKeywords := []string{"validate", "check", "verify", "config", "settings"}
+			validationKeywords := []string{strValidate, "check", "verify", fieldConfig, "settings"}
 			hasValidationKeyword := false
 			for _, keyword := range validationKeywords {
 				if strings.Contains(exampleText, keyword) {
@@ -156,13 +156,13 @@ func (s *ConfigToolsTestSuite) TestConfigShowTool() {
 
 	s.Run("Schema", func() {
 		s.NotNil(configShowTool.InputSchema)
-		s.Equal("object", configShowTool.InputSchema["type"])
+		s.Equal(keyObject, configShowTool.InputSchema[keyType])
 
-		properties, hasProperties := configShowTool.InputSchema["properties"]
+		properties, hasProperties := configShowTool.InputSchema[keyProperties]
 		if hasProperties {
 			if propertiesMap, ok := properties.(map[string]interface{}); ok {
 				// May have specific config key or section to show
-				configFields := []string{"key", "section", "setting", "all", "format"}
+				configFields := []string{"key", "section", "setting", "all", fieldFormat}
 				for _, field := range configFields {
 					if fieldDef, hasField := propertiesMap[field]; hasField {
 						s.NotNil(fieldDef, "Config field %s should have definition", field)
@@ -181,7 +181,7 @@ func (s *ConfigToolsTestSuite) TestConfigShowTool() {
 
 			// Should demonstrate config display scenarios
 			exampleText := strings.ToLower(example.Description + " " + example.UseCase)
-			displayKeywords := []string{"show", "display", "get", "view", "config", "setting"}
+			displayKeywords := []string{"show", "display", "get", "view", fieldConfig, "setting"}
 			hasDisplayKeyword := false
 			for _, keyword := range displayKeywords {
 				if strings.Contains(exampleText, keyword) {
@@ -223,14 +223,14 @@ func (s *ConfigToolsTestSuite) TestConfigSetTool() {
 
 	s.Run("Schema", func() {
 		s.NotNil(configSetTool.InputSchema)
-		s.Equal("object", configSetTool.InputSchema["type"])
+		s.Equal(keyObject, configSetTool.InputSchema[keyType])
 
-		properties, hasProperties := configSetTool.InputSchema["properties"]
+		properties, hasProperties := configSetTool.InputSchema[keyProperties]
 		s.True(hasProperties, "Should have properties for setting config")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have key/value or setting parameters
-			configFields := []string{"key", "value", "setting", "section"}
+			configFields := []string{"key", strValue, "setting", "section"}
 			hasConfigField := false
 			for _, field := range configFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -293,13 +293,13 @@ func (s *ConfigToolsTestSuite) TestConfigInitTool() {
 
 	s.Run("Schema", func() {
 		s.NotNil(configInitTool.InputSchema)
-		s.Equal("object", configInitTool.InputSchema["type"])
+		s.Equal(keyObject, configInitTool.InputSchema[keyType])
 
-		properties, hasProperties := configInitTool.InputSchema["properties"]
+		properties, hasProperties := configInitTool.InputSchema[keyProperties]
 		if hasProperties {
 			if propertiesMap, ok := properties.(map[string]interface{}); ok {
 				// May have template, path, or initialization options
-				initFields := []string{"template", "path", "force", "default"}
+				initFields := []string{fieldTemplate, "path", "force", "default"}
 				for _, field := range initFields {
 					if fieldDef, hasField := propertiesMap[field]; hasField {
 						s.NotNil(fieldDef, "Init field %s should have definition", field)
@@ -386,7 +386,7 @@ func (s *ConfigToolsTestSuite) TestConfigToolsIntegration() {
 		// Core config operations
 		configOperations := map[string][]string{
 			"initialization": {"init", "create", "setup"},
-			"validation":     {"validate", "check", "verify"},
+			"validation":     {strValidate, "check", "verify"},
 			"display":        {"show", "get", "display"},
 			"modification":   {"set", "update", "modify"},
 		}
@@ -420,7 +420,7 @@ func (s *ConfigToolsTestSuite) TestConfigToolsIntegration() {
 		for _, tool := range tools {
 			s.True(
 				strings.HasPrefix(tool.Name, "config_") ||
-					strings.Contains(tool.Name, "config"),
+					strings.Contains(tool.Name, fieldConfig),
 				"Tool %s should be clearly config-related", tool.Name,
 			)
 			s.NotContains(tool.Name, " ", "Tool name should not contain spaces")
@@ -438,7 +438,7 @@ func (s *ConfigToolsTestSuite) TestConfigToolsIntegration() {
 			// Verify CLI args make sense for config operations
 			hasConfigArg := false
 			cliArgsStr := strings.Join(tool.CLIArgs, " ")
-			configKeywords := []string{"config", "configuration", "settings", "validate", "init"}
+			configKeywords := []string{fieldConfig, "configuration", "settings", strValidate, "init"}
 			for _, keyword := range configKeywords {
 				if strings.Contains(cliArgsStr, keyword) {
 					hasConfigArg = true
@@ -468,7 +468,7 @@ func (s *ConfigToolsTestSuite) TestConfigToolsIntegration() {
 		}
 
 		// Should cover common configuration areas
-		commonSettings := []string{"email", "path", "format", "template", "output", "default"}
+		commonSettings := []string{fieldEmail, "path", fieldFormat, fieldTemplate, "output", "default"}
 		settingsCovered := 0
 		for _, setting := range commonSettings {
 			if strings.Contains(allExampleTexts, setting) {
@@ -527,7 +527,7 @@ func (s *ConfigToolsTestSuite) TestConfigToolsEdgeCases() {
 							s.True(
 								strings.Contains(configPath, ".") ||
 									strings.Contains(configPath, "/") ||
-									strings.Contains(configPath, "config"),
+									strings.Contains(configPath, fieldConfig),
 								"Config path example should look realistic: %s", configPath,
 							)
 						}
@@ -541,14 +541,14 @@ func (s *ConfigToolsTestSuite) TestConfigToolsEdgeCases() {
 		tools := CreateConfigTools()
 
 		for _, tool := range tools {
-			properties, hasProps := tool.InputSchema["properties"]
+			properties, hasProps := tool.InputSchema[keyProperties]
 			if !hasProps {
 				continue
 			}
 
 			if propsMap, ok := properties.(map[string]interface{}); ok {
 				// Look for config-related fields
-				configFields := []string{"key", "value", "section", "setting", "config_file"}
+				configFields := []string{"key", strValue, "section", "setting", "config_file"}
 				hasConfigField := false
 				for _, field := range configFields {
 					if _, hasField := propsMap[field]; hasField {
@@ -581,7 +581,7 @@ func (s *ConfigToolsTestSuite) TestConfigToolsEdgeCases() {
 			desc := strings.ToLower(tool.Description)
 
 			// Should indicate configuration functionality
-			configKeywords := []string{"config", "setting", "option", "preference", "validate", "initialize"}
+			configKeywords := []string{fieldConfig, "setting", "option", "preference", strValidate, "initialize"}
 			hasConfigKeyword := false
 			for _, keyword := range configKeywords {
 				if strings.Contains(desc, keyword) {
@@ -622,10 +622,10 @@ func (s *ConfigToolsTestSuite) TestConfigToolsSecurity() {
 		tools := CreateConfigTools()
 
 		for _, tool := range tools {
-			if strings.Contains(strings.ToLower(tool.Name), "validate") {
+			if strings.Contains(strings.ToLower(tool.Name), strValidate) {
 				// Validation operations should be read-only
 				desc := strings.ToLower(tool.Description)
-				safeWords := []string{"check", "verify", "validate", "inspect", "review"}
+				safeWords := []string{"check", "verify", strValidate, "inspect", "review"}
 				unsafeWords := []string{"delete", "remove", "modify", "change", "write"}
 
 				hasSafeWord := false
@@ -663,7 +663,7 @@ func (s *ConfigToolsTestSuite) validateConfigTool(tool *MCPTool) {
 	s.Greater(tool.Timeout, time.Duration(0), "Tool should have positive timeout")
 
 	// Verify schema structure
-	s.Equal("object", tool.InputSchema["type"], "Schema should be object type")
+	s.Equal(keyObject, tool.InputSchema[keyType], "Schema should be object type")
 
 	// Verify examples structure if present
 	for i, example := range tool.Examples {
@@ -673,7 +673,7 @@ func (s *ConfigToolsTestSuite) validateConfigTool(tool *MCPTool) {
 
 	// Config tools should indicate configuration functionality
 	toolText := strings.ToLower(tool.Name + " " + tool.Description)
-	configKeywords := []string{"config", "setting", "validate", "init", "show", "set"}
+	configKeywords := []string{fieldConfig, "setting", strValidate, "init", "show", "set"}
 	hasConfigKeyword := false
 	for _, keyword := range configKeywords {
 		if strings.Contains(toolText, keyword) {
@@ -720,7 +720,7 @@ func TestConfigTools_Specific(t *testing.T) {
 		tools := CreateConfigTools()
 		for _, tool := range tools {
 			require.NotNil(t, tool.InputSchema, "Tool %s missing schema", tool.Name)
-			assert.Equal(t, "object", tool.InputSchema["type"], "Tool %s should have object schema", tool.Name)
+			assert.Equal(t, keyObject, tool.InputSchema[keyType], "Tool %s should have object schema", tool.Name)
 		}
 	})
 
@@ -729,9 +729,9 @@ func TestConfigTools_Specific(t *testing.T) {
 		for _, tool := range tools {
 			toolName := strings.ToLower(tool.Name)
 			assert.True(t,
-				strings.Contains(toolName, "config") ||
+				strings.Contains(toolName, fieldConfig) ||
 					strings.Contains(toolName, "setting") ||
-					strings.Contains(toolName, "validate") ||
+					strings.Contains(toolName, strValidate) ||
 					strings.Contains(toolName, "init"),
 				"Tool name %s should indicate config purpose", tool.Name,
 			)

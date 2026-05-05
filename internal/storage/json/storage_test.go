@@ -321,12 +321,12 @@ func (suite *JSONStorageTestSuite) TestValidate() {
 
 	// Create a valid invoice file
 	invoice := &models.Invoice{
-		ID:     "INV-001",
-		Number: "INV-2024-001",
+		ID:     testInvoiceID001,
+		Number: testInvoiceNum,
 		Client: models.Client{
-			ID:        "CLIENT-001",
-			Name:      "Test Client",
-			Email:     "test@example.com",
+			ID:        testClientID001,
+			Name:      testClientName,
+			Email:     testClientEmail,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -376,12 +376,12 @@ func (suite *JSONStorageTestSuite) TestCreateInvoice() {
 
 	// Create test invoice
 	invoice := &models.Invoice{
-		ID:     "INV-001",
-		Number: "INV-2024-001",
+		ID:     testInvoiceID001,
+		Number: testInvoiceNum,
 		Client: models.Client{
-			ID:        "CLIENT-001",
-			Name:      "Test Client",
-			Email:     "test@example.com",
+			ID:        testClientID001,
+			Name:      testClientName,
+			Email:     testClientEmail,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -419,7 +419,7 @@ func (suite *JSONStorageTestSuite) TestCreateInvoice() {
 	var conflictErr storageTypes.ConflictError
 	require.ErrorAs(t, err, &conflictErr)
 	assert.Equal(t, "invoice", conflictErr.Resource)
-	assert.Equal(t, "INV-001", conflictErr.ID)
+	assert.Equal(t, testInvoiceID001, conflictErr.ID)
 
 	// Test with nil invoice
 	err = suite.storage.CreateInvoice(suite.ctx, nil)
@@ -451,12 +451,12 @@ func (suite *JSONStorageTestSuite) TestGetInvoice() {
 
 	// Create test invoice
 	invoice := &models.Invoice{
-		ID:     "INV-001",
-		Number: "INV-2024-001",
+		ID:     testInvoiceID001,
+		Number: testInvoiceNum,
 		Client: models.Client{
-			ID:        "CLIENT-001",
-			Name:      "Test Client",
-			Email:     "test@example.com",
+			ID:        testClientID001,
+			Name:      testClientName,
+			Email:     testClientEmail,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -473,7 +473,7 @@ func (suite *JSONStorageTestSuite) TestGetInvoice() {
 	require.NoError(t, err)
 
 	// Test successful retrieval
-	retrieved, err := suite.storage.GetInvoice(suite.ctx, "INV-001")
+	retrieved, err := suite.storage.GetInvoice(suite.ctx, testInvoiceID001)
 	require.NoError(t, err)
 	require.NotNil(t, retrieved)
 
@@ -506,7 +506,7 @@ func (suite *JSONStorageTestSuite) TestGetInvoice() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	retrieved, err = suite.storage.GetInvoice(ctx, "INV-001")
+	retrieved, err = suite.storage.GetInvoice(ctx, testInvoiceID001)
 	assert.Equal(t, context.Canceled, err)
 	assert.Nil(t, retrieved)
 }
@@ -520,13 +520,13 @@ func (suite *JSONStorageTestSuite) TestUpdateInvoice() {
 
 	// Create test invoice
 	invoice := &models.Invoice{
-		ID:      "INV-001",
-		Number:  "INV-2024-001",
+		ID:      testInvoiceID001,
+		Number:  testInvoiceNum,
 		Version: 1,
 		Client: models.Client{
-			ID:        "CLIENT-001",
-			Name:      "Test Client",
-			Email:     "test@example.com",
+			ID:        testClientID001,
+			Name:      testClientName,
+			Email:     testClientEmail,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -552,7 +552,7 @@ func (suite *JSONStorageTestSuite) TestUpdateInvoice() {
 	assert.Equal(t, 2, invoice.Version)
 
 	// Verify changes were saved
-	retrieved, err := suite.storage.GetInvoice(suite.ctx, "INV-001")
+	retrieved, err := suite.storage.GetInvoice(suite.ctx, testInvoiceID001)
 	require.NoError(t, err)
 	assert.Equal(t, models.StatusSent, retrieved.Status)
 	assert.Equal(t, "Updated description", retrieved.Description)
@@ -560,8 +560,8 @@ func (suite *JSONStorageTestSuite) TestUpdateInvoice() {
 
 	// Test optimistic locking
 	outdatedInvoice := &models.Invoice{
-		ID:        "INV-001",
-		Number:    "INV-2024-001",
+		ID:        testInvoiceID001,
+		Number:    testInvoiceNum,
 		Version:   1, // Old version
 		Client:    invoice.Client,
 		Date:      invoice.Date,
@@ -576,7 +576,7 @@ func (suite *JSONStorageTestSuite) TestUpdateInvoice() {
 	var versionErr storageTypes.VersionMismatchError
 	require.ErrorAs(t, err, &versionErr)
 	assert.Equal(t, "invoice", versionErr.Resource)
-	assert.Equal(t, "INV-001", versionErr.ID)
+	assert.Equal(t, testInvoiceID001, versionErr.ID)
 	assert.Equal(t, 1, versionErr.ExpectedVersion)
 	assert.Equal(t, 2, versionErr.ActualVersion)
 
@@ -605,7 +605,7 @@ func (suite *JSONStorageTestSuite) TestUpdateInvoice() {
 
 	// Test with invalid invoice
 	invalidInvoice := &models.Invoice{
-		ID:      "INV-001",
+		ID:      testInvoiceID001,
 		Version: 2,
 		// Missing required fields - will fail validation
 		CreatedAt: time.Now(),
@@ -625,12 +625,12 @@ func (suite *JSONStorageTestSuite) TestDeleteInvoice() {
 
 	// Create test invoice
 	invoice := &models.Invoice{
-		ID:     "INV-001",
-		Number: "INV-2024-001",
+		ID:     testInvoiceID001,
+		Number: testInvoiceNum,
 		Client: models.Client{
-			ID:        "CLIENT-001",
-			Name:      "Test Client",
-			Email:     "test@example.com",
+			ID:        testClientID001,
+			Name:      testClientName,
+			Email:     testClientEmail,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -652,7 +652,7 @@ func (suite *JSONStorageTestSuite) TestDeleteInvoice() {
 	require.NoError(t, err)
 
 	// Delete invoice
-	err = suite.storage.DeleteInvoice(suite.ctx, "INV-001")
+	err = suite.storage.DeleteInvoice(suite.ctx, testInvoiceID001)
 	require.NoError(t, err)
 
 	// Verify file was deleted
@@ -660,7 +660,7 @@ func (suite *JSONStorageTestSuite) TestDeleteInvoice() {
 	assert.True(t, os.IsNotExist(err))
 
 	// Try to delete again
-	err = suite.storage.DeleteInvoice(suite.ctx, "INV-001")
+	err = suite.storage.DeleteInvoice(suite.ctx, testInvoiceID001)
 	require.Error(t, err)
 	var notFoundErr storageTypes.NotFoundError
 	require.ErrorAs(t, err, &notFoundErr)
@@ -679,7 +679,7 @@ func (suite *JSONStorageTestSuite) TestDeleteInvoice() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	err = suite.storage.DeleteInvoice(ctx, "INV-001")
+	err = suite.storage.DeleteInvoice(ctx, testInvoiceID001)
 	assert.Equal(t, context.Canceled, err)
 }
 
@@ -691,18 +691,18 @@ func (suite *JSONStorageTestSuite) TestExistsInvoice() {
 	require.NoError(t, err)
 
 	// Test non-existent invoice
-	exists, err := suite.storage.ExistsInvoice(suite.ctx, "INV-001")
+	exists, err := suite.storage.ExistsInvoice(suite.ctx, testInvoiceID001)
 	require.NoError(t, err)
 	assert.False(t, exists)
 
 	// Create test invoice
 	invoice := &models.Invoice{
-		ID:     "INV-001",
-		Number: "INV-2024-001",
+		ID:     testInvoiceID001,
+		Number: testInvoiceNum,
 		Client: models.Client{
-			ID:        "CLIENT-001",
-			Name:      "Test Client",
-			Email:     "test@example.com",
+			ID:        testClientID001,
+			Name:      testClientName,
+			Email:     testClientEmail,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -719,16 +719,16 @@ func (suite *JSONStorageTestSuite) TestExistsInvoice() {
 	require.NoError(t, err)
 
 	// Test existing invoice
-	exists, err = suite.storage.ExistsInvoice(suite.ctx, "INV-001")
+	exists, err = suite.storage.ExistsInvoice(suite.ctx, testInvoiceID001)
 	require.NoError(t, err)
 	assert.True(t, exists)
 
 	// Delete invoice
-	err = suite.storage.DeleteInvoice(suite.ctx, "INV-001")
+	err = suite.storage.DeleteInvoice(suite.ctx, testInvoiceID001)
 	require.NoError(t, err)
 
 	// Test after deletion
-	exists, err = suite.storage.ExistsInvoice(suite.ctx, "INV-001")
+	exists, err = suite.storage.ExistsInvoice(suite.ctx, testInvoiceID001)
 	require.NoError(t, err)
 	assert.False(t, exists)
 
@@ -736,7 +736,7 @@ func (suite *JSONStorageTestSuite) TestExistsInvoice() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	exists, err = suite.storage.ExistsInvoice(ctx, "INV-001")
+	exists, err = suite.storage.ExistsInvoice(ctx, testInvoiceID001)
 	assert.Equal(t, context.Canceled, err)
 	assert.False(t, exists)
 }
@@ -759,7 +759,7 @@ func (suite *JSONStorageTestSuite) TestListInvoices() {
 	// Create test invoices
 	now := time.Now()
 	client1 := models.Client{
-		ID:        "CLIENT-001",
+		ID:        testClientID001,
 		Name:      "Client One",
 		Email:     "client1@example.com",
 		CreatedAt: now,
@@ -775,8 +775,8 @@ func (suite *JSONStorageTestSuite) TestListInvoices() {
 
 	invoices := []*models.Invoice{
 		{
-			ID:        "INV-001",
-			Number:    "INV-2024-001",
+			ID:        testInvoiceID001,
+			Number:    testInvoiceNum,
 			Client:    client1,
 			Version:   1,
 			Date:      now.AddDate(0, -2, 0),
@@ -828,7 +828,7 @@ func (suite *JSONStorageTestSuite) TestListInvoices() {
 	// Verify default sorting (date descending)
 	assert.Equal(t, models.InvoiceID("INV-003"), result.Invoices[0].ID)
 	assert.Equal(t, models.InvoiceID("INV-002"), result.Invoices[1].ID)
-	assert.Equal(t, models.InvoiceID("INV-001"), result.Invoices[2].ID)
+	assert.Equal(t, models.InvoiceID(testInvoiceID001), result.Invoices[2].ID)
 
 	// Test filter by status
 	result, err = suite.storage.ListInvoices(suite.ctx, models.InvoiceFilter{
@@ -836,11 +836,11 @@ func (suite *JSONStorageTestSuite) TestListInvoices() {
 	})
 	require.NoError(t, err)
 	assert.Len(t, result.Invoices, 1)
-	assert.Equal(t, models.InvoiceID("INV-001"), result.Invoices[0].ID)
+	assert.Equal(t, models.InvoiceID(testInvoiceID001), result.Invoices[0].ID)
 
 	// Test filter by client
 	result, err = suite.storage.ListInvoices(suite.ctx, models.InvoiceFilter{
-		ClientID: "CLIENT-001",
+		ClientID: testClientID001,
 	})
 	require.NoError(t, err)
 	assert.Len(t, result.Invoices, 2)
@@ -922,9 +922,9 @@ func (suite *JSONStorageTestSuite) TestCountInvoices() {
 			ID:     models.InvoiceID(fmt.Sprintf("INV-%03d", i)),
 			Number: fmt.Sprintf("INV-2024-%03d", i),
 			Client: models.Client{
-				ID:        "CLIENT-001",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				ID:        testClientID001,
+				Name:      testClientName,
+				Email:     testClientEmail,
 				CreatedAt: now,
 				UpdatedAt: now,
 			},
@@ -993,9 +993,9 @@ func (suite *JSONStorageTestSuite) TestConcurrentAccess() {
 				ID:     models.InvoiceID(fmt.Sprintf("INV-%03d", id)),
 				Number: fmt.Sprintf("INV-2024-%03d", id),
 				Client: models.Client{
-					ID:        "CLIENT-001",
-					Name:      "Test Client",
-					Email:     "test@example.com",
+					ID:        testClientID001,
+					Name:      testClientName,
+					Email:     testClientEmail,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
 				},
@@ -1051,7 +1051,7 @@ func (suite *JSONStorageTestSuite) TestConcurrentAccess() {
 	}
 
 	// Test concurrent updates with optimistic locking
-	invoice, err := suite.storage.GetInvoice(suite.ctx, "INV-001")
+	invoice, err := suite.storage.GetInvoice(suite.ctx, testInvoiceID001)
 	require.NoError(t, err)
 
 	wg = sync.WaitGroup{}
@@ -1106,9 +1106,9 @@ func (suite *JSONStorageTestSuite) TestAtomicWrites() {
 		ID:     "INV-LARGE",
 		Number: "INV-2024-LARGE",
 		Client: models.Client{
-			ID:        "CLIENT-001",
-			Name:      "Test Client",
-			Email:     "test@example.com",
+			ID:        testClientID001,
+			Name:      testClientName,
+			Email:     testClientEmail,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -1160,12 +1160,12 @@ func (suite *JSONStorageTestSuite) TestWriteJSONFileError() {
 
 	// Try to create invoice
 	invoice := &models.Invoice{
-		ID:     "INV-001",
-		Number: "INV-2024-001",
+		ID:     testInvoiceID001,
+		Number: testInvoiceNum,
 		Client: models.Client{
-			ID:        "CLIENT-001",
-			Name:      "Test Client",
-			Email:     "test@example.com",
+			ID:        testClientID001,
+			Name:      testClientName,
+			Email:     testClientEmail,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -1206,10 +1206,10 @@ func (suite *JSONStorageTestSuite) TestMatchesFilter() {
 
 	now := time.Now()
 	invoice := &models.Invoice{
-		ID:     "INV-001",
-		Number: "INV-2024-001",
+		ID:     testInvoiceID001,
+		Number: testInvoiceNum,
 		Client: models.Client{
-			ID: "CLIENT-001",
+			ID: testClientID001,
 		},
 		Date:    now,
 		DueDate: now.AddDate(0, 0, 30),
@@ -1244,7 +1244,7 @@ func (suite *JSONStorageTestSuite) TestMatchesFilter() {
 		{
 			name: "MatchingClientID",
 			filter: models.InvoiceFilter{
-				ClientID: "CLIENT-001",
+				ClientID: testClientID001,
 			},
 			expected: true,
 		},
@@ -1311,7 +1311,7 @@ func (suite *JSONStorageTestSuite) TestMatchesFilter() {
 			name: "MultipleMatchingFilters",
 			filter: models.InvoiceFilter{
 				Status:    models.StatusSent,
-				ClientID:  "CLIENT-001",
+				ClientID:  testClientID001,
 				AmountMin: 1000.0,
 				AmountMax: 2000.0,
 			},
@@ -1321,7 +1321,7 @@ func (suite *JSONStorageTestSuite) TestMatchesFilter() {
 			name: "OneNonMatchingFilter",
 			filter: models.InvoiceFilter{
 				Status:    models.StatusPaid, // Non-matching
-				ClientID:  "CLIENT-001",
+				ClientID:  testClientID001,
 				AmountMin: 1000.0,
 				AmountMax: 2000.0,
 			},

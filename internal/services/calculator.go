@@ -10,6 +10,11 @@ import (
 	"github.com/mrz1836/go-invoice/internal/models"
 )
 
+const (
+	currencyUSD       = "USD"
+	roundingModeRound = "round"
+)
+
 // Calculator service errors
 var (
 	ErrInvoiceCannotBeNil      = fmt.Errorf("invoice cannot be nil")
@@ -109,9 +114,9 @@ func (c *InvoiceCalculator) CalculateInvoiceTotals(ctx context.Context, invoice 
 	if options == nil {
 		options = &CalculationOptions{
 			TaxRate:          0.0,
-			Currency:         "USD",
+			Currency:         currencyUSD,
 			DecimalPlaces:    2,
-			RoundingMode:     "round",
+			RoundingMode:     roundingModeRound,
 			IncludeBreakdown: false,
 			TaxType:          "VAT",
 		}
@@ -245,7 +250,7 @@ func (c *InvoiceCalculator) ValidateCalculation(ctx context.Context, invoice *mo
 	}
 
 	// Validate rounding mode
-	validRoundingModes := []string{"round", "floor", "ceil"}
+	validRoundingModes := []string{roundingModeRound, "floor", "ceil"}
 	validMode := false
 	for _, mode := range validRoundingModes {
 		if options.RoundingMode == mode {
@@ -287,9 +292,9 @@ func (c *InvoiceCalculator) RecalculateInvoice(ctx context.Context, invoice *mod
 
 	options := &CalculationOptions{
 		TaxRate:       taxRate,
-		Currency:      "USD", // Default currency
+		Currency:      currencyUSD, // Default currency
 		DecimalPlaces: 2,
-		RoundingMode:  "round",
+		RoundingMode:  roundingModeRound,
 	}
 
 	result, err := c.CalculateInvoiceTotals(ctx, invoice, options)
@@ -426,16 +431,16 @@ func (c *InvoiceCalculator) roundAmount(amount float64, options *CalculationOpti
 // getCurrencySymbol returns the symbol for a currency code
 func (c *InvoiceCalculator) getCurrencySymbol(currency string) string {
 	symbols := map[string]string{
-		"USD": "$",
-		"EUR": "€",
-		"GBP": "£",
-		"CAD": "C$",
-		"AUD": "A$",
-		"JPY": "¥",
-		"CHF": "CHF",
-		"SEK": "kr",
-		"NOK": "kr",
-		"DKK": "kr",
+		currencyUSD: "$",
+		"EUR":       "€",
+		"GBP":       "£",
+		"CAD":       "C$",
+		"AUD":       "A$",
+		"JPY":       "¥",
+		"CHF":       "CHF",
+		"SEK":       "kr",
+		"NOK":       "kr",
+		"DKK":       "kr",
 	}
 
 	if symbol, exists := symbols[currency]; exists {

@@ -237,7 +237,7 @@ func (v *WorkItemValidator) validateHours(_ context.Context, item *models.WorkIt
 
 	// Warn about unusual hours (more than 12 per day)
 	if item.Hours > 12 {
-		v.logger.Debug("unusually high hours detected", "hours", item.Hours, "date", item.Date)
+		v.logger.Debug("unusually high hours detected", fieldHours, item.Hours, "date", item.Date)
 	}
 
 	// Check for reasonable precision (max 2 decimal places)
@@ -268,7 +268,7 @@ func (v *WorkItemValidator) validateRate(_ context.Context, item *models.WorkIte
 
 	// Warn about unusual rates
 	if item.Rate > 500 {
-		v.logger.Debug("unusually high rate detected", "rate", item.Rate, "date", item.Date)
+		v.logger.Debug("unusually high rate detected", fieldRate, item.Rate, "date", item.Date)
 	}
 
 	return nil

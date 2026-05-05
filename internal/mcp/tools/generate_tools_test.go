@@ -59,7 +59,7 @@ func (s *GenerateToolsTestSuite) TestInvoiceGenerationTool() {
 	var invoiceGenTool *MCPTool
 
 	for _, tool := range tools {
-		if strings.Contains(tool.Name, "generate") && strings.Contains(tool.Name, "invoice") {
+		if strings.Contains(tool.Name, "generate") && strings.Contains(tool.Name, fieldInvoice) {
 			invoiceGenTool = tool
 			break
 		}
@@ -72,7 +72,7 @@ func (s *GenerateToolsTestSuite) TestInvoiceGenerationTool() {
 
 	s.Run("BasicStructure", func() {
 		s.Contains(strings.ToLower(invoiceGenTool.Name), "generate")
-		s.Contains(strings.ToLower(invoiceGenTool.Name), "invoice")
+		s.Contains(strings.ToLower(invoiceGenTool.Name), fieldInvoice)
 		s.NotEmpty(invoiceGenTool.Description)
 		s.Contains(strings.ToLower(invoiceGenTool.Description), "generate")
 		s.Equal(CategoryDataExport, invoiceGenTool.Category)
@@ -82,15 +82,15 @@ func (s *GenerateToolsTestSuite) TestInvoiceGenerationTool() {
 
 	s.Run("Schema", func() {
 		s.NotNil(invoiceGenTool.InputSchema)
-		s.Equal("object", invoiceGenTool.InputSchema["type"])
+		s.Equal(keyObject, invoiceGenTool.InputSchema[keyType])
 
 		// Verify expected properties exist
-		properties, hasProperties := invoiceGenTool.InputSchema["properties"]
+		properties, hasProperties := invoiceGenTool.InputSchema[keyProperties]
 		s.True(hasProperties, "Should have properties in schema")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have invoice identifier
-			identifierFields := []string{"invoice_id", "invoice_number"}
+			identifierFields := []string{fieldInvoiceID, fieldInvoiceNumber}
 			hasIdentifier := false
 			for _, field := range identifierFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -101,7 +101,7 @@ func (s *GenerateToolsTestSuite) TestInvoiceGenerationTool() {
 			s.True(hasIdentifier, "Should have invoice identifier field")
 
 			// May have output format options
-			formatFields := []string{"format", "output_format", "type"}
+			formatFields := []string{fieldFormat, fieldOutputFormat, keyType}
 			for _, field := range formatFields {
 				if fieldDef, hasField := propertiesMap[field]; hasField {
 					s.NotNil(fieldDef, "Format field %s should have definition", field)
@@ -120,7 +120,7 @@ func (s *GenerateToolsTestSuite) TestInvoiceGenerationTool() {
 
 			// Verify example demonstrates invoice generation
 			hasInvoiceRef := false
-			invoiceFields := []string{"invoice_id", "invoice_number"}
+			invoiceFields := []string{fieldInvoiceID, fieldInvoiceNumber}
 			for _, field := range invoiceFields {
 				if invoiceVal, hasInvoice := example.Input[field]; hasInvoice {
 					s.IsType("", invoiceVal, "Invoice field should be string")
@@ -140,14 +140,14 @@ func (s *GenerateToolsTestSuite) TestInvoiceGenerationTool() {
 
 		for _, example := range invoiceGenTool.Examples {
 			exampleText := strings.ToLower(example.Description + " " + example.UseCase)
-			if format, hasFormat := example.Input["format"]; hasFormat {
+			if format, hasFormat := example.Input[fieldFormat]; hasFormat {
 				if formatStr, isStr := format.(string); isStr {
 					switch strings.ToLower(formatStr) {
 					case "pdf":
 						hasPDFExample = true
 					case "html":
 						hasHTMLExample = true
-					case "json":
+					case typeJSON:
 						hasJSONExample = true
 					}
 				}
@@ -190,14 +190,14 @@ func (s *GenerateToolsTestSuite) TestPDFGenerationTool() {
 
 	s.Run("Schema", func() {
 		s.NotNil(pdfGenTool.InputSchema)
-		s.Equal("object", pdfGenTool.InputSchema["type"])
+		s.Equal(keyObject, pdfGenTool.InputSchema[keyType])
 
-		properties, hasProperties := pdfGenTool.InputSchema["properties"]
+		properties, hasProperties := pdfGenTool.InputSchema[keyProperties]
 		s.True(hasProperties, "Should have properties")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have source identifier
-			sourceFields := []string{"invoice_id", "invoice_number", "source", "template"}
+			sourceFields := []string{fieldInvoiceID, fieldInvoiceNumber, "source", fieldTemplate}
 			hasSource := false
 			for _, field := range sourceFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -252,9 +252,9 @@ func (s *GenerateToolsTestSuite) TestReportGenerationTool() {
 
 	s.Run("Schema", func() {
 		s.NotNil(reportGenTool.InputSchema)
-		s.Equal("object", reportGenTool.InputSchema["type"])
+		s.Equal(keyObject, reportGenTool.InputSchema[keyType])
 
-		properties, hasProperties := reportGenTool.InputSchema["properties"]
+		properties, hasProperties := reportGenTool.InputSchema[keyProperties]
 		s.True(hasProperties, "Should have properties")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
@@ -418,7 +418,7 @@ func (s *GenerateToolsTestSuite) TestGenerateToolsIntegration() {
 
 				// Check format specifications in input
 				for key, value := range example.Input {
-					if strings.Contains(key, "format") || strings.Contains(key, "type") {
+					if strings.Contains(key, fieldFormat) || strings.Contains(key, keyType) {
 						if formatStr, isStr := value.(string); isStr {
 							allExampleTexts += strings.ToLower(formatStr) + " "
 						}
@@ -428,7 +428,7 @@ func (s *GenerateToolsTestSuite) TestGenerateToolsIntegration() {
 		}
 
 		// Should cover common output formats
-		commonFormats := []string{"pdf", "html", "json", "csv", "xlsx"}
+		commonFormats := []string{"pdf", "html", typeJSON, "csv", "xlsx"}
 		formatsCovered := 0
 		for _, format := range commonFormats {
 			if strings.Contains(allExampleTexts, format) {
@@ -446,7 +446,7 @@ func (s *GenerateToolsTestSuite) TestGenerateToolsIntegration() {
 		for _, tool := range tools {
 			for _, example := range tool.Examples {
 				exampleText := strings.ToLower(example.Description + " " + example.UseCase)
-				templateKeywords := []string{"template", "custom", "format", "style", "layout"}
+				templateKeywords := []string{fieldTemplate, "custom", fieldFormat, "style", "layout"}
 				for _, keyword := range templateKeywords {
 					if strings.Contains(exampleText, keyword) {
 						hasTemplateExample = true
@@ -501,20 +501,20 @@ func (s *GenerateToolsTestSuite) TestGenerateToolsEdgeCases() {
 		tools := CreateDocumentGenerationTools()
 
 		for _, tool := range tools {
-			properties, hasProps := tool.InputSchema["properties"]
+			properties, hasProps := tool.InputSchema[keyProperties]
 			if !hasProps {
 				continue
 			}
 
 			if propsMap, ok := properties.(map[string]interface{}); ok {
 				// Look for output-related fields
-				outputFields := []string{"output", "output_path", "filename", "destination"}
+				outputFields := []string{"output", fieldOutputPath, "filename", "destination"}
 				for _, field := range outputFields {
 					if fieldDef, hasField := propsMap[field]; hasField {
 						if fieldMap, isMap := fieldDef.(map[string]interface{}); isMap {
 							// Output fields should be strings
-							if fieldType, hasType := fieldMap["type"]; hasType {
-								s.Equal("string", fieldType, "Output field %s should be string type", field)
+							if fieldType, hasType := fieldMap[keyType]; hasType {
+								s.Equal(typeString, fieldType, "Output field %s should be string type", field)
 							}
 						}
 					}
@@ -540,7 +540,7 @@ func (s *GenerateToolsTestSuite) TestGenerateToolsEdgeCases() {
 			desc := strings.ToLower(tool.Description)
 
 			// Should indicate what type of output is being generated
-			outputTypes := []string{"pdf", "html", "report", "invoice", "document", "file"}
+			outputTypes := []string{"pdf", "html", "report", fieldInvoice, "document", "file"}
 			hasOutputType := false
 			for _, outputType := range outputTypes {
 				if strings.Contains(desc, outputType) {
@@ -567,7 +567,7 @@ func (s *GenerateToolsTestSuite) TestGenerateToolsPerformance() {
 
 		for _, tool := range tools {
 			// Count schema properties
-			properties, hasProps := tool.InputSchema["properties"]
+			properties, hasProps := tool.InputSchema[keyProperties]
 			if hasProps {
 				if propsMap, ok := properties.(map[string]interface{}); ok {
 					s.LessOrEqual(len(propsMap), 15, "Tool %s should not have excessive schema complexity", tool.Name)
@@ -598,7 +598,7 @@ func (s *GenerateToolsTestSuite) validateGenerateTool(tool *MCPTool) {
 	s.Greater(tool.Timeout, time.Duration(0), "Tool should have positive timeout")
 
 	// Verify schema structure
-	s.Equal("object", tool.InputSchema["type"], "Schema should be object type")
+	s.Equal(keyObject, tool.InputSchema[keyType], "Schema should be object type")
 
 	// Verify examples structure if present
 	for i, example := range tool.Examples {
@@ -658,7 +658,7 @@ func TestGenerateTools_Specific(t *testing.T) {
 		tools := CreateDocumentGenerationTools()
 		for _, tool := range tools {
 			require.NotNil(t, tool.InputSchema, "Tool %s missing schema", tool.Name)
-			assert.Equal(t, "object", tool.InputSchema["type"], "Tool %s should have object schema", tool.Name)
+			assert.Equal(t, keyObject, tool.InputSchema[keyType], "Tool %s should have object schema", tool.Name)
 		}
 	})
 

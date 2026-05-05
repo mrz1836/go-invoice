@@ -67,8 +67,8 @@ func createClientCreateTool() *MCPTool {
 			{
 				Description: "Create a simple client with basic contact information",
 				Input: map[string]interface{}{
-					"name":  "Acme Corporation",
-					"email": "contact@acme.com",
+					fieldName:  "Acme Corporation",
+					fieldEmail: "contact@acme.com",
 				},
 				ExpectedOutput: "Client created successfully with auto-generated ID and basic contact information",
 				UseCase:        "Quick client setup for new business relationships",
@@ -76,11 +76,11 @@ func createClientCreateTool() *MCPTool {
 			{
 				Description: "Create client with complete contact and business information",
 				Input: map[string]interface{}{
-					"name":    "Tech Solutions Inc",
-					"email":   "billing@techsolutions.com",
-					"phone":   "+1-555-123-4567",
-					"address": "456 Business Ave, Suite 200, Tech City, TC 12345",
-					"tax_id":  "EIN-98-7654321",
+					fieldName:  "Tech Solutions Inc",
+					fieldEmail: "billing@techsolutions.com",
+					"phone":    "+1-555-123-4567",
+					"address":  "456 Business Ave, Suite 200, Tech City, TC 12345",
+					"tax_id":   "EIN-98-7654321",
 				},
 				ExpectedOutput: "Complete client profile created with all contact details and tax information",
 				UseCase:        "Comprehensive client onboarding for major accounts",
@@ -88,10 +88,10 @@ func createClientCreateTool() *MCPTool {
 			{
 				Description: "Create individual contractor client",
 				Input: map[string]interface{}{
-					"name":    "John Smith Consulting",
-					"email":   "john@smithconsulting.com",
-					"phone":   "(555) 987-6543",
-					"address": "123 Freelancer Lane, Remote City, RC 54321",
+					fieldName:  "John Smith Consulting",
+					fieldEmail: "john@smithconsulting.com",
+					"phone":    "(555) 987-6543",
+					"address":  "123 Freelancer Lane, Remote City, RC 54321",
 				},
 				ExpectedOutput: "Individual contractor client created with professional contact details",
 				UseCase:        "Setting up freelancers and individual service providers",
@@ -99,21 +99,21 @@ func createClientCreateTool() *MCPTool {
 			{
 				Description: "Create international client with proper formatting",
 				Input: map[string]interface{}{
-					"name":    "European Tech Partners GmbH",
-					"email":   "kontakt@eurotech.de",
-					"phone":   "+49-30-12345678",
-					"address": "Hauptstraße 42, 10117 Berlin, Germany",
-					"tax_id":  "DE123456789",
+					fieldName:  "European Tech Partners GmbH",
+					fieldEmail: "kontakt@eurotech.de",
+					"phone":    "+49-30-12345678",
+					"address":  "Hauptstraße 42, 10117 Berlin, Germany",
+					"tax_id":   "DE123456789",
 				},
 				ExpectedOutput: "International client created with European contact format and VAT number",
 				UseCase:        "Managing international business relationships and compliance",
 			},
 		},
 		Category:   CategoryClientManagement,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"client", "create"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldClient, "create"},
 		HelpText:   "Creates clients with automatic ID generation and contact validation. Ensures email uniqueness and validates contact information format for professional correspondence.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    30 * time.Second,
 	}
 }
@@ -131,9 +131,9 @@ func createClientListTool() *MCPTool {
 			{
 				Description: "List all active clients with contact information",
 				Input: map[string]interface{}{
-					"active_only":    true,
-					"output_format":  "table",
-					"include_totals": true,
+					"active_only":     true,
+					fieldOutputFormat: "table",
+					"include_totals":  true,
 				},
 				ExpectedOutput: "Table view of active clients with names, emails, phone numbers, and billing totals",
 				UseCase:        "Client relationship management and contact directory maintenance",
@@ -141,10 +141,10 @@ func createClientListTool() *MCPTool {
 			{
 				Description: "Search for clients by partial name match",
 				Input: map[string]interface{}{
-					"name_search":   "Tech",
-					"output_format": "table",
-					"sort_by":       "name",
-					"sort_order":    "asc",
+					"name_search":     "Tech",
+					fieldOutputFormat: "table",
+					"sort_by":         fieldName,
+					"sort_order":      "asc",
 				},
 				ExpectedOutput: "All clients with 'Tech' in their name, sorted alphabetically",
 				UseCase:        "Finding specific clients or client groups for targeted communication",
@@ -152,7 +152,7 @@ func createClientListTool() *MCPTool {
 			{
 				Description: "Export client data for CRM integration",
 				Input: map[string]interface{}{
-					"output_format":    "json",
+					fieldOutputFormat:  typeJSON,
 					"include_invoices": true,
 					"include_totals":   true,
 					"active_only":      true,
@@ -163,11 +163,11 @@ func createClientListTool() *MCPTool {
 			{
 				Description: "Generate client contact list for marketing",
 				Input: map[string]interface{}{
-					"output_format": "csv",
-					"active_only":   true,
-					"limit":         100,
-					"sort_by":       "created_date",
-					"sort_order":    "desc",
+					fieldOutputFormat: "csv",
+					"active_only":     true,
+					"limit":           100,
+					"sort_by":         "created_date",
+					"sort_order":      "desc",
 				},
 				ExpectedOutput: "CSV export of recent active clients for marketing campaigns",
 				UseCase:        "Marketing automation and customer communication workflows",
@@ -186,10 +186,10 @@ func createClientListTool() *MCPTool {
 			},
 		},
 		Category:   CategoryClientManagement,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"client", "list"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldClient, "list"},
 		HelpText:   "Provides comprehensive client discovery with business intelligence features. Supports name search, status filtering, and various export formats for CRM integration and business analysis.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    20 * time.Second,
 	}
 }
@@ -207,10 +207,10 @@ func createClientShowTool() *MCPTool {
 			{
 				Description: "Show complete client profile with invoice history",
 				Input: map[string]interface{}{
-					"client_name":      "Acme Corporation",
+					fieldClientName:    "Acme Corporation",
 					"include_invoices": true,
 					"include_totals":   true,
-					"output_format":    "text",
+					fieldOutputFormat:  "text",
 				},
 				ExpectedOutput: "Formatted client profile with contact details, all invoices, payment history, and financial summary",
 				UseCase:        "Client relationship review and account management preparation",
@@ -218,8 +218,8 @@ func createClientShowTool() *MCPTool {
 			{
 				Description: "Export client data for external CRM system",
 				Input: map[string]interface{}{
-					"client_email":     "contact@techsolutions.com",
-					"output_format":    "json",
+					fieldClientEmail:   "contact@techsolutions.com",
+					fieldOutputFormat:  typeJSON,
 					"include_invoices": true,
 					"include_totals":   true,
 				},
@@ -229,9 +229,9 @@ func createClientShowTool() *MCPTool {
 			{
 				Description: "Quick client lookup for support calls",
 				Input: map[string]interface{}{
-					"client_id":        "client_123",
+					fieldClientID:      "client_123",
 					"include_invoices": false,
-					"output_format":    "text",
+					fieldOutputFormat:  "text",
 				},
 				ExpectedOutput: "Basic client information without invoice details for quick reference",
 				UseCase:        "Customer support and quick client information lookup",
@@ -239,10 +239,10 @@ func createClientShowTool() *MCPTool {
 			{
 				Description: "Generate client summary for executive reporting",
 				Input: map[string]interface{}{
-					"client_name":    "Tech Solutions Inc",
-					"output_format":  "yaml",
-					"include_totals": true,
-					"summary_only":   true,
+					fieldClientName:   "Tech Solutions Inc",
+					fieldOutputFormat: "yaml",
+					"include_totals":  true,
+					"summary_only":    true,
 				},
 				ExpectedOutput: "Executive summary with key metrics and business relationship status",
 				UseCase:        "Executive reporting and strategic account review",
@@ -250,21 +250,21 @@ func createClientShowTool() *MCPTool {
 			{
 				Description: "Detailed client analysis for collections workflow",
 				Input: map[string]interface{}{
-					"client_id":        "client_456",
+					fieldClientID:      "client_456",
 					"include_invoices": true,
 					"include_overdue":  true,
 					"include_totals":   true,
-					"output_format":    "text",
+					fieldOutputFormat:  "text",
 				},
 				ExpectedOutput: "Client profile with emphasis on outstanding invoices and payment patterns",
 				UseCase:        "Collections management and payment follow-up planning",
 			},
 		},
 		Category:   CategoryClientManagement,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"client", "show"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldClient, "show"},
 		HelpText:   "Displays comprehensive client information with configurable detail levels and business intelligence. Supports lookup by client ID, name, or email with financial analytics.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    15 * time.Second,
 	}
 }
@@ -282,9 +282,9 @@ func createClientUpdateTool() *MCPTool {
 			{
 				Description: "Update client contact information after business move",
 				Input: map[string]interface{}{
-					"client_name": "Acme Corporation",
-					"phone":       "+1-555-999-8888",
-					"address":     "789 New Business Plaza, Suite 500, Metro City, MC 67890",
+					fieldClientName: "Acme Corporation",
+					"phone":         "+1-555-999-8888",
+					"address":       "789 New Business Plaza, Suite 500, Metro City, MC 67890",
 				},
 				ExpectedOutput: "Client contact information updated with new office location and phone number",
 				UseCase:        "Maintaining current contact information for business relationships",
@@ -292,9 +292,9 @@ func createClientUpdateTool() *MCPTool {
 			{
 				Description: "Change client email address after company rebrand",
 				Input: map[string]interface{}{
-					"client_id": "client_123",
-					"name":      "Acme Technologies LLC",
-					"email":     "billing@acmetech.com",
+					fieldClientID: "client_123",
+					fieldName:     "Acme Technologies LLC",
+					fieldEmail:    "billing@acmetech.com",
 				},
 				ExpectedOutput: "Client name and email updated to reflect company rebrand and new domain",
 				UseCase:        "Managing client business changes and corporate restructuring",
@@ -302,9 +302,9 @@ func createClientUpdateTool() *MCPTool {
 			{
 				Description: "Add missing tax ID for client compliance reporting",
 				Input: map[string]interface{}{
-					"client_email": "contact@smallbiz.com",
-					"tax_id":       "EIN-12-3456789",
-					"email":        "compliance@smallbiz.com",
+					fieldClientEmail: "contact@smallbiz.com",
+					"tax_id":         "EIN-12-3456789",
+					fieldEmail:       "compliance@smallbiz.com",
 				},
 				ExpectedOutput: "Tax ID added to client profile for compliance and invoicing requirements",
 				UseCase:        "Compliance management and tax reporting preparation",
@@ -312,9 +312,9 @@ func createClientUpdateTool() *MCPTool {
 			{
 				Description: "Update international client with new VAT number",
 				Input: map[string]interface{}{
-					"client_name": "European Tech Partners",
-					"tax_id":      "DE987654321",
-					"address":     "Neue Straße 15, 10178 Berlin, Germany",
+					fieldClientName: "European Tech Partners",
+					"tax_id":        "DE987654321",
+					"address":       "Neue Straße 15, 10178 Berlin, Germany",
 				},
 				ExpectedOutput: "International client updated with new VAT number and registered address",
 				UseCase:        "International compliance and regulatory requirement management",
@@ -322,20 +322,20 @@ func createClientUpdateTool() *MCPTool {
 			{
 				Description: "Complete contact information for partial client record",
 				Input: map[string]interface{}{
-					"client_id": "client_incomplete",
-					"phone":     "+1-555-777-9999",
-					"address":   "456 Complete Ave, Full City, FC 11111",
-					"tax_id":    "EIN-55-5555555",
+					fieldClientID: "client_incomplete",
+					"phone":       "+1-555-777-9999",
+					"address":     "456 Complete Ave, Full City, FC 11111",
+					"tax_id":      "EIN-55-5555555",
 				},
 				ExpectedOutput: "Client profile completed with all missing contact and business information",
 				UseCase:        "Data completion and client relationship enhancement",
 			},
 		},
 		Category:   CategoryClientManagement,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"client", "update"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldClient, "update"},
 		HelpText:   "Updates client information with validation and business rule enforcement. Supports contact information changes, business detail updates, and maintains data integrity with uniqueness checking.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    20 * time.Second,
 	}
 }
@@ -353,8 +353,8 @@ func createClientDeleteTool() *MCPTool {
 			{
 				Description: "Deactivate client with no recent activity (recommended approach)",
 				Input: map[string]interface{}{
-					"client_name": "Inactive Corp",
-					"soft_delete": true,
+					fieldClientName: "Inactive Corp",
+					"soft_delete":   true,
 				},
 				ExpectedOutput: "Client deactivated but data preserved for historical reporting and audit trail",
 				UseCase:        "Managing inactive clients while preserving business history",
@@ -362,7 +362,7 @@ func createClientDeleteTool() *MCPTool {
 			{
 				Description: "Permanently remove test client data",
 				Input: map[string]interface{}{
-					"client_id":   "test_client_123",
+					fieldClientID: "test_client_123",
 					"hard_delete": true,
 				},
 				ExpectedOutput: "Confirmation prompt followed by complete client data removal",
@@ -371,9 +371,9 @@ func createClientDeleteTool() *MCPTool {
 			{
 				Description: "Force delete without confirmation for automation",
 				Input: map[string]interface{}{
-					"client_email": "demo@example.com",
-					"hard_delete":  true,
-					"force":        true,
+					fieldClientEmail: "demo@example.com",
+					"hard_delete":    true,
+					"force":          true,
 				},
 				ExpectedOutput: "Immediate permanent deletion without confirmation prompts",
 				UseCase:        "Automated client cleanup scripts and bulk data management",
@@ -381,7 +381,7 @@ func createClientDeleteTool() *MCPTool {
 			{
 				Description: "Attempt to delete client with active invoices (will be prevented)",
 				Input: map[string]interface{}{
-					"client_name": "Active Client Corp",
+					fieldClientName: "Active Client Corp",
 				},
 				ExpectedOutput: "Deletion blocked with explanation of active invoices and business rule violation",
 				UseCase:        "Demonstrates business rule protection for active client relationships",
@@ -389,7 +389,7 @@ func createClientDeleteTool() *MCPTool {
 			{
 				Description: "Deactivate client but preserve all historical data",
 				Input: map[string]interface{}{
-					"client_id":     "client_historical",
+					fieldClientID:   "client_historical",
 					"soft_delete":   true,
 					"preserve_data": true,
 				},
@@ -398,10 +398,10 @@ func createClientDeleteTool() *MCPTool {
 			},
 		},
 		Category:   CategoryClientManagement,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"client", "delete"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldClient, "delete"},
 		HelpText:   "Safely removes clients with comprehensive business rule validation. Default soft delete preserves audit trail and historical data. Hard delete requires confirmation and dependency checking.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    25 * time.Second,
 	}
 }

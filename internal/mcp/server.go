@@ -188,7 +188,7 @@ func (s *DefaultServer) handleStdioRequests(ctx context.Context) {
 		if err != nil {
 			s.logger.Error("Failed to handle MCP request", "error", err, "method", req.Method)
 			response = &MCPResponse{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      req.ID,
 				Error: &MCPError{
 					Code:    -32603,
@@ -240,7 +240,7 @@ func (s *DefaultServer) handleHTTPRequest(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		s.logger.Error("Failed to handle MCP request", "error", err, "method", req.Method)
 		response = &MCPResponse{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			ID:      req.ID,
 			Error: &MCPError{
 				Code:    -32603,
@@ -268,25 +268,25 @@ func (s *DefaultServer) HandleRequest(ctx context.Context, req *MCPRequest) (*MC
 	s.logger.Debug("Handling MCP request", "method", req.Method, "id", req.ID)
 
 	switch req.Method {
-	case "initialize":
+	case methodInitialize:
 		return s.handler.HandleInitialize(ctx, req)
 	case "notifications/initialized":
 		// Handle initialized notification (no response needed for notifications)
 		s.logger.Debug("Received initialized notification")
 		// For notifications, we return a valid empty response, not nil
 		return &MCPResponse{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			Result:  map[string]interface{}{},
 		}, nil
-	case "ping":
+	case methodPing:
 		return s.handler.HandlePing(ctx, req)
-	case "tools/list":
+	case methodToolsList:
 		return s.handler.HandleToolsList(ctx, req)
-	case "tools/call":
+	case methodToolsCall:
 		return s.handler.HandleToolCall(ctx, req)
 	default:
 		return &MCPResponse{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			ID:      req.ID,
 			Error: &MCPError{
 				Code:    -32601,

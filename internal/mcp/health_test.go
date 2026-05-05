@@ -61,7 +61,7 @@ func (s *HealthTestSuite) SetupTest() {
 			MaxTimeout: 10 * time.Second,
 		},
 		Server: ServerConfig{
-			Host:        "localhost",
+			Host:        defaultHost,
 			Port:        0,
 			Timeout:     30 * time.Second,
 			ReadTimeout: 5 * time.Second,
@@ -188,7 +188,7 @@ func (s *HealthTestSuite) TestCheckHealthWithCustomChecks() {
 	s.NotNil(status)
 
 	// Should be unhealthy due to custom check failure
-	s.Equal("unhealthy", status.Status)
+	s.Equal(statusUnhealthy, status.Status)
 	s.Len(status.Checks, 4) // CLI, Storage, and 2 custom checks
 
 	checkStatuses := make(map[string]string)
@@ -197,7 +197,7 @@ func (s *HealthTestSuite) TestCheckHealthWithCustomChecks() {
 	}
 
 	s.Equal("healthy", checkStatuses["Custom Success"])
-	s.Equal("unhealthy", checkStatuses["Custom Warning"])
+	s.Equal(statusUnhealthy, checkStatuses["Custom Warning"])
 }
 
 func (s *HealthTestSuite) TestCheckHealthContextCancellation() {
@@ -220,8 +220,8 @@ func (s *HealthTestSuite) TestCheckHealthCLIFailure() {
 	s.Require().NoError(err)
 	s.NotNil(status)
 
-	s.Equal("unhealthy", status.Status)
-	s.Equal("unhealthy", status.CLIStatus)
+	s.Equal(statusUnhealthy, status.Status)
+	s.Equal(statusUnhealthy, status.CLIStatus)
 	s.NotEmpty(status.LastError)
 }
 
@@ -239,8 +239,8 @@ func (s *HealthTestSuite) TestCheckHealthStorageFailure() {
 	s.Require().NoError(err)
 	s.NotNil(status)
 
-	s.Equal("unhealthy", status.Status)
-	s.Equal("unhealthy", status.StorageStatus)
+	s.Equal(statusUnhealthy, status.Status)
+	s.Equal(statusUnhealthy, status.StorageStatus)
 	s.NotEmpty(status.LastError)
 }
 
@@ -521,7 +521,7 @@ func (s *HealthTestSuite) TestStorageHealthChecks() {
 				return file
 			},
 			expectMsg:   "Storage path is not a directory",
-			expectState: "unhealthy",
+			expectState: statusUnhealthy,
 		},
 		{
 			name: "ReadOnlyDirectory",
@@ -531,7 +531,7 @@ func (s *HealthTestSuite) TestStorageHealthChecks() {
 				return dir
 			},
 			expectMsg:   "Storage not writable",
-			expectState: "unhealthy",
+			expectState: statusUnhealthy,
 		},
 	}
 
@@ -569,7 +569,7 @@ func (s *HealthTestSuite) TestCLIHealthChecks() {
 		{
 			name:        "NonExistentCLI",
 			cliPath:     "/non/existent/cli",
-			expectState: "unhealthy",
+			expectState: statusUnhealthy,
 			expectMsg:   "CLI check failed",
 		},
 		{
@@ -624,7 +624,7 @@ func (s *HealthTestSuite) TestCustomCheckExecution() {
 			checkFunc: func(ctx context.Context) error {
 				return errCustomCheckFailed
 			},
-			expectState: "unhealthy",
+			expectState: statusUnhealthy,
 			expectMsg:   "custom check failed",
 		},
 		{
@@ -751,7 +751,7 @@ func BenchmarkCheckHealth(b *testing.B) {
 			WorkingDir: tempDir,
 			MaxTimeout: 10 * time.Second,
 		},
-		Server:   ServerConfig{Host: "localhost", Port: 0},
+		Server:   ServerConfig{Host: defaultHost, Port: 0},
 		Security: SecurityConfig{AllowedCommands: []string{"bench-cli"}, WorkingDir: tempDir},
 		LogLevel: "info",
 	}

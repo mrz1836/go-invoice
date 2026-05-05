@@ -26,113 +26,113 @@ import (
 // multiple date formats for natural language interaction.
 func InvoiceCreateSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"client_name": map[string]interface{}{
-				"type":        "string",
-				"description": "Client name or partial name for invoice. If multiple clients match, you'll be prompted to be more specific.",
-				"minLength":   1,
-				"maxLength":   200,
-				"examples":    []string{"Acme Corp", "John Smith", "Tech Solutions"},
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			keyClientName: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Client name or partial name for invoice. If multiple clients match, you'll be prompted to be more specific.",
+				keyMinLength:   1,
+				keyMaxLength:   200,
+				keyExamples:    []string{"Acme Corp", "John Smith", "Tech Solutions"},
 			},
-			"client_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Exact client ID for invoice. Use this when you know the specific client identifier.",
-				"pattern":     "^[A-Za-z0-9_-]+$",
-				"examples":    []string{"client_123", "acme-corp-id"},
+			keyClientID: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Exact client ID for invoice. Use this when you know the specific client identifier.",
+				"pattern":      "^[A-Za-z0-9_-]+$",
+				keyExamples:    []string{"client_123", "acme-corp-id"},
 			},
 			"client_email": map[string]interface{}{
-				"type":        "string",
-				"format":      "email",
-				"description": "Client email address to identify the client for this invoice.",
-				"examples":    []string{"contact@acme.com", "john@techsolutions.com"},
+				keyType:        typeString,
+				keyFormat:      keyEmail,
+				keyDescription: "Client email address to identify the client for this invoice.",
+				keyExamples:    []string{"contact@acme.com", "john@techsolutions.com"},
 			},
 			"invoice_date": map[string]interface{}{
-				"type":        "string",
-				"format":      "date",
-				"description": "Invoice date in YYYY-MM-DD format. Defaults to today if not specified.",
-				"examples":    []string{time.Now().Format("2006-01-02"), "2025-01-15", "2025-08-03"},
+				keyType:        typeString,
+				keyFormat:      formatDate,
+				keyDescription: "Invoice date in YYYY-MM-DD format. Defaults to today if not specified.",
+				keyExamples:    []string{time.Now().Format("2006-01-02"), "2025-01-15", "2025-08-03"},
 			},
 			"due_date": map[string]interface{}{
-				"type":        "string",
-				"format":      "date",
-				"description": "Payment due date in YYYY-MM-DD format. If not provided, calculated based on default payment terms.",
-				"examples":    []string{time.Now().AddDate(0, 0, 30).Format("2006-01-02"), "2025-02-15", "2025-09-02"},
+				keyType:        typeString,
+				keyFormat:      formatDate,
+				keyDescription: "Payment due date in YYYY-MM-DD format. If not provided, calculated based on default payment terms.",
+				keyExamples:    []string{time.Now().AddDate(0, 0, 30).Format("2006-01-02"), "2025-02-15", "2025-09-02"},
 			},
-			"description": map[string]interface{}{
-				"type":        "string",
-				"description": "Optional description for the invoice (e.g., project name, billing period).",
-				"maxLength":   500,
-				"examples":    []string{"January 2025 consulting services", "Website development project", "Monthly retainer"},
+			keyDescription: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Optional description for the invoice (e.g., project name, billing period).",
+				keyMaxLength:   500,
+				keyExamples:    []string{"January 2025 consulting services", "Website development project", "Monthly retainer"},
 			},
 			"create_client_if_missing": map[string]interface{}{
-				"type":        "boolean",
-				"description": "Whether to create a new client if the specified client is not found.",
-				"default":     false,
+				keyType:        typeBoolean,
+				keyDescription: "Whether to create a new client if the specified client is not found.",
+				keyDefault:     false,
 			},
 			"new_client_email": map[string]interface{}{
-				"type":        "string",
-				"format":      "email",
-				"description": "Email address for new client (required when create_client_if_missing is true).",
-				"examples":    []string{"newclient@company.com"},
+				keyType:        typeString,
+				keyFormat:      keyEmail,
+				keyDescription: "Email address for new client (required when create_client_if_missing is true).",
+				keyExamples:    []string{"newclient@company.com"},
 			},
 			"new_client_address": map[string]interface{}{
-				"type":        "string",
-				"description": "Address for new client (optional when creating new client).",
-				"maxLength":   500,
-				"examples":    []string{"123 Main St, City, State 12345"},
+				keyType:        typeString,
+				keyDescription: "Address for new client (optional when creating new client).",
+				keyMaxLength:   500,
+				keyExamples:    []string{"123 Main St, City, State 12345"},
 			},
 			"new_client_phone": map[string]interface{}{
-				"type":        "string",
-				"description": "Phone number for new client (optional when creating new client).",
-				"pattern":     "^[\\d\\s\\+\\-\\(\\)\\.\\/ext]+$",
-				"examples":    []string{"+1-555-123-4567", "(555) 123-4567"},
+				keyType:        typeString,
+				keyDescription: "Phone number for new client (optional when creating new client).",
+				"pattern":      "^[\\d\\s\\+\\-\\(\\)\\.\\/ext]+$",
+				keyExamples:    []string{"+1-555-123-4567", "(555) 123-4567"},
 			},
 			"usdc_address": map[string]interface{}{
-				"type":        "string",
-				"description": "Override USDC cryptocurrency address for this specific invoice. If not provided, uses the global USDC address from configuration. Useful when you want a unique payment address for this invoice.",
-				"examples":    []string{"0x1234567890abcdef1234567890abcdef12345678"},
+				keyType:        typeString,
+				keyDescription: "Override USDC cryptocurrency address for this specific invoice. If not provided, uses the global USDC address from configuration. Useful when you want a unique payment address for this invoice.",
+				keyExamples:    []string{"0x1234567890abcdef1234567890abcdef12345678"},
 			},
 			"bsv_address": map[string]interface{}{
-				"type":        "string",
-				"description": "Override BSV cryptocurrency address for this specific invoice. If not provided, uses the global BSV address from configuration. Useful when you want a unique payment address for this invoice.",
-				"examples":    []string{"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"},
+				keyType:        typeString,
+				keyDescription: "Override BSV cryptocurrency address for this specific invoice. If not provided, uses the global BSV address from configuration. Useful when you want a unique payment address for this invoice.",
+				keyExamples:    []string{"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"},
 			},
 			"work_items": map[string]interface{}{
-				"type":        "array",
-				"description": "Optional work items to add to the invoice upon creation.",
+				keyType:        typeArray,
+				keyDescription: "Optional work items to add to the invoice upon creation.",
 				"items": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"date": map[string]interface{}{
-							"type":        "string",
-							"format":      "date",
-							"description": "Date when work was performed (YYYY-MM-DD).",
+					keyType: keyObject,
+					keyProperties: map[string]interface{}{
+						formatDate: map[string]interface{}{
+							keyType:        typeString,
+							keyFormat:      formatDate,
+							keyDescription: "Date when work was performed (YYYY-MM-DD).",
 						},
-						"hours": map[string]interface{}{
-							"type":        "number",
-							"minimum":     0.01,
-							"maximum":     24.0,
-							"description": "Number of hours worked (decimal allowed, e.g., 1.5 for 1 hour 30 minutes).",
+						keyHours: map[string]interface{}{
+							keyType:        typeNumber,
+							keyMinimum:     0.01,
+							keyMaximum:     24.0,
+							keyDescription: "Number of hours worked (decimal allowed, e.g., 1.5 for 1 hour 30 minutes).",
 						},
-						"rate": map[string]interface{}{
-							"type":        "number",
-							"minimum":     0.01,
-							"description": "Hourly rate for this work item.",
+						keyRate: map[string]interface{}{
+							keyType:        typeNumber,
+							keyMinimum:     0.01,
+							keyDescription: "Hourly rate for this work item.",
 						},
-						"description": map[string]interface{}{
-							"type":        "string",
-							"minLength":   1,
-							"maxLength":   500,
-							"description": "Description of work performed.",
+						keyDescription: map[string]interface{}{
+							keyType:        typeString,
+							keyMinLength:   1,
+							keyMaxLength:   500,
+							keyDescription: "Description of work performed.",
 						},
 					},
-					"required": []string{"date", "hours", "rate", "description"},
+					keyRequired: []string{formatDate, keyHours, keyRate, keyDescription},
 				},
 			},
 		},
-		"required":             []string{}, // At least one client identifier (client_name, client_id, or client_email) is required but handled in validation logic
-		"additionalProperties": false,
+		keyRequired:             []string{}, // At least one client identifier (client_name, client_id, or client_email) is required but handled in validation logic
+		keyAdditionalProperties: false,
 	}
 }
 
@@ -142,68 +142,68 @@ func InvoiceCreateSchema() map[string]interface{} {
 // with natural language-friendly parameter names and flexible search criteria.
 func InvoiceListSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
 			"status": map[string]interface{}{
-				"type":        "string",
-				"enum":        []string{"draft", "sent", "paid", "overdue", "voided"},
-				"description": "Filter invoices by status. Leave empty to show all statuses.",
-				"examples":    []string{"paid", "overdue", "draft"},
+				keyType:        typeString,
+				keyEnum:        []string{"draft", "sent", "paid", "overdue", "voided"},
+				keyDescription: "Filter invoices by status. Leave empty to show all statuses.",
+				keyExamples:    []string{"paid", "overdue", "draft"},
 			},
-			"client_name": map[string]interface{}{
-				"type":        "string",
-				"description": "Filter by client name (partial matches supported).",
-				"examples":    []string{"Acme", "Tech Solutions", "John"},
+			keyClientName: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Filter by client name (partial matches supported).",
+				keyExamples:    []string{"Acme", "Tech Solutions", "John"},
 			},
-			"client_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Filter by exact client ID.",
-				"examples":    []string{"client_123", "acme-corp"},
+			keyClientID: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Filter by exact client ID.",
+				keyExamples:    []string{"client_123", "acme-corp"},
 			},
 			"from_date": map[string]interface{}{
-				"type":        "string",
-				"format":      "date",
-				"description": "Show invoices from this date onwards (YYYY-MM-DD). Filters by invoice date.",
-				"examples":    []string{"2025-01-01", "2025-07-01"},
+				keyType:        typeString,
+				keyFormat:      formatDate,
+				keyDescription: "Show invoices from this date onwards (YYYY-MM-DD). Filters by invoice date.",
+				keyExamples:    []string{"2025-01-01", "2025-07-01"},
 			},
 			"to_date": map[string]interface{}{
-				"type":        "string",
-				"format":      "date",
-				"description": "Show invoices up to this date (YYYY-MM-DD). Filters by invoice date.",
-				"examples":    []string{"2025-12-31", "2025-08-31"},
+				keyType:        typeString,
+				keyFormat:      formatDate,
+				keyDescription: "Show invoices up to this date (YYYY-MM-DD). Filters by invoice date.",
+				keyExamples:    []string{"2025-12-31", "2025-08-31"},
 			},
 			"sort_by": map[string]interface{}{
-				"type":        "string",
-				"enum":        []string{"date", "amount", "status", "client", "due_date"},
-				"default":     "date",
-				"description": "Field to sort results by.",
+				keyType:        typeString,
+				keyEnum:        []string{formatDate, "amount", "status", "client", "due_date"},
+				keyDefault:     formatDate,
+				keyDescription: "Field to sort results by.",
 			},
 			"sort_order": map[string]interface{}{
-				"type":        "string",
-				"enum":        []string{"asc", "desc"},
-				"default":     "desc",
-				"description": "Sort order: ascending or descending.",
+				keyType:        typeString,
+				keyEnum:        []string{"asc", "desc"},
+				keyDefault:     "desc",
+				keyDescription: "Sort order: ascending or descending.",
 			},
 			"limit": map[string]interface{}{
-				"type":        "number",
-				"minimum":     1,
-				"maximum":     1000,
-				"description": "Maximum number of invoices to return. Default is 50.",
-				"default":     50,
+				keyType:        typeNumber,
+				keyMinimum:     1,
+				keyMaximum:     1000,
+				keyDescription: "Maximum number of invoices to return. Default is 50.",
+				keyDefault:     50,
 			},
 			"output_format": map[string]interface{}{
-				"type":        "string",
-				"enum":        []string{"table", "json", "csv"},
-				"default":     "table",
-				"description": "Output format for the results.",
+				keyType:        typeString,
+				keyEnum:        []string{"table", typeJSON, "csv"},
+				keyDefault:     "table",
+				keyDescription: "Output format for the results.",
 			},
 			"include_summary": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Include summary statistics (total amounts, counts by status).",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Include summary statistics (total amounts, counts by status).",
 			},
 		},
-		"additionalProperties": false,
+		keyAdditionalProperties: false,
 	}
 }
 
@@ -213,39 +213,39 @@ func InvoiceListSchema() map[string]interface{} {
 // options for different levels of detail and output formats.
 func InvoiceShowSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"invoice_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Invoice ID to display details for.",
-				"minLength":   1,
-				"examples":    []string{"INV-001", "invoice_abc123"},
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			keyInvoiceID: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Invoice ID to display details for.",
+				keyMinLength:   1,
+				keyExamples:    []string{exampleInvoiceID, "invoice_abc123"},
 			},
 			"invoice_number": map[string]interface{}{
-				"type":        "string",
-				"description": "Invoice number to display details for (alternative to invoice_id).",
-				"minLength":   1,
-				"examples":    []string{"INV-001", "2025-001"},
+				keyType:        typeString,
+				keyDescription: "Invoice number to display details for (alternative to invoice_id).",
+				keyMinLength:   1,
+				keyExamples:    []string{exampleInvoiceID, "2025-001"},
 			},
 			"output_format": map[string]interface{}{
-				"type":        "string",
-				"enum":        []string{"text", "json", "yaml"},
-				"default":     "text",
-				"description": "Output format for invoice details.",
+				keyType:        typeString,
+				keyEnum:        []string{"text", typeJSON, "yaml"},
+				keyDefault:     "text",
+				keyDescription: "Output format for invoice details.",
 			},
 			"show_work_items": map[string]interface{}{
-				"type":        "boolean",
-				"default":     true,
-				"description": "Include detailed work items in the output.",
+				keyType:        typeBoolean,
+				keyDefault:     true,
+				keyDescription: "Include detailed work items in the output.",
 			},
 			"show_client_details": map[string]interface{}{
-				"type":        "boolean",
-				"default":     true,
-				"description": "Include full client information in the output.",
+				keyType:        typeBoolean,
+				keyDefault:     true,
+				keyDescription: "Include full client information in the output.",
 			},
 		},
-		"required":             []string{}, // At least one invoice identifier (invoice_id or invoice_number) is required but handled in validation logic
-		"additionalProperties": false,
+		keyRequired:             []string{}, // At least one invoice identifier (invoice_id or invoice_number) is required but handled in validation logic
+		keyAdditionalProperties: false,
 	}
 }
 
@@ -255,51 +255,51 @@ func InvoiceShowSchema() map[string]interface{} {
 // to ensure business rules are enforced (e.g., no updates to paid invoices).
 func InvoiceUpdateSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"invoice_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Invoice ID to update.",
-				"minLength":   1,
-				"examples":    []string{"INV-001", "invoice_abc123"},
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			keyInvoiceID: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Invoice ID to update.",
+				keyMinLength:   1,
+				keyExamples:    []string{exampleInvoiceID, "invoice_abc123"},
 			},
 			"invoice_number": map[string]interface{}{
-				"type":        "string",
-				"description": "Invoice number to update (alternative to invoice_id).",
-				"minLength":   1,
-				"examples":    []string{"INV-001", "2025-001"},
+				keyType:        typeString,
+				keyDescription: "Invoice number to update (alternative to invoice_id).",
+				keyMinLength:   1,
+				keyExamples:    []string{exampleInvoiceID, "2025-001"},
 			},
 			"status": map[string]interface{}{
-				"type":        "string",
-				"enum":        []string{"draft", "sent", "paid", "overdue", "voided"},
-				"description": "Update invoice status. Note: certain status transitions may be restricted.",
-				"examples":    []string{"sent", "paid"},
+				keyType:        typeString,
+				keyEnum:        []string{"draft", "sent", "paid", "overdue", "voided"},
+				keyDescription: "Update invoice status. Note: certain status transitions may be restricted.",
+				keyExamples:    []string{"sent", "paid"},
 			},
 			"due_date": map[string]interface{}{
-				"type":        "string",
-				"format":      "date",
-				"description": "Update payment due date (YYYY-MM-DD).",
-				"examples":    []string{"2025-02-28", "2025-09-15"},
+				keyType:        typeString,
+				keyFormat:      formatDate,
+				keyDescription: "Update payment due date (YYYY-MM-DD).",
+				keyExamples:    []string{"2025-02-28", "2025-09-15"},
 			},
-			"description": map[string]interface{}{
-				"type":        "string",
-				"maxLength":   500,
-				"description": "Update invoice description.",
-				"examples":    []string{"Updated: January 2025 consulting services", "Q1 2025 development work"},
+			keyDescription: map[string]interface{}{
+				keyType:        typeString,
+				keyMaxLength:   500,
+				keyDescription: "Update invoice description.",
+				keyExamples:    []string{"Updated: January 2025 consulting services", "Q1 2025 development work"},
 			},
 			"usdc_address": map[string]interface{}{
-				"type":        "string",
-				"description": "Override USDC cryptocurrency address for this invoice. Set to empty string to clear override and use global config.",
-				"examples":    []string{"0x1234567890abcdef1234567890abcdef12345678", ""},
+				keyType:        typeString,
+				keyDescription: "Override USDC cryptocurrency address for this invoice. Set to empty string to clear override and use global config.",
+				keyExamples:    []string{"0x1234567890abcdef1234567890abcdef12345678", ""},
 			},
 			"bsv_address": map[string]interface{}{
-				"type":        "string",
-				"description": "Override BSV cryptocurrency address for this invoice. Set to empty string to clear override and use global config.",
-				"examples":    []string{"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", ""},
+				keyType:        typeString,
+				keyDescription: "Override BSV cryptocurrency address for this invoice. Set to empty string to clear override and use global config.",
+				keyExamples:    []string{"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", ""},
 			},
 		},
-		"required":             []string{}, // Invoice ID (invoice_id or invoice_number) and at least one update field (status, due_date, description, usdc_address, bsv_address) required but handled in validation logic
-		"additionalProperties": false,
+		keyRequired:             []string{}, // Invoice ID (invoice_id or invoice_number) and at least one update field (status, due_date, description, usdc_address, bsv_address) required but handled in validation logic
+		keyAdditionalProperties: false,
 	}
 }
 
@@ -309,32 +309,32 @@ func InvoiceUpdateSchema() map[string]interface{} {
 // safety confirmations and business rule validation.
 func InvoiceDeleteSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"invoice_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Invoice ID to delete.",
-				"minLength":   1,
-				"examples":    []string{"INV-001", "invoice_abc123"},
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			keyInvoiceID: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Invoice ID to delete.",
+				keyMinLength:   1,
+				keyExamples:    []string{exampleInvoiceID, "invoice_abc123"},
 			},
 			"invoice_number": map[string]interface{}{
-				"type":        "string",
-				"description": "Invoice number to delete (alternative to invoice_id).",
-				"minLength":   1,
-				"examples":    []string{"INV-001", "2025-001"},
+				keyType:        typeString,
+				keyDescription: "Invoice number to delete (alternative to invoice_id).",
+				keyMinLength:   1,
+				keyExamples:    []string{exampleInvoiceID, "2025-001"},
 			},
 			"hard_delete": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Permanently delete invoice (cannot be undone). Default is soft delete.",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Permanently delete invoice (cannot be undone). Default is soft delete.",
 			},
 			"force": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Skip confirmation prompt (use with caution).",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Skip confirmation prompt (use with caution).",
 			},
 		},
-		"additionalProperties": false,
+		keyAdditionalProperties: false,
 	}
 }
 
@@ -344,60 +344,60 @@ func InvoiceDeleteSchema() map[string]interface{} {
 // validation and natural date/time entry formats.
 func InvoiceAddItemSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"invoice_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Invoice ID to add work items to.",
-				"minLength":   1,
-				"examples":    []string{"INV-001", "invoice_abc123"},
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			keyInvoiceID: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Invoice ID to add work items to.",
+				keyMinLength:   1,
+				keyExamples:    []string{exampleInvoiceID, "invoice_abc123"},
 			},
 			"invoice_number": map[string]interface{}{
-				"type":        "string",
-				"description": "Invoice number to add work items to (alternative to invoice_id).",
-				"minLength":   1,
-				"examples":    []string{"INV-001", "2025-001"},
+				keyType:        typeString,
+				keyDescription: "Invoice number to add work items to (alternative to invoice_id).",
+				keyMinLength:   1,
+				keyExamples:    []string{exampleInvoiceID, "2025-001"},
 			},
 			"work_items": map[string]interface{}{
-				"type":        "array",
-				"minItems":    1,
-				"description": "Work items to add to the invoice.",
+				keyType:        typeArray,
+				"minItems":     1,
+				keyDescription: "Work items to add to the invoice.",
 				"items": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"date": map[string]interface{}{
-							"type":        "string",
-							"format":      "date",
-							"description": "Date when work was performed (YYYY-MM-DD).",
-							"examples":    []string{time.Now().Format("2006-01-02"), "2025-08-01"},
+					keyType: keyObject,
+					keyProperties: map[string]interface{}{
+						formatDate: map[string]interface{}{
+							keyType:        typeString,
+							keyFormat:      formatDate,
+							keyDescription: "Date when work was performed (YYYY-MM-DD).",
+							keyExamples:    []string{time.Now().Format("2006-01-02"), "2025-08-01"},
 						},
-						"hours": map[string]interface{}{
-							"type":        "number",
-							"minimum":     0.01,
-							"maximum":     24.0,
-							"description": "Number of hours worked (decimal allowed, e.g., 1.5 for 1 hour 30 minutes).",
-							"examples":    []interface{}{8.0, 4.5, 2.25},
+						keyHours: map[string]interface{}{
+							keyType:        typeNumber,
+							keyMinimum:     0.01,
+							keyMaximum:     24.0,
+							keyDescription: "Number of hours worked (decimal allowed, e.g., 1.5 for 1 hour 30 minutes).",
+							keyExamples:    []interface{}{8.0, 4.5, 2.25},
 						},
-						"rate": map[string]interface{}{
-							"type":        "number",
-							"minimum":     0.01,
-							"description": "Hourly rate for this work item.",
-							"examples":    []interface{}{75.0, 125.0, 200.0},
+						keyRate: map[string]interface{}{
+							keyType:        typeNumber,
+							keyMinimum:     0.01,
+							keyDescription: "Hourly rate for this work item.",
+							keyExamples:    []interface{}{75.0, 125.0, 200.0},
 						},
-						"description": map[string]interface{}{
-							"type":        "string",
-							"minLength":   1,
-							"maxLength":   500,
-							"description": "Description of work performed.",
-							"examples":    []string{"Frontend development", "Bug fixes and testing", "Client meeting and planning"},
+						keyDescription: map[string]interface{}{
+							keyType:        typeString,
+							keyMinLength:   1,
+							keyMaxLength:   500,
+							keyDescription: "Description of work performed.",
+							keyExamples:    []string{"Frontend development", "Bug fixes and testing", "Client meeting and planning"},
 						},
 					},
-					"required": []string{"date", "hours", "rate", "description"},
+					keyRequired: []string{formatDate, keyHours, keyRate, keyDescription},
 				},
 			},
 		},
-		"required":             []string{}, // Invoice ID and work items required but handled in validation logic
-		"additionalProperties": false,
+		keyRequired:             []string{}, // Invoice ID and work items required but handled in validation logic
+		keyAdditionalProperties: false,
 	}
 }
 
@@ -407,115 +407,115 @@ func InvoiceAddItemSchema() map[string]interface{} {
 // It provides a flexible way to add various types of charges to an invoice beyond simple hourly work.
 func InvoiceAddLineItemSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"invoice_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Invoice ID to add line items to.",
-				"minLength":   1,
-				"examples":    []string{"INV-001", "invoice_abc123"},
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			keyInvoiceID: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Invoice ID to add line items to.",
+				keyMinLength:   1,
+				keyExamples:    []string{exampleInvoiceID, "invoice_abc123"},
 			},
 			"invoice_number": map[string]interface{}{
-				"type":        "string",
-				"description": "Invoice number to add line items to (alternative to invoice_id).",
-				"minLength":   1,
-				"examples":    []string{"INV-001", "2025-001"},
+				keyType:        typeString,
+				keyDescription: "Invoice number to add line items to (alternative to invoice_id).",
+				keyMinLength:   1,
+				keyExamples:    []string{exampleInvoiceID, "2025-001"},
 			},
 			"line_items": map[string]interface{}{
-				"type":        "array",
-				"minItems":    1,
-				"description": "Line items to add to the invoice. Supports hourly, fixed, and quantity-based billing.",
+				keyType:        typeArray,
+				"minItems":     1,
+				keyDescription: "Line items to add to the invoice. Supports hourly, fixed, and quantity-based billing.",
 				"items": map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"type": map[string]interface{}{
-							"type":        "string",
-							"enum":        []string{"hourly", "fixed", "quantity"},
-							"description": "Type of line item: 'hourly' for time-based billing, 'fixed' for flat fees/retainers, 'quantity' for unit-based pricing.",
-							"default":     "hourly",
-							"examples":    []string{"hourly", "fixed", "quantity"},
+					keyType: keyObject,
+					keyProperties: map[string]interface{}{
+						keyType: map[string]interface{}{
+							keyType:        typeString,
+							keyEnum:        []string{"hourly", "fixed", "quantity"},
+							keyDescription: "Type of line item: 'hourly' for time-based billing, 'fixed' for flat fees/retainers, 'quantity' for unit-based pricing.",
+							keyDefault:     "hourly",
+							keyExamples:    []string{"hourly", "fixed", "quantity"},
 						},
-						"date": map[string]interface{}{
-							"type":        "string",
-							"format":      "date",
-							"description": "Date for this line item (YYYY-MM-DD). Defaults to today if not specified.",
-							"examples":    []string{time.Now().Format("2006-01-02"), "2025-08-01"},
+						formatDate: map[string]interface{}{
+							keyType:        typeString,
+							keyFormat:      formatDate,
+							keyDescription: "Date for this line item (YYYY-MM-DD). Defaults to today if not specified.",
+							keyExamples:    []string{time.Now().Format("2006-01-02"), "2025-08-01"},
 						},
-						"description": map[string]interface{}{
-							"type":        "string",
-							"minLength":   1,
-							"maxLength":   1000,
-							"description": "Description of the line item (work performed, service provided, item sold, etc.).",
-							"examples":    []string{"Development work", "Monthly retainer - August", "SSL certificates", "Project setup fee"},
+						keyDescription: map[string]interface{}{
+							keyType:        typeString,
+							keyMinLength:   1,
+							keyMaxLength:   1000,
+							keyDescription: "Description of the line item (work performed, service provided, item sold, etc.).",
+							keyExamples:    []string{"Development work", "Monthly retainer - August", "SSL certificates", "Project setup fee"},
 						},
 						// Hourly type fields
-						"hours": map[string]interface{}{
-							"type":        "number",
-							"minimum":     0.01,
-							"maximum":     24.0,
-							"description": "Number of hours worked (required for 'hourly' type). Decimal values allowed (e.g., 1.5 for 1 hour 30 minutes).",
-							"examples":    []interface{}{8.0, 4.5, 2.25},
+						keyHours: map[string]interface{}{
+							keyType:        typeNumber,
+							keyMinimum:     0.01,
+							keyMaximum:     24.0,
+							keyDescription: "Number of hours worked (required for 'hourly' type). Decimal values allowed (e.g., 1.5 for 1 hour 30 minutes).",
+							keyExamples:    []interface{}{8.0, 4.5, 2.25},
 						},
-						"rate": map[string]interface{}{
-							"type":        "number",
-							"minimum":     0.01,
-							"maximum":     10000.0,
-							"description": "Hourly rate (required for 'hourly' type).",
-							"examples":    []interface{}{75.0, 125.0, 200.0},
+						keyRate: map[string]interface{}{
+							keyType:        typeNumber,
+							keyMinimum:     0.01,
+							keyMaximum:     10000.0,
+							keyDescription: "Hourly rate (required for 'hourly' type).",
+							keyExamples:    []interface{}{75.0, 125.0, 200.0},
 						},
 						// Fixed type fields
 						"amount": map[string]interface{}{
-							"type":        "number",
-							"minimum":     0.01,
-							"maximum":     1000000.0,
-							"description": "Fixed amount (required for 'fixed' type). Use for retainers, flat fees, setup charges, etc.",
-							"examples":    []interface{}{2000.0, 500.0, 150.0},
+							keyType:        typeNumber,
+							keyMinimum:     0.01,
+							keyMaximum:     1000000.0,
+							keyDescription: "Fixed amount (required for 'fixed' type). Use for retainers, flat fees, setup charges, etc.",
+							keyExamples:    []interface{}{2000.0, 500.0, 150.0},
 						},
 						// Quantity type fields
 						"quantity": map[string]interface{}{
-							"type":        "number",
-							"minimum":     0.01,
-							"maximum":     10000.0,
-							"description": "Quantity of units (required for 'quantity' type). Use for materials, licenses, subscriptions, etc.",
-							"examples":    []interface{}{2.0, 5.0, 10.0},
+							keyType:        typeNumber,
+							keyMinimum:     0.01,
+							keyMaximum:     10000.0,
+							keyDescription: "Quantity of units (required for 'quantity' type). Use for materials, licenses, subscriptions, etc.",
+							keyExamples:    []interface{}{2.0, 5.0, 10.0},
 						},
 						"unit_price": map[string]interface{}{
-							"type":        "number",
-							"minimum":     0.01,
-							"maximum":     100000.0,
-							"description": "Price per unit (required for 'quantity' type).",
-							"examples":    []interface{}{50.0, 25.0, 100.0},
+							keyType:        typeNumber,
+							keyMinimum:     0.01,
+							keyMaximum:     100000.0,
+							keyDescription: "Price per unit (required for 'quantity' type).",
+							keyExamples:    []interface{}{50.0, 25.0, 100.0},
 						},
 					},
-					"required": []string{"description"}, // Type defaults to hourly, other fields required based on type
+					keyRequired: []string{keyDescription}, // Type defaults to hourly, other fields required based on type
 					"oneOf": []interface{}{
 						// Hourly type validation
 						map[string]interface{}{
-							"properties": map[string]interface{}{
-								"type": map[string]interface{}{"const": "hourly"},
+							keyProperties: map[string]interface{}{
+								keyType: map[string]interface{}{"const": "hourly"},
 							},
-							"required": []string{"hours", "rate"},
+							keyRequired: []string{keyHours, keyRate},
 						},
 						// Fixed type validation
 						map[string]interface{}{
-							"properties": map[string]interface{}{
-								"type": map[string]interface{}{"const": "fixed"},
+							keyProperties: map[string]interface{}{
+								keyType: map[string]interface{}{"const": "fixed"},
 							},
-							"required": []string{"amount"},
+							keyRequired: []string{"amount"},
 						},
 						// Quantity type validation
 						map[string]interface{}{
-							"properties": map[string]interface{}{
-								"type": map[string]interface{}{"const": "quantity"},
+							keyProperties: map[string]interface{}{
+								keyType: map[string]interface{}{"const": "quantity"},
 							},
-							"required": []string{"quantity", "unit_price"},
+							keyRequired: []string{"quantity", "unit_price"},
 						},
 					},
 				},
 			},
 		},
-		"required":             []string{}, // Invoice ID and line items required but handled in validation logic
-		"additionalProperties": false,
+		keyRequired:             []string{}, // Invoice ID and line items required but handled in validation logic
+		keyAdditionalProperties: false,
 	}
 }
 
@@ -525,51 +525,51 @@ func InvoiceAddLineItemSchema() map[string]interface{} {
 // with appropriate safety validations.
 func InvoiceRemoveItemSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"invoice_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Invoice ID to remove work items from.",
-				"minLength":   1,
-				"examples":    []string{"INV-001", "invoice_abc123"},
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			keyInvoiceID: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Invoice ID to remove work items from.",
+				keyMinLength:   1,
+				keyExamples:    []string{exampleInvoiceID, "invoice_abc123"},
 			},
 			"invoice_number": map[string]interface{}{
-				"type":        "string",
-				"description": "Invoice number to remove work items from (alternative to invoice_id).",
-				"minLength":   1,
-				"examples":    []string{"INV-001", "2025-001"},
+				keyType:        typeString,
+				keyDescription: "Invoice number to remove work items from (alternative to invoice_id).",
+				keyMinLength:   1,
+				keyExamples:    []string{exampleInvoiceID, "2025-001"},
 			},
 			"work_item_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Specific work item ID to remove.",
-				"minLength":   1,
-				"examples":    []string{"work_item_123", "wi_abc"},
+				keyType:        typeString,
+				keyDescription: "Specific work item ID to remove.",
+				keyMinLength:   1,
+				keyExamples:    []string{"work_item_123", "wi_abc"},
 			},
 			"work_item_description": map[string]interface{}{
-				"type":        "string",
-				"description": "Remove work items matching this description (partial matches supported).",
-				"minLength":   1,
-				"examples":    []string{"Frontend development", "Bug fixes"},
+				keyType:        typeString,
+				keyDescription: "Remove work items matching this description (partial matches supported).",
+				keyMinLength:   1,
+				keyExamples:    []string{"Frontend development", "Bug fixes"},
 			},
 			"work_item_date": map[string]interface{}{
-				"type":        "string",
-				"format":      "date",
-				"description": "Remove work items from this specific date (YYYY-MM-DD).",
-				"examples":    []string{"2025-08-01", "2025-07-15"},
+				keyType:        typeString,
+				keyFormat:      formatDate,
+				keyDescription: "Remove work items from this specific date (YYYY-MM-DD).",
+				keyExamples:    []string{"2025-08-01", "2025-07-15"},
 			},
 			"remove_all_matching": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Remove all work items matching the criteria (vs. just the first match).",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Remove all work items matching the criteria (vs. just the first match).",
 			},
 			"confirm": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Confirm removal without additional prompts.",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Confirm removal without additional prompts.",
 			},
 		},
-		"required":             []string{}, // Invoice ID (invoice_id or invoice_number) and work item identifier (work_item_id, work_item_description, or work_item_date) required but handled in validation logic
-		"additionalProperties": false,
+		keyRequired:             []string{}, // Invoice ID (invoice_id or invoice_number) and work item identifier (work_item_id, work_item_description, or work_item_date) required but handled in validation logic
+		keyAdditionalProperties: false,
 	}
 }
 

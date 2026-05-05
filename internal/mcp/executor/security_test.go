@@ -21,7 +21,7 @@ func (suite *CommandValidatorTestSuite) SetupTest() {
 	suite.logger = new(MockLogger)
 
 	suite.sandbox = SandboxConfig{
-		AllowedCommands:      []string{"go-invoice", "echo"},
+		AllowedCommands:      []string{"go-invoice", testEcho},
 		AllowedPaths:         []string{"/tmp", "/home"},
 		BlockedPaths:         []string{"/etc", "/root"},
 		EnvironmentWhitelist: []string{"PATH", "HOME", "USER"},
@@ -64,7 +64,7 @@ func (suite *CommandValidatorTestSuite) TestValidateCommand() {
 		{
 			name:    "ValidCommand",
 			command: "go-invoice",
-			args:    []string{"invoice", "list"},
+			args:    []string{subCmdInvoice, "list"},
 			wantErr: false,
 		},
 		{
@@ -117,7 +117,7 @@ func (suite *CommandValidatorTestSuite) TestValidateCommand() {
 		},
 		{
 			name:    "ArgumentTooLong",
-			command: "echo",
+			command: testEcho,
 			args:    []string{string(make([]byte, 5000))},
 			wantErr: true,
 		},
@@ -140,7 +140,7 @@ func (suite *CommandValidatorTestSuite) TestValidateCommandContextCancellation()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	err := suite.validator.ValidateCommand(ctx, "echo", nil)
+	err := suite.validator.ValidateCommand(ctx, testEcho, nil)
 	suite.Equal(context.Canceled, err)
 }
 
@@ -293,7 +293,7 @@ func (suite *CommandValidatorTestSuite) TestValidateArgument() {
 		arg     string
 		wantErr bool
 	}{
-		{"ValidArgument", "invoice", false},
+		{"ValidArgument", subCmdInvoice, false},
 		{"ValidPath", "/tmp/test.txt", false},
 		{"ValidWithSpaces", "hello world", false},
 		{"ValidWithTab", "hello\tworld", false},

@@ -19,14 +19,14 @@ func TestPaymentService_VerifyPayment(t *testing.T) {
 	// Create test invoice
 	usdcAddress := "0x1234567890abcdef"
 	testClient := models.Client{
-		ID:    "CLIENT-001",
-		Name:  "Test Client",
-		Email: "test@example.com",
+		ID:    testClientID,
+		Name:  testClientName,
+		Email: testClientEmail,
 	}
 
 	testInvoice := &models.Invoice{
-		ID:                  "INV-001",
-		Number:              "INV-2024-001",
+		ID:                  testInvoiceID001,
+		Number:              testInvoiceNum,
 		Total:               100.00,
 		Client:              testClient,
 		Status:              models.StatusSent,
@@ -168,14 +168,14 @@ func TestPaymentService_MarkInvoiceAsPaid(t *testing.T) {
 			mockStorage := new(MockInvoiceStorage)
 
 			testClient := models.Client{
-				ID:    "CLIENT-001",
-				Name:  "Test Client",
-				Email: "test@example.com",
+				ID:    testClientID,
+				Name:  testClientName,
+				Email: testClientEmail,
 			}
 
 			invoice := &models.Invoice{
-				ID:          "INV-001",
-				Number:      "INV-2024-001",
+				ID:          testInvoiceID001,
+				Number:      testInvoiceNum,
 				Status:      tt.initialStatus,
 				Total:       100.00,
 				Client:      testClient,
@@ -184,7 +184,7 @@ func TestPaymentService_MarkInvoiceAsPaid(t *testing.T) {
 			}
 
 			// Setup mock expectations
-			mockStorage.On("GetInvoice", ctx, models.InvoiceID("INV-001")).Return(invoice, nil)
+			mockStorage.On("GetInvoice", ctx, models.InvoiceID(testInvoiceID001)).Return(invoice, nil)
 			if tt.expectUpdate {
 				mockStorage.On("UpdateInvoice", ctx, mock.Anything).Return(nil)
 			}
@@ -192,7 +192,7 @@ func TestPaymentService_MarkInvoiceAsPaid(t *testing.T) {
 			service := NewPaymentService(mockStorage, logger)
 
 			verification := &models.PaymentVerification{
-				InvoiceID:       "INV-001",
+				InvoiceID:       testInvoiceID001,
 				Status:          models.PaymentStatusVerified,
 				Method:          models.PaymentMethodUSDC,
 				ExpectedAmount:  100.00,
@@ -201,7 +201,7 @@ func TestPaymentService_MarkInvoiceAsPaid(t *testing.T) {
 			}
 
 			// Execute
-			err := service.MarkInvoiceAsPaid(ctx, "INV-001", verification)
+			err := service.MarkInvoiceAsPaid(ctx, testInvoiceID001, verification)
 
 			// Assert
 			if tt.expectError {
@@ -225,8 +225,8 @@ func TestPaymentService_AddressOverrides(t *testing.T) {
 	globalAddress := "0xGLOBALADDRESS"
 
 	invoice := &models.Invoice{
-		ID:                  "INV-001",
-		Number:              "INV-2024-001",
+		ID:                  testInvoiceID001,
+		Number:              testInvoiceNum,
 		Total:               100.00,
 		USDCAddressOverride: &invoiceAddress,
 		CreatedAt:           time.Now(),
@@ -256,8 +256,8 @@ func TestPaymentService_NoAddressConfigured(t *testing.T) {
 	ctx := context.Background()
 
 	invoice := &models.Invoice{
-		ID:        "INV-001",
-		Number:    "INV-2024-001",
+		ID:        testInvoiceID001,
+		Number:    testInvoiceNum,
 		Total:     100.00,
 		CreatedAt: time.Now(),
 		DueDate:   time.Now().AddDate(0, 0, 30),
@@ -295,7 +295,7 @@ func TestPaymentService_GetPaymentAddress_BSV(t *testing.T) {
 		{
 			name: "BSV with invoice-specific address",
 			invoice: &models.Invoice{
-				ID:                 "INV-001",
+				ID:                 testInvoiceID001,
 				BSVAddressOverride: &bsvAddress,
 			},
 			config: PaymentVerificationConfig{
@@ -307,7 +307,7 @@ func TestPaymentService_GetPaymentAddress_BSV(t *testing.T) {
 		{
 			name: "BSV with global config address",
 			invoice: &models.Invoice{
-				ID: "INV-001",
+				ID: testInvoiceID001,
 			},
 			config: PaymentVerificationConfig{
 				PaymentMethod:     models.PaymentMethodBSV,
@@ -318,7 +318,7 @@ func TestPaymentService_GetPaymentAddress_BSV(t *testing.T) {
 		{
 			name: "BSV with no address configured",
 			invoice: &models.Invoice{
-				ID: "INV-001",
+				ID: testInvoiceID001,
 			},
 			config: PaymentVerificationConfig{
 				PaymentMethod: models.PaymentMethodBSV,
@@ -329,7 +329,7 @@ func TestPaymentService_GetPaymentAddress_BSV(t *testing.T) {
 		{
 			name: "BSV with empty override falls back to global",
 			invoice: &models.Invoice{
-				ID: "INV-001",
+				ID: testInvoiceID001,
 				BSVAddressOverride: func() *string {
 					s := ""
 					return &s
@@ -374,7 +374,7 @@ func TestPaymentService_UnsupportedPaymentMethods(t *testing.T) {
 	ctx := context.Background()
 
 	invoice := &models.Invoice{
-		ID:     "INV-001",
+		ID:     testInvoiceID001,
 		Total:  100.00,
 		Status: models.StatusSent,
 	}
@@ -580,7 +580,7 @@ func TestPaymentService_ContextCancellation(t *testing.T) {
 	service := NewPaymentService(mockStorage, logger)
 
 	invoice := &models.Invoice{
-		ID:    "INV-001",
+		ID:    testInvoiceID001,
 		Total: 100.00,
 	}
 
@@ -605,11 +605,11 @@ func TestPaymentService_ContextCancellation(t *testing.T) {
 		cancel() // Cancel immediately
 
 		verification := &models.PaymentVerification{
-			InvoiceID: "INV-001",
+			InvoiceID: testInvoiceID001,
 			Status:    models.PaymentStatusVerified,
 		}
 
-		err := service.MarkInvoiceAsPaid(ctx, "INV-001", verification)
+		err := service.MarkInvoiceAsPaid(ctx, testInvoiceID001, verification)
 		require.Error(t, err)
 		assert.Equal(t, context.Canceled, err)
 	})
@@ -621,15 +621,15 @@ func TestPaymentService_MarkInvoiceAsPaid_WithPaymentNotes(t *testing.T) {
 	mockStorage := new(MockInvoiceStorage)
 
 	invoice := &models.Invoice{
-		ID:          "INV-001",
-		Number:      "INV-2024-001",
+		ID:          testInvoiceID001,
+		Number:      testInvoiceNum,
 		Status:      models.StatusSent,
 		Total:       100.00,
 		Description: "Original description",
 		Version:     1,
 	}
 
-	mockStorage.On("GetInvoice", ctx, models.InvoiceID("INV-001")).Return(invoice, nil)
+	mockStorage.On("GetInvoice", ctx, models.InvoiceID(testInvoiceID001)).Return(invoice, nil)
 	mockStorage.On("UpdateInvoice", ctx, mock.MatchedBy(func(inv *models.Invoice) bool {
 		// Verify description was updated with payment details
 		return assert.Contains(t, inv.Description, "Original description") &&
@@ -640,14 +640,14 @@ func TestPaymentService_MarkInvoiceAsPaid_WithPaymentNotes(t *testing.T) {
 	service := NewPaymentService(mockStorage, logger)
 
 	verification := &models.PaymentVerification{
-		InvoiceID:       "INV-001",
+		InvoiceID:       testInvoiceID001,
 		Status:          models.PaymentStatusVerified,
 		Method:          models.PaymentMethodUSDC,
 		ReceivedAmount:  100.00,
 		TransactionHash: "0xabcdef",
 	}
 
-	err := service.MarkInvoiceAsPaid(ctx, "INV-001", verification)
+	err := service.MarkInvoiceAsPaid(ctx, testInvoiceID001, verification)
 	require.NoError(t, err)
 
 	mockStorage.AssertExpectations(t)
@@ -663,7 +663,7 @@ func TestPaymentService_GetRelevantTransactions_TimeWindow(t *testing.T) {
 	dueDate := time.Now().AddDate(0, 0, 5)
 
 	invoice := &models.Invoice{
-		ID:        "INV-001",
+		ID:        testInvoiceID001,
 		Total:     100.00,
 		CreatedAt: createdAt,
 		DueDate:   dueDate,

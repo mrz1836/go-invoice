@@ -28,7 +28,7 @@ func (suite *ExecutorTestSuite) SetupTest() {
 	suite.fileHandler = new(MockFileHandler)
 
 	suite.sandbox = SandboxConfig{
-		AllowedCommands:      []string{"echo", "go-invoice", "true"},
+		AllowedCommands:      []string{testEcho, "go-invoice", "true"},
 		AllowedPaths:         []string{"/tmp", "/home"},
 		BlockedPaths:         []string{"/etc", "/root"},
 		EnvironmentWhitelist: []string{"PATH", "HOME", "USER"},
@@ -49,11 +49,11 @@ func (suite *ExecutorTestSuite) SetupTest() {
 func (suite *ExecutorTestSuite) TestExecuteSuccess() {
 	ctx := context.Background()
 
-	suite.validator.On("ValidateCommand", ctx, "echo", []string{"hello"}).Return(nil)
+	suite.validator.On("ValidateCommand", ctx, testEcho, []string{"hello"}).Return(nil)
 	suite.validator.On("ValidateEnvironment", ctx, mock.Anything).Return(nil)
 
 	req := &ExecutionRequest{
-		Command: "echo",
+		Command: testEcho,
 		Args:    []string{"hello"},
 		Timeout: 5 * time.Second,
 	}
@@ -72,7 +72,7 @@ func (suite *ExecutorTestSuite) TestExecuteContextCancellation() {
 	cancel()
 
 	req := &ExecutionRequest{
-		Command: "echo",
+		Command: testEcho,
 		Args:    []string{"hello"},
 	}
 
@@ -105,12 +105,12 @@ func (suite *ExecutorTestSuite) TestExecuteCommandValidationFailed() {
 func (suite *ExecutorTestSuite) TestExecuteEnvironmentValidationFailed() {
 	ctx := context.Background()
 
-	suite.validator.On("ValidateCommand", ctx, "echo", []string{"test"}).Return(nil)
+	suite.validator.On("ValidateCommand", ctx, testEcho, []string{testStr}).Return(nil)
 	suite.validator.On("ValidateEnvironment", ctx, mock.Anything).Return(ErrEnvNotAllowed)
 
 	req := &ExecutionRequest{
-		Command:     "echo",
-		Args:        []string{"test"},
+		Command:     testEcho,
+		Args:        []string{testStr},
 		Environment: map[string]string{"MALICIOUS": "value"},
 	}
 
@@ -126,13 +126,13 @@ func (suite *ExecutorTestSuite) TestExecuteWithWorkingDir() {
 	ctx := context.Background()
 	tmpDir := os.TempDir()
 
-	suite.validator.On("ValidateCommand", ctx, "echo", []string{"test"}).Return(nil)
+	suite.validator.On("ValidateCommand", ctx, testEcho, []string{testStr}).Return(nil)
 	suite.validator.On("ValidateEnvironment", ctx, mock.Anything).Return(nil)
 	suite.validator.On("ValidatePath", mock.Anything, tmpDir).Return(nil)
 
 	req := &ExecutionRequest{
-		Command:    "echo",
-		Args:       []string{"test"},
+		Command:    testEcho,
+		Args:       []string{testStr},
 		WorkingDir: tmpDir,
 		Timeout:    5 * time.Second,
 	}
@@ -148,13 +148,13 @@ func (suite *ExecutorTestSuite) TestExecuteWithWorkingDir() {
 func (suite *ExecutorTestSuite) TestExecuteWithInvalidWorkingDir() {
 	ctx := context.Background()
 
-	suite.validator.On("ValidateCommand", ctx, "echo", []string{"test"}).Return(nil)
+	suite.validator.On("ValidateCommand", ctx, testEcho, []string{testStr}).Return(nil)
 	suite.validator.On("ValidateEnvironment", ctx, mock.Anything).Return(nil)
 	suite.validator.On("ValidatePath", mock.Anything, "/etc/secret").Return(ErrPathTraversal)
 
 	req := &ExecutionRequest{
-		Command:    "echo",
-		Args:       []string{"test"},
+		Command:    testEcho,
+		Args:       []string{testStr},
 		WorkingDir: "/etc/secret",
 	}
 
@@ -205,14 +205,14 @@ func (suite *ExecutorTestSuite) TestExecuteWithInputFiles() {
 	ctx := context.Background()
 	tmpDir := os.TempDir()
 
-	suite.validator.On("ValidateCommand", mock.Anything, "echo", []string{"test"}).Return(nil)
+	suite.validator.On("ValidateCommand", mock.Anything, testEcho, []string{testStr}).Return(nil)
 	suite.validator.On("ValidateEnvironment", mock.Anything, mock.Anything).Return(nil)
 	suite.fileHandler.On("PrepareWorkspace", mock.Anything, mock.Anything).
 		Return(tmpDir, func() {}, nil)
 
 	req := &ExecutionRequest{
-		Command: "echo",
-		Args:    []string{"test"},
+		Command: testEcho,
+		Args:    []string{testStr},
 		InputFiles: []FileReference{
 			{Path: "/tmp/input.txt", ContentType: "text/plain"},
 		},
@@ -229,15 +229,15 @@ func (suite *ExecutorTestSuite) TestExecuteWithInputFiles() {
 func (suite *ExecutorTestSuite) TestExecuteWorkspacePreparationFailed() {
 	ctx := context.Background()
 
-	suite.validator.On("ValidateCommand", mock.Anything, "echo", []string{"test"}).Return(nil)
+	suite.validator.On("ValidateCommand", mock.Anything, testEcho, []string{testStr}).Return(nil)
 	suite.validator.On("ValidateEnvironment", mock.Anything, mock.Anything).Return(nil)
 	// Must return a valid cleanup function (even if empty) when returning an error
 	suite.fileHandler.On("PrepareWorkspace", mock.Anything, mock.Anything).
 		Return("", func() {}, ErrInvalidPath)
 
 	req := &ExecutionRequest{
-		Command: "echo",
-		Args:    []string{"test"},
+		Command: testEcho,
+		Args:    []string{testStr},
 		InputFiles: []FileReference{
 			{Path: "/tmp/input.txt", ContentType: "text/plain"},
 		},
@@ -298,7 +298,7 @@ func (suite *ExecutorTestSuite) TestNewSecureExecutorPanicsWithNilFileHandler() 
 func (suite *ExecutorTestSuite) TestExecuteWithProgressCallback() {
 	ctx := context.Background()
 
-	suite.validator.On("ValidateCommand", ctx, "echo", []string{"test"}).Return(nil)
+	suite.validator.On("ValidateCommand", ctx, testEcho, []string{testStr}).Return(nil)
 	suite.validator.On("ValidateEnvironment", ctx, mock.Anything).Return(nil)
 
 	callback := func(_ *ProgressUpdate) {
@@ -306,8 +306,8 @@ func (suite *ExecutorTestSuite) TestExecuteWithProgressCallback() {
 	}
 
 	req := &ExecutionRequest{
-		Command:          "echo",
-		Args:             []string{"test"},
+		Command:          testEcho,
+		Args:             []string{testStr},
 		Timeout:          2 * time.Second,
 		ProgressCallback: callback,
 	}
@@ -336,7 +336,7 @@ func (suite *ExecutorTestSuite) TestValidateCommandContextCanceled() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	err := suite.executor.ValidateCommand(ctx, "echo", nil)
+	err := suite.executor.ValidateCommand(ctx, testEcho, nil)
 
 	suite.Equal(context.Canceled, err)
 }
@@ -364,11 +364,11 @@ func TestExecutorErrorVariables(t *testing.T) {
 		wantOp  string
 		wantMsg string
 	}{
-		{ErrCommandNotAllowed, "ErrCommandNotAllowed", "validate", "command not allowed"},
-		{ErrInvalidPath, "ErrInvalidPath", "validate", "invalid path"},
+		{ErrCommandNotAllowed, "ErrCommandNotAllowed", opValidate, "command not allowed"},
+		{ErrInvalidPath, "ErrInvalidPath", opValidate, "invalid path"},
 		{ErrTimeout, "ErrTimeout", "execute", "command execution timeout"},
 		{ErrOutputTooLarge, "ErrOutputTooLarge", "execute", "output exceeds maximum size"},
-		{ErrInvalidWorkDir, "ErrInvalidWorkDir", "validate", "invalid working directory"},
+		{ErrInvalidWorkDir, "ErrInvalidWorkDir", opValidate, "invalid working directory"},
 	}
 
 	for _, tt := range tests {

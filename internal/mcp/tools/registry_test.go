@@ -80,20 +80,20 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 		{
 			name: "ValidToolRegistration",
 			tool: &MCPTool{
-				Name:        "test_tool",
+				Name:        testToolName,
 				Description: "Test tool for registration",
 				InputSchema: map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
+					keyType: keyObject,
+					keyProperties: map[string]interface{}{
 						"param": map[string]interface{}{
-							"type": "string",
+							keyType: typeString,
 						},
 					},
 				},
 				Category:   CategoryConfiguration,
-				CLICommand: "go-invoice",
-				CLIArgs:    []string{"test"},
-				Version:    "1.0.0",
+				CLICommand: toolCLIName,
+				CLIArgs:    []string{strTest},
+				Version:    toolVersion,
 				Timeout:    30 * time.Second,
 			},
 			expectError: false,
@@ -114,10 +114,10 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 			tool: &MCPTool{
 				Name:        "",
 				Description: "Tool with empty name",
-				InputSchema: map[string]interface{}{"type": "object"},
+				InputSchema: map[string]interface{}{keyType: keyObject},
 				Category:    CategoryConfiguration,
-				CLICommand:  "test",
-				Version:     "1.0.0",
+				CLICommand:  strTest,
+				Version:     toolVersion,
 				Timeout:     10 * time.Second,
 			},
 			expectError: true,
@@ -129,12 +129,12 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 		{
 			name: "EmptyDescription",
 			tool: &MCPTool{
-				Name:        "test_tool",
+				Name:        testToolName,
 				Description: "",
-				InputSchema: map[string]interface{}{"type": "object"},
+				InputSchema: map[string]interface{}{keyType: keyObject},
 				Category:    CategoryConfiguration,
-				CLICommand:  "test",
-				Version:     "1.0.0",
+				CLICommand:  strTest,
+				Version:     toolVersion,
 				Timeout:     10 * time.Second,
 			},
 			expectError: true,
@@ -146,12 +146,12 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 		{
 			name: "NilInputSchema",
 			tool: &MCPTool{
-				Name:        "test_tool",
+				Name:        testToolName,
 				Description: "Test tool",
 				InputSchema: nil,
 				Category:    CategoryConfiguration,
-				CLICommand:  "test",
-				Version:     "1.0.0",
+				CLICommand:  strTest,
+				Version:     toolVersion,
 				Timeout:     10 * time.Second,
 			},
 			expectError: true,
@@ -163,12 +163,12 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 		{
 			name: "InvalidCategory",
 			tool: &MCPTool{
-				Name:        "test_tool",
+				Name:        testToolName,
 				Description: "Test tool",
-				InputSchema: map[string]interface{}{"type": "object"},
+				InputSchema: map[string]interface{}{keyType: keyObject},
 				Category:    CategoryType("invalid_category"),
-				CLICommand:  "test",
-				Version:     "1.0.0",
+				CLICommand:  strTest,
+				Version:     toolVersion,
 				Timeout:     10 * time.Second,
 			},
 			expectError: true,
@@ -180,12 +180,12 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 		{
 			name: "InvalidTimeout",
 			tool: &MCPTool{
-				Name:        "test_tool",
+				Name:        testToolName,
 				Description: "Test tool",
-				InputSchema: map[string]interface{}{"type": "object"},
+				InputSchema: map[string]interface{}{keyType: keyObject},
 				Category:    CategoryConfiguration,
-				CLICommand:  "test",
-				Version:     "1.0.0",
+				CLICommand:  strTest,
+				Version:     toolVersion,
 				Timeout:     0,
 			},
 			expectError: true,
@@ -197,12 +197,12 @@ func (s *RegistryTestSuite) TestRegisterTool() {
 		{
 			name: "InvalidSchemaType",
 			tool: &MCPTool{
-				Name:        "test_tool",
+				Name:        testToolName,
 				Description: "Test tool",
-				InputSchema: map[string]interface{}{"type": "array"},
+				InputSchema: map[string]interface{}{keyType: "array"},
 				Category:    CategoryConfiguration,
-				CLICommand:  "test",
-				Version:     "1.0.0",
+				CLICommand:  strTest,
+				Version:     toolVersion,
 				Timeout:     10 * time.Second,
 			},
 			expectError: true,
@@ -246,20 +246,20 @@ func (s *RegistryTestSuite) TestRegisterTool_DuplicateName() {
 	tool1 := &MCPTool{
 		Name:        "duplicate_tool",
 		Description: "First tool",
-		InputSchema: map[string]interface{}{"type": "object"},
+		InputSchema: map[string]interface{}{keyType: keyObject},
 		Category:    CategoryConfiguration,
 		CLICommand:  "test1",
-		Version:     "1.0.0",
+		Version:     toolVersion,
 		Timeout:     10 * time.Second,
 	}
 
 	tool2 := &MCPTool{
 		Name:        "duplicate_tool",
 		Description: "Second tool",
-		InputSchema: map[string]interface{}{"type": "object"},
+		InputSchema: map[string]interface{}{keyType: keyObject},
 		Category:    CategoryDataImport,
 		CLICommand:  "test2",
-		Version:     "1.0.0",
+		Version:     toolVersion,
 		Timeout:     10 * time.Second,
 	}
 
@@ -281,10 +281,10 @@ func (s *RegistryTestSuite) TestGetTool() {
 	tool := &MCPTool{
 		Name:        "get_test_tool",
 		Description: "Tool for get testing",
-		InputSchema: map[string]interface{}{"type": "object"},
+		InputSchema: map[string]interface{}{keyType: keyObject},
 		Category:    CategoryInvoiceManagement,
-		CLICommand:  "test",
-		Version:     "1.0.0",
+		CLICommand:  strTest,
+		Version:     toolVersion,
 		Timeout:     15 * time.Second,
 	}
 
@@ -362,37 +362,37 @@ func (s *RegistryTestSuite) TestListTools() {
 		{
 			Name:        "invoice_tool",
 			Description: "Invoice tool",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryInvoiceManagement,
-			CLICommand:  "invoice",
-			Version:     "1.0.0",
+			CLICommand:  fieldInvoice,
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		},
 		{
 			Name:        "client_tool",
 			Description: "Client tool",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryClientManagement,
-			CLICommand:  "client",
-			Version:     "1.0.0",
+			CLICommand:  fieldClient,
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		},
 		{
 			Name:        "config_tool",
 			Description: "Config tool",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryConfiguration,
-			CLICommand:  "config",
-			Version:     "1.0.0",
+			CLICommand:  fieldConfig,
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		},
 		{
 			Name:        "another_invoice_tool",
 			Description: "Another invoice tool",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryInvoiceManagement,
 			CLICommand:  "invoice2",
-			Version:     "1.0.0",
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		},
 	}
@@ -481,20 +481,20 @@ func (s *RegistryTestSuite) TestValidateToolInput() {
 		Name:        "validation_test_tool",
 		Description: "Tool for validation testing",
 		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"name": map[string]interface{}{
-					"type": "string",
+			keyType: keyObject,
+			keyProperties: map[string]interface{}{
+				fieldName: map[string]interface{}{
+					keyType: typeString,
 				},
-				"amount": map[string]interface{}{
-					"type": "number",
+				fieldAmount: map[string]interface{}{
+					keyType: typeNumber,
 				},
 			},
-			"required": []interface{}{"name"},
+			keyRequired: []interface{}{fieldName},
 		},
 		Category:   CategoryConfiguration,
-		CLICommand: "test",
-		Version:    "1.0.0",
+		CLICommand: strTest,
+		Version:    toolVersion,
 		Timeout:    10 * time.Second,
 	}
 
@@ -513,8 +513,8 @@ func (s *RegistryTestSuite) TestValidateToolInput() {
 			name:     "ValidInput",
 			toolName: "validation_test_tool",
 			input: map[string]interface{}{
-				"name":   "Test Name",
-				"amount": 100.0,
+				fieldName:   "Test Name",
+				fieldAmount: 100.0,
 			},
 			expectError: false,
 			setupMocks: func() {
@@ -526,12 +526,12 @@ func (s *RegistryTestSuite) TestValidateToolInput() {
 			name:     "InvalidInput",
 			toolName: "validation_test_tool",
 			input: map[string]interface{}{
-				"amount": 100.0,
+				fieldAmount: 100.0,
 			},
 			expectError: true,
 			setupMocks: func() {
 				s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe() // GetTool + failed validation + error log
-				validationErr := &ValidationError{Field: "name", Message: "required", Code: "required_field"}
+				validationErr := &ValidationError{Field: fieldName, Message: keyRequired, Code: "required_field"}
 				s.validator.On("ValidateAgainstSchema", context.Background(), mock.Anything, mock.Anything).Return(validationErr).Once()
 			},
 		},
@@ -573,28 +573,28 @@ func (s *RegistryTestSuite) TestGetCategories() {
 		{
 			Name:        "tool1",
 			Description: "Tool 1",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryInvoiceManagement,
 			CLICommand:  "test1",
-			Version:     "1.0.0",
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		},
 		{
 			Name:        "tool2",
 			Description: "Tool 2",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryClientManagement,
 			CLICommand:  "test2",
-			Version:     "1.0.0",
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		},
 		{
 			Name:        "tool3",
 			Description: "Tool 3",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryInvoiceManagement, // Same category as tool1
 			CLICommand:  "test3",
-			Version:     "1.0.0",
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		},
 	}
@@ -626,10 +626,10 @@ func (s *RegistryTestSuite) TestContextCancellation() {
 				tool := &MCPTool{
 					Name:        "cancel_test",
 					Description: "Test",
-					InputSchema: map[string]interface{}{"type": "object"},
+					InputSchema: map[string]interface{}{keyType: keyObject},
 					Category:    CategoryConfiguration,
-					CLICommand:  "test",
-					Version:     "1.0.0",
+					CLICommand:  strTest,
+					Version:     toolVersion,
 					Timeout:     10 * time.Second,
 				}
 				return s.registry.RegisterTool(ctx, tool)
@@ -638,7 +638,7 @@ func (s *RegistryTestSuite) TestContextCancellation() {
 		{
 			name: "GetToolCancellation",
 			testFunc: func(ctx context.Context) error {
-				_, err := s.registry.GetTool(ctx, "test_tool")
+				_, err := s.registry.GetTool(ctx, testToolName)
 				return err
 			},
 		},
@@ -652,7 +652,7 @@ func (s *RegistryTestSuite) TestContextCancellation() {
 		{
 			name: "ValidateToolInputCancellation",
 			testFunc: func(ctx context.Context) error {
-				return s.registry.ValidateToolInput(ctx, "test_tool", map[string]interface{}{})
+				return s.registry.ValidateToolInput(ctx, testToolName, map[string]interface{}{})
 			},
 		},
 		{
@@ -694,10 +694,10 @@ func (s *RegistryTestSuite) TestConcurrentOperations() {
 				tool := &MCPTool{
 					Name:        fmt.Sprintf("concurrent_tool_%d", id),
 					Description: fmt.Sprintf("Concurrent tool %d", id),
-					InputSchema: map[string]interface{}{"type": "object"},
+					InputSchema: map[string]interface{}{keyType: keyObject},
 					Category:    CategoryConfiguration,
-					CLICommand:  "test",
-					Version:     "1.0.0",
+					CLICommand:  strTest,
+					Version:     toolVersion,
 					Timeout:     10 * time.Second,
 				}
 				err := s.registry.RegisterTool(context.Background(), tool)
@@ -729,10 +729,10 @@ func (s *RegistryTestSuite) TestConcurrentOperations() {
 		tool := &MCPTool{
 			Name:        "concurrent_get_test",
 			Description: "Test tool for concurrent gets",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryConfiguration,
-			CLICommand:  "test",
-			Version:     "1.0.0",
+			CLICommand:  strTest,
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		}
 
@@ -778,23 +778,23 @@ func (s *RegistryTestSuite) TestToolDefensiveCopying() {
 		Name:        "copy_test_tool",
 		Description: "Tool for testing defensive copying",
 		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
+			keyType: keyObject,
+			keyProperties: map[string]interface{}{
 				"param": map[string]interface{}{
-					"type": "string",
+					keyType: typeString,
 				},
 			},
 		},
 		Examples: []MCPToolExample{
 			{
 				Description: "Test example",
-				Input:       map[string]interface{}{"param": "value"},
+				Input:       map[string]interface{}{"param": strValue},
 			},
 		},
 		Category:   CategoryConfiguration,
-		CLICommand: "test",
+		CLICommand: strTest,
 		CLIArgs:    []string{"arg1", "arg2"},
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    15 * time.Second,
 	}
 
@@ -823,28 +823,28 @@ func (s *RegistryTestSuite) TestValidationIntegration() {
 		Name:        "complex_validation_tool",
 		Description: "Tool with complex validation schema",
 		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"client_name": map[string]interface{}{
-					"type":      "string",
+			keyType: keyObject,
+			keyProperties: map[string]interface{}{
+				fieldClientName: map[string]interface{}{
+					keyType:     typeString,
 					"minLength": 1.0,
 					"maxLength": 100.0,
 				},
-				"amount": map[string]interface{}{
-					"type":    "number",
+				fieldAmount: map[string]interface{}{
+					keyType:   typeNumber,
 					"minimum": 0.01,
 					"maximum": 1000000.0,
 				},
-				"email": map[string]interface{}{
-					"type":   "string",
-					"format": "email",
+				fieldEmail: map[string]interface{}{
+					keyType:     typeString,
+					fieldFormat: fieldEmail,
 				},
 			},
-			"required": []interface{}{"client_name", "amount"},
+			keyRequired: []interface{}{fieldClientName, fieldAmount},
 		},
 		Category:   CategoryInvoiceManagement,
-		CLICommand: "test",
-		Version:    "1.0.0",
+		CLICommand: strTest,
+		Version:    toolVersion,
 		Timeout:    20 * time.Second,
 	}
 
@@ -861,9 +861,9 @@ func (s *RegistryTestSuite) TestValidationIntegration() {
 		{
 			name: "ValidComplexInput",
 			input: map[string]interface{}{
-				"client_name": "Acme Corporation",
-				"amount":      500.75,
-				"email":       "contact@acme.com",
+				fieldClientName: "Acme Corporation",
+				fieldAmount:     500.75,
+				fieldEmail:      "contact@acme.com",
 			},
 			expectError: false,
 			setupMocks: func() {
@@ -874,15 +874,15 @@ func (s *RegistryTestSuite) TestValidationIntegration() {
 		{
 			name: "InvalidComplexInput",
 			input: map[string]interface{}{
-				"client_name": "",              // Empty required field
-				"amount":      -100.0,          // Negative amount
-				"email":       "invalid-email", // Invalid email format
+				fieldClientName: "",              // Empty required field
+				fieldAmount:     -100.0,          // Negative amount
+				fieldEmail:      "invalid-email", // Invalid email format
 			},
 			expectError: true,
 			setupMocks: func() {
 				s.logger.On("Debug", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe()
 				validationErr := &ValidationError{
-					Field:   "client_name",
+					Field:   fieldClientName,
 					Message: "field cannot be empty",
 					Code:    "empty_field",
 				}
@@ -925,10 +925,10 @@ func BenchmarkDefaultToolRegistry_GetTool(b *testing.B) {
 	tool := &MCPTool{
 		Name:        "benchmark_tool",
 		Description: "Benchmark test tool",
-		InputSchema: map[string]interface{}{"type": "object"},
+		InputSchema: map[string]interface{}{keyType: keyObject},
 		Category:    CategoryConfiguration,
-		CLICommand:  "test",
-		Version:     "1.0.0",
+		CLICommand:  strTest,
+		Version:     toolVersion,
 		Timeout:     10 * time.Second,
 	}
 
@@ -954,10 +954,10 @@ func BenchmarkDefaultToolRegistry_ListTools(b *testing.B) {
 		tool := &MCPTool{
 			Name:        fmt.Sprintf("tool_%d", i),
 			Description: fmt.Sprintf("Tool %d", i),
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryConfiguration,
-			CLICommand:  "test",
-			Version:     "1.0.0",
+			CLICommand:  strTest,
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		}
 		_ = registry.RegisterTool(ctx, tool)
@@ -1016,10 +1016,10 @@ func TestToolValidation_EdgeCases(t *testing.T) {
 		tool := &MCPTool{
 			Name:        "excessive_timeout_tool",
 			Description: "Tool with excessive timeout",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryConfiguration,
-			CLICommand:  "test",
-			Version:     "1.0.0",
+			CLICommand:  strTest,
+			Version:     toolVersion,
 			Timeout:     24 * time.Hour, // Excessive timeout
 		}
 
@@ -1033,9 +1033,9 @@ func TestToolValidation_EdgeCases(t *testing.T) {
 		tool := &MCPTool{
 			Name:        "no_version_tool",
 			Description: "Tool without version",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryConfiguration,
-			CLICommand:  "test",
+			CLICommand:  strTest,
 			Version:     "", // Empty version
 			Timeout:     10 * time.Second,
 		}
@@ -1050,10 +1050,10 @@ func TestToolValidation_EdgeCases(t *testing.T) {
 		tool := &MCPTool{
 			Name:        "no_cli_tool",
 			Description: "Tool without CLI command",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryConfiguration,
 			CLICommand:  "", // Empty CLI command
-			Version:     "1.0.0",
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		}
 

@@ -44,19 +44,19 @@ func TestToolSearchIndex(t *testing.T) {
 
 		// Create test tool
 		tool := &MCPTool{
-			Name:        "test_tool",
+			Name:        testToolName,
 			Description: "A test tool for testing",
 			Category:    CategoryInvoiceManagement,
-			InputSchema: map[string]interface{}{"type": "object"},
-			CLICommand:  "test",
-			Version:     "1.0.0",
+			InputSchema: map[string]interface{}{keyType: keyObject},
+			CLICommand:  strTest,
+			Version:     toolVersion,
 			Timeout:     30 * time.Second,
 		}
 
 		// Test adding to name index
-		index.NameIndex["test"] = []*MCPTool{tool}
-		assert.Len(t, index.NameIndex["test"], 1, "Name index should have one tool")
-		assert.Equal(t, tool, index.NameIndex["test"][0], "Tool should be in name index")
+		index.NameIndex[strTest] = []*MCPTool{tool}
+		assert.Len(t, index.NameIndex[strTest], 1, "Name index should have one tool")
+		assert.Equal(t, tool, index.NameIndex[strTest][0], "Tool should be in name index")
 
 		// Test adding to category index
 		index.CategoryIndex[CategoryInvoiceManagement] = []*MCPTool{tool}
@@ -71,9 +71,9 @@ func TestToolSearchResult(t *testing.T) {
 		Name:        "result_test_tool",
 		Description: "Tool for result testing",
 		Category:    CategoryClientManagement,
-		InputSchema: map[string]interface{}{"type": "object"},
+		InputSchema: map[string]interface{}{keyType: keyObject},
 		CLICommand:  "result",
-		Version:     "1.0.0",
+		Version:     toolVersion,
 		Timeout:     15 * time.Second,
 	}
 
@@ -82,14 +82,14 @@ func TestToolSearchResult(t *testing.T) {
 			Tool:           tool,
 			RelevanceScore: 0.85,
 			MatchContext:   "Test match context",
-			MatchedFields:  []string{"name", "description"},
+			MatchedFields:  []string{fieldName, fieldDescription},
 			CategoryMatch:  true,
 		}
 
 		assert.Equal(t, tool, result.Tool, "Tool should be assigned correctly")
 		assert.InDelta(t, 0.85, result.RelevanceScore, 0.001, "Relevance score should be set")
 		assert.Equal(t, "Test match context", result.MatchContext, "Match context should be set")
-		assert.Equal(t, []string{"name", "description"}, result.MatchedFields, "Matched fields should be set")
+		assert.Equal(t, []string{fieldName, fieldDescription}, result.MatchedFields, "Matched fields should be set")
 		assert.True(t, result.CategoryMatch, "Category match should be true")
 	})
 
@@ -128,7 +128,7 @@ func TestToolSearchCriteria(t *testing.T) {
 		criteria := &ToolSearchCriteria{
 			Query:             "test search",
 			Categories:        []CategoryType{CategoryInvoiceManagement, CategoryDataImport},
-			Tags:              []string{"important", "test"},
+			Tags:              []string{"important", strTest},
 			IncludeExamples:   true,
 			MaxResults:        20,
 			MinRelevanceScore: 0.3,
@@ -140,7 +140,7 @@ func TestToolSearchCriteria(t *testing.T) {
 		assert.Len(t, criteria.Categories, 2, "Should have 2 categories")
 		assert.Contains(t, criteria.Categories, CategoryInvoiceManagement, "Should contain invoice category")
 		assert.Contains(t, criteria.Categories, CategoryDataImport, "Should contain import category")
-		assert.Equal(t, []string{"important", "test"}, criteria.Tags, "Tags should be set")
+		assert.Equal(t, []string{"important", strTest}, criteria.Tags, "Tags should be set")
 		assert.True(t, criteria.IncludeExamples, "Include examples should be true")
 		assert.Equal(t, 20, criteria.MaxResults, "Max results should be 20")
 		assert.InDelta(t, 0.3, criteria.MinRelevanceScore, 0.001, "Min relevance score should be 0.3")
@@ -169,18 +169,18 @@ func TestCategoryDiscoveryResult(t *testing.T) {
 			Name:        "discovery_tool_1",
 			Description: "First discovery tool",
 			Category:    CategoryConfiguration,
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			CLICommand:  "discover1",
-			Version:     "1.0.0",
+			Version:     toolVersion,
 			Timeout:     25 * time.Second,
 		},
 		{
 			Name:        "discovery_tool_2",
 			Description: "Second discovery tool",
 			Category:    CategoryConfiguration,
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			CLICommand:  "discover2",
-			Version:     "1.0.0",
+			Version:     toolVersion,
 			Timeout:     25 * time.Second,
 		},
 	}
@@ -210,9 +210,9 @@ func TestToolRecommendation(t *testing.T) {
 		Name:        "recommendation_tool",
 		Description: "Tool for recommendation testing",
 		Category:    CategoryDataExport,
-		InputSchema: map[string]interface{}{"type": "object"},
+		InputSchema: map[string]interface{}{keyType: keyObject},
 		CLICommand:  "recommend",
-		Version:     "1.0.0",
+		Version:     toolVersion,
 		Timeout:     40 * time.Second,
 	}
 
@@ -340,15 +340,15 @@ func TestToolSearchResultJSON(t *testing.T) {
 		Description: "Tool for JSON testing",
 		Category:    CategoryReporting,
 		InputSchema: map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"format": map[string]interface{}{
-					"type": "string",
+			keyType: keyObject,
+			keyProperties: map[string]interface{}{
+				fieldFormat: map[string]interface{}{
+					keyType: typeString,
 				},
 			},
 		},
 		CLICommand: "json-test",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    20 * time.Second,
 	}
 
@@ -356,7 +356,7 @@ func TestToolSearchResultJSON(t *testing.T) {
 		Tool:           tool,
 		RelevanceScore: 0.75,
 		MatchContext:   "JSON serialization test",
-		MatchedFields:  []string{"name", "category", "description"},
+		MatchedFields:  []string{fieldName, "category", fieldDescription},
 		CategoryMatch:  false,
 	}
 
@@ -366,7 +366,7 @@ func TestToolSearchResultJSON(t *testing.T) {
 	assert.Equal(t, CategoryReporting, result.Tool.Category, "Tool category should be accessible")
 	assert.InDelta(t, 0.75, result.RelevanceScore, 0.001, "Relevance score should be accessible")
 	assert.Equal(t, "JSON serialization test", result.MatchContext, "Match context should be accessible")
-	assert.Equal(t, []string{"name", "category", "description"}, result.MatchedFields, "Matched fields should be accessible")
+	assert.Equal(t, []string{fieldName, "category", fieldDescription}, result.MatchedFields, "Matched fields should be accessible")
 	assert.False(t, result.CategoryMatch, "Category match should be accessible")
 }
 
@@ -394,9 +394,9 @@ func (s *DiscoveryServiceTestSuite) SetupTest() {
 			Name:        "create_invoice",
 			Description: "Create a new invoice for clients",
 			Category:    CategoryInvoiceManagement,
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			CLICommand:  "create-invoice",
-			Version:     "1.0.0",
+			Version:     toolVersion,
 			Timeout:     30 * time.Second,
 			HelpText:    "Creates invoices with line items",
 			Examples: []MCPToolExample{
@@ -407,9 +407,9 @@ func (s *DiscoveryServiceTestSuite) SetupTest() {
 			Name:        "import_csv",
 			Description: "Import timesheet data from CSV files",
 			Category:    CategoryDataImport,
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			CLICommand:  "import-csv",
-			Version:     "1.0.0",
+			Version:     toolVersion,
 			Timeout:     45 * time.Second,
 			HelpText:    "Imports CSV data for processing",
 		},
@@ -417,9 +417,9 @@ func (s *DiscoveryServiceTestSuite) SetupTest() {
 			Name:        "generate_report",
 			Description: "Generate comprehensive reports",
 			Category:    CategoryReporting,
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			CLICommand:  "generate-report",
-			Version:     "1.0.0",
+			Version:     toolVersion,
 			Timeout:     60 * time.Second,
 		},
 	}
@@ -491,7 +491,7 @@ func (s *DiscoveryServiceTestSuite) TestNewToolDiscoveryService() {
 func (s *DiscoveryServiceTestSuite) TestSearchTools() {
 	s.Run("QuerySearch", func() {
 		criteria := &ToolSearchCriteria{
-			Query:      "invoice",
+			Query:      fieldInvoice,
 			MaxResults: 10,
 		}
 
@@ -569,7 +569,7 @@ func (s *DiscoveryServiceTestSuite) TestSearchTools() {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		criteria := &ToolSearchCriteria{Query: "test"}
+		criteria := &ToolSearchCriteria{Query: strTest}
 
 		results, err := s.service.SearchTools(ctx, criteria)
 
@@ -634,7 +634,7 @@ func (s *DiscoveryServiceTestSuite) TestGetToolRecommendations() {
 	})
 
 	s.Run("ZeroLimit", func() {
-		recommendations, err := s.service.GetToolRecommendations(s.getContext(), "test", 0)
+		recommendations, err := s.service.GetToolRecommendations(s.getContext(), strTest, 0)
 
 		s.Require().NoError(err)
 		s.LessOrEqual(len(recommendations), 5) // Should default to 5
@@ -644,7 +644,7 @@ func (s *DiscoveryServiceTestSuite) TestGetToolRecommendations() {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		recommendations, err := s.service.GetToolRecommendations(ctx, "test", 3)
+		recommendations, err := s.service.GetToolRecommendations(ctx, strTest, 3)
 
 		s.Require().Error(err)
 		s.Nil(recommendations)
@@ -664,15 +664,15 @@ func TestToolStructureValidation(t *testing.T) {
 			Description: "A valid tool for testing",
 			Category:    CategoryInvoiceManagement,
 			InputSchema: map[string]interface{}{
-				"type": "object",
-				"properties": map[string]interface{}{
+				keyType: keyObject,
+				keyProperties: map[string]interface{}{
 					"param": map[string]interface{}{
-						"type": "string",
+						keyType: typeString,
 					},
 				},
 			},
 			CLICommand: "valid-tool",
-			Version:    "1.0.0",
+			Version:    toolVersion,
 			Timeout:    30 * time.Second,
 		}
 
@@ -685,9 +685,9 @@ func TestToolStructureValidation(t *testing.T) {
 		assert.Greater(t, tool.Timeout, time.Duration(0), "Tool should have positive timeout")
 
 		// Validate schema structure
-		schemaType, hasType := tool.InputSchema["type"]
+		schemaType, hasType := tool.InputSchema[keyType]
 		assert.True(t, hasType, "Schema should have type")
-		assert.Equal(t, "object", schemaType, "Schema type should be object")
+		assert.Equal(t, keyObject, schemaType, "Schema type should be object")
 	})
 
 	t.Run("ToolWithExamples", func(t *testing.T) {
@@ -695,17 +695,17 @@ func TestToolStructureValidation(t *testing.T) {
 			Name:        "example_tool",
 			Description: "Tool with examples",
 			Category:    CategoryClientManagement,
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Examples: []MCPToolExample{
 				{
 					Description:    "Basic usage example",
-					Input:          map[string]interface{}{"name": "test"},
+					Input:          map[string]interface{}{fieldName: strTest},
 					ExpectedOutput: "Success",
 					UseCase:        "Testing",
 				},
 			},
 			CLICommand: "example-tool",
-			Version:    "1.0.0",
+			Version:    toolVersion,
 			Timeout:    25 * time.Second,
 		}
 

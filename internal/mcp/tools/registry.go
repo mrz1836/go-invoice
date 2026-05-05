@@ -453,8 +453,8 @@ func (r *DefaultToolRegistry) validateToolDefinition(tool *MCPTool) error {
 	}
 
 	// Validate input schema structure
-	if schemaType, exists := tool.InputSchema["type"]; exists {
-		if schemaType != "object" {
+	if schemaType, exists := tool.InputSchema[keyType]; exists {
+		if schemaType != keyObject {
 			return fmt.Errorf("%w, got: %v", ErrToolSchemaTypeInvalid, schemaType)
 		}
 	}

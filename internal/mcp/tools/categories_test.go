@@ -254,12 +254,12 @@ func (s *CategoriesTestSuite) TestCategoryContextUsage() {
 		for _, category := range s.getAllValidCategories() {
 			// Simulate tool creation with category
 			tool := &MCPTool{
-				Name:        "test_tool",
+				Name:        testToolName,
 				Description: "Test tool",
-				InputSchema: map[string]interface{}{"type": "object"},
+				InputSchema: map[string]interface{}{keyType: keyObject},
 				Category:    category,
-				CLICommand:  "test",
-				Version:     "1.0.0",
+				CLICommand:  strTest,
+				Version:     toolVersion,
 				Timeout:     10000000000, // 10 seconds in nanoseconds
 			}
 
@@ -584,7 +584,7 @@ func (s *CategoriesTestSuite) TestDiscoverCategories() {
 		})
 
 		filter := &CategoryDiscoveryFilter{
-			Keywords:   []string{"invoice"},
+			Keywords:   []string{fieldInvoice},
 			MaxResults: 5,
 		}
 
@@ -684,7 +684,7 @@ func (s *CategoriesTestSuite) TestGenerateNaturalLanguageDescription() {
 		s.Require().NoError(err)
 		s.NotEmpty(description)
 		s.Contains(description, "Invoice Management")
-		s.Contains(description, "invoice") // Should contain category keywords
+		s.Contains(description, fieldInvoice) // Should contain category keywords
 		s.Contains(description, "Common use cases")
 	})
 
@@ -783,7 +783,7 @@ func (s *CategoriesTestSuite) TestGetRecommendedCategories() {
 	})
 
 	s.Run("ZeroLimit", func() {
-		recommendations, err := s.manager.GetRecommendedCategories(ctx, "test", 0)
+		recommendations, err := s.manager.GetRecommendedCategories(ctx, strTest, 0)
 
 		s.Require().NoError(err)
 		s.LessOrEqual(len(recommendations), 3) // Should default to 3
@@ -793,7 +793,7 @@ func (s *CategoriesTestSuite) TestGetRecommendedCategories() {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		recommendations, err := s.manager.GetRecommendedCategories(ctx, "test", 3)
+		recommendations, err := s.manager.GetRecommendedCategories(ctx, strTest, 3)
 
 		s.Require().Error(err)
 		s.Nil(recommendations)

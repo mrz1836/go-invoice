@@ -73,12 +73,12 @@ func (suite *ConfigTestSuite) TestLoadConfigFromEnv() {
 				"BUSINESS_NAME":    "Test Business",
 				"BUSINESS_ADDRESS": "123 Test St",
 				"BUSINESS_EMAIL":   "test@example.com",
-				"PAYMENT_TERMS":    "Net 30",
+				"PAYMENT_TERMS":    testNetThirty,
 			},
 			expected: func(c *Config) bool {
 				return c.Business.Name == "Test Business" &&
 					c.Business.Email == "test@example.com" &&
-					c.Invoice.Currency == "USD" &&
+					c.Invoice.Currency == testCurrencyUSD &&
 					c.Invoice.Prefix == "INV"
 			},
 			wantErr: false,
@@ -200,12 +200,12 @@ func (suite *ConfigTestSuite) TestValidateConfig() {
 					Name:         "Valid Business",
 					Address:      "123 Valid St",
 					Email:        "valid@example.com",
-					PaymentTerms: "Net 30",
+					PaymentTerms: testNetThirty,
 				},
 				Invoice: InvoiceConfig{
 					Prefix:      "VB",
 					StartNumber: 1000,
-					Currency:    "USD",
+					Currency:    testCurrencyUSD,
 					VATRate:     0.10,
 				},
 				Storage: StorageConfig{
@@ -225,12 +225,12 @@ func (suite *ConfigTestSuite) TestValidateConfig() {
 				Business: BusinessConfig{
 					Address:      "123 Valid St",
 					Email:        "valid@example.com",
-					PaymentTerms: "Net 30",
+					PaymentTerms: testNetThirty,
 				},
 				Invoice: InvoiceConfig{
 					Prefix:      "VB",
 					StartNumber: 1000,
-					Currency:    "USD",
+					Currency:    testCurrencyUSD,
 				},
 				Storage: StorageConfig{
 					DataDir: "/tmp/test",
@@ -245,12 +245,12 @@ func (suite *ConfigTestSuite) TestValidateConfig() {
 					Name:         "Valid Business",
 					Address:      "123 Valid St",
 					Email:        "valid@example.com",
-					PaymentTerms: "Net 30",
+					PaymentTerms: testNetThirty,
 				},
 				Invoice: InvoiceConfig{
 					Prefix:      "VB",
 					StartNumber: 1000,
-					Currency:    "USD",
+					Currency:    testCurrencyUSD,
 					VATRate:     1.5, // Invalid rate > 1
 				},
 				Storage: StorageConfig{
@@ -369,12 +369,12 @@ func TestSimpleValidator(t *testing.T) {
 					Name:         "Test Business",
 					Address:      "123 Test St",
 					Email:        "test@example.com",
-					PaymentTerms: "Net 30",
+					PaymentTerms: testNetThirty,
 				},
 				Invoice: InvoiceConfig{
 					Prefix:      "TEST",
 					StartNumber: 1,
-					Currency:    "USD",
+					Currency:    testCurrencyUSD,
 					VATRate:     0.0,
 				},
 				Storage: StorageConfig{
@@ -389,12 +389,12 @@ func TestSimpleValidator(t *testing.T) {
 				Business: BusinessConfig{
 					Address:      "123 Test St",
 					Email:        "test@example.com",
-					PaymentTerms: "Net 30",
+					PaymentTerms: testNetThirty,
 				},
 				Invoice: InvoiceConfig{
 					Prefix:      "TEST",
 					StartNumber: 1,
-					Currency:    "USD",
+					Currency:    testCurrencyUSD,
 				},
 				Storage: StorageConfig{
 					DataDir: "/tmp/test",

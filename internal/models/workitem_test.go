@@ -46,11 +46,11 @@ func (suite *WorkItemTestSuite) TestNewWorkItem() {
 	}{
 		{
 			name:          "ValidWorkItem",
-			id:            "ITEM-001",
+			id:            testItemID001,
 			date:          time.Now(),
 			hours:         8.0,
 			rate:          100.0,
-			description:   "Development work",
+			description:   testDevWork,
 			expectError:   false,
 			expectedTotal: 800.0,
 		},
@@ -70,7 +70,7 @@ func (suite *WorkItemTestSuite) TestNewWorkItem() {
 			date:        time.Now(),
 			hours:       8.0,
 			rate:        100.0,
-			description: "Development work",
+			description: testDevWork,
 			expectError: true,
 			errorMsg:    "validation failed for field 'id': is required",
 		},
@@ -80,7 +80,7 @@ func (suite *WorkItemTestSuite) TestNewWorkItem() {
 			date:        time.Now(),
 			hours:       0,
 			rate:        100.0,
-			description: "Development work",
+			description: testDevWork,
 			expectError: true,
 			errorMsg:    "validation failed for field 'hours': must be greater than 0",
 		},
@@ -90,7 +90,7 @@ func (suite *WorkItemTestSuite) TestNewWorkItem() {
 			date:        time.Now(),
 			hours:       -5.0,
 			rate:        100.0,
-			description: "Development work",
+			description: testDevWork,
 			expectError: true,
 			errorMsg:    "validation failed for field 'hours': must be greater than 0",
 		},
@@ -100,7 +100,7 @@ func (suite *WorkItemTestSuite) TestNewWorkItem() {
 			date:        time.Now(),
 			hours:       25.0,
 			rate:        100.0,
-			description: "Development work",
+			description: testDevWork,
 			expectError: true,
 			errorMsg:    "validation failed for field 'hours': cannot exceed 24 hours per entry",
 		},
@@ -110,7 +110,7 @@ func (suite *WorkItemTestSuite) TestNewWorkItem() {
 			date:        time.Now(),
 			hours:       8.0,
 			rate:        0,
-			description: "Development work",
+			description: testDevWork,
 			expectError: true,
 			errorMsg:    "validation failed for field 'rate': must be greater than 0",
 		},
@@ -120,7 +120,7 @@ func (suite *WorkItemTestSuite) TestNewWorkItem() {
 			date:        time.Now(),
 			hours:       8.0,
 			rate:        10001.0,
-			description: "Development work",
+			description: testDevWork,
 			expectError: true,
 			errorMsg:    "validation failed for field 'rate': cannot exceed $10,000 per hour",
 		},
@@ -140,7 +140,7 @@ func (suite *WorkItemTestSuite) TestNewWorkItem() {
 			date:        time.Now().AddDate(0, 0, 2), // 2 days in future
 			hours:       8.0,
 			rate:        100.0,
-			description: "Development work",
+			description: testDevWork,
 			expectError: true,
 			errorMsg:    "validation failed for field 'date': cannot be more than 1 day in the future",
 		},
@@ -176,7 +176,7 @@ func (suite *WorkItemTestSuite) TestNewWorkItemWithContext() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
-	item, err := NewWorkItem(ctx, "ITEM-001", time.Now(), 8.0, 100.0, "Development work")
+	item, err := NewWorkItem(ctx, testItemID001, time.Now(), 8.0, 100.0, testDevWork)
 	require.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
 	assert.Nil(t, item)
@@ -194,11 +194,11 @@ func (suite *WorkItemTestSuite) TestWorkItemValidate() {
 		{
 			name: "ValidWorkItem",
 			workItem: WorkItem{
-				ID:          "ITEM-001",
+				ID:          testItemID001,
 				Date:        time.Now(),
 				Hours:       8.0,
 				Rate:        100.0,
-				Description: "Development work",
+				Description: testDevWork,
 				Total:       800.0,
 				CreatedAt:   time.Now(),
 			},
@@ -211,7 +211,7 @@ func (suite *WorkItemTestSuite) TestWorkItemValidate() {
 				Date:        time.Time{},
 				Hours:       8.0,
 				Rate:        100.0,
-				Description: "Development work",
+				Description: testDevWork,
 				Total:       800.0,
 				CreatedAt:   time.Now(),
 			},
@@ -239,7 +239,7 @@ func (suite *WorkItemTestSuite) TestWorkItemValidate() {
 				Date:        time.Now(),
 				Hours:       8.0,
 				Rate:        100.0,
-				Description: "Development work",
+				Description: testDevWork,
 				Total:       900.0, // Should be 800.0
 				CreatedAt:   time.Now(),
 			},
@@ -253,7 +253,7 @@ func (suite *WorkItemTestSuite) TestWorkItemValidate() {
 				Date:        time.Now(),
 				Hours:       8.0,
 				Rate:        100.0,
-				Description: "Development work",
+				Description: testDevWork,
 				Total:       -800.0,
 				CreatedAt:   time.Now(),
 			},
@@ -267,7 +267,7 @@ func (suite *WorkItemTestSuite) TestWorkItemValidate() {
 				Date:        time.Now(),
 				Hours:       8.0,
 				Rate:        100.0,
-				Description: "Development work",
+				Description: testDevWork,
 				Total:       800.0,
 				CreatedAt:   time.Time{},
 			},
@@ -281,7 +281,7 @@ func (suite *WorkItemTestSuite) TestWorkItemValidate() {
 				Date:        time.Now(),
 				Hours:       8.0,
 				Rate:        100.0,
-				Description: "   ",
+				Description: testBlankStr,
 				Total:       800.0,
 				CreatedAt:   time.Now(),
 			},
@@ -308,7 +308,7 @@ func (suite *WorkItemTestSuite) TestWorkItemValidate() {
 				Date:        time.Now().Add(23 * time.Hour), // Just under 24 hours future
 				Hours:       8.0,
 				Rate:        100.0,
-				Description: "Development work",
+				Description: testDevWork,
 				Total:       800.0,
 				CreatedAt:   time.Now(),
 			},
@@ -334,11 +334,11 @@ func (suite *WorkItemTestSuite) TestUpdateHours() {
 	t := suite.T()
 
 	workItem := &WorkItem{
-		ID:          "ITEM-001",
+		ID:          testItemID001,
 		Date:        time.Now(),
 		Hours:       8.0,
 		Rate:        100.0,
-		Description: "Development work",
+		Description: testDevWork,
 		Total:       800.0,
 		CreatedAt:   time.Now(),
 	}
@@ -415,11 +415,11 @@ func (suite *WorkItemTestSuite) TestUpdateRate() {
 	t := suite.T()
 
 	workItem := &WorkItem{
-		ID:          "ITEM-001",
+		ID:          testItemID001,
 		Date:        time.Now(),
 		Hours:       8.0,
 		Rate:        100.0,
-		Description: "Development work",
+		Description: testDevWork,
 		Total:       800.0,
 		CreatedAt:   time.Now(),
 	}
@@ -496,11 +496,11 @@ func (suite *WorkItemTestSuite) TestUpdateDescription() {
 	t := suite.T()
 
 	workItem := &WorkItem{
-		ID:          "ITEM-001",
+		ID:          testItemID001,
 		Date:        time.Now(),
 		Hours:       8.0,
 		Rate:        100.0,
-		Description: "Development work",
+		Description: testDevWork,
 		Total:       800.0,
 		CreatedAt:   time.Now(),
 	}
@@ -532,7 +532,7 @@ func (suite *WorkItemTestSuite) TestUpdateDescription() {
 		},
 		{
 			name:        "WhitespaceOnlyDescription",
-			newDesc:     "   ",
+			newDesc:     testBlankStr,
 			expectError: true,
 			errorMsg:    "description cannot be empty",
 		},
@@ -553,7 +553,7 @@ func (suite *WorkItemTestSuite) TestUpdateDescription() {
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
 			// Reset work item for each test
-			workItem.Description = "Development work"
+			workItem.Description = testDevWork
 
 			err := workItem.UpdateDescription(suite.ctx, tt.newDesc)
 
@@ -561,7 +561,7 @@ func (suite *WorkItemTestSuite) TestUpdateDescription() {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
 				// Value should remain unchanged
-				assert.Equal(t, "Development work", workItem.Description)
+				assert.Equal(t, testDevWork, workItem.Description)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tt.expectedDesc, workItem.Description)
@@ -577,11 +577,11 @@ func (suite *WorkItemTestSuite) TestContextCancellation() {
 	cancel() // Cancel immediately
 
 	workItem := &WorkItem{
-		ID:          "ITEM-001",
+		ID:          testItemID001,
 		Date:        time.Now(),
 		Hours:       8.0,
 		Rate:        100.0,
-		Description: "Development work",
+		Description: testDevWork,
 		Total:       800.0,
 		CreatedAt:   time.Now(),
 	}

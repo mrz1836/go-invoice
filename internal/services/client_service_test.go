@@ -73,8 +73,8 @@ func (suite *ClientServiceTestSuite) TestCreateClient() {
 	t := suite.T()
 
 	request := models.CreateClientRequest{
-		Name:    "Test Client",
-		Email:   "test@example.com",
+		Name:    testClientName,
+		Email:   testClientEmail,
 		Phone:   "+1234567890",
 		Address: "123 Test St",
 		TaxID:   "TAX-123",
@@ -82,7 +82,7 @@ func (suite *ClientServiceTestSuite) TestCreateClient() {
 
 	// Success case
 	suite.Run("Success", func() {
-		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(nil, storage.NewNotFoundError("client", "email:test@example.com")).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, testClientEmail).Return(nil, storage.NewNotFoundError("client", "email:test@example.com")).Once()
 		suite.idGen.On("GenerateClientID", suite.ctx).Return(models.ClientID(testClientID), nil).Once()
 		suite.clientStorage.On("CreateClient", suite.ctx, mock.AnythingOfType("*models.Client")).Return(nil).Once()
 
@@ -91,8 +91,8 @@ func (suite *ClientServiceTestSuite) TestCreateClient() {
 		require.NoError(t, err)
 		require.NotNil(t, client)
 		assert.Equal(t, models.ClientID(testClientID), client.ID)
-		assert.Equal(t, "Test Client", client.Name)
-		assert.Equal(t, "test@example.com", client.Email)
+		assert.Equal(t, testClientName, client.Name)
+		assert.Equal(t, testClientEmail, client.Email)
 		assert.Equal(t, "+1234567890", client.Phone)
 		assert.Equal(t, "123 Test St", client.Address)
 		assert.Equal(t, "TAX-123", client.TaxID)
@@ -103,10 +103,10 @@ func (suite *ClientServiceTestSuite) TestCreateClient() {
 	suite.Run("DuplicateEmail", func() {
 		existingClient := &models.Client{
 			ID:    "CLIENT-999",
-			Email: "test@example.com",
+			Email: testClientEmail,
 		}
 
-		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(existingClient, nil).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, testClientEmail).Return(existingClient, nil).Once()
 
 		client, err := suite.service.CreateClient(suite.ctx, request)
 
@@ -141,7 +141,7 @@ func (suite *ClientServiceTestSuite) TestCreateClient() {
 
 	// ID generation failure
 	suite.Run("IDGenerationFailure", func() {
-		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(nil, storage.NewNotFoundError("client", "email:test@example.com")).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, testClientEmail).Return(nil, storage.NewNotFoundError("client", "email:test@example.com")).Once()
 		suite.idGen.On("GenerateClientID", suite.ctx).Return(models.ClientID(""), ErrTestIDGeneration).Once()
 
 		client, err := suite.service.CreateClient(suite.ctx, request)
@@ -154,7 +154,7 @@ func (suite *ClientServiceTestSuite) TestCreateClient() {
 	// Request validation failure
 	suite.Run("RequestValidationFailure", func() {
 		invalidRequest := models.CreateClientRequest{
-			Name:  "Test Client",
+			Name:  testClientName,
 			Email: "invalid-email", // Invalid email format
 		}
 
@@ -167,7 +167,7 @@ func (suite *ClientServiceTestSuite) TestCreateClient() {
 
 	// Storage error
 	suite.Run("StorageError", func() {
-		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(nil, storage.NewNotFoundError("client", "email:test@example.com")).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, testClientEmail).Return(nil, storage.NewNotFoundError("client", "email:test@example.com")).Once()
 		suite.idGen.On("GenerateClientID", suite.ctx).Return(models.ClientID(testClientID), nil).Once()
 		suite.clientStorage.On("CreateClient", suite.ctx, mock.AnythingOfType("*models.Client")).Return(ErrTestStorage).Once()
 
@@ -180,7 +180,7 @@ func (suite *ClientServiceTestSuite) TestCreateClient() {
 
 	// Email lookup error during validation
 	suite.Run("EmailLookupError", func() {
-		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(nil, ErrTestDatabase).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, testClientEmail).Return(nil, ErrTestDatabase).Once()
 
 		client, err := suite.service.CreateClient(suite.ctx, request)
 
@@ -195,8 +195,8 @@ func (suite *ClientServiceTestSuite) TestGetClient() {
 
 	testClient := &models.Client{
 		ID:        testClientID,
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Active:    true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -307,19 +307,19 @@ func (suite *ClientServiceTestSuite) TestUpdateClient() {
 	suite.Run("StorageError", func() {
 		existingClient := &models.Client{
 			ID:    testClientID,
-			Name:  "Test Client",
+			Name:  testClientName,
 			Email: "old@example.com",
 		}
 		client := &models.Client{
 			ID:        testClientID,
-			Name:      "Test Client",
-			Email:     "test@example.com",
+			Name:      testClientName,
+			Email:     testClientEmail,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
 
 		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID(testClientID)).Return(existingClient, nil).Once()
-		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(nil, storage.NewNotFoundError("client", "test@example.com")).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, testClientEmail).Return(nil, storage.NewNotFoundError("client", testClientEmail)).Once()
 		suite.clientStorage.On("UpdateClient", suite.ctx, client).Return(errors.New("storage error")).Once() //nolint:err113 // Test mock error
 
 		updatedClient, err := suite.service.UpdateClient(suite.ctx, client)
@@ -367,7 +367,7 @@ func (suite *ClientServiceTestSuite) TestDeleteClient() {
 		// Mock ListInvoices to return invoices for first status check (draft)
 		activeResult := &storage.InvoiceListResult{
 			Invoices: []*models.Invoice{{
-				ID:     "INV-001",
+				ID:     testInvoiceID001,
 				Status: models.StatusDraft,
 				Client: models.Client{ID: testClientID},
 			}},
@@ -417,16 +417,16 @@ func (suite *ClientServiceTestSuite) TestFindClientByEmail() {
 
 	testClient := &models.Client{
 		ID:     testClientID,
-		Name:   "Test Client",
-		Email:  "test@example.com",
+		Name:   testClientName,
+		Email:  testClientEmail,
 		Active: true,
 	}
 
 	// Success case
 	suite.Run("Success", func() {
-		suite.clientStorage.On("FindClientByEmail", suite.ctx, "test@example.com").Return(testClient, nil).Once()
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, testClientEmail).Return(testClient, nil).Once()
 
-		client, err := suite.service.FindClientByEmail(suite.ctx, "test@example.com")
+		client, err := suite.service.FindClientByEmail(suite.ctx, testClientEmail)
 
 		require.NoError(t, err)
 		require.NotNil(t, client)
@@ -453,7 +453,7 @@ func (suite *ClientServiceTestSuite) TestActivateClient() {
 	suite.Run("Success", func() {
 		inactiveClient := &models.Client{
 			ID:        testClientID,
-			Name:      "Test Client",
+			Name:      testClientName,
 			Active:    false,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -506,7 +506,7 @@ func (suite *ClientServiceTestSuite) TestActivateClient() {
 	suite.Run("StorageErrorOnUpdate", func() {
 		inactiveClient := &models.Client{
 			ID:        testClientID,
-			Name:      "Test Client",
+			Name:      testClientName,
 			Active:    false,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -526,7 +526,7 @@ func (suite *ClientServiceTestSuite) TestActivateClient() {
 	suite.Run("AlreadyActive", func() {
 		activeClient := &models.Client{
 			ID:        testClientID,
-			Name:      "Test Client",
+			Name:      testClientName,
 			Active:    true,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -549,7 +549,7 @@ func (suite *ClientServiceTestSuite) TestDeactivateClient() {
 	suite.Run("Success", func() {
 		activeClient := &models.Client{
 			ID:        testClientID,
-			Name:      "Test Client",
+			Name:      testClientName,
 			Active:    true,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -615,7 +615,7 @@ func (suite *ClientServiceTestSuite) TestDeactivateClient() {
 	suite.Run("HasActiveInvoices", func() {
 		// Mock ListInvoices to return active invoices for first status check (draft)
 		activeInvoices := []*models.Invoice{
-			{ID: "INV-001", Status: models.StatusDraft},
+			{ID: testInvoiceID001, Status: models.StatusDraft},
 		}
 		invoiceResult := &storage.InvoiceListResult{Invoices: activeInvoices, TotalCount: 1}
 
@@ -648,7 +648,7 @@ func (suite *ClientServiceTestSuite) TestDeactivateClient() {
 	suite.Run("StorageErrorOnUpdate", func() {
 		activeClient := &models.Client{
 			ID:        testClientID,
-			Name:      "Test Client",
+			Name:      testClientName,
 			Active:    true,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -682,15 +682,15 @@ func (suite *ClientServiceTestSuite) TestGetClientWithInvoices() {
 
 	client := &models.Client{
 		ID:        testClientID,
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Active:    true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
 
 	invoices := []*models.Invoice{
-		{ID: "INV-001", Number: "INV-2024-001", Status: models.StatusDraft},
+		{ID: testInvoiceID001, Number: testInvoiceNum, Status: models.StatusDraft},
 		{ID: "INV-002", Number: "INV-2024-002", Status: models.StatusSent},
 		{ID: "INV-003", Number: "INV-2024-003", Status: models.StatusPaid},
 	}

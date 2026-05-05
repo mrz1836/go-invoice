@@ -62,7 +62,7 @@ func createConfigShowTool() *MCPTool {
 			{
 				Description: "Show complete configuration in readable format",
 				Input: map[string]interface{}{
-					"output_format":     "yaml",
+					fieldOutputFormat:   "yaml",
 					"include_defaults":  true,
 					"show_descriptions": true,
 				},
@@ -72,9 +72,9 @@ func createConfigShowTool() *MCPTool {
 			{
 				Description: "Show specific configuration section for focused review",
 				Input: map[string]interface{}{
-					"section":       "invoice_settings",
-					"output_format": "json",
-					"verbose":       true,
+					"section":         "invoice_settings",
+					fieldOutputFormat: typeJSON,
+					"verbose":         true,
 				},
 				ExpectedOutput: "Detailed invoice settings configuration with metadata",
 				UseCase:        "Focused configuration review for specific functionality",
@@ -82,10 +82,10 @@ func createConfigShowTool() *MCPTool {
 			{
 				Description: "Export configuration for backup or sharing",
 				Input: map[string]interface{}{
-					"output_format":     "json",
+					fieldOutputFormat:   typeJSON,
 					"exclude_sensitive": true,
 					"include_metadata":  true,
-					"output_path":       "./config-backup.json",
+					fieldOutputPath:     "./config-backup.json",
 				},
 				ExpectedOutput: "Configuration exported to file with sensitive data excluded",
 				UseCase:        "Configuration backup and team sharing",
@@ -94,7 +94,7 @@ func createConfigShowTool() *MCPTool {
 				Description: "Quick configuration summary for status checking",
 				Input: map[string]interface{}{
 					"summary_only":    true,
-					"output_format":   "table",
+					fieldOutputFormat: "table",
 					"show_validation": true,
 				},
 				ExpectedOutput: "Summary table showing key settings and validation status",
@@ -105,7 +105,7 @@ func createConfigShowTool() *MCPTool {
 				Input: map[string]interface{}{
 					"environment":     "production",
 					"show_overrides":  true,
-					"output_format":   "yaml",
+					fieldOutputFormat: "yaml",
 					"include_sources": true,
 				},
 				ExpectedOutput: "Configuration with production overrides and source information",
@@ -114,19 +114,19 @@ func createConfigShowTool() *MCPTool {
 			{
 				Description: "Display configuration for API integration",
 				Input: map[string]interface{}{
-					"output_format": "json",
-					"api_format":    true,
-					"return_data":   true,
+					fieldOutputFormat: typeJSON,
+					"api_format":      true,
+					"return_data":     true,
 				},
 				ExpectedOutput: "Configuration in API-friendly JSON format returned in memory",
 				UseCase:        "Integration with configuration management APIs",
 			},
 		},
 		Category:   CategoryConfiguration,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"config", "show"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldConfig, "show"},
 		HelpText:   "Displays system configuration with flexible formatting and filtering. Supports sensitive data protection and environment-specific views for troubleshooting.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    20 * time.Second,
 	}
 }
@@ -146,7 +146,7 @@ func createConfigValidateTool() *MCPTool {
 				Input: map[string]interface{}{
 					"comprehensive":      true,
 					"check_dependencies": true,
-					"output_format":      "detailed",
+					fieldOutputFormat:    "detailed",
 				},
 				ExpectedOutput: "Comprehensive validation report with all checks and dependency verification",
 				UseCase:        "Complete system health check and configuration audit",
@@ -166,7 +166,7 @@ func createConfigValidateTool() *MCPTool {
 				Input: map[string]interface{}{
 					"deployment_check": true,
 					"fail_fast":        true,
-					"output_format":    "summary",
+					fieldOutputFormat:  "summary",
 				},
 				ExpectedOutput: "Quick deployment readiness check with pass/fail status",
 				UseCase:        "Pre-deployment configuration verification",
@@ -177,7 +177,7 @@ func createConfigValidateTool() *MCPTool {
 					"include_suggestions": true,
 					"auto_fix_safe":       true,
 					"backup_before_fix":   true,
-					"output_format":       "interactive",
+					fieldOutputFormat:     "interactive",
 				},
 				ExpectedOutput: "Validation report with automatic safe fixes and manual suggestions",
 				UseCase:        "Configuration troubleshooting with guided repair options",
@@ -197,9 +197,9 @@ func createConfigValidateTool() *MCPTool {
 				Description: "Export validation results for documentation",
 				Input: map[string]interface{}{
 					"comprehensive":   true,
-					"output_format":   "report",
+					fieldOutputFormat: "report",
 					"include_metrics": true,
-					"output_path":     "./validation-report.html",
+					fieldOutputPath:   "./validation-report.html",
 				},
 				ExpectedOutput: "Detailed HTML validation report with metrics and recommendations",
 				UseCase:        "Documentation and audit trail for configuration compliance",
@@ -210,17 +210,17 @@ func createConfigValidateTool() *MCPTool {
 					"auto_fix_safe":       true,
 					"backup_before_fix":   true,
 					"include_suggestions": true,
-					"output_format":       "detailed",
+					fieldOutputFormat:     "detailed",
 				},
 				ExpectedOutput: "Validation report identifying invalid configuration entries with automatic fixes for malformed settings",
 				UseCase:        "Recovery from corrupt or missing configuration data",
 			},
 		},
 		Category:   CategoryConfiguration,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"config", "validate"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldConfig, strValidate},
 		HelpText:   "Validates configuration integrity with comprehensive checks, dependency verification, and actionable fix suggestions. Supports deployment readiness verification.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    45 * time.Second,
 	}
 }
@@ -239,7 +239,7 @@ func createConfigInitTool() *MCPTool {
 				Description: "Initialize configuration with interactive guided setup",
 				Input: map[string]interface{}{
 					"interactive":    true,
-					"template":       "default",
+					fieldTemplate:    "default",
 					"environment":    "development",
 					"validate_after": true,
 				},
@@ -249,7 +249,7 @@ func createConfigInitTool() *MCPTool {
 			{
 				Description: "Initialize production configuration from template",
 				Input: map[string]interface{}{
-					"template":         "production",
+					fieldTemplate:      "production",
 					"environment":      "production",
 					"company_name":     "My Consulting LLC",
 					"default_tax_rate": 8.5,
@@ -262,8 +262,8 @@ func createConfigInitTool() *MCPTool {
 			{
 				Description: "Initialize minimal configuration for testing",
 				Input: map[string]interface{}{
-					"template":      "minimal",
-					"environment":   "test",
+					fieldTemplate:   "minimal",
+					"environment":   strTest,
 					"skip_optional": true,
 					"auto_confirm":  true,
 				},
@@ -273,7 +273,7 @@ func createConfigInitTool() *MCPTool {
 			{
 				Description: "Initialize configuration with custom values",
 				Input: map[string]interface{}{
-					"template": "custom",
+					fieldTemplate: "custom",
 					"custom_values": map[string]interface{}{
 						"invoice_prefix":   "MYCO",
 						"default_due_days": 45,
@@ -301,8 +301,8 @@ func createConfigInitTool() *MCPTool {
 			{
 				Description: "Initialize configuration with external service integration",
 				Input: map[string]interface{}{
-					"template":            "enterprise",
-					"enable_integrations": []string{"quickbooks", "stripe", "email"},
+					fieldTemplate:         "enterprise",
+					"enable_integrations": []string{"quickbooks", "stripe", fieldEmail},
 					"test_connections":    true,
 					"setup_webhooks":      true,
 				},
@@ -311,10 +311,10 @@ func createConfigInitTool() *MCPTool {
 			},
 		},
 		Category:   CategoryConfiguration,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"config", "init"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldConfig, "init"},
 		HelpText:   "Initializes system configuration with templates, guided setup, and validation. Supports migration from existing configurations and enterprise integrations.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    120 * time.Second,
 	}
 }

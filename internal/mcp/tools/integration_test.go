@@ -74,7 +74,7 @@ func (suite *ToolIntegrationTestSuite) TestToolDiscoveryIntegration() {
 
 	// Test search functionality
 	searchCriteria := &ToolSearchCriteria{
-		Query:             "invoice",
+		Query:             fieldInvoice,
 		MaxResults:        20,
 		MinRelevanceScore: 0.1,
 		SortBy:            "relevance",

@@ -27,7 +27,7 @@ func (s *HandlersTestSuite) SetupTest() {
 	s.bridge = NewMockCLIBridge()
 	s.config = &Config{
 		CLI: CLIConfig{
-			Path:       "go-invoice",
+			Path:       defaultCLIName,
 			WorkingDir: "/tmp",
 			MaxTimeout: 60 * time.Second,
 		},
@@ -39,15 +39,15 @@ func (s *HandlersTestSuite) TestHandleInitialize() {
 	ctx := context.Background()
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      1,
-		Method:  "initialize",
+		Method:  methodInitialize,
 	}
 
 	resp, err := s.handler.HandleInitialize(ctx, req)
 	s.Require().NoError(err)
 	s.NotNil(resp)
-	s.Equal("2.0", resp.JSONRPC)
+	s.Equal(jsonRPCVersion, resp.JSONRPC) //nolint:testifylint // JSONRPC is a version string, not JSON-encoded data
 	s.Equal(1, resp.ID)
 	s.Nil(resp.Error)
 
@@ -62,15 +62,15 @@ func (s *HandlersTestSuite) TestHandlePing() {
 	ctx := context.Background()
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      2,
-		Method:  "ping",
+		Method:  methodPing,
 	}
 
 	resp, err := s.handler.HandlePing(ctx, req)
 	s.Require().NoError(err)
 	s.NotNil(resp)
-	s.Equal("2.0", resp.JSONRPC)
+	s.Equal(jsonRPCVersion, resp.JSONRPC) //nolint:testifylint // JSONRPC is a version string, not JSON-encoded data
 	s.Equal(2, resp.ID)
 	s.Nil(resp.Error)
 
@@ -83,15 +83,15 @@ func (s *HandlersTestSuite) TestHandleToolsList() {
 	ctx := context.Background()
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      3,
-		Method:  "tools/list",
+		Method:  methodToolsList,
 	}
 
 	resp, err := s.handler.HandleToolsList(ctx, req)
 	s.Require().NoError(err)
 	s.NotNil(resp)
-	s.Equal("2.0", resp.JSONRPC)
+	s.Equal(jsonRPCVersion, resp.JSONRPC) //nolint:testifylint // JSONRPC is a version string, not JSON-encoded data
 	s.Equal(3, resp.ID)
 	s.Nil(resp.Error)
 
@@ -104,7 +104,7 @@ func (s *HandlersTestSuite) TestHandleToolsList() {
 	for i, tool := range result.Tools {
 		toolNames[i] = tool.Name
 	}
-	s.Contains(toolNames, "ping")
+	s.Contains(toolNames, methodPing)
 	s.Contains(toolNames, "version")
 }
 
@@ -120,11 +120,11 @@ func (s *HandlersTestSuite) TestHandleToolCallPing() {
 	}, nil)
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      4,
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: ToolCallParams{
-			Name:      "ping",
+			Name:      methodPing,
 			Arguments: map[string]interface{}{},
 		},
 	}
@@ -153,9 +153,9 @@ func (s *HandlersTestSuite) TestHandleToolCallVersion() {
 	}, nil)
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      5,
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: ToolCallParams{
 			Name:      "version",
 			Arguments: map[string]interface{}{},
@@ -178,9 +178,9 @@ func (s *HandlersTestSuite) TestHandleToolCallUnknownTool() {
 	ctx := context.Background()
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      6,
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: ToolCallParams{
 			Name:      "unknown-tool",
 			Arguments: map[string]interface{}{},
@@ -200,9 +200,9 @@ func (s *HandlersTestSuite) TestHandleContextCancellation() {
 	cancel() // Immediately cancel
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      7,
-		Method:  "ping",
+		Method:  methodPing,
 	}
 
 	_, err := s.handler.HandlePing(ctx, req)
@@ -223,15 +223,15 @@ func BenchmarkHandleInitialize(b *testing.B) {
 	logger := NewTestLogger()
 	bridge := NewMockCLIBridge()
 	config := &Config{
-		CLI: CLIConfig{Path: "go-invoice"},
+		CLI: CLIConfig{Path: defaultCLIName},
 	}
 	handler := NewMCPHandler(logger, bridge, config)
 
 	ctx := context.Background()
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      1,
-		Method:  "initialize",
+		Method:  methodInitialize,
 	}
 
 	b.ResetTimer()
@@ -251,17 +251,17 @@ func BenchmarkHandleToolCall(b *testing.B) {
 	}, nil)
 
 	config := &Config{
-		CLI: CLIConfig{Path: "go-invoice"},
+		CLI: CLIConfig{Path: defaultCLIName},
 	}
 	handler := NewMCPHandler(logger, bridge, config)
 
 	ctx := context.Background()
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      1,
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: ToolCallParams{
-			Name:      "ping",
+			Name:      methodPing,
 			Arguments: map[string]interface{}{},
 		},
 	}

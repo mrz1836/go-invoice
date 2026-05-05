@@ -19,29 +19,29 @@ func FuzzNewWorkItem(f *testing.F) {
 		rate        float64
 		description string
 	}{
-		{"valid-id", 0, 8.0, 100.0, "Development work"},
+		{testValidID, 0, 8.0, 100.0, testDevWork},
 		{"", 0, 8.0, 100.0, "Empty ID"},                                        // Empty ID
-		{"valid-id", 0, -1.0, 100.0, "Negative hours"},                         // Negative hours
-		{"valid-id", 0, 8.0, -50.0, "Negative rate"},                           // Negative rate
-		{"valid-id", 0, 8.0, 100.0, ""},                                        // Empty description
-		{"valid-id", 0, 0.0, 100.0, "Zero hours"},                              // Zero hours
-		{"valid-id", 0, 8.0, 0.0, "Zero rate"},                                 // Zero rate
-		{"valid-id", 0, 25.0, 100.0, "Too many hours"},                         // Hours > 24
-		{"valid-id", 0, 8.0, 5000.0, "Very high rate"},                         // Very high rate
-		{"valid-id", 0, 8.0, 0.1, "Very low rate"},                             // Very low rate
-		{"valid-id", 10, 8.0, 100.0, "Future date"},                            // Future date
-		{"valid-id", -1000, 8.0, 100.0, "Past date"},                           // Far past date
-		{"valid-id", 0, math.NaN(), 100.0, "NaN hours"},                        // NaN hours
-		{"valid-id", 0, 8.0, math.Inf(1), "Infinite rate"},                     // Infinite rate
-		{"valid-id", 0, math.Inf(-1), 100.0, "Negative infinite hours"},        // Negative infinite hours
-		{"valid-id", 0, 8.333333333, 100.123456, "High precision"},             // High precision values
+		{testValidID, 0, -1.0, 100.0, "Negative hours"},                        // Negative hours
+		{testValidID, 0, 8.0, -50.0, "Negative rate"},                          // Negative rate
+		{testValidID, 0, 8.0, 100.0, ""},                                       // Empty description
+		{testValidID, 0, 0.0, 100.0, "Zero hours"},                             // Zero hours
+		{testValidID, 0, 8.0, 0.0, "Zero rate"},                                // Zero rate
+		{testValidID, 0, 25.0, 100.0, "Too many hours"},                        // Hours > 24
+		{testValidID, 0, 8.0, 5000.0, "Very high rate"},                        // Very high rate
+		{testValidID, 0, 8.0, 0.1, "Very low rate"},                            // Very low rate
+		{testValidID, 10, 8.0, 100.0, "Future date"},                           // Future date
+		{testValidID, -1000, 8.0, 100.0, "Past date"},                          // Far past date
+		{testValidID, 0, math.NaN(), 100.0, "NaN hours"},                       // NaN hours
+		{testValidID, 0, 8.0, math.Inf(1), "Infinite rate"},                    // Infinite rate
+		{testValidID, 0, math.Inf(-1), 100.0, "Negative infinite hours"},       // Negative infinite hours
+		{testValidID, 0, 8.333333333, 100.123456, "High precision"},            // High precision values
 		{"123", 0, 8.0, 100.0, "Numeric ID"},                                   // Numeric ID
 		{"very-long-id-" + strings.Repeat("x", 100), 0, 8.0, 100.0, "Long ID"}, // Very long ID
-		{"valid-id", 0, 8.0, 100.0, "A"},                                       // Very short description
-		{"valid-id", 0, 8.0, 100.0, strings.Repeat("A", 1001)},                 // Very long description
+		{testValidID, 0, 8.0, 100.0, "A"},                                      // Very short description
+		{testValidID, 0, 8.0, 100.0, strings.Repeat("A", 1001)},                // Very long description
 		{"id-with-special-chars!@#$%", 0, 8.0, 100.0, "Special chars in ID"},   // Special characters in ID
-		{"valid-id", 0, 8.0, 100.0, "Description with special chars!@#$%"},     // Special characters in description
-		{"valid-id", 0, 8.0, 100.0, "Unicode description 🚀 with emojis"},       // Unicode description
+		{testValidID, 0, 8.0, 100.0, "Description with special chars!@#$%"},    // Special characters in description
+		{testValidID, 0, 8.0, 100.0, "Unicode description 🚀 with emojis"},      // Unicode description
 	}
 
 	for _, seed := range seeds {
@@ -158,7 +158,7 @@ func FuzzWorkItemValidation(f *testing.F) {
 		rate        float64
 		description string
 	}{
-		{"valid-1", 8.0, 100.0, "Development work"},
+		{"valid-1", 8.0, 100.0, testDevWork},
 		{"valid-2", 4.5, 125.0, "Bug fixes and testing"},
 		{"valid-3", 2.0, 200.0, "Code review"},
 	}
@@ -315,12 +315,12 @@ func FuzzWorkItemUpdates(f *testing.F) {
 		{"hours", 0.0, ""},         // Zero hours
 		{"hours", math.NaN(), ""},  // NaN hours
 		{"hours", math.Inf(1), ""}, // Infinite hours
-		{"rate", 150.0, ""},
-		{"rate", -50.0, ""},       // Invalid rate
-		{"rate", 0.0, ""},         // Zero rate
-		{"rate", 15000.0, ""},     // Too high rate
-		{"rate", math.NaN(), ""},  // NaN rate
-		{"rate", math.Inf(1), ""}, // Infinite rate
+		{testFieldRate, 150.0, ""},
+		{testFieldRate, -50.0, ""},       // Invalid rate
+		{testFieldRate, 0.0, ""},         // Zero rate
+		{testFieldRate, 15000.0, ""},     // Too high rate
+		{testFieldRate, math.NaN(), ""},  // NaN rate
+		{testFieldRate, math.Inf(1), ""}, // Infinite rate
 		{"description", 0.0, "Updated description"},
 		{"description", 0.0, ""},                        // Empty description
 		{"description", 0.0, "A"},                       // Very short description
@@ -391,7 +391,7 @@ func FuzzWorkItemUpdates(f *testing.F) {
 				}
 			}
 
-		case "rate":
+		case testFieldRate:
 			err = workItem.UpdateRate(ctx, numValue)
 			if err == nil {
 				// If update succeeded, check invariants
@@ -448,7 +448,7 @@ func FuzzWorkItemUpdates(f *testing.F) {
 		}
 
 		// Test context cancellation for each update type (only for valid update types)
-		validUpdateTypes := []string{"hours", "rate", "description"}
+		validUpdateTypes := []string{"hours", testFieldRate, "description"}
 		isValidUpdateType := false
 		for _, validType := range validUpdateTypes {
 			if updateType == validType {
@@ -465,7 +465,7 @@ func FuzzWorkItemUpdates(f *testing.F) {
 			switch updateType {
 			case "hours":
 				cancelErr = workItem.UpdateHours(cancelCtx, numValue)
-			case "rate":
+			case testFieldRate:
 				cancelErr = workItem.UpdateRate(cancelCtx, numValue)
 			case "description":
 				cancelErr = workItem.UpdateDescription(cancelCtx, strValue)

@@ -18,22 +18,22 @@ func (s *ClientSchemasTestSuite) TestClientCreateSchema() {
 
 	s.Run("BasicStructure", func() {
 		s.NotNil(schema, "Schema should not be nil")
-		s.Equal("object", schema["type"], "Schema type should be object")
+		s.Equal(keyObject, schema[keyType], "Schema type should be object")
 
 		// Should have properties
-		properties, hasProperties := schema["properties"]
+		properties, hasProperties := schema[keyProperties]
 		s.True(hasProperties, "Schema should have properties")
 		s.IsType(map[string]interface{}{}, properties, "Properties should be a map")
 	})
 
 	s.Run("RequiredFields", func() {
-		required, hasRequired := schema["required"]
+		required, hasRequired := schema[keyRequired]
 		if hasRequired {
 			s.IsType([]interface{}{}, required, "Required should be an array")
 
 			if requiredSlice, ok := required.([]interface{}); ok {
 				// Should have at least basic required fields for client creation
-				expectedFields := []string{"name"}
+				expectedFields := []string{keyName}
 				for _, expectedField := range expectedFields {
 					found := false
 					for _, reqField := range requiredSlice {
@@ -51,14 +51,14 @@ func (s *ClientSchemasTestSuite) TestClientCreateSchema() {
 	})
 
 	s.Run("FieldDefinitions", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 
 		// Common client fields that should exist
 		expectedFields := map[string]string{
-			"name":    "string",
-			"email":   "string",
-			"address": "string",
-			"phone":   "string",
+			keyName:   typeString,
+			keyEmail:  typeString,
+			"address": typeString,
+			"phone":   typeString,
 		}
 
 		for fieldName, expectedType := range expectedFields {
@@ -66,7 +66,7 @@ func (s *ClientSchemasTestSuite) TestClientCreateSchema() {
 				s.IsType(map[string]interface{}{}, fieldDef, "Field %s should have definition", fieldName)
 
 				if fieldMap, ok := fieldDef.(map[string]interface{}); ok {
-					if fieldType, hasType := fieldMap["type"]; hasType {
+					if fieldType, hasType := fieldMap[keyType]; hasType {
 						s.Equal(expectedType, fieldType, "Field %s should have type %s", fieldName, expectedType)
 					}
 				}
@@ -75,21 +75,21 @@ func (s *ClientSchemasTestSuite) TestClientCreateSchema() {
 	})
 
 	s.Run("ValidationConstraints", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 
 		// Email field should have format validation
-		if emailField, hasEmail := properties["email"]; hasEmail {
+		if emailField, hasEmail := properties[keyEmail]; hasEmail {
 			if emailMap, ok := emailField.(map[string]interface{}); ok {
 				if format, hasFormat := emailMap["format"]; hasFormat {
-					s.Equal("email", format, "Email field should have email format")
+					s.Equal(keyEmail, format, "Email field should have email format")
 				}
 			}
 		}
 
 		// Name field should have length constraints
-		if nameField, hasName := properties["name"]; hasName {
+		if nameField, hasName := properties[keyName]; hasName {
 			if nameMap, ok := nameField.(map[string]interface{}); ok {
-				if minLength, hasMinLength := nameMap["minLength"]; hasMinLength {
+				if minLength, hasMinLength := nameMap[keyMinLength]; hasMinLength {
 					s.IsType(float64(0), minLength, "MinLength should be numeric")
 					s.Greater(minLength.(float64), 0.0, "Name should have minimum length")
 				}
@@ -99,11 +99,11 @@ func (s *ClientSchemasTestSuite) TestClientCreateSchema() {
 
 	s.Run("SchemaCompleteness", func() {
 		// Verify schema has all necessary components for JSON Schema validation
-		s.Contains(schema, "type", "Schema should have type")
-		s.Contains(schema, "properties", "Schema should have properties")
+		s.Contains(schema, keyType, "Schema should have type")
+		s.Contains(schema, keyProperties, "Schema should have properties")
 
 		// Should not allow additional properties by default for strict validation
-		if additionalProperties, hasAdditional := schema["additionalProperties"]; hasAdditional {
+		if additionalProperties, hasAdditional := schema[keyAdditionalProperties]; hasAdditional {
 			s.IsType(false, additionalProperties, "Additional properties should be boolean")
 		}
 	})
@@ -114,11 +114,11 @@ func (s *ClientSchemasTestSuite) TestClientListSchema() {
 
 	s.Run("BasicStructure", func() {
 		s.NotNil(schema, "Schema should not be nil")
-		s.Equal("object", schema["type"], "Schema type should be object")
+		s.Equal(keyObject, schema[keyType], "Schema type should be object")
 	})
 
 	s.Run("FilteringFields", func() {
-		properties, hasProperties := schema["properties"]
+		properties, hasProperties := schema[keyProperties]
 		if hasProperties {
 			if propertiesMap, ok := properties.(map[string]interface{}); ok {
 				// Common list filtering fields
@@ -129,7 +129,7 @@ func (s *ClientSchemasTestSuite) TestClientListSchema() {
 						s.IsType(map[string]interface{}{}, fieldDef, "Field %s should have definition", field)
 
 						if fieldMap, ok := fieldDef.(map[string]interface{}); ok {
-							s.Contains(fieldMap, "type", "Field %s should have type", field)
+							s.Contains(fieldMap, keyType, "Field %s should have type", field)
 						}
 					}
 				}
@@ -139,7 +139,7 @@ func (s *ClientSchemasTestSuite) TestClientListSchema() {
 
 	s.Run("OptionalParameters", func() {
 		// List schemas typically have all optional parameters
-		required, hasRequired := schema["required"]
+		required, hasRequired := schema[keyRequired]
 		if hasRequired {
 			if requiredSlice, ok := required.([]interface{}); ok {
 				s.Empty(requiredSlice, "List schema should have no required fields or minimal required fields")
@@ -153,16 +153,16 @@ func (s *ClientSchemasTestSuite) TestClientShowSchema() {
 
 	s.Run("BasicStructure", func() {
 		s.NotNil(schema, "Schema should not be nil")
-		s.Equal("object", schema["type"], "Schema type should be object")
+		s.Equal(keyObject, schema[keyType], "Schema type should be object")
 	})
 
 	s.Run("IdentifierFields", func() {
-		properties, hasProperties := schema["properties"]
+		properties, hasProperties := schema[keyProperties]
 		s.True(hasProperties, "Schema should have properties for client identification")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have at least one way to identify clients
-			identifierFields := []string{"client_id", "client_name", "email", "id", "name"}
+			identifierFields := []string{keyClientID, keyClientName, keyEmail, "id", keyName}
 			hasIdentifier := false
 
 			for _, field := range identifierFields {
@@ -177,7 +177,7 @@ func (s *ClientSchemasTestSuite) TestClientShowSchema() {
 	})
 
 	s.Run("OutputOptions", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 
 		// May have output format options
 		outputFields := []string{"output_format", "format", "show_details"}
@@ -194,16 +194,16 @@ func (s *ClientSchemasTestSuite) TestClientUpdateSchema() {
 
 	s.Run("BasicStructure", func() {
 		s.NotNil(schema, "Schema should not be nil")
-		s.Equal("object", schema["type"], "Schema type should be object")
+		s.Equal(keyObject, schema[keyType], "Schema type should be object")
 	})
 
 	s.Run("IdentifierAndUpdateFields", func() {
-		properties, hasProperties := schema["properties"]
+		properties, hasProperties := schema[keyProperties]
 		s.True(hasProperties, "Schema should have properties")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have identifier fields
-			identifierFields := []string{"client_id", "client_name", "email", "id", "name"}
+			identifierFields := []string{keyClientID, keyClientName, keyEmail, "id", keyName}
 			hasIdentifier := false
 			for _, field := range identifierFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -214,7 +214,7 @@ func (s *ClientSchemasTestSuite) TestClientUpdateSchema() {
 			s.True(hasIdentifier, "Should have client identifier field")
 
 			// Should have updatable fields
-			updatableFields := []string{"name", "email", "address", "phone", "notes"}
+			updatableFields := []string{keyName, keyEmail, "address", "phone", "notes"}
 			hasUpdatableField := false
 			for _, field := range updatableFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -227,13 +227,13 @@ func (s *ClientSchemasTestSuite) TestClientUpdateSchema() {
 	})
 
 	s.Run("UpdateValidation", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 
 		// Email field should maintain format validation
-		if emailField, hasEmail := properties["email"]; hasEmail {
+		if emailField, hasEmail := properties[keyEmail]; hasEmail {
 			if emailMap, ok := emailField.(map[string]interface{}); ok {
 				if format, hasFormat := emailMap["format"]; hasFormat {
-					s.Equal("email", format, "Email field should maintain email format validation")
+					s.Equal(keyEmail, format, "Email field should maintain email format validation")
 				}
 			}
 		}
@@ -245,16 +245,16 @@ func (s *ClientSchemasTestSuite) TestClientDeleteSchema() {
 
 	s.Run("BasicStructure", func() {
 		s.NotNil(schema, "Schema should not be nil")
-		s.Equal("object", schema["type"], "Schema type should be object")
+		s.Equal(keyObject, schema[keyType], "Schema type should be object")
 	})
 
 	s.Run("IdentifierFields", func() {
-		properties, hasProperties := schema["properties"]
+		properties, hasProperties := schema[keyProperties]
 		s.True(hasProperties, "Schema should have properties")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have identifier fields
-			identifierFields := []string{"client_id", "client_name", "email", "id", "name"}
+			identifierFields := []string{keyClientID, keyClientName, keyEmail, "id", keyName}
 			hasIdentifier := false
 			for _, field := range identifierFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -267,7 +267,7 @@ func (s *ClientSchemasTestSuite) TestClientDeleteSchema() {
 	})
 
 	s.Run("SafetyFields", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 
 		// May have safety/confirmation fields
 		safetyFields := []string{"confirm", "force", "cascade"}
@@ -276,8 +276,8 @@ func (s *ClientSchemasTestSuite) TestClientDeleteSchema() {
 				s.IsType(map[string]interface{}{}, fieldDef, "Safety field %s should have definition", field)
 
 				if fieldMap, ok := fieldDef.(map[string]interface{}); ok {
-					if fieldType, hasType := fieldMap["type"]; hasType {
-						s.Equal("boolean", fieldType, "Safety field %s should be boolean", field)
+					if fieldType, hasType := fieldMap[keyType]; hasType {
+						s.Equal(typeBoolean, fieldType, "Safety field %s should be boolean", field)
 					}
 				}
 			}
@@ -311,11 +311,11 @@ func (s *ClientSchemasTestSuite) TestSchemaConsistency() {
 		}
 
 		for i, schema := range schemas {
-			properties, _ := schema["properties"].(map[string]interface{})
-			if emailField, hasEmail := properties["email"]; hasEmail {
+			properties, _ := schema[keyProperties].(map[string]interface{})
+			if emailField, hasEmail := properties[keyEmail]; hasEmail {
 				if emailMap, ok := emailField.(map[string]interface{}); ok {
 					if format, hasFormat := emailMap["format"]; hasFormat {
-						s.Equal("email", format, "Email format should be consistent across schemas (schema %d)", i)
+						s.Equal(keyEmail, format, "Email format should be consistent across schemas (schema %d)", i)
 					}
 				}
 			}
@@ -330,15 +330,15 @@ func (s *ClientSchemasTestSuite) TestSchemaConsistency() {
 			ClientDeleteSchema(),
 		}
 
-		commonIdentifiers := []string{"client_id", "client_name", "email"}
+		commonIdentifiers := []string{keyClientID, keyClientName, keyEmail}
 		for _, identifier := range commonIdentifiers {
 			fieldTypes := make(map[string]int)
 
 			for _, schema := range identifierSchemas {
-				properties, _ := schema["properties"].(map[string]interface{})
+				properties, _ := schema[keyProperties].(map[string]interface{})
 				if fieldDef, hasField := properties[identifier]; hasField {
 					if fieldMap, ok := fieldDef.(map[string]interface{}); ok {
-						if fieldType, hasType := fieldMap["type"]; hasType {
+						if fieldType, hasType := fieldMap[keyType]; hasType {
 							fieldTypes[fieldType.(string)]++
 						}
 					}
@@ -367,7 +367,7 @@ func (s *ClientSchemasTestSuite) TestSchemaEdgeCases() {
 		for _, schemaFunc := range schemas {
 			schema := schemaFunc()
 			s.NotEmpty(schema, "Schema should not be empty")
-			s.Contains(schema, "type", "Schema should have type field")
+			s.Contains(schema, keyType, "Schema should have type field")
 		}
 	})
 
@@ -376,11 +376,11 @@ func (s *ClientSchemasTestSuite) TestSchemaEdgeCases() {
 		schema1 := ClientCreateSchema()
 		schema2 := ClientCreateSchema()
 
-		s.Equal(schema1["type"], schema2["type"], "Schema type should be consistent")
+		s.Equal(schema1[keyType], schema2[keyType], "Schema type should be consistent")
 
 		// Deep comparison would be complex, but basic structure should match
-		props1, _ := schema1["properties"].(map[string]interface{})
-		props2, _ := schema2["properties"].(map[string]interface{})
+		props1, _ := schema1[keyProperties].(map[string]interface{})
+		props2, _ := schema2[keyProperties].(map[string]interface{})
 		s.Len(props1, len(props2), "Schema properties count should be consistent")
 	})
 }
@@ -388,11 +388,11 @@ func (s *ClientSchemasTestSuite) TestSchemaEdgeCases() {
 // Helper method to validate JSON Schema structure
 func (s *ClientSchemasTestSuite) validateJSONSchema(schema map[string]interface{}, schemaName string) {
 	// Basic JSON Schema requirements
-	s.Contains(schema, "type", "%s should have type field", schemaName)
-	s.Equal("object", schema["type"], "%s should be object type", schemaName)
+	s.Contains(schema, keyType, "%s should have type field", schemaName)
+	s.Equal(keyObject, schema[keyType], "%s should be object type", schemaName)
 
 	// Properties validation
-	if properties, hasProps := schema["properties"]; hasProps {
+	if properties, hasProps := schema[keyProperties]; hasProps {
 		s.IsType(map[string]interface{}{}, properties, "%s properties should be map", schemaName)
 
 		if propsMap, ok := properties.(map[string]interface{}); ok {
@@ -402,8 +402,8 @@ func (s *ClientSchemasTestSuite) validateJSONSchema(schema map[string]interface{
 
 				if fieldMap, ok := fieldDef.(map[string]interface{}); ok {
 					// Each field should have a type
-					if fieldType, hasType := fieldMap["type"]; hasType {
-						validTypes := []string{"string", "number", "boolean", "array", "object", "null"}
+					if fieldType, hasType := fieldMap[keyType]; hasType {
+						validTypes := []string{typeString, typeNumber, typeBoolean, typeArray, keyObject, "null"}
 						s.Contains(validTypes, fieldType, "Field %s should have valid type", fieldName)
 					}
 				}
@@ -412,11 +412,11 @@ func (s *ClientSchemasTestSuite) validateJSONSchema(schema map[string]interface{
 	}
 
 	// Required field validation
-	if required, hasRequired := schema["required"]; hasRequired {
+	if required, hasRequired := schema[keyRequired]; hasRequired {
 		s.IsType([]interface{}{}, required, "%s required should be array", schemaName)
 
 		if reqSlice, ok := required.([]interface{}); ok {
-			properties, _ := schema["properties"].(map[string]interface{})
+			properties, _ := schema[keyProperties].(map[string]interface{})
 			for _, reqField := range reqSlice {
 				s.IsType("", reqField, "Required field should be string")
 				if reqFieldStr, ok := reqField.(string); ok {
@@ -464,7 +464,7 @@ func TestClientSchemas_Specific(t *testing.T) {
 			schema := schemaFunc()
 			assert.NotNil(t, schema)
 			assert.IsType(t, map[string]interface{}{}, schema)
-			assert.Contains(t, schema, "type")
+			assert.Contains(t, schema, keyType)
 		}
 	})
 
@@ -472,12 +472,12 @@ func TestClientSchemas_Specific(t *testing.T) {
 		schema := ClientCreateSchema()
 
 		// Client creation should require at least a name
-		required, hasRequired := schema["required"]
+		required, hasRequired := schema[keyRequired]
 		if hasRequired {
 			if reqSlice, ok := required.([]interface{}); ok {
 				hasNameRequired := false
 				for _, req := range reqSlice {
-					if req == "name" {
+					if req == keyName {
 						hasNameRequired = true
 						break
 					}
@@ -494,13 +494,13 @@ func TestClientSchemas_Specific(t *testing.T) {
 		}
 
 		for _, schema := range schemas {
-			properties, _ := schema["properties"].(map[string]interface{})
-			if emailField, hasEmail := properties["email"]; hasEmail {
+			properties, _ := schema[keyProperties].(map[string]interface{})
+			if emailField, hasEmail := properties[keyEmail]; hasEmail {
 				if emailMap, ok := emailField.(map[string]interface{}); ok {
 					format, hasFormat := emailMap["format"]
 					assert.True(t, hasFormat, "Email field should have format validation")
 					if hasFormat {
-						assert.Equal(t, "email", format, "Email field should have email format")
+						assert.Equal(t, keyEmail, format, "Email field should have email format")
 					}
 				}
 			}
@@ -528,14 +528,14 @@ func TestClientSchemas_EdgeCases(t *testing.T) {
 		}
 
 		for i, schema := range schemas {
-			assert.Contains(t, schema, "type", "Schema %d should have type", i)
-			assert.Equal(t, "object", schema["type"], "Schema %d should be object type", i)
+			assert.Contains(t, schema, keyType, "Schema %d should have type", i)
+			assert.Equal(t, keyObject, schema[keyType], "Schema %d should be object type", i)
 		}
 	})
 
 	t.Run("PropertiesAreValid", func(t *testing.T) {
 		schema := ClientCreateSchema()
-		properties, hasProps := schema["properties"]
+		properties, hasProps := schema[keyProperties]
 
 		if hasProps {
 			require.IsType(t, map[string]interface{}{}, properties)

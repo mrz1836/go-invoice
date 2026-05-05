@@ -42,18 +42,18 @@ func (s *HandlersProductionTestSuite) SetupTest() {
 	s.mockHandler = newMockToolCallHandler()
 	s.config = &Config{
 		CLI: CLIConfig{
-			Path:       "/usr/bin/go-invoice",
+			Path:       "/usr/bin/" + defaultCLIName,
 			WorkingDir: "/tmp",
 			MaxTimeout: 30 * time.Second,
 		},
 		Server: ServerConfig{
-			Host:        "localhost",
+			Host:        defaultHost,
 			Port:        8080,
 			Timeout:     30 * time.Second,
 			ReadTimeout: 5 * time.Second,
 		},
 		Security: SecurityConfig{
-			AllowedCommands:       []string{"go-invoice"},
+			AllowedCommands:       []string{defaultCLIName},
 			WorkingDir:            "/tmp",
 			SandboxEnabled:        true,
 			FileAccessRestricted:  true,
@@ -96,9 +96,9 @@ func (s *HandlersProductionTestSuite) TestHandleInitialize() {
 				return context.Background()
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      1,
-				Method:  "initialize",
+				Method:  methodInitialize,
 				Params: types.InitializeParams{
 					ProtocolVersion: "2024-11-05",
 					ClientInfo: types.ClientInfo{
@@ -109,7 +109,7 @@ func (s *HandlersProductionTestSuite) TestHandleInitialize() {
 			},
 			expectedError: false,
 			validateResult: func(resp *types.MCPResponse) {
-				s.Equal("2.0", resp.JSONRPC)
+				s.Equal(jsonRPCVersion, resp.JSONRPC) //nolint:testifylint // JSONRPC is a version string, not JSON-encoded data
 				s.Equal(1, resp.ID)
 				s.Nil(resp.Error)
 
@@ -130,9 +130,9 @@ func (s *HandlersProductionTestSuite) TestHandleInitialize() {
 				return ctx
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      2,
-				Method:  "initialize",
+				Method:  methodInitialize,
 			},
 			expectedError: true,
 		},
@@ -145,7 +145,7 @@ func (s *HandlersProductionTestSuite) TestHandleInitialize() {
 			expectedError: false, // Should handle gracefully
 			validateResult: func(resp *types.MCPResponse) {
 				s.NotNil(resp)
-				s.Equal("2.0", resp.JSONRPC)
+				s.Equal(jsonRPCVersion, resp.JSONRPC) //nolint:testifylint // JSONRPC is a version string, not JSON-encoded data
 			},
 		},
 	}
@@ -188,13 +188,13 @@ func (s *HandlersProductionTestSuite) TestHandlePing() {
 				return context.Background()
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      3,
-				Method:  "ping",
+				Method:  methodPing,
 			},
 			expectedError: false,
 			validateResult: func(resp *types.MCPResponse) {
-				s.Equal("2.0", resp.JSONRPC)
+				s.Equal(jsonRPCVersion, resp.JSONRPC) //nolint:testifylint // JSONRPC is a version string, not JSON-encoded data
 				s.Equal(3, resp.ID)
 				s.Nil(resp.Error)
 
@@ -211,9 +211,9 @@ func (s *HandlersProductionTestSuite) TestHandlePing() {
 				return ctx
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      4,
-				Method:  "ping",
+				Method:  methodPing,
 			},
 			expectedError: true,
 		},
@@ -226,9 +226,9 @@ func (s *HandlersProductionTestSuite) TestHandlePing() {
 				return ctx
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      5,
-				Method:  "ping",
+				Method:  methodPing,
 			},
 			expectedError: true,
 		},
@@ -294,13 +294,13 @@ func (s *HandlersProductionTestSuite) TestHandleToolsList() {
 				return context.Background()
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      6,
-				Method:  "tools/list",
+				Method:  methodToolsList,
 			},
 			expectedError: false,
 			validateResult: func(resp *types.MCPResponse) {
-				s.Equal("2.0", resp.JSONRPC)
+				s.Equal(jsonRPCVersion, resp.JSONRPC) //nolint:testifylint // JSONRPC is a version string, not JSON-encoded data
 				s.Equal(6, resp.ID)
 				s.Nil(resp.Error)
 
@@ -325,9 +325,9 @@ func (s *HandlersProductionTestSuite) TestHandleToolsList() {
 				return context.Background()
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      7,
-				Method:  "tools/list",
+				Method:  methodToolsList,
 			},
 			expectedError: false,
 			validateResult: func(resp *types.MCPResponse) {
@@ -346,9 +346,9 @@ func (s *HandlersProductionTestSuite) TestHandleToolsList() {
 				return context.Background()
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      8,
-				Method:  "tools/list",
+				Method:  methodToolsList,
 			},
 			expectedError: true,
 		},
@@ -363,9 +363,9 @@ func (s *HandlersProductionTestSuite) TestHandleToolsList() {
 				return ctx
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      9,
-				Method:  "tools/list",
+				Method:  methodToolsList,
 			},
 			expectedError: true,
 		},
@@ -409,13 +409,13 @@ func (s *HandlersProductionTestSuite) TestHandleToolCall() {
 			name: "ValidToolCall",
 			setupHandler: func(handler *mockToolCallHandler) {
 				handler.response = &types.MCPResponse{
-					JSONRPC: "2.0",
+					JSONRPC: jsonRPCVersion,
 					ID:      10,
 					Result: types.ToolCallResult{
 						IsError: false,
 						Content: []Content{
 							{
-								Type: "text",
+								Type: contentTypeText,
 								Text: "Tool executed successfully",
 							},
 						},
@@ -426,9 +426,9 @@ func (s *HandlersProductionTestSuite) TestHandleToolCall() {
 				return context.Background()
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      10,
-				Method:  "tools/call",
+				Method:  methodToolsCall,
 				Params: types.ToolCallParams{
 					Name: "test-tool",
 					Arguments: map[string]interface{}{
@@ -439,7 +439,7 @@ func (s *HandlersProductionTestSuite) TestHandleToolCall() {
 			},
 			expectedError: false,
 			validateResult: func(resp *types.MCPResponse) {
-				s.Equal("2.0", resp.JSONRPC)
+				s.Equal(jsonRPCVersion, resp.JSONRPC) //nolint:testifylint // JSONRPC is a version string, not JSON-encoded data
 				s.Equal(10, resp.ID)
 				s.Nil(resp.Error)
 
@@ -447,7 +447,7 @@ func (s *HandlersProductionTestSuite) TestHandleToolCall() {
 				s.Require().True(ok, "Result should be ToolCallResult")
 				s.False(result.IsError)
 				s.Len(result.Content, 1)
-				s.Equal("text", result.Content[0].Type)
+				s.Equal(contentTypeText, result.Content[0].Type)
 				s.Equal("Tool executed successfully", result.Content[0].Text)
 			},
 			validateHandler: func(handler *mockToolCallHandler) {
@@ -464,9 +464,9 @@ func (s *HandlersProductionTestSuite) TestHandleToolCall() {
 				return context.Background()
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      11,
-				Method:  "tools/call",
+				Method:  methodToolsCall,
 				Params: types.ToolCallParams{
 					Name:      "failing-tool",
 					Arguments: map[string]interface{}{},
@@ -488,9 +488,9 @@ func (s *HandlersProductionTestSuite) TestHandleToolCall() {
 				return ctx
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      12,
-				Method:  "tools/call",
+				Method:  methodToolsCall,
 				Params: types.ToolCallParams{
 					Name:      "test-tool",
 					Arguments: map[string]interface{}{},
@@ -505,13 +505,13 @@ func (s *HandlersProductionTestSuite) TestHandleToolCall() {
 			name: "ToolCallWithComplexArguments",
 			setupHandler: func(handler *mockToolCallHandler) {
 				handler.response = &types.MCPResponse{
-					JSONRPC: "2.0",
+					JSONRPC: jsonRPCVersion,
 					ID:      13,
 					Result: types.ToolCallResult{
 						IsError: false,
 						Content: []Content{
 							{
-								Type: "text",
+								Type: contentTypeText,
 								Text: "Complex arguments processed",
 							},
 						},
@@ -522,9 +522,9 @@ func (s *HandlersProductionTestSuite) TestHandleToolCall() {
 				return context.Background()
 			},
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      13,
-				Method:  "tools/call",
+				Method:  methodToolsCall,
 				Params: types.ToolCallParams{
 					Name: "complex-tool",
 					Arguments: map[string]interface{}{
@@ -601,9 +601,9 @@ func (s *HandlersProductionTestSuite) TestConcurrentAccess() {
 
 				// Test HandleInitialize
 				_, err := s.handler.HandleInitialize(context.Background(), &types.MCPRequest{
-					JSONRPC: "2.0",
+					JSONRPC: jsonRPCVersion,
 					ID:      requestID,
-					Method:  "initialize",
+					Method:  methodInitialize,
 				})
 				if err != nil {
 					errors <- fmt.Errorf("initialize error in routine %d: %w", routineID, err)
@@ -611,9 +611,9 @@ func (s *HandlersProductionTestSuite) TestConcurrentAccess() {
 
 				// Test HandlePing
 				_, err = s.handler.HandlePing(context.Background(), &types.MCPRequest{
-					JSONRPC: "2.0",
+					JSONRPC: jsonRPCVersion,
 					ID:      requestID + 1000,
-					Method:  "ping",
+					Method:  methodPing,
 				})
 				if err != nil {
 					errors <- fmt.Errorf("ping error in routine %d: %w", routineID, err)
@@ -621,9 +621,9 @@ func (s *HandlersProductionTestSuite) TestConcurrentAccess() {
 
 				// Test HandleToolsList
 				_, err = s.handler.HandleToolsList(context.Background(), &types.MCPRequest{
-					JSONRPC: "2.0",
+					JSONRPC: jsonRPCVersion,
 					ID:      requestID + 2000,
-					Method:  "tools/list",
+					Method:  methodToolsList,
 				})
 				if err != nil {
 					errors <- fmt.Errorf("tools/list error in routine %d: %w", routineID, err)
@@ -631,17 +631,17 @@ func (s *HandlersProductionTestSuite) TestConcurrentAccess() {
 
 				// Test HandleToolCall
 				s.mockHandler.response = &types.MCPResponse{
-					JSONRPC: "2.0",
+					JSONRPC: jsonRPCVersion,
 					ID:      requestID + 3000,
 					Result: types.ToolCallResult{
 						IsError: false,
-						Content: []Content{{Type: "text", Text: "concurrent test"}},
+						Content: []Content{{Type: contentTypeText, Text: "concurrent test"}},
 					},
 				}
 				_, err = s.handler.HandleToolCall(context.Background(), &types.MCPRequest{
-					JSONRPC: "2.0",
+					JSONRPC: jsonRPCVersion,
 					ID:      requestID + 3000,
-					Method:  "tools/call",
+					Method:  methodToolsCall,
 					Params: types.ToolCallParams{
 						Name:      "test-tool",
 						Arguments: map[string]interface{}{"routine": routineID, "operation": j},
@@ -675,32 +675,32 @@ func (s *HandlersProductionTestSuite) TestInputValidation() {
 	}{
 		{
 			name:   "ValidJSONRPC",
-			method: "initialize",
+			method: methodInitialize,
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      1,
-				Method:  "initialize",
+				Method:  methodInitialize,
 			},
 			expectedError: false,
 			description:   "Should accept valid JSONRPC 2.0 request",
 		},
 		{
 			name:   "MissingJSONRPC",
-			method: "initialize",
+			method: methodInitialize,
 			request: &types.MCPRequest{
 				ID:     2,
-				Method: "initialize",
+				Method: methodInitialize,
 			},
 			expectedError: false, // Handler should be lenient and accept
 			description:   "Should handle missing JSONRPC field gracefully",
 		},
 		{
 			name:   "InvalidRequestID",
-			method: "ping",
+			method: methodPing,
 			request: &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      "invalid-id", // Should be number but is string
-				Method:  "ping",
+				Method:  methodPing,
 			},
 			expectedError: false, // Handler should accept any ID type
 			description:   "Should handle various ID types gracefully",
@@ -713,13 +713,13 @@ func (s *HandlersProductionTestSuite) TestInputValidation() {
 			var err error
 
 			switch tt.method {
-			case "initialize":
+			case methodInitialize:
 				resp, err = s.handler.HandleInitialize(context.Background(), tt.request)
-			case "ping":
+			case methodPing:
 				resp, err = s.handler.HandlePing(context.Background(), tt.request)
-			case "tools/list":
+			case methodToolsList:
 				resp, err = s.handler.HandleToolsList(context.Background(), tt.request)
-			case "tools/call":
+			case methodToolsCall:
 				resp, err = s.handler.HandleToolCall(context.Background(), tt.request)
 			default:
 				s.Fail("Unknown test method", tt.method)
@@ -758,10 +758,10 @@ func (s *HandlersProductionTestSuite) TestPerformanceUnderLoad() {
 
 	// Prepare mock handler
 	s.mockHandler.response = &types.MCPResponse{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		Result: types.ToolCallResult{
 			IsError: false,
-			Content: []Content{{Type: "text", Text: "performance test"}},
+			Content: []Content{{Type: contentTypeText, Text: "performance test"}},
 		},
 	}
 
@@ -778,9 +778,9 @@ func (s *HandlersProductionTestSuite) TestPerformanceUnderLoad() {
 
 			// Test tools/list (most complex operation)
 			_, err := s.handler.HandleToolsList(context.Background(), &types.MCPRequest{
-				JSONRPC: "2.0",
+				JSONRPC: jsonRPCVersion,
 				ID:      requestID,
-				Method:  "tools/list",
+				Method:  methodToolsList,
 			})
 			s.NoError(err, "Tools list should not error under load")
 		}(i)
@@ -886,11 +886,11 @@ func (m *mockToolCallHandler) HandleToolCall(_ context.Context, req *types.MCPRe
 	}
 
 	return &types.MCPResponse{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      req.ID,
 		Result: types.ToolCallResult{
 			IsError: false,
-			Content: []Content{{Type: "text", Text: "mock response"}},
+			Content: []Content{{Type: contentTypeText, Text: "mock response"}},
 		},
 	}, nil
 }
@@ -963,17 +963,17 @@ func (s *HandlersProductionTestSuite) TestEdgeCases() {
 		}
 
 		s.mockHandler.response = &types.MCPResponse{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			Result: types.ToolCallResult{
 				IsError: false,
-				Content: []Content{{Type: "text", Text: "large payload processed"}},
+				Content: []Content{{Type: contentTypeText, Text: "large payload processed"}},
 			},
 		}
 
 		resp, err := s.handler.HandleToolCall(context.Background(), &types.MCPRequest{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			ID:      100,
-			Method:  "tools/call",
+			Method:  methodToolsCall,
 			Params: types.ToolCallParams{
 				Name:      "large-payload-tool",
 				Arguments: largeData,
@@ -997,17 +997,17 @@ func (s *HandlersProductionTestSuite) TestEdgeCases() {
 		}
 
 		s.mockHandler.response = &types.MCPResponse{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			Result: types.ToolCallResult{
 				IsError: false,
-				Content: []Content{{Type: "text", Text: "special characters handled"}},
+				Content: []Content{{Type: contentTypeText, Text: "special characters handled"}},
 			},
 		}
 
 		resp, err := s.handler.HandleToolCall(context.Background(), &types.MCPRequest{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			ID:      101,
-			Method:  "tools/call",
+			Method:  methodToolsCall,
 			Params: types.ToolCallParams{
 				Name:      "special-char-tool",
 				Arguments: specialChars,
@@ -1030,17 +1030,17 @@ func (s *HandlersProductionTestSuite) TestEdgeCases() {
 		}
 
 		s.mockHandler.response = &types.MCPResponse{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			Result: types.ToolCallResult{
 				IsError: false,
-				Content: []Content{{Type: "text", Text: "deep nesting handled"}},
+				Content: []Content{{Type: contentTypeText, Text: "deep nesting handled"}},
 			},
 		}
 
 		resp, err := s.handler.HandleToolCall(context.Background(), &types.MCPRequest{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			ID:      102,
-			Method:  "tools/call",
+			Method:  methodToolsCall,
 			Params: types.ToolCallParams{
 				Name:      "nested-tool",
 				Arguments: nested,

@@ -65,3 +65,13 @@ const (
 	TransportStdio = types.TransportStdio
 	TransportHTTP  = types.TransportHTTP
 )
+
+const (
+	jsonRPCVersion   = "2.0"
+	keyStatus        = "status"
+	contentTypeText  = "text"
+	methodPing       = "ping"
+	methodInitialize = "initialize"
+	methodToolsList  = "tools/list"
+	methodToolsCall  = "tools/call"
+)

@@ -32,11 +32,11 @@ func (s *BridgeTestSuite) SetupTest() {
 	s.tempDir = tempDir
 
 	s.logger = NewTestLogger()
-	s.validator = NewCommandValidator([]string{"echo", "go"})
+	s.validator = NewCommandValidator([]string{testCmdEcho, "go"})
 	s.fileHandler = NewFileHandler(tempDir)
 
 	config := CLIConfig{
-		Path:       "echo",
+		Path:       testCmdEcho,
 		WorkingDir: tempDir,
 		MaxTimeout: 30 * time.Second,
 	}
@@ -55,7 +55,7 @@ func (s *BridgeTestSuite) TestExecuteCommandSuccess() {
 	ctx := context.Background()
 
 	req := &CommandRequest{
-		Command: "echo",
+		Command: testCmdEcho,
 		Args:    []string{"hello", "world"},
 		Timeout: 5 * time.Second,
 	}
@@ -87,7 +87,7 @@ func (s *BridgeTestSuite) TestExecuteCommandContextCancellation() {
 	cancel() // Immediately cancel
 
 	req := &CommandRequest{
-		Command: "echo",
+		Command: testCmdEcho,
 		Args:    []string{"test"},
 	}
 
@@ -99,7 +99,7 @@ func (s *BridgeTestSuite) TestExecuteCommandTimeout() {
 	ctx := context.Background()
 
 	req := &CommandRequest{
-		Command: "echo",
+		Command: testCmdEcho,
 		Args:    []string{"test"},
 		Timeout: 1 * time.Millisecond, // Very short timeout but not nanosecond
 	}
@@ -125,7 +125,7 @@ func (s *BridgeTestSuite) TestValidateCommand() {
 	}{
 		{
 			name:        "AllowedCommand",
-			command:     "echo",
+			command:     testCmdEcho,
 			args:        []string{"test"},
 			expectError: false,
 		},
@@ -137,13 +137,13 @@ func (s *BridgeTestSuite) TestValidateCommand() {
 		},
 		{
 			name:        "CommandInjectionAttempt",
-			command:     "echo",
+			command:     testCmdEcho,
 			args:        []string{"test; rm -rf /"},
 			expectError: true,
 		},
 		{
 			name:        "PathTraversalAttempt",
-			command:     "echo",
+			command:     testCmdEcho,
 			args:        []string{"../../../etc/passwd"},
 			expectError: true,
 		},
@@ -167,7 +167,7 @@ func (s *BridgeTestSuite) TestGetAllowedCommands() {
 	commands, err := s.bridge.GetAllowedCommands(ctx)
 	s.Require().NoError(err)
 	s.NotEmpty(commands)
-	s.Contains(commands, "echo")
+	s.Contains(commands, testCmdEcho)
 }
 
 type CommandValidatorTestSuite struct {
@@ -181,7 +181,7 @@ func TestCommandValidatorSuite(t *testing.T) {
 }
 
 func (s *CommandValidatorTestSuite) SetupTest() {
-	s.validator = NewCommandValidator([]string{"echo", "ls", "cat"})
+	s.validator = NewCommandValidator([]string{testCmdEcho, "ls", "cat"})
 }
 
 func (s *CommandValidatorTestSuite) TestIsCommandAllowed() {
@@ -194,7 +194,7 @@ func (s *CommandValidatorTestSuite) TestIsCommandAllowed() {
 	}{
 		{
 			name:     "AllowedExactMatch",
-			command:  "echo",
+			command:  testCmdEcho,
 			expected: true,
 		},
 		{
@@ -239,7 +239,7 @@ func (s *CommandValidatorTestSuite) TestValidateCommandWithDangerousArgs() {
 
 	for i, args := range dangerousArgs {
 		s.Run(s.T().Name()+"_"+string(rune('A'+i)), func() {
-			err := s.validator.ValidateCommand(ctx, "echo", args)
+			err := s.validator.ValidateCommand(ctx, testCmdEcho, args)
 			s.Error(err)
 		})
 	}
@@ -249,7 +249,7 @@ func (s *CommandValidatorTestSuite) TestValidateCommandContextCancellation() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	err := s.validator.ValidateCommand(ctx, "echo", []string{"test"})
+	err := s.validator.ValidateCommand(ctx, testCmdEcho, []string{"test"})
 	s.Equal(context.Canceled, err)
 }
 
@@ -357,11 +357,11 @@ func BenchmarkExecuteCommand(b *testing.B) {
 	}()
 
 	logger := NewTestLogger()
-	validator := NewCommandValidator([]string{"echo"})
+	validator := NewCommandValidator([]string{testCmdEcho})
 	fileHandler := NewFileHandler(tempDir)
 
 	config := CLIConfig{
-		Path:       "echo",
+		Path:       testCmdEcho,
 		WorkingDir: tempDir,
 		MaxTimeout: 30 * time.Second,
 	}
@@ -370,7 +370,7 @@ func BenchmarkExecuteCommand(b *testing.B) {
 	ctx := context.Background()
 
 	req := &CommandRequest{
-		Command: "echo",
+		Command: testCmdEcho,
 		Args:    []string{"benchmark", "test"},
 		Timeout: 5 * time.Second,
 	}
@@ -383,12 +383,12 @@ func BenchmarkExecuteCommand(b *testing.B) {
 }
 
 func BenchmarkValidateCommand(b *testing.B) {
-	validator := NewCommandValidator([]string{"echo", "ls", "cat"})
+	validator := NewCommandValidator([]string{testCmdEcho, "ls", "cat"})
 	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		err := validator.ValidateCommand(ctx, "echo", []string{"test", "args"})
+		err := validator.ValidateCommand(ctx, testCmdEcho, []string{"test", "args"})
 		require.NoError(b, err)
 	}
 }

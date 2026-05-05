@@ -62,23 +62,23 @@ func (suite *InvoiceServiceTestSuite) TestCreateInvoice() {
 
 	// Test data
 	client := &models.Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		ID:        testClientID,
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Active:    true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
 
 	request := models.CreateInvoiceRequest{
-		Number:      "INV-2024-001",
-		ClientID:    "CLIENT-001",
+		Number:      testInvoiceNum,
+		ClientID:    testClientID,
 		Date:        time.Now(),
 		DueDate:     time.Now().AddDate(0, 0, 30),
 		Description: "Test Invoice",
 		WorkItems: []models.WorkItem{
 			{
-				ID:          "WORK-001",
+				ID:          testWorkID001,
 				Date:        time.Now(),
 				Hours:       8.0,
 				Rate:        100.0,
@@ -91,21 +91,21 @@ func (suite *InvoiceServiceTestSuite) TestCreateInvoice() {
 
 	// Success case
 	suite.Run("Success", func() {
-		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-001")).Return(client, nil).Once()
-		suite.idGen.On("GenerateInvoiceID", suite.ctx).Return(models.InvoiceID("INV-001"), nil).Once()
+		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID(testClientID)).Return(client, nil).Once()
+		suite.idGen.On("GenerateInvoiceID", suite.ctx).Return(models.InvoiceID(testInvoiceID001), nil).Once()
 		suite.storage.On("ListInvoices", suite.ctx, mock.MatchedBy(func(filter models.InvoiceFilter) bool {
 			return filter.Status == "" && filter.ClientID == "" && filter.Limit == 0
 		})).Return(&storage.InvoiceListResult{Invoices: []*models.Invoice{}}, nil).Once()
 		// Mock GenerateWorkItemID for each work item in request
-		suite.idGen.On("GenerateWorkItemID", suite.ctx).Return("WORK-001", nil).Once()
+		suite.idGen.On("GenerateWorkItemID", suite.ctx).Return(testWorkID001, nil).Once()
 		suite.storage.On("CreateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(nil).Once()
 
 		invoice, err := suite.service.CreateInvoice(suite.ctx, request)
 
 		require.NoError(t, err)
 		require.NotNil(t, invoice)
-		assert.Equal(t, models.InvoiceID("INV-001"), invoice.ID)
-		assert.Equal(t, "INV-2024-001", invoice.Number)
+		assert.Equal(t, models.InvoiceID(testInvoiceID001), invoice.ID)
+		assert.Equal(t, testInvoiceNum, invoice.Number)
 		assert.Equal(t, client.ID, invoice.Client.ID)
 		assert.Equal(t, "Test Invoice", invoice.Description)
 		assert.Len(t, invoice.WorkItems, 1)
@@ -114,7 +114,7 @@ func (suite *InvoiceServiceTestSuite) TestCreateInvoice() {
 
 	// Client not found
 	suite.Run("ClientNotFound", func() {
-		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID("CLIENT-001")).Return(nil, storage.NewNotFoundError("client", "CLIENT-001")).Once()
+		suite.clientStorage.On("GetClient", suite.ctx, models.ClientID(testClientID)).Return(nil, storage.NewNotFoundError("client", testClientID)).Once()
 
 		invoice, err := suite.service.CreateInvoice(suite.ctx, request)
 
@@ -128,8 +128,8 @@ func (suite *InvoiceServiceTestSuite) TestGetInvoice() {
 	t := suite.T()
 
 	testInvoice := &models.Invoice{
-		ID:        "INV-001",
-		Number:    "INV-2024-001",
+		ID:        testInvoiceID001,
+		Number:    testInvoiceNum,
 		Status:    models.StatusDraft,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -138,9 +138,9 @@ func (suite *InvoiceServiceTestSuite) TestGetInvoice() {
 
 	// Success case
 	suite.Run("Success", func() {
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(testInvoice, nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(testInvoice, nil).Once()
 
-		invoice, err := suite.service.GetInvoice(suite.ctx, "INV-001")
+		invoice, err := suite.service.GetInvoice(suite.ctx, testInvoiceID001)
 
 		require.NoError(t, err)
 		require.NotNil(t, invoice)
@@ -164,8 +164,8 @@ func (suite *InvoiceServiceTestSuite) TestUpdateInvoice() {
 	t := suite.T()
 
 	existingInvoice := &models.Invoice{
-		ID:        "INV-001",
-		Number:    "INV-2024-001",
+		ID:        testInvoiceID001,
+		Number:    testInvoiceNum,
 		Status:    models.StatusDraft,
 		Total:     1000.0,
 		CreatedAt: time.Now(),
@@ -174,13 +174,13 @@ func (suite *InvoiceServiceTestSuite) TestUpdateInvoice() {
 	}
 
 	updateRequest := models.UpdateInvoiceRequest{
-		ID:          "INV-001",
+		ID:          testInvoiceID001,
 		Description: ptrString("Updated description"),
 	}
 
 	// Success case
 	suite.Run("Success", func() {
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(existingInvoice, nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(existingInvoice, nil).Once()
 		suite.storage.On("UpdateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(nil).Once()
 
 		updatedInvoice, err := suite.service.UpdateInvoice(suite.ctx, updateRequest)
@@ -192,7 +192,7 @@ func (suite *InvoiceServiceTestSuite) TestUpdateInvoice() {
 
 	// Invoice not found
 	suite.Run("InvoiceNotFound", func() {
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(nil, storage.NewNotFoundError("invoice", "INV-001")).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(nil, storage.NewNotFoundError("invoice", testInvoiceID001)).Once()
 
 		updatedInvoice, err := suite.service.UpdateInvoice(suite.ctx, updateRequest)
 
@@ -208,14 +208,14 @@ func (suite *InvoiceServiceTestSuite) TestDeleteInvoice() {
 	// Success - Draft invoice
 	suite.Run("DeleteDraftInvoice", func() {
 		draftInvoice := &models.Invoice{
-			ID:     "INV-001",
+			ID:     testInvoiceID001,
 			Status: models.StatusDraft,
 		}
 
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(draftInvoice, nil).Once()
-		suite.storage.On("DeleteInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(draftInvoice, nil).Once()
+		suite.storage.On("DeleteInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(nil).Once()
 
-		err := suite.service.DeleteInvoice(suite.ctx, "INV-001")
+		err := suite.service.DeleteInvoice(suite.ctx, testInvoiceID001)
 
 		require.NoError(t, err)
 	})
@@ -223,14 +223,14 @@ func (suite *InvoiceServiceTestSuite) TestDeleteInvoice() {
 	// Cannot delete paid invoice
 	suite.Run("CannotDeletePaid", func() {
 		paidInvoice := &models.Invoice{
-			ID:     "INV-001",
-			Number: "INV-2024-001",
+			ID:     testInvoiceID001,
+			Number: testInvoiceNum,
 			Status: models.StatusPaid,
 		}
 
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(paidInvoice, nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(paidInvoice, nil).Once()
 
-		err := suite.service.DeleteInvoice(suite.ctx, "INV-001")
+		err := suite.service.DeleteInvoice(suite.ctx, testInvoiceID001)
 
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot delete paid invoice")
@@ -241,7 +241,7 @@ func (suite *InvoiceServiceTestSuite) TestListInvoices() {
 	t := suite.T()
 
 	invoices := []*models.Invoice{
-		{ID: "INV-001", Number: "INV-2024-001", Status: models.StatusDraft},
+		{ID: testInvoiceID001, Number: testInvoiceNum, Status: models.StatusDraft},
 		{ID: "INV-002", Number: "INV-2024-002", Status: models.StatusSent},
 		{ID: "INV-003", Number: "INV-2024-003", Status: models.StatusPaid},
 	}
@@ -274,14 +274,14 @@ func (suite *InvoiceServiceTestSuite) TestAddWorkItemToInvoice() {
 	t := suite.T()
 
 	invoice := &models.Invoice{
-		ID:        "INV-001",
-		Number:    "INV-2024-001",
+		ID:        testInvoiceID001,
+		Number:    testInvoiceNum,
 		Status:    models.StatusDraft,
 		WorkItems: []models.WorkItem{},
 		Version:   1,
 		Client: models.Client{
-			ID:        "CLIENT-001",
-			Name:      "Test Client",
+			ID:        testClientID,
+			Name:      testClientName,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -301,16 +301,16 @@ func (suite *InvoiceServiceTestSuite) TestAddWorkItemToInvoice() {
 
 	// Success case
 	suite.Run("Success", func() {
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(invoice, nil).Once()
-		suite.idGen.On("GenerateWorkItemID", suite.ctx).Return("WORK-001", nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(invoice, nil).Once()
+		suite.idGen.On("GenerateWorkItemID", suite.ctx).Return(testWorkID001, nil).Once()
 		suite.storage.On("UpdateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(nil).Once()
 
-		updatedInvoice, err := suite.service.AddWorkItemToInvoice(suite.ctx, "INV-001", newWorkItem)
+		updatedInvoice, err := suite.service.AddWorkItemToInvoice(suite.ctx, testInvoiceID001, newWorkItem)
 
 		require.NoError(t, err)
 		require.NotNil(t, updatedInvoice)
 		assert.Len(t, updatedInvoice.WorkItems, 1)
-		assert.Equal(t, "WORK-001", updatedInvoice.WorkItems[0].ID)
+		assert.Equal(t, testWorkID001, updatedInvoice.WorkItems[0].ID)
 		assert.InEpsilon(t, 800.0, updatedInvoice.WorkItems[0].Total, 1e-9)
 	})
 
@@ -323,8 +323,8 @@ func (suite *InvoiceServiceTestSuite) TestAddWorkItemToInvoice() {
 			WorkItems: []models.WorkItem{},
 			Version:   1,
 			Client: models.Client{
-				ID:        "CLIENT-001",
-				Name:      "Test Client",
+				ID:        testClientID,
+				Name:      testClientName,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			},
@@ -357,14 +357,14 @@ func (suite *InvoiceServiceTestSuite) TestAddLineItemToInvoice() {
 	t := suite.T()
 
 	invoice := &models.Invoice{
-		ID:        "INV-001",
-		Number:    "INV-2024-001",
+		ID:        testInvoiceID001,
+		Number:    testInvoiceNum,
 		Status:    models.StatusDraft,
 		LineItems: []models.LineItem{},
 		Version:   1,
 		Client: models.Client{
-			ID:        "CLIENT-001",
-			Name:      "Test Client",
+			ID:        testClientID,
+			Name:      testClientName,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
@@ -385,11 +385,11 @@ func (suite *InvoiceServiceTestSuite) TestAddLineItemToInvoice() {
 
 	// Success case
 	suite.Run("Success", func() {
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(invoice, nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(invoice, nil).Once()
 		suite.idGen.On("GenerateWorkItemID", suite.ctx).Return("LINE-001", nil).Once()
 		suite.storage.On("UpdateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(nil).Once()
 
-		updatedInvoice, err := suite.service.AddLineItemToInvoice(suite.ctx, "INV-001", newLineItem)
+		updatedInvoice, err := suite.service.AddLineItemToInvoice(suite.ctx, testInvoiceID001, newLineItem)
 
 		require.NoError(t, err)
 		require.NotNil(t, updatedInvoice)
@@ -410,8 +410,8 @@ func (suite *InvoiceServiceTestSuite) TestAddLineItemToInvoice() {
 			LineItems: []models.LineItem{},
 			Version:   1,
 			Client: models.Client{
-				ID:        "CLIENT-001",
-				Name:      "Test Client",
+				ID:        testClientID,
+				Name:      testClientName,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			},
@@ -459,8 +459,8 @@ func (suite *InvoiceServiceTestSuite) TestAddLineItemToInvoice() {
 			LineItems: []models.LineItem{},
 			Version:   1,
 			Client: models.Client{
-				ID:        "CLIENT-001",
-				Name:      "Test Client",
+				ID:        testClientID,
+				Name:      testClientName,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			},
@@ -486,20 +486,20 @@ func (suite *InvoiceServiceTestSuite) TestSendInvoice() {
 	// Success case
 	suite.Run("Success", func() {
 		draftInvoice := &models.Invoice{
-			ID:      "INV-001",
+			ID:      testInvoiceID001,
 			Status:  models.StatusDraft,
 			Version: 1,
 			WorkItems: []models.WorkItem{
-				{ID: "WORK-001", Hours: 8, Rate: 100, Total: 800},
+				{ID: testWorkID001, Hours: 8, Rate: 100, Total: 800},
 			},
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
 
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(draftInvoice, nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(draftInvoice, nil).Once()
 		suite.storage.On("UpdateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(nil).Once()
 
-		sentInvoice, err := suite.service.SendInvoice(suite.ctx, "INV-001")
+		sentInvoice, err := suite.service.SendInvoice(suite.ctx, testInvoiceID001)
 
 		require.NoError(t, err)
 		require.NotNil(t, sentInvoice)
@@ -510,16 +510,16 @@ func (suite *InvoiceServiceTestSuite) TestSendInvoice() {
 	// Cannot send non-draft invoice
 	suite.Run("CannotSendNonDraft", func() {
 		sentInvoice := &models.Invoice{
-			ID:     "INV-001",
+			ID:     testInvoiceID001,
 			Status: models.StatusSent,
 			WorkItems: []models.WorkItem{
-				{ID: "WORK-001", Hours: 8, Rate: 100, Total: 800},
+				{ID: testWorkID001, Hours: 8, Rate: 100, Total: 800},
 			},
 		}
 
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(sentInvoice, nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(sentInvoice, nil).Once()
 
-		invoice, err := suite.service.SendInvoice(suite.ctx, "INV-001")
+		invoice, err := suite.service.SendInvoice(suite.ctx, testInvoiceID001)
 
 		require.Error(t, err)
 		assert.Nil(t, invoice)
@@ -533,17 +533,17 @@ func (suite *InvoiceServiceTestSuite) TestMarkInvoicePaid() {
 	// Success case
 	suite.Run("Success", func() {
 		sentInvoice := &models.Invoice{
-			ID:        "INV-001",
+			ID:        testInvoiceID001,
 			Status:    models.StatusSent,
 			Version:   1,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
 
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(sentInvoice, nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(sentInvoice, nil).Once()
 		suite.storage.On("UpdateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(nil).Once()
 
-		paidInvoice, err := suite.service.MarkInvoicePaid(suite.ctx, "INV-001")
+		paidInvoice, err := suite.service.MarkInvoicePaid(suite.ctx, testInvoiceID001)
 
 		require.NoError(t, err)
 		require.NotNil(t, paidInvoice)
@@ -554,13 +554,13 @@ func (suite *InvoiceServiceTestSuite) TestMarkInvoicePaid() {
 	// Cannot mark draft invoice as paid
 	suite.Run("CannotMarkDraftPaid", func() {
 		draftInvoice := &models.Invoice{
-			ID:     "INV-001",
+			ID:     testInvoiceID001,
 			Status: models.StatusDraft,
 		}
 
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(draftInvoice, nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(draftInvoice, nil).Once()
 
-		invoice, err := suite.service.MarkInvoicePaid(suite.ctx, "INV-001")
+		invoice, err := suite.service.MarkInvoicePaid(suite.ctx, testInvoiceID001)
 
 		require.Error(t, err)
 		assert.Nil(t, invoice)
@@ -572,7 +572,7 @@ func (suite *InvoiceServiceTestSuite) TestGetOverdueInvoices() {
 	t := suite.T()
 
 	overdueInvoices := []*models.Invoice{
-		{ID: "INV-001", Status: models.StatusSent, DueDate: time.Now().AddDate(0, 0, -5)},
+		{ID: testInvoiceID001, Status: models.StatusSent, DueDate: time.Now().AddDate(0, 0, -5)},
 		{ID: "INV-002", Status: models.StatusSent, DueDate: time.Now().AddDate(0, 0, -10)},
 	}
 
@@ -600,19 +600,19 @@ func (suite *InvoiceServiceTestSuite) TestRemoveWorkItemFromInvoice() {
 
 	// Create test invoice with multiple work items
 	invoiceWithWorkItems := &models.Invoice{
-		ID:      "INV-001",
-		Number:  "INV-2024-001",
+		ID:      testInvoiceID001,
+		Number:  testInvoiceNum,
 		Status:  models.StatusDraft,
 		Version: 1,
 		Client: models.Client{
-			ID:        "CLIENT-001",
-			Name:      "Test Client",
+			ID:        testClientID,
+			Name:      testClientName,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		},
 		WorkItems: []models.WorkItem{
 			{
-				ID:          "WORK-001",
+				ID:          testWorkID001,
 				Date:        time.Now(),
 				Hours:       8.0,
 				Rate:        100.0,
@@ -638,10 +638,10 @@ func (suite *InvoiceServiceTestSuite) TestRemoveWorkItemFromInvoice() {
 
 	// Success case - remove existing work item
 	suite.Run("Success", func() {
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(invoiceWithWorkItems, nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(invoiceWithWorkItems, nil).Once()
 		suite.storage.On("UpdateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(nil).Once()
 
-		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-001", "WORK-001")
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, testInvoiceID001, testWorkID001)
 
 		require.NoError(t, err)
 		require.NotNil(t, updatedInvoice)
@@ -653,7 +653,7 @@ func (suite *InvoiceServiceTestSuite) TestRemoveWorkItemFromInvoice() {
 	suite.Run("InvoiceNotFound", func() {
 		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-999")).Return(nil, storage.NewNotFoundError("invoice", "INV-999")).Once()
 
-		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-999", "WORK-001")
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-999", testWorkID001)
 
 		require.Error(t, err)
 		assert.Nil(t, updatedInvoice)
@@ -663,17 +663,17 @@ func (suite *InvoiceServiceTestSuite) TestRemoveWorkItemFromInvoice() {
 	// Cannot remove from non-draft invoice
 	suite.Run("CannotRemoveFromNonDraft", func() {
 		sentInvoice := &models.Invoice{
-			ID:      "INV-001",
+			ID:      testInvoiceID001,
 			Status:  models.StatusSent,
 			Version: 1,
 			WorkItems: []models.WorkItem{
-				{ID: "WORK-001", Hours: 8, Rate: 100, Total: 800},
+				{ID: testWorkID001, Hours: 8, Rate: 100, Total: 800},
 			},
 		}
 
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(sentInvoice, nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(sentInvoice, nil).Once()
 
-		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-001", "WORK-001")
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, testInvoiceID001, testWorkID001)
 
 		require.Error(t, err)
 		assert.Nil(t, updatedInvoice)
@@ -683,9 +683,9 @@ func (suite *InvoiceServiceTestSuite) TestRemoveWorkItemFromInvoice() {
 
 	// Work item not found
 	suite.Run("WorkItemNotFound", func() {
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(invoiceWithWorkItems, nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(invoiceWithWorkItems, nil).Once()
 
-		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-001", "WORK-999")
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, testInvoiceID001, "WORK-999")
 
 		require.Error(t, err)
 		assert.Nil(t, updatedInvoice)
@@ -695,15 +695,15 @@ func (suite *InvoiceServiceTestSuite) TestRemoveWorkItemFromInvoice() {
 	// Remove last work item
 	suite.Run("RemoveLastWorkItem", func() {
 		invoiceWithOneItem := &models.Invoice{
-			ID:      "INV-001",
+			ID:      testInvoiceID001,
 			Status:  models.StatusDraft,
 			Version: 1,
 			WorkItems: []models.WorkItem{
-				{ID: "WORK-001", Hours: 8, Rate: 100, Total: 800},
+				{ID: testWorkID001, Hours: 8, Rate: 100, Total: 800},
 			},
 			Client: models.Client{
-				ID:        "CLIENT-001",
-				Name:      "Test Client",
+				ID:        testClientID,
+				Name:      testClientName,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			},
@@ -713,10 +713,10 @@ func (suite *InvoiceServiceTestSuite) TestRemoveWorkItemFromInvoice() {
 			UpdatedAt: time.Now(),
 		}
 
-		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-001")).Return(invoiceWithOneItem, nil).Once()
+		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID(testInvoiceID001)).Return(invoiceWithOneItem, nil).Once()
 		suite.storage.On("UpdateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(nil).Once()
 
-		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-001", "WORK-001")
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, testInvoiceID001, testWorkID001)
 
 		require.NoError(t, err)
 		require.NotNil(t, updatedInvoice)
@@ -728,18 +728,18 @@ func (suite *InvoiceServiceTestSuite) TestRemoveWorkItemFromInvoice() {
 		// Create a copy so we can modify it without affecting other tests
 		testInvoice := &models.Invoice{
 			ID:      "INV-STORAGE-FAIL",
-			Number:  "INV-2024-001",
+			Number:  testInvoiceNum,
 			Status:  models.StatusDraft,
 			Version: 1,
 			Client: models.Client{
-				ID:        "CLIENT-001",
-				Name:      "Test Client",
+				ID:        testClientID,
+				Name:      testClientName,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
 			},
 			WorkItems: []models.WorkItem{
 				{
-					ID:          "WORK-001",
+					ID:          testWorkID001,
 					Date:        time.Now(),
 					Hours:       8.0,
 					Rate:        100.0,
@@ -757,7 +757,7 @@ func (suite *InvoiceServiceTestSuite) TestRemoveWorkItemFromInvoice() {
 		suite.storage.On("GetInvoice", suite.ctx, models.InvoiceID("INV-STORAGE-FAIL")).Return(testInvoice, nil).Once()
 		suite.storage.On("UpdateInvoice", suite.ctx, mock.AnythingOfType("*models.Invoice")).Return(storage.NewStorageUnavailableError("database connection lost", errConnectionTimeout)).Once()
 
-		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-STORAGE-FAIL", "WORK-001")
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(suite.ctx, "INV-STORAGE-FAIL", testWorkID001)
 
 		require.Error(t, err)
 		assert.Nil(t, updatedInvoice)
@@ -769,7 +769,7 @@ func (suite *InvoiceServiceTestSuite) TestRemoveWorkItemFromInvoice() {
 		canceledCtx, cancel := context.WithCancel(context.Background())
 		cancel() // Cancel immediately
 
-		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(canceledCtx, "INV-001", "WORK-001")
+		updatedInvoice, err := suite.service.RemoveWorkItemFromInvoice(canceledCtx, testInvoiceID001, testWorkID001)
 
 		require.Error(t, err)
 		assert.Nil(t, updatedInvoice)
@@ -833,8 +833,8 @@ func (suite *InvoiceServiceTestSuite) TestGetInvoiceByNumber() {
 	t := suite.T()
 
 	testInvoice := &models.Invoice{
-		ID:        "INV-001",
-		Number:    "INV-2024-001",
+		ID:        testInvoiceID001,
+		Number:    testInvoiceNum,
 		Status:    models.StatusDraft,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -848,11 +848,11 @@ func (suite *InvoiceServiceTestSuite) TestGetInvoiceByNumber() {
 			Invoices: []*models.Invoice{testInvoice},
 		}, nil).Once()
 
-		invoice, err := suite.service.GetInvoiceByNumber(suite.ctx, "INV-2024-001")
+		invoice, err := suite.service.GetInvoiceByNumber(suite.ctx, testInvoiceNum)
 
 		require.NoError(t, err)
 		require.NotNil(t, invoice)
-		assert.Equal(t, "INV-2024-001", invoice.Number)
+		assert.Equal(t, testInvoiceNum, invoice.Number)
 	})
 
 	suite.Run("EmptyNumber", func() {
@@ -890,7 +890,7 @@ func (suite *InvoiceServiceTestSuite) TestGetInvoiceByNumber() {
 			return true
 		})).Return(nil, errConnectionTimeout).Once()
 
-		invoice, err := suite.service.GetInvoiceByNumber(suite.ctx, "INV-2024-001")
+		invoice, err := suite.service.GetInvoiceByNumber(suite.ctx, testInvoiceNum)
 
 		require.Error(t, err)
 		assert.Nil(t, invoice)
@@ -901,7 +901,7 @@ func (suite *InvoiceServiceTestSuite) TestGetInvoiceByNumber() {
 		canceledCtx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		invoice, err := suite.service.GetInvoiceByNumber(canceledCtx, "INV-2024-001")
+		invoice, err := suite.service.GetInvoiceByNumber(canceledCtx, testInvoiceNum)
 
 		require.Error(t, err)
 		assert.Nil(t, invoice)

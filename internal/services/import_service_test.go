@@ -459,14 +459,14 @@ func (suite *ImportServiceTestSuite) TestImportToNewInvoice() {
 
 		client := &models.Client{
 			ID:     "client-1",
-			Name:   "Test Client",
-			Email:  "test@example.com",
+			Name:   testClientName,
+			Email:  testClientEmail,
 			Active: true,
 		}
 
 		invoice := &models.Invoice{
 			ID:          "invoice-1",
-			Number:      "INV-001",
+			Number:      testInvoiceID001,
 			Client:      *client,
 			Date:        time.Now(),
 			DueDate:     time.Now().AddDate(0, 0, 30),
@@ -477,7 +477,7 @@ func (suite *ImportServiceTestSuite) TestImportToNewInvoice() {
 		req := ImportToNewInvoiceRequest{
 			ClientID:      "client-1",
 			ParseOptions:  csv.ParseOptions{},
-			InvoiceNumber: "INV-001",
+			InvoiceNumber: testInvoiceID001,
 			InvoiceDate:   time.Now(),
 			DueDate:       time.Now().AddDate(0, 0, 30),
 			Description:   "Test invoice",
@@ -763,14 +763,14 @@ func (suite *ImportServiceTestSuite) TestAppendToInvoice() {
 
 		client := &models.Client{
 			ID:     "client-1",
-			Name:   "Test Client",
-			Email:  "test@example.com",
+			Name:   testClientName,
+			Email:  testClientEmail,
 			Active: true,
 		}
 
 		existingInvoice := &models.Invoice{
 			ID:     "invoice-1",
-			Number: "INV-001",
+			Number: testInvoiceID001,
 			Client: *client,
 			WorkItems: []models.WorkItem{
 				{
@@ -785,7 +785,7 @@ func (suite *ImportServiceTestSuite) TestAppendToInvoice() {
 
 		updatedInvoice := &models.Invoice{
 			ID:        "invoice-1",
-			Number:    "INV-001",
+			Number:    testInvoiceID001,
 			Client:    *client,
 			WorkItems: append(existingInvoice.WorkItems, workItems...),
 		}
@@ -847,14 +847,14 @@ func (suite *ImportServiceTestSuite) TestAppendToInvoice() {
 
 		client := &models.Client{
 			ID:     "client-1",
-			Name:   "Test Client",
-			Email:  "test@example.com",
+			Name:   testClientName,
+			Email:  testClientEmail,
 			Active: true,
 		}
 
 		existingInvoice := &models.Invoice{
 			ID:     "invoice-1",
-			Number: "INV-001",
+			Number: testInvoiceID001,
 			Client: *client,
 			WorkItems: []models.WorkItem{
 				{
@@ -1050,7 +1050,7 @@ func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceContextCanceled()
 	cancel()
 
 	req := ImportToNewInvoiceRequest{
-		ClientID: "CLIENT-001",
+		ClientID: testClientID,
 		Format:   "csv",
 	}
 
@@ -1065,7 +1065,7 @@ func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceParseError() {
 		Return(nil, errTestParseError).Once()
 
 	req := ImportToNewInvoiceRequest{
-		ClientID: "CLIENT-001",
+		ClientID: testClientID,
 		Format:   "csv",
 	}
 
@@ -1081,7 +1081,7 @@ func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceEmptyResult() {
 		Return(&csv.ParseResult{WorkItems: []models.WorkItem{}}, nil).Once()
 
 	req := ImportToNewInvoiceRequest{
-		ClientID: "CLIENT-001",
+		ClientID: testClientID,
 		Format:   "csv",
 	}
 
@@ -1094,7 +1094,7 @@ func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceEmptyResult() {
 func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceValidationError() {
 	ctx := context.Background()
 	workItems := []models.WorkItem{
-		{ID: "WORK-001", Hours: 8.0, Rate: 100.0, Total: 800.0},
+		{ID: testWorkID001, Hours: 8.0, Rate: 100.0, Total: 800.0},
 	}
 	suite.csvParser.On("ParseTimesheet", ctx, mock.Anything, mock.Anything).
 		Return(&csv.ParseResult{WorkItems: workItems}, nil).Once()
@@ -1102,7 +1102,7 @@ func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceValidationError()
 		Return(errTestValidationError).Once()
 
 	req := ImportToNewInvoiceRequest{
-		ClientID: "CLIENT-001",
+		ClientID: testClientID,
 		Format:   "csv",
 	}
 
@@ -1115,14 +1115,14 @@ func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceValidationError()
 func (suite *RealImportServiceTestSuite) TestImportToNewInvoiceDryRun() {
 	ctx := context.Background()
 	workItems := []models.WorkItem{
-		{ID: "WORK-001", Hours: 8.0, Rate: 100.0, Total: 800.0},
+		{ID: testWorkID001, Hours: 8.0, Rate: 100.0, Total: 800.0},
 	}
 	suite.csvParser.On("ParseTimesheet", ctx, mock.Anything, mock.Anything).
 		Return(&csv.ParseResult{WorkItems: workItems}, nil).Once()
 	suite.validator.On("ValidateBatch", ctx, workItems).Return(nil).Once()
 
 	req := ImportToNewInvoiceRequest{
-		ClientID: "CLIENT-001",
+		ClientID: testClientID,
 		Format:   "csv",
 		DryRun:   true,
 	}
@@ -1139,7 +1139,7 @@ func (suite *RealImportServiceTestSuite) TestAppendToInvoiceContextCanceled() {
 	cancel()
 
 	req := AppendToInvoiceRequest{
-		InvoiceID: "INV-001",
+		InvoiceID: testInvoiceID001,
 	}
 
 	result, err := suite.importService.AppendToInvoice(canceledCtx, strings.NewReader(""), req)
@@ -1153,7 +1153,7 @@ func (suite *RealImportServiceTestSuite) TestAppendToInvoiceParseError() {
 		Return(nil, errTestParseError).Once()
 
 	req := AppendToInvoiceRequest{
-		InvoiceID: "INV-001",
+		InvoiceID: testInvoiceID001,
 		Format:    "csv",
 	}
 
@@ -1168,7 +1168,7 @@ func (suite *RealImportServiceTestSuite) TestAppendToInvoiceEmptyResult() {
 		Return(&csv.ParseResult{WorkItems: []models.WorkItem{}}, nil).Once()
 
 	req := AppendToInvoiceRequest{
-		InvoiceID: "INV-001",
+		InvoiceID: testInvoiceID001,
 		Format:    "csv",
 	}
 
@@ -1176,7 +1176,7 @@ func (suite *RealImportServiceTestSuite) TestAppendToInvoiceEmptyResult() {
 	suite.Require().NoError(err)
 	suite.NotNil(result)
 	suite.Equal(0, result.WorkItemsAdded)
-	suite.Equal("INV-001", result.InvoiceID)
+	suite.Equal(testInvoiceID001, result.InvoiceID)
 }
 
 func (suite *RealImportServiceTestSuite) TestBatchImportContextCanceled() {
@@ -1185,7 +1185,7 @@ func (suite *RealImportServiceTestSuite) TestBatchImportContextCanceled() {
 
 	req := csv.BatchImportRequest{
 		Requests: []csv.ImportRequest{
-			{ClientID: "CLIENT-001", Reader: strings.NewReader("test")},
+			{ClientID: testClientID, Reader: strings.NewReader("test")},
 		},
 	}
 
@@ -1210,11 +1210,11 @@ func (suite *RealImportServiceTestSuite) TestBatchImportAppendSuccess() {
 	ctx := context.Background()
 	now := time.Now()
 	workItems := []models.WorkItem{
-		{ID: "WORK-001", Hours: 8.0, Rate: 100.0, Total: 800.0, Date: now, Description: "Development", CreatedAt: now},
+		{ID: testWorkID001, Hours: 8.0, Rate: 100.0, Total: 800.0, Date: now, Description: "Development", CreatedAt: now},
 	}
 	existingInvoice := &models.Invoice{
-		ID:        "INV-001",
-		Number:    "INV-2024-001",
+		ID:        testInvoiceID001,
+		Number:    testInvoiceNum,
 		Status:    models.StatusDraft,
 		WorkItems: []models.WorkItem{},
 	}
@@ -1222,13 +1222,13 @@ func (suite *RealImportServiceTestSuite) TestBatchImportAppendSuccess() {
 	suite.csvParser.On("ParseTimesheet", ctx, mock.Anything, mock.Anything).
 		Return(&csv.ParseResult{WorkItems: workItems}, nil).Once()
 	suite.validator.On("ValidateBatch", ctx, workItems).Return(nil).Once()
-	suite.invoiceStorage.On("GetInvoice", ctx, models.InvoiceID("INV-001")).Return(existingInvoice, nil).Twice()
+	suite.invoiceStorage.On("GetInvoice", ctx, models.InvoiceID(testInvoiceID001)).Return(existingInvoice, nil).Twice()
 	suite.idGen.On("GenerateWorkItemID", ctx).Return("WORK-GEN-001", nil).Once()
 	suite.invoiceStorage.On("UpdateInvoice", ctx, mock.Anything).Return(nil).Once()
 
 	req := csv.BatchImportRequest{
 		Requests: []csv.ImportRequest{
-			{InvoiceID: "INV-001", Reader: strings.NewReader("test")},
+			{InvoiceID: testInvoiceID001, Reader: strings.NewReader("test")},
 		},
 	}
 
@@ -1246,7 +1246,7 @@ func (suite *RealImportServiceTestSuite) TestBatchImportFailStopsOnError() {
 
 	req := csv.BatchImportRequest{
 		Requests: []csv.ImportRequest{
-			{ClientID: "CLIENT-001", Reader: strings.NewReader("test1")},
+			{ClientID: testClientID, Reader: strings.NewReader("test1")},
 			{ClientID: "CLIENT-002", Reader: strings.NewReader("test2")},
 		},
 		Options: csv.BatchOptions{ContinueOnError: false},
@@ -1262,21 +1262,21 @@ func (suite *RealImportServiceTestSuite) TestDetectDuplicates() {
 	ctx := context.Background()
 	date := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 	existingInvoice := &models.Invoice{
-		ID:     "INV-001",
-		Number: "INV-2024-001",
+		ID:     testInvoiceID001,
+		Number: testInvoiceNum,
 		WorkItems: []models.WorkItem{
-			{ID: "WORK-001", Date: date, Hours: 8.0},
+			{ID: testWorkID001, Date: date, Hours: 8.0},
 		},
 	}
 
-	suite.invoiceStorage.On("GetInvoice", ctx, models.InvoiceID("INV-001")).Return(existingInvoice, nil).Once()
+	suite.invoiceStorage.On("GetInvoice", ctx, models.InvoiceID(testInvoiceID001)).Return(existingInvoice, nil).Once()
 
 	newWorkItems := []models.WorkItem{
 		{ID: "WORK-NEW-001", Date: date, Hours: 8.0},                  // Same date and hours - duplicate
 		{ID: "WORK-NEW-002", Date: date.AddDate(0, 0, 1), Hours: 8.0}, // Different date - not duplicate
 	}
 
-	warnings, err := suite.importService.detectDuplicates(ctx, "INV-001", newWorkItems)
+	warnings, err := suite.importService.detectDuplicates(ctx, testInvoiceID001, newWorkItems)
 	suite.Require().NoError(err)
 	suite.Len(warnings, 1)
 	suite.Equal("duplicate", warnings[0].Type)

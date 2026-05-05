@@ -15,18 +15,18 @@ func BenchmarkSimpleServerOperations(b *testing.B) {
 	// Create minimal configuration for performance testing
 	config := &Config{
 		Server: ServerConfig{
-			Host:        "localhost",
+			Host:        defaultHost,
 			Port:        0,
 			Timeout:     5 * time.Second,
 			ReadTimeout: 30 * time.Second,
 		},
 		CLI: CLIConfig{
-			Path:       "/usr/bin/go-invoice",
+			Path:       "/usr/bin/" + defaultCLIName,
 			WorkingDir: "/tmp",
 			MaxTimeout: 5 * time.Second,
 		},
 		Security: SecurityConfig{
-			AllowedCommands: []string{"go-invoice"},
+			AllowedCommands: []string{defaultCLIName},
 		},
 		LogLevel: "error",
 	}
@@ -48,9 +48,9 @@ func BenchmarkSimpleServerOperations(b *testing.B) {
 	// Test simple request handling
 	b.Run("ping_request", func(b *testing.B) {
 		request := &types.MCPRequest{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			ID:      "test-ping",
-			Method:  "ping",
+			Method:  methodPing,
 			Params:  nil,
 		}
 
@@ -64,9 +64,9 @@ func BenchmarkSimpleServerOperations(b *testing.B) {
 
 	b.Run("initialize_request", func(b *testing.B) {
 		request := &types.MCPRequest{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			ID:      "test-init",
-			Method:  "initialize",
+			Method:  methodInitialize,
 			Params: map[string]interface{}{
 				"protocolVersion": "2024-11-05",
 				"capabilities":    map[string]interface{}{},
@@ -175,18 +175,18 @@ func BenchmarkResponseTimeValidation(b *testing.B) {
 
 	config := &Config{
 		Server: ServerConfig{
-			Host:        "localhost",
+			Host:        defaultHost,
 			Port:        0,
 			Timeout:     5 * time.Second,
 			ReadTimeout: 30 * time.Second,
 		},
 		CLI: CLIConfig{
-			Path:       "/usr/bin/go-invoice",
+			Path:       "/usr/bin/" + defaultCLIName,
 			WorkingDir: "/tmp",
 			MaxTimeout: 5 * time.Second,
 		},
 		Security: SecurityConfig{
-			AllowedCommands: []string{"go-invoice"},
+			AllowedCommands: []string{defaultCLIName},
 		},
 		LogLevel: "error",
 	}
@@ -203,9 +203,9 @@ func BenchmarkResponseTimeValidation(b *testing.B) {
 	ctx := context.Background()
 
 	request := &types.MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      "test",
-		Method:  "ping",
+		Method:  methodPing,
 	}
 
 	b.Run("response_time_under_target", func(b *testing.B) {

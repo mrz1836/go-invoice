@@ -9,6 +9,8 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
+const defaultBinDir = "bin"
+
 type RealShellRunner struct{}
 
 func (r *RealShellRunner) Run(cmd string, args ...string) error {
@@ -82,7 +84,7 @@ func NewDefaultConfig() *Config {
 	return &Config{
 		MainBinary: "go-invoice",
 		MCPBinary:  "go-invoice-mcp",
-		BinDir:     "bin",
+		BinDir:     defaultBinDir,
 		GOPATHBin:  gopathBin,
 	}
 }

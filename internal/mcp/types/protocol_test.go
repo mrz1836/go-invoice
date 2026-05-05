@@ -86,7 +86,7 @@ func (s *ProtocolTypesTestSuite) TestMCPRequest() {
 			JSONRPC: "2.0",
 			ID:      42,
 			Method:  "initialize",
-			Params:  map[string]interface{}{"clientInfo": map[string]string{"name": "test"}},
+			Params:  map[string]interface{}{"clientInfo": map[string]string{"name": testValue}},
 		}
 
 		data, err := json.Marshal(req)
@@ -106,7 +106,7 @@ func (s *ProtocolTypesTestSuite) TestMCPRequest() {
 	s.Run("NoParams", func() {
 		req := MCPRequest{
 			JSONRPC: "2.0",
-			ID:      "test",
+			ID:      testValue,
 			Method:  "ping",
 		}
 
@@ -247,7 +247,7 @@ func (s *ProtocolTypesTestSuite) TestToolCallParams() {
 		params := ToolCallParams{
 			Name: "complex_tool",
 			Arguments: map[string]interface{}{
-				"string_param":  "test",
+				"string_param":  testValue,
 				"number_param":  123.45,
 				"boolean_param": true,
 				"array_param":   []interface{}{"a", "b", "c"},
@@ -617,7 +617,7 @@ func TestProtocolTypes_Specific(t *testing.T) {
 		// Standard JSON-RPC error codes
 		standardCodes := []int{-32700, -32600, -32601, -32602, -32603}
 		for _, code := range standardCodes {
-			err := MCPError{Code: code, Message: "test"}
+			err := MCPError{Code: code, Message: testValue}
 			assert.Equal(t, code, err.Code)
 		}
 	})
@@ -691,7 +691,7 @@ func TestProtocolTypes_EdgeCases(t *testing.T) {
 		req := MCPRequest{
 			JSONRPC: "2.0",
 			ID:      "complex",
-			Method:  "test",
+			Method:  testValue,
 			Params:  params,
 		}
 

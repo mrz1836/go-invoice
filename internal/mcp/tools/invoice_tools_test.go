@@ -66,12 +66,12 @@ func (suite *InvoiceToolsTestSuite) TestInvoiceToolSchemas() {
 		schema := tool.InputSchema
 
 		// All schemas should be objects
-		schemaType, exists := schema["type"]
+		schemaType, exists := schema[keyType]
 		suite.True(exists, "Schema should have type field for tool %s", tool.Name)
-		suite.Equal("object", schemaType, "Schema type should be object for tool %s", tool.Name)
+		suite.Equal(keyObject, schemaType, "Schema type should be object for tool %s", tool.Name)
 
 		// All schemas should have properties
-		properties, exists := schema["properties"]
+		properties, exists := schema[keyProperties]
 		suite.True(exists, "Schema should have properties for tool %s", tool.Name)
 		suite.IsType(map[string]interface{}{}, properties, "Properties should be map for tool %s", tool.Name)
 

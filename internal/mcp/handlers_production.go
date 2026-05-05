@@ -77,7 +77,7 @@ func (h *ProductionMCPHandler) HandleInitialize(ctx context.Context, req *types.
 	}
 
 	return &types.MCPResponse{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      reqID,
 		Result:  result,
 	}, nil
@@ -94,9 +94,9 @@ func (h *ProductionMCPHandler) HandlePing(ctx context.Context, req *types.MCPReq
 	h.logger.Debug("handling ping request")
 
 	return &types.MCPResponse{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      req.ID,
-		Result:  map[string]string{"status": "ok"},
+		Result:  map[string]string{keyStatus: "ok"},
 	}, nil
 }
 
@@ -136,7 +136,7 @@ func (h *ProductionMCPHandler) HandleToolsList(ctx context.Context, req *types.M
 	)
 
 	return &types.MCPResponse{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      req.ID,
 		Result:  result,
 	}, nil

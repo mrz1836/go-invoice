@@ -22,6 +22,8 @@ func (e *HealthError) Error() string {
 	return fmt.Sprintf("health %s: %s", e.Op, e.Msg)
 }
 
+const statusUnhealthy = "unhealthy"
+
 // Health check errors
 var (
 	ErrHealthCheckFailed       = &HealthError{Op: "check", Msg: "health check failed"}
@@ -201,7 +203,7 @@ func (h *DefaultHealthChecker) CheckHealth(ctx context.Context) (*HealthStatus, 
 
 	for _, check := range checkResults {
 		switch check.Status {
-		case "unhealthy":
+		case statusUnhealthy:
 			overallHealthy = false
 			if status.LastError == "" {
 				status.LastError = check.Message
@@ -230,7 +232,7 @@ func (h *DefaultHealthChecker) CheckHealth(ctx context.Context) (*HealthStatus, 
 			status.Status = "healthy"
 		}
 	} else {
-		status.Status = "unhealthy"
+		status.Status = statusUnhealthy
 	}
 
 	// Update last status
@@ -254,7 +256,7 @@ func (h *DefaultHealthChecker) CheckHealth(ctx context.Context) (*HealthStatus, 
 func (h *DefaultHealthChecker) checkCLIAvailability(ctx context.Context) HealthCheck {
 	check := HealthCheck{
 		Name:        "CLI Availability",
-		Status:      "unhealthy",
+		Status:      statusUnhealthy,
 		LastChecked: time.Now(),
 	}
 
@@ -268,7 +270,7 @@ func (h *DefaultHealthChecker) checkCLIAvailability(ctx context.Context) HealthC
 	defer cancel()
 
 	// #nosec G204 -- CLI path comes from validated configuration
-	cmd := exec.CommandContext(cmdCtx, h.cliPath, "--version") //nolint:gosec // G702: cliPath comes from validated configuration
+	cmd := exec.CommandContext(cmdCtx, h.cliPath, "--version")
 	output, err := cmd.Output()
 	if err != nil {
 		check.Message = fmt.Sprintf("CLI check failed: %v", err)
@@ -294,7 +296,7 @@ func (h *DefaultHealthChecker) checkCLIAvailability(ctx context.Context) HealthC
 func (h *DefaultHealthChecker) checkStorageHealth(_ context.Context) HealthCheck {
 	check := HealthCheck{
 		Name:        "Storage Health",
-		Status:      "unhealthy",
+		Status:      statusUnhealthy,
 		LastChecked: time.Now(),
 	}
 
@@ -304,11 +306,11 @@ func (h *DefaultHealthChecker) checkStorageHealth(_ context.Context) HealthCheck
 	}()
 
 	// Check if storage directory exists
-	info, err := os.Stat(h.storagePath) //nolint:gosec // G703: storagePath comes from validated configuration
+	info, err := os.Stat(h.storagePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Try to create it
-			if mkdirErr := os.MkdirAll(h.storagePath, 0o750); mkdirErr != nil { //nolint:gosec // G703: storagePath comes from validated configuration
+			if mkdirErr := os.MkdirAll(h.storagePath, 0o750); mkdirErr != nil {
 				check.Message = fmt.Sprintf("Cannot create storage directory: %v", mkdirErr)
 				return check
 			}
@@ -328,13 +330,13 @@ func (h *DefaultHealthChecker) checkStorageHealth(_ context.Context) HealthCheck
 
 	// Check write permissions by creating a test file
 	testFile := filepath.Join(h.storagePath, ".health-check")
-	if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil { //nolint:gosec // G703: testFile is constructed from validated storagePath
+	if err := os.WriteFile(testFile, []byte("test"), 0o600); err != nil {
 		check.Message = fmt.Sprintf("Storage not writable: %v", err)
 		return check
 	}
 
 	// Clean up test file
-	_ = os.Remove(testFile) //nolint:gosec // G703: testFile is constructed from validated storagePath
+	_ = os.Remove(testFile)
 
 	// Check available space (simplified check)
 	check.Status = "healthy"
@@ -347,7 +349,7 @@ func (h *DefaultHealthChecker) checkStorageHealth(_ context.Context) HealthCheck
 func (h *DefaultHealthChecker) runCustomCheck(ctx context.Context, name string, checkFunc func(context.Context) error) HealthCheck {
 	check := HealthCheck{
 		Name:        name,
-		Status:      "unhealthy",
+		Status:      statusUnhealthy,
 		LastChecked: time.Now(),
 	}
 
@@ -540,7 +542,7 @@ func (h *HealthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Set appropriate status code
 	statusCode := http.StatusOK
 	switch status.Status {
-	case "unhealthy":
+	case statusUnhealthy:
 		statusCode = http.StatusServiceUnavailable
 	case "degraded":
 		statusCode = http.StatusOK // Still return 200 for degraded

@@ -43,16 +43,16 @@ func (suite *ClientTestSuite) TestNewClient() {
 	}{
 		{
 			name:        "ValidClient",
-			id:          "CLIENT-001",
-			clientName:  "Test Client",
-			email:       "test@example.com",
+			id:          testClientID001,
+			clientName:  testClientName,
+			email:       testClientEmail,
 			expectError: false,
 		},
 		{
 			name:        "EmptyID",
 			id:          "",
-			clientName:  "Test Client",
-			email:       "test@example.com",
+			clientName:  testClientName,
+			email:       testClientEmail,
 			expectError: true,
 			errorMsg:    "validation failed for field 'id': is required",
 		},
@@ -60,14 +60,14 @@ func (suite *ClientTestSuite) TestNewClient() {
 			name:        "EmptyName",
 			id:          "CLIENT-002",
 			clientName:  "",
-			email:       "test@example.com",
+			email:       testClientEmail,
 			expectError: true,
 			errorMsg:    "validation failed for field 'name': is required",
 		},
 		{
 			name:        "EmptyEmail",
 			id:          "CLIENT-003",
-			clientName:  "Test Client",
+			clientName:  testClientName,
 			email:       "",
 			expectError: true,
 			errorMsg:    "validation failed for field 'email': is required",
@@ -75,7 +75,7 @@ func (suite *ClientTestSuite) TestNewClient() {
 		{
 			name:        "InvalidEmail",
 			id:          "CLIENT-004",
-			clientName:  "Test Client",
+			clientName:  testClientName,
 			email:       "invalid-email",
 			expectError: true,
 			errorMsg:    "validation failed for field 'email': must be a valid email address",
@@ -84,22 +84,22 @@ func (suite *ClientTestSuite) TestNewClient() {
 			name:        "LongName",
 			id:          "CLIENT-005",
 			clientName:  strings.Repeat("a", 201),
-			email:       "test@example.com",
+			email:       testClientEmail,
 			expectError: true,
 			errorMsg:    "validation failed for field 'name': cannot exceed 200 characters",
 		},
 		{
 			name:        "WhitespaceOnlyName",
 			id:          "CLIENT-006",
-			clientName:  "   ",
-			email:       "test@example.com",
+			clientName:  testBlankStr,
+			email:       testClientEmail,
 			expectError: true,
 			errorMsg:    "validation failed for field 'name': is required",
 		},
 		{
 			name:        "ValidComplexEmail",
 			id:          "CLIENT-007",
-			clientName:  "Test Client",
+			clientName:  testClientName,
 			email:       "test.user+tag@sub.example.com",
 			expectError: false,
 		},
@@ -135,7 +135,7 @@ func (suite *ClientTestSuite) TestNewClientWithContext() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
-	client, err := NewClient(ctx, "CLIENT-001", "Test Client", "test@example.com")
+	client, err := NewClient(ctx, testClientID001, testClientName, testClientEmail)
 	require.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
 	assert.Nil(t, client)
@@ -153,9 +153,9 @@ func (suite *ClientTestSuite) TestClientValidate() {
 		{
 			name: "ValidClient",
 			client: Client{
-				ID:        "CLIENT-001",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				ID:        testClientID001,
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Active:    true,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
@@ -166,8 +166,8 @@ func (suite *ClientTestSuite) TestClientValidate() {
 			name: "ValidClientWithOptionalFields",
 			client: Client{
 				ID:        "CLIENT-002",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Phone:     "+1-555-123-4567",
 				Address:   "123 Main St, City, State 12345",
 				TaxID:     "12-3456789",
@@ -181,8 +181,8 @@ func (suite *ClientTestSuite) TestClientValidate() {
 			name: "EmptyID",
 			client: Client{
 				ID:        "",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Active:    true,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
@@ -193,9 +193,9 @@ func (suite *ClientTestSuite) TestClientValidate() {
 		{
 			name: "WhitespaceID",
 			client: Client{
-				ID:        "   ",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				ID:        testBlankStr,
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Active:    true,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
@@ -207,7 +207,7 @@ func (suite *ClientTestSuite) TestClientValidate() {
 			name: "InvalidEmailFormat",
 			client: Client{
 				ID:        "CLIENT-003",
-				Name:      "Test Client",
+				Name:      testClientName,
 				Email:     "not-an-email",
 				Active:    true,
 				CreatedAt: time.Now(),
@@ -220,8 +220,8 @@ func (suite *ClientTestSuite) TestClientValidate() {
 			name: "ShortPhone",
 			client: Client{
 				ID:        "CLIENT-004",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Phone:     "123456789", // 9 chars, min is 10
 				Active:    true,
 				CreatedAt: time.Now(),
@@ -234,8 +234,8 @@ func (suite *ClientTestSuite) TestClientValidate() {
 			name: "LongPhone",
 			client: Client{
 				ID:        "CLIENT-005",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Phone:     strings.Repeat("1", 21), // 21 chars, max is 20
 				Active:    true,
 				CreatedAt: time.Now(),
@@ -248,8 +248,8 @@ func (suite *ClientTestSuite) TestClientValidate() {
 			name: "LongAddress",
 			client: Client{
 				ID:        "CLIENT-006",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Address:   strings.Repeat("a", 501), // 501 chars, max is 500
 				Active:    true,
 				CreatedAt: time.Now(),
@@ -262,8 +262,8 @@ func (suite *ClientTestSuite) TestClientValidate() {
 			name: "LongTaxID",
 			client: Client{
 				ID:        "CLIENT-007",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				Name:      testClientName,
+				Email:     testClientEmail,
 				TaxID:     strings.Repeat("1", 51), // 51 chars, max is 50
 				Active:    true,
 				CreatedAt: time.Now(),
@@ -276,8 +276,8 @@ func (suite *ClientTestSuite) TestClientValidate() {
 			name: "MissingCreatedAt",
 			client: Client{
 				ID:        "CLIENT-008",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Active:    true,
 				CreatedAt: time.Time{},
 				UpdatedAt: time.Now(),
@@ -289,8 +289,8 @@ func (suite *ClientTestSuite) TestClientValidate() {
 			name: "MissingUpdatedAt",
 			client: Client{
 				ID:        "CLIENT-009",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Active:    true,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Time{},
@@ -302,8 +302,8 @@ func (suite *ClientTestSuite) TestClientValidate() {
 			name: "UpdatedBeforeCreated",
 			client: Client{
 				ID:        "CLIENT-010",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Active:    true,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now().Add(-1 * time.Hour),
@@ -315,8 +315,8 @@ func (suite *ClientTestSuite) TestClientValidate() {
 			name: "EmptyOptionalFields",
 			client: Client{
 				ID:        "CLIENT-011",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Phone:     "",
 				Address:   "",
 				TaxID:     "",
@@ -346,9 +346,9 @@ func (suite *ClientTestSuite) TestUpdateName() {
 	t := suite.T()
 
 	client := &Client{
-		ID:        "CLIENT-001",
+		ID:        testClientID001,
 		Name:      "Original Name",
-		Email:     "test@example.com",
+		Email:     testClientEmail,
 		Active:    true,
 		CreatedAt: time.Now().Add(-1 * time.Hour),
 		UpdatedAt: time.Now().Add(-1 * time.Hour),
@@ -383,7 +383,7 @@ func (suite *ClientTestSuite) TestUpdateName() {
 		},
 		{
 			name:        "WhitespaceOnlyName",
-			newName:     "   ",
+			newName:     testBlankStr,
 			expectError: true,
 			errorMsg:    "name cannot be empty",
 		},
@@ -427,8 +427,8 @@ func (suite *ClientTestSuite) TestUpdateEmail() {
 	t := suite.T()
 
 	client := &Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
+		ID:        testClientID001,
+		Name:      testClientName,
 		Email:     "original@example.com",
 		Active:    true,
 		CreatedAt: time.Now().Add(-1 * time.Hour),
@@ -464,7 +464,7 @@ func (suite *ClientTestSuite) TestUpdateEmail() {
 		},
 		{
 			name:        "WhitespaceOnlyEmail",
-			newEmail:    "   ",
+			newEmail:    testBlankStr,
 			expectError: true,
 			errorMsg:    "email cannot be empty",
 		},
@@ -508,9 +508,9 @@ func (suite *ClientTestSuite) TestUpdatePhone() {
 	t := suite.T()
 
 	client := &Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		ID:        testClientID001,
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Phone:     "1234567890",
 		Active:    true,
 		CreatedAt: time.Now().Add(-1 * time.Hour),
@@ -546,7 +546,7 @@ func (suite *ClientTestSuite) TestUpdatePhone() {
 		},
 		{
 			name:          "WhitespaceOnlyPhone",
-			newPhone:      "   ",
+			newPhone:      testBlankStr,
 			expectError:   false,
 			expectedPhone: "",
 		},
@@ -608,9 +608,9 @@ func (suite *ClientTestSuite) TestUpdateAddress() {
 	t := suite.T()
 
 	client := &Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		ID:        testClientID001,
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Address:   "123 Main St",
 		Active:    true,
 		CreatedAt: time.Now().Add(-1 * time.Hour),
@@ -646,7 +646,7 @@ func (suite *ClientTestSuite) TestUpdateAddress() {
 		},
 		{
 			name:            "WhitespaceOnlyAddress",
-			newAddress:      "   ",
+			newAddress:      testBlankStr,
 			expectError:     false,
 			expectedAddress: "",
 		},
@@ -696,9 +696,9 @@ func (suite *ClientTestSuite) TestUpdateTaxID() {
 	t := suite.T()
 
 	client := &Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		ID:        testClientID001,
+		Name:      testClientName,
+		Email:     testClientEmail,
 		TaxID:     "12-3456789",
 		Active:    true,
 		CreatedAt: time.Now().Add(-1 * time.Hour),
@@ -734,7 +734,7 @@ func (suite *ClientTestSuite) TestUpdateTaxID() {
 		},
 		{
 			name:          "WhitespaceOnlyTaxID",
-			newTaxID:      "   ",
+			newTaxID:      testBlankStr,
 			expectError:   false,
 			expectedTaxID: "",
 		},
@@ -784,9 +784,9 @@ func (suite *ClientTestSuite) TestUpdateApproverContacts() {
 	t := suite.T()
 
 	client := &Client{
-		ID:               "CLIENT-001",
-		Name:             "Test Client",
-		Email:            "test@example.com",
+		ID:               testClientID001,
+		Name:             testClientName,
+		Email:            testClientEmail,
 		ApproverContacts: "John Doe",
 		Active:           true,
 		CreatedAt:        time.Now().Add(-1 * time.Hour),
@@ -828,7 +828,7 @@ func (suite *ClientTestSuite) TestUpdateApproverContacts() {
 		},
 		{
 			name:                     "WhitespaceOnlyApproverContacts",
-			newApproverContacts:      "   ",
+			newApproverContacts:      testBlankStr,
 			expectError:              false,
 			expectedApproverContacts: "",
 		},
@@ -872,9 +872,9 @@ func (suite *ClientTestSuite) TestActivateDeactivate() {
 	t := suite.T()
 
 	client := &Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		ID:        testClientID001,
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Active:    true,
 		CreatedAt: time.Now().Add(-1 * time.Hour),
 		UpdatedAt: time.Now().Add(-1 * time.Hour),
@@ -905,9 +905,9 @@ func (suite *ClientTestSuite) TestContextCancellation() {
 	cancel() // Cancel immediately
 
 	client := &Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		ID:        testClientID001,
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Active:    true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -951,10 +951,10 @@ func (suite *ClientTestSuite) TestGetDisplayName() {
 		{
 			name: "WithName",
 			client: Client{
-				ID:   "CLIENT-001",
-				Name: "Test Client",
+				ID:   testClientID001,
+				Name: testClientName,
 			},
-			expectedName: "Test Client",
+			expectedName: testClientName,
 		},
 		{
 			name: "WithoutName",
@@ -984,9 +984,9 @@ func (suite *ClientTestSuite) TestGetContactInfo() {
 		{
 			name: "EmailOnly",
 			client: Client{
-				Email: "test@example.com",
+				Email: testClientEmail,
 			},
-			expectedInfo: "test@example.com",
+			expectedInfo: testClientEmail,
 		},
 		{
 			name: "PhoneOnly",
@@ -998,7 +998,7 @@ func (suite *ClientTestSuite) TestGetContactInfo() {
 		{
 			name: "EmailAndPhone",
 			client: Client{
-				Email: "test@example.com",
+				Email: testClientEmail,
 				Phone: "+1-555-123-4567",
 			},
 			expectedInfo: "test@example.com | +1-555-123-4567",
@@ -1031,8 +1031,8 @@ func (suite *ClientTestSuite) TestHasCompleteInfo() {
 		{
 			name: "CompleteInfo",
 			client: Client{
-				Name:    "Test Client",
-				Email:   "test@example.com",
+				Name:    testClientName,
+				Email:   testClientEmail,
 				Address: "123 Main St",
 			},
 			expected: true,
@@ -1041,7 +1041,7 @@ func (suite *ClientTestSuite) TestHasCompleteInfo() {
 			name: "MissingName",
 			client: Client{
 				Name:    "",
-				Email:   "test@example.com",
+				Email:   testClientEmail,
 				Address: "123 Main St",
 			},
 			expected: false,
@@ -1049,7 +1049,7 @@ func (suite *ClientTestSuite) TestHasCompleteInfo() {
 		{
 			name: "MissingEmail",
 			client: Client{
-				Name:    "Test Client",
+				Name:    testClientName,
 				Email:   "",
 				Address: "123 Main St",
 			},
@@ -1058,8 +1058,8 @@ func (suite *ClientTestSuite) TestHasCompleteInfo() {
 		{
 			name: "MissingAddress",
 			client: Client{
-				Name:    "Test Client",
-				Email:   "test@example.com",
+				Name:    testClientName,
+				Email:   testClientEmail,
 				Address: "",
 			},
 			expected: false,
@@ -1105,9 +1105,9 @@ func (suite *ClientTestSuite) TestLateFeeEnabled() {
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
 			client := &Client{
-				ID:             "CLIENT-001",
-				Name:           "Test Client",
-				Email:          "test@example.com",
+				ID:             testClientID001,
+				Name:           testClientName,
+				Email:          testClientEmail,
 				Active:         true,
 				LateFeeEnabled: tt.lateFeeEnabled,
 				CreatedAt:      time.Now(),
@@ -1131,16 +1131,16 @@ func (suite *ClientTestSuite) TestCreateClientRequestValidate() {
 		{
 			name: "ValidRequest",
 			request: CreateClientRequest{
-				Name:  "Test Client",
-				Email: "test@example.com",
+				Name:  testClientName,
+				Email: testClientEmail,
 			},
 			expectError: false,
 		},
 		{
 			name: "ValidRequestWithOptionalFields",
 			request: CreateClientRequest{
-				Name:    "Test Client",
-				Email:   "test@example.com",
+				Name:    testClientName,
+				Email:   testClientEmail,
 				Phone:   "+1-555-123-4567",
 				Address: "123 Main St, City, State 12345",
 				TaxID:   "12-3456789",
@@ -1150,8 +1150,8 @@ func (suite *ClientTestSuite) TestCreateClientRequestValidate() {
 		{
 			name: "ValidRequestWithLateFee",
 			request: CreateClientRequest{
-				Name:           "Test Client",
-				Email:          "test@example.com",
+				Name:           testClientName,
+				Email:          testClientEmail,
 				LateFeeEnabled: true,
 			},
 			expectError: false,
@@ -1160,7 +1160,7 @@ func (suite *ClientTestSuite) TestCreateClientRequestValidate() {
 			name: "EmptyName",
 			request: CreateClientRequest{
 				Name:  "",
-				Email: "test@example.com",
+				Email: testClientEmail,
 			},
 			expectError: true,
 			errorMsg:    "validation failed for field 'name': is required",
@@ -1168,7 +1168,7 @@ func (suite *ClientTestSuite) TestCreateClientRequestValidate() {
 		{
 			name: "EmptyEmail",
 			request: CreateClientRequest{
-				Name:  "Test Client",
+				Name:  testClientName,
 				Email: "",
 			},
 			expectError: true,
@@ -1177,7 +1177,7 @@ func (suite *ClientTestSuite) TestCreateClientRequestValidate() {
 		{
 			name: "InvalidEmail",
 			request: CreateClientRequest{
-				Name:  "Test Client",
+				Name:  testClientName,
 				Email: "invalid-email",
 			},
 			expectError: true,
@@ -1186,8 +1186,8 @@ func (suite *ClientTestSuite) TestCreateClientRequestValidate() {
 		{
 			name: "InvalidPhone",
 			request: CreateClientRequest{
-				Name:  "Test Client",
-				Email: "test@example.com",
+				Name:  testClientName,
+				Email: testClientEmail,
 				Phone: "123", // Too short
 			},
 			expectError: true,
@@ -1197,7 +1197,7 @@ func (suite *ClientTestSuite) TestCreateClientRequestValidate() {
 			name: "LongName",
 			request: CreateClientRequest{
 				Name:  strings.Repeat("a", 201),
-				Email: "test@example.com",
+				Email: testClientEmail,
 			},
 			expectError: true,
 			errorMsg:    "validation failed for field 'name': cannot exceed 200 characters",
@@ -1205,8 +1205,8 @@ func (suite *ClientTestSuite) TestCreateClientRequestValidate() {
 		{
 			name: "LongAddress",
 			request: CreateClientRequest{
-				Name:    "Test Client",
-				Email:   "test@example.com",
+				Name:    testClientName,
+				Email:   testClientEmail,
 				Address: strings.Repeat("a", 501),
 			},
 			expectError: true,
@@ -1215,8 +1215,8 @@ func (suite *ClientTestSuite) TestCreateClientRequestValidate() {
 		{
 			name: "LongTaxID",
 			request: CreateClientRequest{
-				Name:  "Test Client",
-				Email: "test@example.com",
+				Name:  testClientName,
+				Email: testClientEmail,
 				TaxID: strings.Repeat("1", 51),
 			},
 			expectError: true,

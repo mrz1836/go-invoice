@@ -12,19 +12,19 @@ import (
 )
 
 func TestBuilder_EnsureBinDir_Success(t *testing.T) {
-	config := &Config{BinDir: "bin"}
+	config := &Config{BinDir: defaultBinDir}
 	mockFS := mocks.NewMockFileSystem()
 	builder := NewBuilder(config, nil, mockFS, nil, nil)
 
 	err := builder.EnsureBinDir()
 
 	require.NoError(t, err)
-	assert.Contains(t, mockFS.Files, "bin")
-	assert.Equal(t, os.FileMode(0o750), mockFS.Permissions["bin"])
+	assert.Contains(t, mockFS.Files, defaultBinDir)
+	assert.Equal(t, os.FileMode(0o750), mockFS.Permissions[defaultBinDir])
 }
 
 func TestBuilder_EnsureBinDir_Error(t *testing.T) {
-	config := &Config{BinDir: "bin"}
+	config := &Config{BinDir: defaultBinDir}
 	mockFS := mocks.NewMockFileSystem()
 	mockFS.MkdirError = assert.AnError
 	builder := NewBuilder(config, nil, mockFS, nil, nil)
@@ -35,7 +35,7 @@ func TestBuilder_EnsureBinDir_Error(t *testing.T) {
 }
 
 func TestBuilder_BuildMain_Success(t *testing.T) {
-	config := &Config{MainBinary: "go-invoice", BinDir: "bin"}
+	config := &Config{MainBinary: "go-invoice", BinDir: defaultBinDir}
 	mockShell := &mocks.MockShellRunner{OutputValue: "v1.0.0"}
 	mockFS := mocks.NewMockFileSystem()
 	mockLogger := &mocks.MockLogger{}
@@ -53,14 +53,14 @@ func TestBuilder_BuildMain_Success(t *testing.T) {
 	assert.Equal(t, "-ldflags", call[3])
 	assert.Contains(t, call[4], "-s -w")
 	assert.Equal(t, "-o", call[5])
-	assert.Equal(t, filepath.Join("bin", "go-invoice"), call[6])
+	assert.Equal(t, filepath.Join(defaultBinDir, "go-invoice"), call[6])
 	assert.Equal(t, "./cmd/go-invoice", call[7])
 
 	assert.Contains(t, mockLogger.Messages, "Building go-invoice...")
 }
 
 func TestBuilder_BuildMCP_Success(t *testing.T) {
-	config := &Config{MCPBinary: "go-invoice-mcp", BinDir: "bin"}
+	config := &Config{MCPBinary: "go-invoice-mcp", BinDir: defaultBinDir}
 	mockShell := &mocks.MockShellRunner{OutputValue: "v1.0.0"}
 	mockFS := mocks.NewMockFileSystem()
 	mockLogger := &mocks.MockLogger{}
@@ -73,7 +73,7 @@ func TestBuilder_BuildMCP_Success(t *testing.T) {
 
 	call := mockShell.RunCalls[0]
 	assert.Equal(t, "go", call[0])
-	assert.Equal(t, filepath.Join("bin", "go-invoice-mcp"), call[6])
+	assert.Equal(t, filepath.Join(defaultBinDir, "go-invoice-mcp"), call[6])
 	assert.Equal(t, "./cmd/go-invoice-mcp", call[7])
 
 	assert.Contains(t, mockLogger.Messages, "Building go-invoice-mcp...")
@@ -83,7 +83,7 @@ func TestBuilder_BuildAll_Success(t *testing.T) {
 	config := &Config{
 		MainBinary: "go-invoice",
 		MCPBinary:  "go-invoice-mcp",
-		BinDir:     "bin",
+		BinDir:     defaultBinDir,
 	}
 	mockShell := &mocks.MockShellRunner{OutputValue: "v1.0.0"}
 	mockFS := mocks.NewMockFileSystem()
@@ -98,7 +98,7 @@ func TestBuilder_BuildAll_Success(t *testing.T) {
 }
 
 func TestBuilder_InstallBinary_Success(t *testing.T) {
-	config := &Config{BinDir: "bin", GOPATHBin: "/home/test/go/bin"}
+	config := &Config{BinDir: defaultBinDir, GOPATHBin: "/home/test/go/bin"}
 	mockFS := mocks.NewMockFileSystem()
 	mockFS.Files["bin/go-invoice"] = []byte("binary content")
 	mockCopier := &mocks.MockFileCopier{BytesCopied: 1024}
@@ -112,7 +112,7 @@ func TestBuilder_InstallBinary_Success(t *testing.T) {
 }
 
 func TestBuilder_InstallBinary_SourceNotExist(t *testing.T) {
-	config := &Config{BinDir: "bin", GOPATHBin: "/home/test/go/bin"}
+	config := &Config{BinDir: defaultBinDir, GOPATHBin: "/home/test/go/bin"}
 	mockFS := mocks.NewMockFileSystem()
 	builder := NewBuilder(config, nil, mockFS, nil, nil)
 
@@ -124,7 +124,7 @@ func TestBuilder_InstallBinary_SourceNotExist(t *testing.T) {
 func TestBuilder_DevBuild_Success(t *testing.T) {
 	config := &Config{
 		MainBinary: "go-invoice",
-		BinDir:     "bin",
+		BinDir:     defaultBinDir,
 		GOPATHBin:  "/home/test/go/bin",
 	}
 	mockShell := &mocks.MockShellRunner{OutputValue: "abc123"}
@@ -147,16 +147,16 @@ func TestBuilder_DevBuild_Success(t *testing.T) {
 }
 
 func TestBuilder_Clean_Success(t *testing.T) {
-	config := &Config{BinDir: "bin"}
+	config := &Config{BinDir: defaultBinDir}
 	mockFS := mocks.NewMockFileSystem()
-	mockFS.Files["bin"] = nil
+	mockFS.Files[defaultBinDir] = nil
 	mockLogger := &mocks.MockLogger{}
 	builder := NewBuilder(config, nil, mockFS, mockLogger, nil)
 
 	err := builder.Clean()
 
 	require.NoError(t, err)
-	assert.NotContains(t, mockFS.Files, "bin")
+	assert.NotContains(t, mockFS.Files, defaultBinDir)
 	assert.Contains(t, mockLogger.Messages, "Cleaning build artifacts...")
 	assert.Contains(t, mockLogger.Messages, "✅ Build artifacts cleaned")
 }

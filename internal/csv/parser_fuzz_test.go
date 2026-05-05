@@ -18,14 +18,14 @@ func FuzzParseTimesheet(f *testing.F) {
 
 	// Seed with known good examples
 	seeds := []string{
-		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,100.00,Development work",
-		"Date\tHours\tRate\tDescription\n" + isoDate + "\t8.0\t100.00\tDevelopment work",
-		"Date;Hours;Rate;Description\n" + isoDate + ";8.0;100.00;Development work",
-		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,100.00,Work",
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0," + testRate100_00 + "," + testDevWork,
+		"Date\tHours\tRate\tDescription\n" + isoDate + "\t8.0\t" + testRate100_00 + "\t" + testDevWork,
+		"Date;Hours;Rate;Description\n" + isoDate + ";8.0;" + testRate100_00 + ";" + testDevWork,
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0," + testRate100_00 + ",Work",
 		"Date,Hours,Rate,Description\n" + usDate + ",8.5,125.50,Bug fixes",
 		"Date,Hours,Rate,Description\n" + euDate + ",4.0,80.00,Code review",
-		"DATE,DURATION,HOURLY_RATE,TASK\n" + isoDate + ",8.0,100.00,Development",
-		"Work_Date,Time,Billing_Rate,Notes\n" + isoDate + ",8.0,100.00,Work",
+		"DATE,DURATION,HOURLY_RATE,TASK\n" + isoDate + ",8.0," + testRate100_00 + ",Development",
+		"Work_Date,Time,Billing_Rate,Notes\n" + isoDate + ",8.0," + testRate100_00 + ",Work",
 	}
 
 	// Add seeds to fuzzer
@@ -38,15 +38,15 @@ func FuzzParseTimesheet(f *testing.F) {
 		"",                              // Empty file
 		"Date,Hours,Rate,Description",   // Header only
 		"Date,Hours,Rate,Description\n", // Header with newline
-		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,100.00",                      // Missing field
-		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,100.00,Work,Extra",           // Extra field
-		"Date,Hours,Rate,Description\n,,,",                                             // Empty fields
-		"Date,Hours,Rate,Description\n" + isoDate + ",,100.00,Work",                    // Missing hours
-		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,,Work",                       // Missing rate
-		"Date,Hours,Rate,Description\n,8.0,100.00,Work",                                // Missing date
-		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,100.00,",                     // Missing description
-		"Date,Hours,Rate,Description\n\"" + isoDate + "\",\"8.0\",\"100.00\",\"Work\"", // Quoted fields
-		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,100.00,\"Work, with comma\"", // Quoted description with comma
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0," + testRate100_00,                           // Missing field
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0," + testRate100_00 + ",Work,Extra",           // Extra field
+		"Date,Hours,Rate,Description\n,,,",                                                             // Empty fields
+		"Date,Hours,Rate,Description\n" + isoDate + ",," + testRate100_00 + ",Work",                    // Missing hours
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0,,Work",                                       // Missing rate
+		"Date,Hours,Rate,Description\n,8.0," + testRate100_00 + ",Work",                                // Missing date
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0," + testRate100_00 + ",",                     // Missing description
+		"Date,Hours,Rate,Description\n\"" + isoDate + "\",\"8.0\",\"" + testRate100_00 + "\",\"Work\"", // Quoted fields
+		"Date,Hours,Rate,Description\n" + isoDate + ",8.0," + testRate100_00 + ",\"Work, with comma\"", // Quoted description with comma
 	}
 
 	for _, edge := range edgeCases {
@@ -62,7 +62,7 @@ func FuzzParseTimesheet(f *testing.F) {
 
 		reader := strings.NewReader(csvData)
 		options := ParseOptions{
-			Format:          "standard",
+			Format:          formatStandard,
 			ContinueOnError: true, // Don't fail on errors, collect them
 		}
 
@@ -206,7 +206,7 @@ func FuzzDetectFormat(f *testing.F) {
 			}
 
 			// Name should match expected values
-			validNames := []string{"standard", "tab", "semicolon", "excel", "rfc4180", "tsv"}
+			validNames := []string{formatStandard, formatTab, "semicolon", "excel", "rfc4180", "tsv"}
 			isValidName := false
 			for _, validName := range validNames {
 				if format.Name == validName {
@@ -401,16 +401,16 @@ func FuzzNormalizeHeaderName(f *testing.F) {
 	// Seed with common header variations
 	seeds := []string{
 		"Date",
-		"date",
+		fieldDate,
 		"DATE",
 		"Hours",
-		"hours",
+		fieldHours,
 		"HOURS",
 		"Rate",
-		"rate",
+		fieldRate,
 		"RATE",
 		"Description",
-		"description",
+		fieldDescription,
 		"DESCRIPTION",
 		"Work_Date",
 		"work_date",
@@ -485,15 +485,15 @@ func FuzzNormalizeHeaderName(f *testing.F) {
 
 		// Known mappings should work correctly
 		knownMappings := map[string]string{
-			"Date":             "date",
-			"date":             "date",
-			"HOURS":            "hours",
-			"Rate":             "rate",
-			"Description":      "description",
-			"Work_Date":        "date",
-			"Hourly_Rate":      "rate",
-			"Work_Description": "description",
-			"  Date  ":         "date",
+			"Date":             fieldDate,
+			"date":             fieldDate,
+			"HOURS":            fieldHours,
+			"Rate":             fieldRate,
+			"Description":      fieldDescription,
+			"Work_Date":        fieldDate,
+			"Hourly_Rate":      fieldRate,
+			"Work_Description": fieldDescription,
+			"  Date  ":         fieldDate,
 		}
 
 		if expected, exists := knownMappings[header]; exists {

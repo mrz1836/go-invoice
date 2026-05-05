@@ -74,9 +74,9 @@ func (suite *ClientStorageTestSuite) TestCreateClient() {
 
 	// Create test client
 	client := &models.Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		ID:        testClientID001,
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Active:    true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -109,7 +109,7 @@ func (suite *ClientStorageTestSuite) TestCreateClient() {
 	var conflictErr storageTypes.ConflictError
 	require.ErrorAs(t, err, &conflictErr)
 	assert.Equal(t, "client", conflictErr.Resource)
-	assert.Equal(t, "CLIENT-001", conflictErr.ID)
+	assert.Equal(t, testClientID001, conflictErr.ID)
 
 	// Test with nil client
 	err = suite.storage.CreateClient(suite.ctx, nil)
@@ -137,9 +137,9 @@ func (suite *ClientStorageTestSuite) TestGetClient() {
 
 	// Create test client
 	client := &models.Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		ID:        testClientID001,
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Phone:     "+1234567890",
 		Address:   "123 Test St",
 		Active:    true,
@@ -152,7 +152,7 @@ func (suite *ClientStorageTestSuite) TestGetClient() {
 	require.NoError(t, err)
 
 	// Test successful retrieval
-	retrieved, err := suite.storage.GetClient(suite.ctx, "CLIENT-001")
+	retrieved, err := suite.storage.GetClient(suite.ctx, testClientID001)
 	require.NoError(t, err)
 	require.NotNil(t, retrieved)
 
@@ -187,7 +187,7 @@ func (suite *ClientStorageTestSuite) TestGetClient() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	retrieved, err = suite.storage.GetClient(ctx, "CLIENT-001")
+	retrieved, err = suite.storage.GetClient(ctx, testClientID001)
 	assert.Equal(t, context.Canceled, err)
 	assert.Nil(t, retrieved)
 }
@@ -197,9 +197,9 @@ func (suite *ClientStorageTestSuite) TestUpdateClient() {
 
 	// Create test client
 	client := &models.Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		ID:        testClientID001,
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Active:    true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -221,7 +221,7 @@ func (suite *ClientStorageTestSuite) TestUpdateClient() {
 	assert.True(t, client.UpdatedAt.After(time.Now().Add(-time.Second)))
 
 	// Verify changes were saved
-	retrieved, err := suite.storage.GetClient(suite.ctx, "CLIENT-001")
+	retrieved, err := suite.storage.GetClient(suite.ctx, testClientID001)
 	require.NoError(t, err)
 	assert.Equal(t, "Updated Client", retrieved.Name)
 	assert.Equal(t, "updated@example.com", retrieved.Email)
@@ -231,7 +231,7 @@ func (suite *ClientStorageTestSuite) TestUpdateClient() {
 	// Test concurrent update (no optimistic locking in client storage)
 	// Multiple updates should succeed
 	concurrentClient := &models.Client{
-		ID:        "CLIENT-001",
+		ID:        testClientID001,
 		Name:      "Concurrent Update",
 		Email:     "concurrent@example.com",
 		Active:    true,
@@ -243,7 +243,7 @@ func (suite *ClientStorageTestSuite) TestUpdateClient() {
 	require.NoError(t, err)
 
 	// Verify last update wins
-	retrieved, err = suite.storage.GetClient(suite.ctx, "CLIENT-001")
+	retrieved, err = suite.storage.GetClient(suite.ctx, testClientID001)
 	require.NoError(t, err)
 	assert.Equal(t, "Concurrent Update", retrieved.Name)
 	assert.Equal(t, "concurrent@example.com", retrieved.Email)
@@ -270,7 +270,7 @@ func (suite *ClientStorageTestSuite) TestUpdateClient() {
 
 	// Test with invalid client
 	invalidClient := &models.Client{
-		ID: "CLIENT-001",
+		ID: testClientID001,
 		// Missing required fields
 	}
 	err = suite.storage.UpdateClient(suite.ctx, invalidClient)
@@ -283,9 +283,9 @@ func (suite *ClientStorageTestSuite) TestDeleteClient() {
 
 	// Create test client
 	client := &models.Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		ID:        testClientID001,
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Active:    true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -301,7 +301,7 @@ func (suite *ClientStorageTestSuite) TestDeleteClient() {
 	require.NoError(t, err)
 
 	// Delete client (soft delete)
-	err = suite.storage.DeleteClient(suite.ctx, "CLIENT-001")
+	err = suite.storage.DeleteClient(suite.ctx, testClientID001)
 	require.NoError(t, err)
 
 	// Verify file still exists (soft delete)
@@ -309,7 +309,7 @@ func (suite *ClientStorageTestSuite) TestDeleteClient() {
 	require.NoError(t, err)
 
 	// Verify client is marked as inactive
-	retrieved, err := suite.storage.GetClient(suite.ctx, "CLIENT-001")
+	retrieved, err := suite.storage.GetClient(suite.ctx, testClientID001)
 	require.NoError(t, err)
 	assert.False(t, retrieved.Active)
 
@@ -333,7 +333,7 @@ func (suite *ClientStorageTestSuite) TestDeleteClient() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	err = suite.storage.DeleteClient(ctx, "CLIENT-001")
+	err = suite.storage.DeleteClient(ctx, testClientID001)
 	assert.Equal(t, context.Canceled, err)
 }
 
@@ -352,7 +352,7 @@ func (suite *ClientStorageTestSuite) TestListClients() {
 	now := time.Now()
 	clients := []*models.Client{
 		{
-			ID:        "CLIENT-001",
+			ID:        testClientID001,
 			Name:      "Alpha Client",
 			Email:     "alpha@example.com",
 			Active:    true,
@@ -468,7 +468,7 @@ func (suite *ClientStorageTestSuite) TestFindClientByEmail() {
 	// Create test clients
 	clients := []*models.Client{
 		{
-			ID:        "CLIENT-001",
+			ID:        testClientID001,
 			Name:      "Test Client 1",
 			Email:     "test1@example.com",
 			Active:    true,
@@ -503,7 +503,7 @@ func (suite *ClientStorageTestSuite) TestFindClientByEmail() {
 	client, err = suite.storage.FindClientByEmail(suite.ctx, "test1@example.com")
 	require.NoError(t, err)
 	require.NotNil(t, client)
-	assert.Equal(t, "CLIENT-001", string(client.ID))
+	assert.Equal(t, testClientID001, string(client.ID))
 	assert.Equal(t, "Test Client 1", client.Name)
 	assert.Equal(t, "test1@example.com", client.Email)
 
@@ -549,15 +549,15 @@ func (suite *ClientStorageTestSuite) TestExistsClient() {
 	t := suite.T()
 
 	// Test non-existent client
-	exists, err := suite.storage.ExistsClient(suite.ctx, "CLIENT-001")
+	exists, err := suite.storage.ExistsClient(suite.ctx, testClientID001)
 	require.NoError(t, err)
 	assert.False(t, exists)
 
 	// Create test client
 	client := &models.Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		ID:        testClientID001,
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Active:    true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -568,16 +568,16 @@ func (suite *ClientStorageTestSuite) TestExistsClient() {
 	require.NoError(t, err)
 
 	// Test existing client
-	exists, err = suite.storage.ExistsClient(suite.ctx, "CLIENT-001")
+	exists, err = suite.storage.ExistsClient(suite.ctx, testClientID001)
 	require.NoError(t, err)
 	assert.True(t, exists)
 
 	// Soft delete client
-	err = suite.storage.DeleteClient(suite.ctx, "CLIENT-001")
+	err = suite.storage.DeleteClient(suite.ctx, testClientID001)
 	require.NoError(t, err)
 
 	// Test after soft deletion (should still exist)
-	exists, err = suite.storage.ExistsClient(suite.ctx, "CLIENT-001")
+	exists, err = suite.storage.ExistsClient(suite.ctx, testClientID001)
 	require.NoError(t, err)
 	assert.True(t, exists)
 
@@ -585,7 +585,7 @@ func (suite *ClientStorageTestSuite) TestExistsClient() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	exists, err = suite.storage.ExistsClient(ctx, "CLIENT-001")
+	exists, err = suite.storage.ExistsClient(ctx, testClientID001)
 	assert.Equal(t, context.Canceled, err)
 	assert.False(t, exists)
 }
@@ -655,7 +655,7 @@ func (suite *ClientStorageTestSuite) TestConcurrentClientAccess() {
 	}
 
 	// Test concurrent updates (no optimistic locking in client storage)
-	client, err := suite.storage.GetClient(suite.ctx, "CLIENT-001")
+	client, err := suite.storage.GetClient(suite.ctx, testClientID001)
 	require.NoError(t, err)
 
 	wg = sync.WaitGroup{}
@@ -821,7 +821,7 @@ func (suite *ClientStorageTestSuite) TestHardDeleteClient() {
 	// Create test client
 	client := &models.Client{
 		ID:        "CLIENT-HARD-DELETE",
-		Name:      "Test Client",
+		Name:      testClientName,
 		Email:     "harddelete@example.com",
 		Active:    true,
 		CreatedAt: time.Now(),
@@ -891,7 +891,7 @@ func (suite *ClientStorageTestSuite) TestRestoreClient() {
 	// Create test client
 	client := &models.Client{
 		ID:        "CLIENT-RESTORE",
-		Name:      "Test Client",
+		Name:      testClientName,
 		Email:     "restore@example.com",
 		Active:    true,
 		CreatedAt: time.Now(),

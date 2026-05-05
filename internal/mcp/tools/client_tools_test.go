@@ -75,7 +75,7 @@ func (s *ClientToolsTestSuite) TestClientCreateTool() {
 	s.Run("BasicStructure", func() {
 		s.Equal("client_create", clientCreateTool.Name)
 		s.NotEmpty(clientCreateTool.Description)
-		s.Contains(clientCreateTool.Description, "client")
+		s.Contains(clientCreateTool.Description, fieldClient)
 		s.Contains(clientCreateTool.Description, "create")
 		s.Equal(CategoryClientManagement, clientCreateTool.Category)
 		s.NotEmpty(clientCreateTool.Version)
@@ -84,15 +84,15 @@ func (s *ClientToolsTestSuite) TestClientCreateTool() {
 
 	s.Run("Schema", func() {
 		s.NotNil(clientCreateTool.InputSchema)
-		s.Equal("object", clientCreateTool.InputSchema["type"])
+		s.Equal(keyObject, clientCreateTool.InputSchema[keyType])
 
 		// Verify expected properties exist
-		properties, hasProperties := clientCreateTool.InputSchema["properties"]
+		properties, hasProperties := clientCreateTool.InputSchema[keyProperties]
 		s.True(hasProperties, "Should have properties in schema")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have common client fields
-			expectedFields := []string{"name", "email"}
+			expectedFields := []string{fieldName, fieldEmail}
 			for _, field := range expectedFields {
 				if _, hasField := propertiesMap[field]; hasField {
 					s.Contains(propertiesMap, field, "Should have %s field", field)
@@ -110,7 +110,7 @@ func (s *ClientToolsTestSuite) TestClientCreateTool() {
 			s.NotEmpty(example.Input, "Example %d input should not be empty", i)
 
 			// Verify example input contains reasonable fields
-			if name, hasName := example.Input["name"]; hasName {
+			if name, hasName := example.Input[fieldName]; hasName {
 				s.IsType("", name, "Name should be string")
 				s.NotEmpty(name, "Name should not be empty")
 			}
@@ -137,21 +137,21 @@ func (s *ClientToolsTestSuite) TestClientListTool() {
 	s.Run("BasicStructure", func() {
 		s.Equal("client_list", clientListTool.Name)
 		s.NotEmpty(clientListTool.Description)
-		s.Contains(clientListTool.Description, "client")
+		s.Contains(clientListTool.Description, fieldClient)
 		s.Contains(strings.ToLower(clientListTool.Description), "list")
 		s.Equal(CategoryClientManagement, clientListTool.Category)
 	})
 
 	s.Run("Schema", func() {
 		s.NotNil(clientListTool.InputSchema)
-		s.Equal("object", clientListTool.InputSchema["type"])
+		s.Equal(keyObject, clientListTool.InputSchema[keyType])
 
 		// List tools typically have optional filtering parameters
-		properties, hasProperties := clientListTool.InputSchema["properties"]
+		properties, hasProperties := clientListTool.InputSchema[keyProperties]
 		if hasProperties {
 			if propertiesMap, ok := properties.(map[string]interface{}); ok {
 				// Common list parameters
-				potentialFields := []string{"search", "limit", "offset", "output_format"}
+				potentialFields := []string{"search", "limit", "offset", fieldOutputFormat}
 				for _, field := range potentialFields {
 					if fieldDef, hasField := propertiesMap[field]; hasField {
 						s.NotNil(fieldDef, "Field %s should have definition", field)
@@ -202,21 +202,21 @@ func (s *ClientToolsTestSuite) TestClientShowTool() {
 	s.Run("BasicStructure", func() {
 		s.Equal("client_show", clientShowTool.Name)
 		s.NotEmpty(clientShowTool.Description)
-		s.Contains(clientShowTool.Description, "client")
+		s.Contains(clientShowTool.Description, fieldClient)
 		s.Equal(CategoryClientManagement, clientShowTool.Category)
 	})
 
 	s.Run("Schema", func() {
 		s.NotNil(clientShowTool.InputSchema)
-		s.Equal("object", clientShowTool.InputSchema["type"])
+		s.Equal(keyObject, clientShowTool.InputSchema[keyType])
 
 		// Show tools typically require an identifier
-		properties, hasProperties := clientShowTool.InputSchema["properties"]
+		properties, hasProperties := clientShowTool.InputSchema[keyProperties]
 		s.True(hasProperties, "Should have properties for client identification")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have at least one identification method
-			identifierFields := []string{"client_id", "client_name", "client_email"}
+			identifierFields := []string{fieldClientID, fieldClientName, fieldClientEmail}
 			hasIdentifier := false
 			for _, field := range identifierFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -238,7 +238,7 @@ func (s *ClientToolsTestSuite) TestClientShowTool() {
 
 			// Verify examples use valid identifier fields
 			hasValidIdentifier := false
-			identifierFields := []string{"client_id", "client_name", "client_email"}
+			identifierFields := []string{fieldClientID, fieldClientName, fieldClientEmail}
 			for _, field := range identifierFields {
 				if _, hasField := example.Input[field]; hasField {
 					hasValidIdentifier = true
@@ -271,21 +271,21 @@ func (s *ClientToolsTestSuite) TestClientUpdateTool() {
 	s.Run("BasicStructure", func() {
 		s.Equal("client_update", clientUpdateTool.Name)
 		s.NotEmpty(clientUpdateTool.Description)
-		s.Contains(clientUpdateTool.Description, "client")
+		s.Contains(clientUpdateTool.Description, fieldClient)
 		s.Contains(strings.ToLower(clientUpdateTool.Description), "update")
 		s.Equal(CategoryClientManagement, clientUpdateTool.Category)
 	})
 
 	s.Run("Schema", func() {
 		s.NotNil(clientUpdateTool.InputSchema)
-		s.Equal("object", clientUpdateTool.InputSchema["type"])
+		s.Equal(keyObject, clientUpdateTool.InputSchema[keyType])
 
-		properties, hasProperties := clientUpdateTool.InputSchema["properties"]
+		properties, hasProperties := clientUpdateTool.InputSchema[keyProperties]
 		s.True(hasProperties, "Should have properties")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have identifier and updatable fields
-			identifierFields := []string{"client_id", "client_name", "client_email"}
+			identifierFields := []string{fieldClientID, fieldClientName, fieldClientEmail}
 			hasIdentifier := false
 			for _, field := range identifierFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -296,7 +296,7 @@ func (s *ClientToolsTestSuite) TestClientUpdateTool() {
 			s.True(hasIdentifier, "Should have client identifier field")
 
 			// Should have updatable fields
-			updatableFields := []string{"name", "email", "address", "phone"}
+			updatableFields := []string{fieldName, fieldEmail, "address", "phone"}
 			hasUpdatableField := false
 			for _, field := range updatableFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -318,7 +318,7 @@ func (s *ClientToolsTestSuite) TestClientUpdateTool() {
 
 			// Should demonstrate updating different fields
 			updateFieldCount := 0
-			updatableFields := []string{"name", "email", "address", "phone"}
+			updatableFields := []string{fieldName, fieldEmail, "address", "phone"}
 			for _, field := range updatableFields {
 				if _, hasField := example.Input[field]; hasField {
 					updateFieldCount++
@@ -348,21 +348,21 @@ func (s *ClientToolsTestSuite) TestClientDeleteTool() {
 	s.Run("BasicStructure", func() {
 		s.Equal("client_delete", clientDeleteTool.Name)
 		s.NotEmpty(clientDeleteTool.Description)
-		s.Contains(clientDeleteTool.Description, "client")
+		s.Contains(clientDeleteTool.Description, fieldClient)
 		s.Contains(strings.ToLower(clientDeleteTool.Description), "delete")
 		s.Equal(CategoryClientManagement, clientDeleteTool.Category)
 	})
 
 	s.Run("Schema", func() {
 		s.NotNil(clientDeleteTool.InputSchema)
-		s.Equal("object", clientDeleteTool.InputSchema["type"])
+		s.Equal(keyObject, clientDeleteTool.InputSchema[keyType])
 
-		properties, hasProperties := clientDeleteTool.InputSchema["properties"]
+		properties, hasProperties := clientDeleteTool.InputSchema[keyProperties]
 		s.True(hasProperties, "Should have properties")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have identifier field
-			identifierFields := []string{"client_id", "client_name", "client_email"}
+			identifierFields := []string{fieldClientID, fieldClientName, fieldClientEmail}
 			hasIdentifier := false
 			for _, field := range identifierFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -494,7 +494,7 @@ func (s *ClientToolsTestSuite) TestClientToolsIntegration() {
 			// Verify CLI args make sense for client operations
 			hasClientArg := false
 			for _, arg := range tool.CLIArgs {
-				if strings.Contains(arg, "client") {
+				if strings.Contains(arg, fieldClient) {
 					hasClientArg = true
 					break
 				}
@@ -519,7 +519,7 @@ func (s *ClientToolsTestSuite) TestClientToolsIntegration() {
 				// Examples should be relevant to client management
 				exampleText := strings.ToLower(example.Description + " " + example.UseCase)
 				s.True(
-					strings.Contains(exampleText, "client") ||
+					strings.Contains(exampleText, fieldClient) ||
 						strings.Contains(exampleText, "customer") ||
 						strings.Contains(exampleText, "contact"),
 					"Tool %s example %d should be client-related", tool.Name, i,
@@ -544,12 +544,12 @@ func (s *ClientToolsTestSuite) TestClientToolsEdgeCases() {
 			// Schema should be valid JSON schema structure
 			s.NotNil(tool.InputSchema, "Tool %s should have schema", tool.Name)
 
-			if schemaType, hasType := tool.InputSchema["type"]; hasType {
-				s.Equal("object", schemaType, "Tool %s schema should be object type", tool.Name)
+			if schemaType, hasType := tool.InputSchema[keyType]; hasType {
+				s.Equal(keyObject, schemaType, "Tool %s schema should be object type", tool.Name)
 			}
 
 			// Properties should be properly structured
-			if properties, hasProps := tool.InputSchema["properties"]; hasProps {
+			if properties, hasProps := tool.InputSchema[keyProperties]; hasProps {
 				s.IsType(map[string]interface{}{}, properties, "Properties should be map")
 
 				if propsMap, ok := properties.(map[string]interface{}); ok {
@@ -558,8 +558,8 @@ func (s *ClientToolsTestSuite) TestClientToolsEdgeCases() {
 						s.NotNil(fieldDef, "Field definition should not be nil")
 
 						if fieldMap, isMap := fieldDef.(map[string]interface{}); isMap {
-							if fieldType, hasFieldType := fieldMap["type"]; hasFieldType {
-								validTypes := []string{"string", "number", "boolean", "array", "object"}
+							if fieldType, hasFieldType := fieldMap[keyType]; hasFieldType {
+								validTypes := []string{typeString, typeNumber, "boolean", "array", keyObject}
 								s.Contains(validTypes, fieldType, "Field %s should have valid type", fieldName)
 							}
 						}
@@ -591,7 +591,7 @@ func (s *ClientToolsTestSuite) validateClientTool(tool *MCPTool) {
 	s.Greater(tool.Timeout, time.Duration(0), "Tool should have positive timeout")
 
 	// Verify schema structure
-	s.Equal("object", tool.InputSchema["type"], "Schema should be object type")
+	s.Equal(keyObject, tool.InputSchema[keyType], "Schema should be object type")
 
 	// Verify examples structure if present
 	for i, example := range tool.Examples {
@@ -635,7 +635,7 @@ func TestClientTools_Specific(t *testing.T) {
 		tools := CreateClientManagementTools()
 		for _, tool := range tools {
 			require.NotNil(t, tool.InputSchema, "Tool %s missing schema", tool.Name)
-			assert.Equal(t, "object", tool.InputSchema["type"], "Tool %s should have object schema", tool.Name)
+			assert.Equal(t, keyObject, tool.InputSchema[keyType], "Tool %s should have object schema", tool.Name)
 		}
 	})
 }

@@ -101,7 +101,7 @@ func (suite *TypesTestSuite) TestInvoiceFilterValidate() {
 			name: "ValidFilterWithAllFields",
 			filter: InvoiceFilter{
 				Status:      StatusPaid,
-				ClientID:    "CLIENT-001",
+				ClientID:    testClientID001,
 				DateFrom:    time.Now().AddDate(0, -1, 0),
 				DateTo:      time.Now(),
 				DueDateFrom: time.Now(),
@@ -272,8 +272,8 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 		{
 			name: "ValidRequest",
 			request: CreateInvoiceRequest{
-				Number:   "INV-2024-001",
-				ClientID: "CLIENT-001",
+				Number:   testInvoiceNum,
+				ClientID: testClientID001,
 				Date:     time.Now(),
 				DueDate:  time.Now().AddDate(0, 0, 30),
 			},
@@ -282,8 +282,8 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 		{
 			name: "ValidRequestWithDescription",
 			request: CreateInvoiceRequest{
-				Number:      "INV-2024-001",
-				ClientID:    "CLIENT-001",
+				Number:      testInvoiceNum,
+				ClientID:    testClientID001,
 				Date:        time.Now(),
 				DueDate:     time.Now().AddDate(0, 0, 30),
 				Description: "Monthly retainer invoice",
@@ -293,17 +293,17 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 		{
 			name: "ValidRequestWithWorkItems",
 			request: CreateInvoiceRequest{
-				Number:   "INV-2024-001",
-				ClientID: "CLIENT-001",
+				Number:   testInvoiceNum,
+				ClientID: testClientID001,
 				Date:     time.Now(),
 				DueDate:  time.Now().AddDate(0, 0, 30),
 				WorkItems: []WorkItem{
 					{
-						ID:          "ITEM-001",
+						ID:          testItemID001,
 						Date:        time.Now(),
 						Hours:       8.0,
 						Rate:        100.0,
-						Description: "Development work",
+						Description: testDevWork,
 						Total:       800.0,
 						CreatedAt:   time.Now(),
 					},
@@ -315,7 +315,7 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 			name: "EmptyNumber",
 			request: CreateInvoiceRequest{
 				Number:   "",
-				ClientID: "CLIENT-001",
+				ClientID: testClientID001,
 				Date:     time.Now(),
 				DueDate:  time.Now().AddDate(0, 0, 30),
 			},
@@ -325,8 +325,8 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 		{
 			name: "WhitespaceNumber",
 			request: CreateInvoiceRequest{
-				Number:   "   ",
-				ClientID: "CLIENT-001",
+				Number:   testBlankStr,
+				ClientID: testClientID001,
 				Date:     time.Now(),
 				DueDate:  time.Now().AddDate(0, 0, 30),
 			},
@@ -337,7 +337,7 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 			name: "InvalidNumberFormat",
 			request: CreateInvoiceRequest{
 				Number:   "inv-2024-001", // lowercase not allowed
-				ClientID: "CLIENT-001",
+				ClientID: testClientID001,
 				Date:     time.Now(),
 				DueDate:  time.Now().AddDate(0, 0, 30),
 			},
@@ -348,7 +348,7 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 			name: "NumberWithSpecialChars",
 			request: CreateInvoiceRequest{
 				Number:   "INV_2024@001",
-				ClientID: "CLIENT-001",
+				ClientID: testClientID001,
 				Date:     time.Now(),
 				DueDate:  time.Now().AddDate(0, 0, 30),
 			},
@@ -358,7 +358,7 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 		{
 			name: "EmptyClientID",
 			request: CreateInvoiceRequest{
-				Number:   "INV-2024-001",
+				Number:   testInvoiceNum,
 				ClientID: "",
 				Date:     time.Now(),
 				DueDate:  time.Now().AddDate(0, 0, 30),
@@ -369,8 +369,8 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 		{
 			name: "ZeroDate",
 			request: CreateInvoiceRequest{
-				Number:   "INV-2024-001",
-				ClientID: "CLIENT-001",
+				Number:   testInvoiceNum,
+				ClientID: testClientID001,
 				Date:     time.Time{},
 				DueDate:  time.Now().AddDate(0, 0, 30),
 			},
@@ -380,8 +380,8 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 		{
 			name: "ZeroDueDate",
 			request: CreateInvoiceRequest{
-				Number:   "INV-2024-001",
-				ClientID: "CLIENT-001",
+				Number:   testInvoiceNum,
+				ClientID: testClientID001,
 				Date:     time.Now(),
 				DueDate:  time.Time{},
 			},
@@ -391,8 +391,8 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 		{
 			name: "DueDateBeforeDate",
 			request: CreateInvoiceRequest{
-				Number:   "INV-2024-001",
-				ClientID: "CLIENT-001",
+				Number:   testInvoiceNum,
+				ClientID: testClientID001,
 				Date:     time.Now(),
 				DueDate:  time.Now().AddDate(0, 0, -7),
 			},
@@ -402,8 +402,8 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 		{
 			name: "InvalidWorkItem",
 			request: CreateInvoiceRequest{
-				Number:   "INV-2024-001",
-				ClientID: "CLIENT-001",
+				Number:   testInvoiceNum,
+				ClientID: testClientID001,
 				Date:     time.Now(),
 				DueDate:  time.Now().AddDate(0, 0, 30),
 				WorkItems: []WorkItem{
@@ -412,7 +412,7 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 						Date:        time.Now(),
 						Hours:       8.0,
 						Rate:        100.0,
-						Description: "Development work",
+						Description: testDevWork,
 						Total:       800.0,
 						CreatedAt:   time.Now(),
 					},
@@ -435,8 +435,8 @@ func (suite *TypesTestSuite) TestCreateInvoiceRequestValidate() {
 		{
 			name: "SameDateAndDueDate",
 			request: CreateInvoiceRequest{
-				Number:   "INV-2024-001",
-				ClientID: "CLIENT-001",
+				Number:   testInvoiceNum,
+				ClientID: testClientID001,
 				Date:     time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 				DueDate:  time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
@@ -470,7 +470,7 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "ValidUpdateNumber",
 			request: UpdateInvoiceRequest{
-				ID:     "INV-001",
+				ID:     testInvoiceID001,
 				Number: ptrString("INV-2024-002"),
 			},
 			expectError: false,
@@ -478,7 +478,7 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "ValidUpdateDate",
 			request: UpdateInvoiceRequest{
-				ID:   "INV-001",
+				ID:   testInvoiceID001,
 				Date: ptrTime(time.Now()),
 			},
 			expectError: false,
@@ -486,7 +486,7 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "ValidUpdateStatus",
 			request: UpdateInvoiceRequest{
-				ID:     "INV-001",
+				ID:     testInvoiceID001,
 				Status: ptrString(StatusPaid),
 			},
 			expectError: false,
@@ -494,7 +494,7 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "ValidUpdateMultipleFields",
 			request: UpdateInvoiceRequest{
-				ID:          "INV-001",
+				ID:          testInvoiceID001,
 				Number:      ptrString("INV-2024-002"),
 				Date:        ptrTime(time.Now()),
 				DueDate:     ptrTime(time.Now().AddDate(0, 0, 30)),
@@ -515,7 +515,7 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "WhitespaceID",
 			request: UpdateInvoiceRequest{
-				ID:     "   ",
+				ID:     testBlankStr,
 				Number: ptrString("INV-2024-002"),
 			},
 			expectError: true,
@@ -524,7 +524,7 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "EmptyNumber",
 			request: UpdateInvoiceRequest{
-				ID:     "INV-001",
+				ID:     testInvoiceID001,
 				Number: ptrString(""),
 			},
 			expectError: true,
@@ -533,8 +533,8 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "WhitespaceNumber",
 			request: UpdateInvoiceRequest{
-				ID:     "INV-001",
-				Number: ptrString("   "),
+				ID:     testInvoiceID001,
+				Number: ptrString(testBlankStr),
 			},
 			expectError: true,
 			errorMsg:    "validation failed for field 'number': cannot be empty",
@@ -542,7 +542,7 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "InvalidNumberFormat",
 			request: UpdateInvoiceRequest{
-				ID:     "INV-001",
+				ID:     testInvoiceID001,
 				Number: ptrString("inv-2024-001"),
 			},
 			expectError: true,
@@ -551,7 +551,7 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "InvalidStatus",
 			request: UpdateInvoiceRequest{
-				ID:     "INV-001",
+				ID:     testInvoiceID001,
 				Status: ptrString("invalid-status"),
 			},
 			expectError: true,
@@ -560,7 +560,7 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "DueDateBeforeDate",
 			request: UpdateInvoiceRequest{
-				ID:      "INV-001",
+				ID:      testInvoiceID001,
 				Date:    ptrTime(time.Now()),
 				DueDate: ptrTime(time.Now().AddDate(0, 0, -7)),
 			},
@@ -570,14 +570,14 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "ValidOnlyID",
 			request: UpdateInvoiceRequest{
-				ID: "INV-001",
+				ID: testInvoiceID001,
 			},
 			expectError: false,
 		},
 		{
 			name: "ValidWithNilFields",
 			request: UpdateInvoiceRequest{
-				ID:          "INV-001",
+				ID:          testInvoiceID001,
 				Number:      nil,
 				Date:        nil,
 				DueDate:     nil,
@@ -589,7 +589,7 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "ValidEmptyDescription",
 			request: UpdateInvoiceRequest{
-				ID:          "INV-001",
+				ID:          testInvoiceID001,
 				Description: ptrString(""),
 			},
 			expectError: false,
@@ -597,7 +597,7 @@ func (suite *TypesTestSuite) TestUpdateInvoiceRequestValidate() {
 		{
 			name: "ValidDatesWithSameValue",
 			request: UpdateInvoiceRequest{
-				ID:      "INV-001",
+				ID:      testInvoiceID001,
 				Date:    ptrTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
 				DueDate: ptrTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
@@ -643,8 +643,8 @@ func (suite *TypesTestSuite) TestValidationPatterns() {
 
 	// Test invoice ID pattern
 	validInvoiceIDs := []string{
-		"INV-001",
-		"INV-2024-001",
+		testInvoiceID001,
+		testInvoiceNum,
 		"INVOICE-123",
 		"A",
 		"123",
@@ -677,7 +677,7 @@ func (suite *TypesTestSuite) TestValidationPatterns() {
 
 	// Test email pattern
 	validEmails := []string{
-		"test@example.com",
+		testClientEmail,
 		"user.name@example.com",
 		"user+tag@example.com",
 		"test@sub.example.com",

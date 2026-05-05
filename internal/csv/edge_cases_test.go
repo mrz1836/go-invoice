@@ -214,42 +214,42 @@ func (suite *CSVEdgeCasesTestSuite) TestNumericFieldEdgeCases() {
 		expectRate  float64
 	}{
 		// Valid cases
-		{"NormalValues", "8.0", "100.0", true, 8.0, 100.0},
+		{"NormalValues", testHours8_0, testRate100_0, true, 8.0, 100.0},
 		{"IntegerValues", "8", "100", true, 8.0, 100.0},
 		{"DecimalPrecision", "8.25", "125.50", true, 8.25, 125.50},
 
 		// Boundary cases (based on validator: 0 < hours <= 24, 1 <= rate <= 1000)
-		{"MaxHours", "24.0", "100.0", true, 24.0, 100.0},
-		{"MinHours", "0.01", "100.0", true, 0.01, 100.0},
-		{"MinRate", "8.0", "1.0", true, 8.0, 1.0},
-		{"MaxRate", "8.0", "1000.0", true, 8.0, 1000.0},
+		{"MaxHours", "24.0", testRate100_0, true, 24.0, 100.0},
+		{"MinHours", "0.01", testRate100_0, true, 0.01, 100.0},
+		{"MinRate", testHours8_0, "1.0", true, 8.0, 1.0},
+		{"MaxRate", testHours8_0, "1000.0", true, 8.0, 1000.0},
 
 		// Invalid cases (based on validator rules: hours > 0 && <= 24, rate > 0 && <= 1000)
-		{"NegativeHours", "-1.0", "100.0", false, 0, 0},
-		{"NegativeRate", "8.0", "-50.0", false, 0, 0},
-		{"ExcessiveHours", "25.0", "100.0", false, 0, 0}, // > 24 hours
-		{"ExcessiveRate", "8.0", "1001.0", false, 0, 0},  // > 1000 rate
-		{"ZeroHours", "0.0", "100.0", false, 0, 0},       // hours must be > 0
-		{"ZeroRate", "8.0", "0.0", false, 0, 0},          // rate must be > 0
-		{"VeryLowRate", "8.0", "0.5", false, 0, 0},       // rate < 1.0
+		{"NegativeHours", "-1.0", testRate100_0, false, 0, 0},
+		{"NegativeRate", testHours8_0, "-50.0", false, 0, 0},
+		{"ExcessiveHours", "25.0", testRate100_0, false, 0, 0}, // > 24 hours
+		{"ExcessiveRate", testHours8_0, "1001.0", false, 0, 0}, // > 1000 rate
+		{"ZeroHours", "0.0", testRate100_0, false, 0, 0},       // hours must be > 0
+		{"ZeroRate", testHours8_0, "0.0", false, 0, 0},         // rate must be > 0
+		{"VeryLowRate", testHours8_0, "0.5", false, 0, 0},      // rate < 1.0
 
 		// Precision edge cases (validator limits hours to 2 decimal places)
-		{"HighPrecisionHours", "8.123456", "100.0", false, 0, 0},          // > 2 decimal places
-		{"HighPrecisionRate", "8.0", "100.123456", true, 8.0, 100.123456}, // Rate precision OK
-		{"VerySmallHours", "0.01", "100.0", true, 0.01, 100.0},
-		{"VerySmallRate", "8.0", "0.01", false, 0, 0}, // Rate < 1.0
+		{"HighPrecisionHours", "8.123456", testRate100_0, false, 0, 0},           // > 2 decimal places
+		{"HighPrecisionRate", testHours8_0, "100.123456", true, 8.0, 100.123456}, // Rate precision OK
+		{"VerySmallHours", "0.01", testRate100_0, true, 0.01, 100.0},
+		{"VerySmallRate", testHours8_0, "0.01", false, 0, 0}, // Rate < 1.0
 
 		// String values
-		{"AlphabeticHours", "eight", "100.0", false, 0, 0},
-		{"AlphabeticRate", "8.0", "hundred", false, 0, 0},
-		{"EmptyHours", "", "100.0", false, 0, 0},
-		{"EmptyRate", "8.0", "", false, 0, 0},
+		{"AlphabeticHours", "eight", testRate100_0, false, 0, 0},
+		{"AlphabeticRate", testHours8_0, "hundred", false, 0, 0},
+		{"EmptyHours", "", testRate100_0, false, 0, 0},
+		{"EmptyRate", testHours8_0, "", false, 0, 0},
 
 		// Special numeric values
-		{"InfinityHours", "inf", "100.0", false, 0, 0},
-		{"InfinityRate", "8.0", "inf", false, 0, 0},
-		{"NaNHours", "NaN", "100.0", false, 0, 0},
-		{"NaNRate", "8.0", "NaN", false, 0, 0},
+		{"InfinityHours", "inf", testRate100_0, false, 0, 0},
+		{"InfinityRate", testHours8_0, "inf", false, 0, 0},
+		{"NaNHours", "NaN", testRate100_0, false, 0, 0},
+		{"NaNRate", testHours8_0, "NaN", false, 0, 0},
 	}
 
 	for _, tt := range tests {
@@ -341,7 +341,7 @@ func (suite *CSVEdgeCasesTestSuite) TestDescriptionEdgeCases() {
 		description string
 		valid       bool
 	}{
-		{"NormalDescription", "Development work", true},
+		{"NormalDescription", testDevWork, true},
 		{"EmptyDescription", "", false},
 		{"WhitespaceOnly", "   ", false},
 		{"SingleChar", "X", false},                                // < 3 chars
@@ -412,11 +412,10 @@ func (suite *CSVEdgeCasesTestSuite) TestFormatDetectionEdgeCases() {
 			expectError: true, // Can't detect format
 		},
 		{
-			name: "OnlyCommasInQuotes",
-			csvData: fmt.Sprintf(`"Date,Time","Hours","Rate","Description"
-"%s","8.0","100.0","Work"`, validDateQuoted),
+			name:        "OnlyCommasInQuotes",
+			csvData:     fmt.Sprintf("\"Date,Time\",\"Hours\",\"Rate\",\"Description\"\n\"%s\",\"8.0\",\"%s\",\"Work\"", validDateQuoted, testRate100_0),
 			expectError: false,
-			expectFmt:   "standard",
+			expectFmt:   formatStandard,
 		},
 		{
 			name: "VeryFewSamples",
@@ -582,25 +581,25 @@ func (suite *CSVEdgeCasesTestSuite) TestErrorMessageQuality() {
 		{
 			name:               "InvalidDate",
 			csvData:            "Date,Hours,Rate,Description\n2024-13-01,8.0,100.0,Work",
-			expectedInMsg:      []string{"date", "2024-13-01"},
+			expectedInMsg:      []string{fieldDate, "2024-13-01"},
 			expectedSuggestion: false,
 		},
 		{
 			name:               "NegativeHours",
 			csvData:            fmt.Sprintf("Date,Hours,Rate,Description\n%s,-5.0,100.0,Work", validDate),
-			expectedInMsg:      []string{"hours", "-5"},
+			expectedInMsg:      []string{fieldHours, "-5"},
 			expectedSuggestion: false,
 		},
 		{
 			name:               "InvalidRate",
 			csvData:            fmt.Sprintf("Date,Hours,Rate,Description\n%s,8.0,abc,Work", validDate),
-			expectedInMsg:      []string{"rate", "abc"},
+			expectedInMsg:      []string{fieldRate, "abc"},
 			expectedSuggestion: false,
 		},
 		{
 			name:               "MissingHeader",
 			csvData:            fmt.Sprintf("Date,Hours,Description\n%s,8.0,Work", validDate), // Missing Rate
-			expectedInMsg:      []string{"rate", "not found"},
+			expectedInMsg:      []string{fieldRate, "not found"},
 			expectedSuggestion: false,
 		},
 	}

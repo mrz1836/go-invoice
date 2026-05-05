@@ -57,7 +57,7 @@ func (h *DefaultMCPHandler) HandleInitialize(ctx context.Context, req *types.MCP
 	}
 
 	return &types.MCPResponse{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      req.ID,
 		Result:  result,
 	}, nil
@@ -72,9 +72,9 @@ func (h *DefaultMCPHandler) HandlePing(ctx context.Context, req *types.MCPReques
 	}
 
 	return &types.MCPResponse{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      req.ID,
-		Result:  map[string]string{"status": "ok"},
+		Result:  map[string]string{keyStatus: "ok"},
 	}, nil
 }
 
@@ -92,7 +92,7 @@ func (h *DefaultMCPHandler) HandleToolsList(ctx context.Context, req *types.MCPR
 	// This will be expanded in Phase 2 with comprehensive tool definitions
 	tools := []Tool{
 		{
-			Name:        "ping",
+			Name:        methodPing,
 			Description: "Test connectivity to the go-invoice CLI",
 			InputSchema: map[string]interface{}{
 				"type":       "object",
@@ -114,7 +114,7 @@ func (h *DefaultMCPHandler) HandleToolsList(ctx context.Context, req *types.MCPR
 	}
 
 	return &types.MCPResponse{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      req.ID,
 		Result:  result,
 	}, nil
@@ -142,13 +142,13 @@ func (h *DefaultMCPHandler) HandleToolCall(ctx context.Context, req *types.MCPRe
 	h.logger.Debug("Handling tool call", "tool", params.Name)
 
 	switch params.Name {
-	case "ping":
+	case methodPing:
 		return h.handlePingTool(ctx, req, &params)
 	case "version":
 		return h.handleVersionTool(ctx, req, &params)
 	default:
 		return &types.MCPResponse{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			ID:      req.ID,
 			Error: &MCPError{
 				Code:    -32602,
@@ -179,7 +179,7 @@ func (h *DefaultMCPHandler) handlePingTool(ctx context.Context, req *types.MCPRe
 		result := ToolCallResult{
 			Content: []Content{
 				{
-					Type: "text",
+					Type: contentTypeText,
 					Text: fmt.Sprintf("CLI connectivity test failed: %v", err),
 				},
 			},
@@ -187,7 +187,7 @@ func (h *DefaultMCPHandler) handlePingTool(ctx context.Context, req *types.MCPRe
 		}
 
 		return &types.MCPResponse{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			ID:      req.ID,
 			Result:  result,
 		}, nil
@@ -196,7 +196,7 @@ func (h *DefaultMCPHandler) handlePingTool(ctx context.Context, req *types.MCPRe
 	result := ToolCallResult{
 		Content: []Content{
 			{
-				Type: "text",
+				Type: contentTypeText,
 				Text: fmt.Sprintf("CLI connectivity test successful (exit code: %d, duration: %v)", resp.ExitCode, resp.Duration),
 			},
 		},
@@ -204,7 +204,7 @@ func (h *DefaultMCPHandler) handlePingTool(ctx context.Context, req *types.MCPRe
 	}
 
 	return &types.MCPResponse{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      req.ID,
 		Result:  result,
 	}, nil
@@ -230,7 +230,7 @@ func (h *DefaultMCPHandler) handleVersionTool(ctx context.Context, req *types.MC
 		result := ToolCallResult{
 			Content: []Content{
 				{
-					Type: "text",
+					Type: contentTypeText,
 					Text: fmt.Sprintf("Failed to get CLI version: %v", err),
 				},
 			},
@@ -238,7 +238,7 @@ func (h *DefaultMCPHandler) handleVersionTool(ctx context.Context, req *types.MC
 		}
 
 		return &types.MCPResponse{
-			JSONRPC: "2.0",
+			JSONRPC: jsonRPCVersion,
 			ID:      req.ID,
 			Result:  result,
 		}, nil
@@ -247,7 +247,7 @@ func (h *DefaultMCPHandler) handleVersionTool(ctx context.Context, req *types.MC
 	result := ToolCallResult{
 		Content: []Content{
 			{
-				Type: "text",
+				Type: contentTypeText,
 				Text: fmt.Sprintf("go-invoice CLI version information:\n%s", resp.Stdout),
 			},
 		},
@@ -255,7 +255,7 @@ func (h *DefaultMCPHandler) handleVersionTool(ctx context.Context, req *types.MC
 	}
 
 	return &types.MCPResponse{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      req.ID,
 		Result:  result,
 	}, nil

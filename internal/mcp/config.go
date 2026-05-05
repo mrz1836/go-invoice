@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+const (
+	defaultHost    = "localhost"
+	defaultCLIName = "go-invoice"
+)
+
 // Static errors for err113 compliance
 var (
 	ErrInvalidServerPort    = errors.New("invalid server port")
@@ -124,19 +129,19 @@ func getDefaultConfig() *Config {
 
 	return &Config{
 		Server: ServerConfig{
-			Host:        "localhost",
+			Host:        defaultHost,
 			Port:        0, // Auto-assign port
 			Timeout:     30 * time.Second,
 			ReadTimeout: 10 * time.Second,
 		},
 		CLI: CLIConfig{
-			Path:       "go-invoice",
+			Path:       defaultCLIName,
 			WorkingDir: invoiceDir,
 			MaxTimeout: 60 * time.Second,
 		},
 		Security: SecurityConfig{
 			AllowedCommands: []string{
-				"go-invoice",
+				defaultCLIName,
 			},
 			WorkingDir:            invoiceDir,
 			SandboxEnabled:        true,

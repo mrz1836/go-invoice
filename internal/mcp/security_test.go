@@ -68,10 +68,10 @@ func (s *SecurityTestSuite) SetupSuite() {
 	absTmpDir, _ := filepath.Abs(tmpDir)
 	sandbox := executor.SandboxConfig{
 		AllowedCommands: []string{
-			"go-invoice",
-			"echo", // For testing purposes
-			"ls",   // For testing purposes
-			"cat",  // For testing purposes
+			defaultCLIName,
+			testCmdEcho, // For testing purposes
+			"ls",        // For testing purposes
+			"cat",       // For testing purposes
 		},
 		AllowedPaths: []string{
 			absTmpDir,
@@ -186,7 +186,7 @@ func (s *SecurityTestSuite) TestCommandInjectionPrevention() {
 		},
 		{
 			name:        "valid command",
-			command:     "echo",
+			command:     testCmdEcho,
 			args:        []string{"hello", "world"},
 			expectError: false,
 		},
@@ -303,7 +303,7 @@ func (s *SecurityTestSuite) TestSandboxEnforcement() {
 	}
 
 	// Test allowed commands work
-	allowedCommands := []string{"go-invoice", "echo", "ls", "cat"}
+	allowedCommands := []string{defaultCLIName, testCmdEcho, "ls", "cat"}
 	for _, cmd := range allowedCommands {
 		s.Run(fmt.Sprintf("allow_%s", cmd), func() {
 			err := s.executer.ValidateCommand(ctx, cmd, []string{})
@@ -377,7 +377,7 @@ func (s *SecurityTestSuite) TestAuditLoggingCompleteness() {
 		Timestamp:   time.Now(),
 		UserID:      "test-user",
 		SessionID:   "test-session",
-		Command:     "echo",
+		Command:     testCmdEcho,
 		Args:        []string{"hello"},
 		WorkingDir:  s.tmpDir,
 		Environment: map[string]string{"PATH": "/bin"},
@@ -488,7 +488,7 @@ func (s *SecurityTestSuite) TestInputValidationAgainstMaliciousPayloads() {
 		{
 			name: "valid input",
 			input: map[string]interface{}{
-				"command": "go-invoice",
+				"command": defaultCLIName,
 				"email":   "user@example.com",
 			},
 			expectError: false,
@@ -602,7 +602,7 @@ func (s *SecurityTestSuite) TestSecurityConfigValidation() {
 		builder := executor.NewSecurityConfigBuilder()
 
 		sandbox := executor.SandboxConfig{
-			AllowedCommands:  []string{"echo"},
+			AllowedCommands:  []string{testCmdEcho},
 			MaxExecutionTime: 5 * time.Second,
 			MaxOutputSize:    1024,
 			MaxFileSize:      1024,
@@ -625,7 +625,7 @@ func (s *SecurityTestSuite) TestBasicExecution() {
 
 	s.Run("valid_command_execution", func() {
 		req := &executor.ExecutionRequest{
-			Command: "echo",
+			Command: testCmdEcho,
 			Args:    []string{"hello", "world"},
 			Timeout: 5 * time.Second,
 		}

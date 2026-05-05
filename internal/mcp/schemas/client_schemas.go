@@ -22,54 +22,54 @@ package schemas
 // parameter names and extensive validation for professional client relationships.
 func ClientCreateSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"name": map[string]interface{}{
-				"type":        "string",
-				"description": "Client name or company name. This will be displayed on invoices and used for client identification.",
-				"minLength":   1.0,
-				"maxLength":   200.0,
-				"examples":    []interface{}{"Acme Corporation", "John Smith Consulting", "Tech Solutions Inc"},
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			keyName: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Client name or company name. This will be displayed on invoices and used for client identification.",
+				keyMinLength:   1.0,
+				keyMaxLength:   200.0,
+				keyExamples:    []interface{}{"Acme Corporation", "John Smith Consulting", "Tech Solutions Inc"},
 			},
-			"email": map[string]interface{}{
-				"type":        "string",
-				"format":      "email",
-				"description": "Primary email address for the client. Must be unique across all clients and will be used for invoice delivery.",
-				"examples":    []interface{}{"contact@acme.com", "john@smithconsulting.com", "billing@techsolutions.com"},
+			keyEmail: map[string]interface{}{
+				keyType:        typeString,
+				keyFormat:      keyEmail,
+				keyDescription: "Primary email address for the client. Must be unique across all clients and will be used for invoice delivery.",
+				keyExamples:    []interface{}{"contact@acme.com", "john@smithconsulting.com", "billing@techsolutions.com"},
 			},
 			"phone": map[string]interface{}{
-				"type":        "string",
-				"description": "Phone number for the client. Can include country codes and various formats.",
-				"minLength":   10.0,
-				"maxLength":   20.0,
-				"pattern":     "^[\\d\\s\\+\\-\\(\\)\\.\\/ext]+$",
-				"examples":    []interface{}{"+1-555-123-4567", "(555) 987-6543", "+49-30-12345678"},
+				keyType:        typeString,
+				keyDescription: "Phone number for the client. Can include country codes and various formats.",
+				keyMinLength:   10.0,
+				keyMaxLength:   20.0,
+				"pattern":      "^[\\d\\s\\+\\-\\(\\)\\.\\/ext]+$",
+				keyExamples:    []interface{}{"+1-555-123-4567", "(555) 987-6543", "+49-30-12345678"},
 			},
 			"address": map[string]interface{}{
-				"type":        "string",
-				"description": "Physical or mailing address for the client. Used for formal correspondence and invoicing.",
-				"maxLength":   500.0,
-				"examples": []interface{}{
+				keyType:        typeString,
+				keyDescription: "Physical or mailing address for the client. Used for formal correspondence and invoicing.",
+				keyMaxLength:   500.0,
+				keyExamples: []interface{}{
 					"123 Business Ave, Suite 200, Metro City, MC 12345",
 					"456 Main Street, Small Town, ST 67890",
 					"Hauptstraße 42, 10117 Berlin, Germany",
 				},
 			},
 			"tax_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Tax identification number (EIN, VAT number, etc.) for business clients. Used for tax reporting and compliance.",
-				"maxLength":   50.0,
-				"examples":    []interface{}{"EIN-12-3456789", "DE123456789", "VAT-GB123456789"},
+				keyType:        typeString,
+				keyDescription: "Tax identification number (EIN, VAT number, etc.) for business clients. Used for tax reporting and compliance.",
+				keyMaxLength:   50.0,
+				keyExamples:    []interface{}{"EIN-12-3456789", "DE123456789", "VAT-GB123456789"},
 			},
 			"approver_contacts": map[string]interface{}{
-				"type":        "string",
-				"description": "Approver contacts (names or departments) who should be shown on the invoice. Can be multiple people separated by commas.",
-				"maxLength":   500.0,
-				"examples":    []interface{}{"John Doe, Finance Dept", "Jane Smith", "HR Department, Accounting Team"},
+				keyType:        typeString,
+				keyDescription: "Approver contacts (names or departments) who should be shown on the invoice. Can be multiple people separated by commas.",
+				keyMaxLength:   500.0,
+				keyExamples:    []interface{}{"John Doe, Finance Dept", "Jane Smith", "HR Department, Accounting Team"},
 			},
 		},
-		"required":             []interface{}{"name", "email"},
-		"additionalProperties": false,
+		keyRequired:             []interface{}{keyName, keyEmail},
+		keyAdditionalProperties: false,
 	}
 }
 
@@ -79,76 +79,76 @@ func ClientCreateSchema() map[string]interface{} {
 // with natural language-friendly parameter names and flexible search criteria.
 func ClientListSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
 			"active_only": map[string]interface{}{
-				"type":        "boolean",
-				"default":     true,
-				"description": "Show only active clients. Set to false to include deactivated clients.",
+				keyType:        typeBoolean,
+				keyDefault:     true,
+				keyDescription: "Show only active clients. Set to false to include deactivated clients.",
 			},
 			"inactive_only": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Show only inactive clients. Useful for reactivation campaigns and cleanup.",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Show only inactive clients. Useful for reactivation campaigns and cleanup.",
 			},
 			"name_search": map[string]interface{}{
-				"type":        "string",
-				"description": "Search clients by name (partial matches supported). Case-insensitive search.",
-				"examples":    []interface{}{"Acme", "Tech", "John", "Corp"},
+				keyType:        typeString,
+				keyDescription: "Search clients by name (partial matches supported). Case-insensitive search.",
+				keyExamples:    []interface{}{"Acme", "Tech", "John", "Corp"},
 			},
 			"email_search": map[string]interface{}{
-				"type":        "string",
-				"description": "Search clients by email address (partial matches supported).",
-				"examples":    []interface{}{"@acme.com", "contact", "billing"},
+				keyType:        typeString,
+				keyDescription: "Search clients by email address (partial matches supported).",
+				keyExamples:    []interface{}{"@acme.com", "contact", "billing"},
 			},
 			"sort_by": map[string]interface{}{
-				"type":        "string",
-				"enum":        []interface{}{"name", "email", "created_date", "last_invoice_date", "total_invoiced"},
-				"default":     "name",
-				"description": "Field to sort results by.",
+				keyType:        typeString,
+				keyEnum:        []interface{}{keyName, keyEmail, "created_date", "last_invoice_date", "total_invoiced"},
+				keyDefault:     keyName,
+				keyDescription: "Field to sort results by.",
 			},
 			"sort_order": map[string]interface{}{
-				"type":        "string",
-				"enum":        []interface{}{"asc", "desc"},
-				"default":     "asc",
-				"description": "Sort order: ascending or descending.",
+				keyType:        typeString,
+				keyEnum:        []interface{}{"asc", "desc"},
+				keyDefault:     "asc",
+				keyDescription: "Sort order: ascending or descending.",
 			},
 			"limit": map[string]interface{}{
-				"type":        "number",
-				"minimum":     1.0,
-				"maximum":     1000,
-				"default":     50,
-				"description": "Maximum number of clients to return.",
+				keyType:        typeNumber,
+				keyMinimum:     1.0,
+				keyMaximum:     1000,
+				keyDefault:     50,
+				keyDescription: "Maximum number of clients to return.",
 			},
 			"offset": map[string]interface{}{
-				"type":        "number",
-				"minimum":     0,
-				"default":     0,
-				"description": "Number of clients to skip (for pagination).",
+				keyType:        typeNumber,
+				keyMinimum:     0,
+				keyDefault:     0,
+				keyDescription: "Number of clients to skip (for pagination).",
 			},
 			"output_format": map[string]interface{}{
-				"type":        "string",
-				"enum":        []interface{}{"table", "json", "csv"},
-				"default":     "table",
-				"description": "Output format for the results.",
+				keyType:        typeString,
+				keyEnum:        []interface{}{"table", typeJSON, "csv"},
+				keyDefault:     "table",
+				keyDescription: "Output format for the results.",
 			},
 			"include_invoices": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Include invoice count and total amounts for each client.",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Include invoice count and total amounts for each client.",
 			},
 			"include_totals": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Include summary statistics and total amounts across all clients.",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Include summary statistics and total amounts across all clients.",
 			},
 			"show_contact_info": map[string]interface{}{
-				"type":        "boolean",
-				"default":     true,
-				"description": "Include contact information (phone, address) in the output.",
+				keyType:        typeBoolean,
+				keyDefault:     true,
+				keyDescription: "Include contact information (phone, address) in the output.",
 			},
 		},
-		"additionalProperties": false,
+		keyAdditionalProperties: false,
 	}
 }
 
@@ -158,61 +158,61 @@ func ClientListSchema() map[string]interface{} {
 // options for different levels of detail and output formats.
 func ClientShowSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"client_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Client ID to display details for.",
-				"minLength":   1.0,
-				"examples":    []interface{}{"client_123", "acme-corp-id"},
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			keyClientID: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Client ID to display details for.",
+				keyMinLength:   1.0,
+				keyExamples:    []interface{}{"client_123", "acme-corp-id"},
 			},
-			"client_name": map[string]interface{}{
-				"type":        "string",
-				"description": "Client name to display details for (alternative to client_id).",
-				"minLength":   1.0,
-				"examples":    []interface{}{"Acme Corporation", "John Smith", "Tech Solutions"},
+			keyClientName: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Client name to display details for (alternative to client_id).",
+				keyMinLength:   1.0,
+				keyExamples:    []interface{}{"Acme Corporation", "John Smith", "Tech Solutions"},
 			},
 			"client_email": map[string]interface{}{
-				"type":        "string",
-				"format":      "email",
-				"description": "Client email to display details for (alternative to client_id or name).",
-				"examples":    []interface{}{"contact@acme.com", "john@example.com"},
+				keyType:        typeString,
+				keyFormat:      keyEmail,
+				keyDescription: "Client email to display details for (alternative to client_id or name).",
+				keyExamples:    []interface{}{"contact@acme.com", "john@example.com"},
 			},
 			"output_format": map[string]interface{}{
-				"type":        "string",
-				"enum":        []interface{}{"text", "json", "yaml"},
-				"default":     "text",
-				"description": "Output format for client details.",
+				keyType:        typeString,
+				keyEnum:        []interface{}{"text", typeJSON, "yaml"},
+				keyDefault:     "text",
+				keyDescription: "Output format for client details.",
 			},
 			"include_invoices": map[string]interface{}{
-				"type":        "boolean",
-				"default":     true,
-				"description": "Include detailed invoice history in the output.",
+				keyType:        typeBoolean,
+				keyDefault:     true,
+				keyDescription: "Include detailed invoice history in the output.",
 			},
 			"include_totals": map[string]interface{}{
-				"type":        "boolean",
-				"default":     true,
-				"description": "Include financial summary totals and statistics.",
+				keyType:        typeBoolean,
+				keyDefault:     true,
+				keyDescription: "Include financial summary totals and statistics.",
 			},
 			"include_overdue": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Highlight overdue invoices and payment issues.",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Highlight overdue invoices and payment issues.",
 			},
 			"summary_only": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Show only summary information without detailed invoice listing.",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Show only summary information without detailed invoice listing.",
 			},
 			"invoice_limit": map[string]interface{}{
-				"type":        "number",
-				"minimum":     1.0,
-				"maximum":     100.0,
-				"default":     10,
-				"description": "Maximum number of recent invoices to include.",
+				keyType:        typeNumber,
+				keyMinimum:     1.0,
+				keyMaximum:     100.0,
+				keyDefault:     10,
+				keyDescription: "Maximum number of recent invoices to include.",
 			},
 		},
-		"additionalProperties": false,
+		keyAdditionalProperties: false,
 	}
 }
 
@@ -222,78 +222,78 @@ func ClientShowSchema() map[string]interface{} {
 // to ensure business rules are enforced and data integrity is maintained.
 func ClientUpdateSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"client_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Client ID to update.",
-				"minLength":   1.0,
-				"examples":    []interface{}{"client_123", "acme-corp-id"},
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			keyClientID: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Client ID to update.",
+				keyMinLength:   1.0,
+				keyExamples:    []interface{}{"client_123", "acme-corp-id"},
 			},
-			"client_name": map[string]interface{}{
-				"type":        "string",
-				"description": "Client name to update (alternative to client_id).",
-				"minLength":   1.0,
-				"examples":    []interface{}{"Acme Corporation", "John Smith"},
+			keyClientName: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Client name to update (alternative to client_id).",
+				keyMinLength:   1.0,
+				keyExamples:    []interface{}{"Acme Corporation", "John Smith"},
 			},
 			"client_email": map[string]interface{}{
-				"type":        "string",
-				"format":      "email",
-				"description": "Client email to identify the client to update (alternative to client_id or name).",
-				"examples":    []interface{}{"contact@acme.com", "john@example.com"},
+				keyType:        typeString,
+				keyFormat:      keyEmail,
+				keyDescription: "Client email to identify the client to update (alternative to client_id or name).",
+				keyExamples:    []interface{}{"contact@acme.com", "john@example.com"},
 			},
-			"name": map[string]interface{}{
-				"type":        "string",
-				"description": "Update client name or company name.",
-				"minLength":   1.0,
-				"maxLength":   200.0,
-				"examples":    []interface{}{"Updated Company Name", "John Smith LLC"},
+			keyName: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Update client name or company name.",
+				keyMinLength:   1.0,
+				keyMaxLength:   200.0,
+				keyExamples:    []interface{}{"Updated Company Name", "John Smith LLC"},
 			},
-			"email": map[string]interface{}{
-				"type":        "string",
-				"format":      "email",
-				"description": "Update client email address. Must be unique across all clients.",
-				"examples":    []interface{}{"newemail@company.com", "updated@example.com"},
+			keyEmail: map[string]interface{}{
+				keyType:        typeString,
+				keyFormat:      keyEmail,
+				keyDescription: "Update client email address. Must be unique across all clients.",
+				keyExamples:    []interface{}{"newemail@company.com", "updated@example.com"},
 			},
 			"phone": map[string]interface{}{
-				"type":        "string",
-				"description": "Update client phone number. Can include country codes and various formats.",
-				"minLength":   10.0,
-				"maxLength":   20.0,
-				"pattern":     "^[\\d\\s\\+\\-\\(\\)\\.\\/ext]+$",
-				"examples":    []interface{}{"+1-555-999-8888", "(555) 111-2222"},
+				keyType:        typeString,
+				keyDescription: "Update client phone number. Can include country codes and various formats.",
+				keyMinLength:   10.0,
+				keyMaxLength:   20.0,
+				"pattern":      "^[\\d\\s\\+\\-\\(\\)\\.\\/ext]+$",
+				keyExamples:    []interface{}{"+1-555-999-8888", "(555) 111-2222"},
 			},
 			"address": map[string]interface{}{
-				"type":        "string",
-				"description": "Update client address information.",
-				"maxLength":   500.0,
-				"examples": []interface{}{
+				keyType:        typeString,
+				keyDescription: "Update client address information.",
+				keyMaxLength:   500.0,
+				keyExamples: []interface{}{
 					"789 New Business Plaza, Suite 500, Metro City, MC 67890",
 					"Updated Address, New City, NC 12345",
 				},
 			},
 			"tax_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Update tax identification number for the client.",
-				"maxLength":   50.0,
-				"examples":    []interface{}{"EIN-98-7654321", "VAT-GB987654321"},
+				keyType:        typeString,
+				keyDescription: "Update tax identification number for the client.",
+				keyMaxLength:   50.0,
+				keyExamples:    []interface{}{"EIN-98-7654321", "VAT-GB987654321"},
 			},
 			"approver_contacts": map[string]interface{}{
-				"type":        "string",
-				"description": "Update approver contacts (names or departments) who should be shown on the invoice.",
-				"maxLength":   500.0,
-				"examples":    []interface{}{"John Doe, Finance Dept", "Jane Smith", "HR Department, Accounting Team"},
+				keyType:        typeString,
+				keyDescription: "Update approver contacts (names or departments) who should be shown on the invoice.",
+				keyMaxLength:   500.0,
+				keyExamples:    []interface{}{"John Doe, Finance Dept", "Jane Smith", "HR Department, Accounting Team"},
 			},
 			"activate": map[string]interface{}{
-				"type":        "boolean",
-				"description": "Reactivate a deactivated client. Cannot be used with deactivate.",
+				keyType:        typeBoolean,
+				keyDescription: "Reactivate a deactivated client. Cannot be used with deactivate.",
 			},
 			"deactivate": map[string]interface{}{
-				"type":        "boolean",
-				"description": "Deactivate the client (soft delete). Cannot be used with activate.",
+				keyType:        typeBoolean,
+				keyDescription: "Deactivate the client (soft delete). Cannot be used with activate.",
 			},
 		},
-		"additionalProperties": false,
+		keyAdditionalProperties: false,
 	}
 }
 
@@ -303,53 +303,53 @@ func ClientUpdateSchema() map[string]interface{} {
 // safety confirmations and business rule validation.
 func ClientDeleteSchema() map[string]interface{} {
 	return map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"client_id": map[string]interface{}{
-				"type":        "string",
-				"description": "Client ID to delete.",
-				"minLength":   1.0,
-				"examples":    []interface{}{"client_123", "test-client"},
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			keyClientID: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Client ID to delete.",
+				keyMinLength:   1.0,
+				keyExamples:    []interface{}{"client_123", "test-client"},
 			},
-			"client_name": map[string]interface{}{
-				"type":        "string",
-				"description": "Client name to delete (alternative to client_id).",
-				"minLength":   1.0,
-				"examples":    []interface{}{"Test Client", "Inactive Corp"},
+			keyClientName: map[string]interface{}{
+				keyType:        typeString,
+				keyDescription: "Client name to delete (alternative to client_id).",
+				keyMinLength:   1.0,
+				keyExamples:    []interface{}{"Test Client", "Inactive Corp"},
 			},
 			"client_email": map[string]interface{}{
-				"type":        "string",
-				"format":      "email",
-				"description": "Client email to identify the client to delete (alternative to client_id or name).",
-				"examples":    []interface{}{"test@example.com", "inactive@corp.com"},
+				keyType:        typeString,
+				keyFormat:      keyEmail,
+				keyDescription: "Client email to identify the client to delete (alternative to client_id or name).",
+				keyExamples:    []interface{}{"test@example.com", "inactive@corp.com"},
 			},
 			"soft_delete": map[string]interface{}{
-				"type":        "boolean",
-				"default":     true,
-				"description": "Deactivate client instead of permanent deletion (recommended). Preserves audit trail and historical data.",
+				keyType:        typeBoolean,
+				keyDefault:     true,
+				keyDescription: "Deactivate client instead of permanent deletion (recommended). Preserves audit trail and historical data.",
 			},
 			"hard_delete": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Permanently delete client data (cannot be undone). Use with extreme caution.",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Permanently delete client data (cannot be undone). Use with extreme caution.",
 			},
 			"force": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Skip confirmation prompts (use with caution in automated scripts).",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Skip confirmation prompts (use with caution in automated scripts).",
 			},
 			"preserve_data": map[string]interface{}{
-				"type":        "boolean",
-				"default":     true,
-				"description": "Preserve all client data and invoice history even with soft delete.",
+				keyType:        typeBoolean,
+				keyDefault:     true,
+				keyDescription: "Preserve all client data and invoice history even with soft delete.",
 			},
 			"cascade_invoices": map[string]interface{}{
-				"type":        "boolean",
-				"default":     false,
-				"description": "Also delete associated invoices (only available with hard_delete and force).",
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Also delete associated invoices (only available with hard_delete and force).",
 			},
 		},
-		"additionalProperties": false,
+		keyAdditionalProperties: false,
 	}
 }
 

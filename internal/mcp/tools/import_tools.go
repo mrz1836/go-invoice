@@ -64,11 +64,11 @@ func createImportCSVTool() *MCPTool {
 			{
 				Description: "Import timesheet to create new invoice for existing client",
 				Input: map[string]interface{}{
-					"file_path":   "/path/to/timesheet.csv",
-					"client_name": "Acme Corporation",
-					"description": "August 2025 Development Work",
-					"import_mode": "new_invoice",
-					"due_days":    30,
+					fieldFilePath:    "/path/to/timesheet.csv",
+					fieldClientName:  "Acme Corporation",
+					fieldDescription: "August 2025 Development Work",
+					fieldImportMode:  "new_invoice",
+					"due_days":       30,
 				},
 				ExpectedOutput: "New invoice created with imported timesheet data, automatic totals calculated",
 				UseCase:        "Monthly billing from timesheet exports",
@@ -76,14 +76,14 @@ func createImportCSVTool() *MCPTool {
 			{
 				Description: "Import timesheet with custom field mapping",
 				Input: map[string]interface{}{
-					"file_path":   "/path/to/custom-format.csv",
-					"client_id":   "client_123",
-					"import_mode": "new_invoice",
+					fieldFilePath:   "/path/to/custom-format.csv",
+					fieldClientID:   "client_123",
+					fieldImportMode: "new_invoice",
 					"field_mapping": map[string]interface{}{
-						"date":        "work_date",
-						"hours":       "time_spent",
-						"rate":        "hourly_rate",
-						"description": "task_description",
+						fieldDate:        "work_date",
+						fieldHours:       "time_spent",
+						fieldRate:        "hourly_rate",
+						fieldDescription: "task_description",
 					},
 					"has_header": true,
 				},
@@ -93,9 +93,9 @@ func createImportCSVTool() *MCPTool {
 			{
 				Description: "Append timesheet data to existing invoice",
 				Input: map[string]interface{}{
-					"file_path":     "/path/to/additional-work.csv",
-					"invoice_id":    "INV-2025-001",
-					"import_mode":   "append_invoice",
+					fieldFilePath:   "/path/to/additional-work.csv",
+					fieldInvoiceID:  "INV-2025-001",
+					fieldImportMode: "append_invoice",
 					"validate_only": false,
 				},
 				ExpectedOutput: "Additional work items added to existing invoice with automatic total recalculation",
@@ -104,13 +104,13 @@ func createImportCSVTool() *MCPTool {
 			{
 				Description: "Import with data transformation and rate override",
 				Input: map[string]interface{}{
-					"file_path":     "/path/to/contractor-hours.csv",
-					"client_email":  "contractor@freelance.com",
-					"import_mode":   "new_invoice",
-					"default_rate":  150.0,
-					"rate_override": true,
-					"description":   "Consulting Services - September 2025",
-					"currency":      "USD",
+					fieldFilePath:    "/path/to/contractor-hours.csv",
+					fieldClientEmail: "contractor@freelance.com",
+					fieldImportMode:  "new_invoice",
+					"default_rate":   150.0,
+					"rate_override":  true,
+					fieldDescription: "Consulting Services - September 2025",
+					"currency":       "USD",
 				},
 				ExpectedOutput: "Contractor timesheet imported with standardized rate across all entries",
 				UseCase:        "Standardizing rates for contractor and freelancer billing",
@@ -118,9 +118,9 @@ func createImportCSVTool() *MCPTool {
 			{
 				Description: "Import large timesheet with batch processing",
 				Input: map[string]interface{}{
-					"file_path":     "/path/to/large-timesheet.csv",
-					"client_name":   "Enterprise Client LLC",
-					"import_mode":   "new_invoice",
+					fieldFilePath:   "/path/to/large-timesheet.csv",
+					fieldClientName: "Enterprise Client LLC",
+					fieldImportMode: "new_invoice",
 					"batch_size":    100,
 					"validate_only": false,
 					"dry_run":       false,
@@ -130,10 +130,10 @@ func createImportCSVTool() *MCPTool {
 			},
 		},
 		Category:   CategoryDataImport,
-		CLICommand: "go-invoice",
+		CLICommand: toolCLIName,
 		CLIArgs:    []string{"import"},
 		HelpText:   "Imports timesheet data from CSV files with comprehensive mapping and validation. Supports both new invoice creation and appending to existing invoices with flexible field mapping options.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    60 * time.Second,
 	}
 }
@@ -151,9 +151,9 @@ func createImportValidateTool() *MCPTool {
 			{
 				Description: "Validate timesheet CSV structure and data quality",
 				Input: map[string]interface{}{
-					"file_path":       "/path/to/timesheet.csv",
+					fieldFilePath:     "/path/to/timesheet.csv",
 					"has_header":      true,
-					"expected_fields": []string{"date", "hours", "rate", "description"},
+					"expected_fields": []string{fieldDate, fieldHours, fieldRate, fieldDescription},
 				},
 				ExpectedOutput: "Validation report with field analysis, data quality metrics, and error identification",
 				UseCase:        "Quality assurance before important data imports",
@@ -161,12 +161,12 @@ func createImportValidateTool() *MCPTool {
 			{
 				Description: "Validate custom format with specific field mapping",
 				Input: map[string]interface{}{
-					"file_path": "/path/to/custom-export.csv",
+					fieldFilePath: "/path/to/custom-export.csv",
 					"field_mapping": map[string]interface{}{
-						"date":        "work_date",
-						"hours":       "duration",
-						"rate":        "bill_rate",
-						"description": "task_notes",
+						fieldDate:        "work_date",
+						fieldHours:       "duration",
+						fieldRate:        "bill_rate",
+						fieldDescription: "task_notes",
 					},
 					"validate_rates":   true,
 					"validate_dates":   true,
@@ -178,7 +178,7 @@ func createImportValidateTool() *MCPTool {
 			{
 				Description: "Quick validation for standard timesheet format",
 				Input: map[string]interface{}{
-					"file_path":      "/path/to/standard-timesheet.csv",
+					fieldFilePath:    "/path/to/standard-timesheet.csv",
 					"quick_validate": true,
 					"sample_size":    50,
 				},
@@ -188,7 +188,7 @@ func createImportValidateTool() *MCPTool {
 			{
 				Description: "Detailed validation with business rule checking",
 				Input: map[string]interface{}{
-					"file_path":         "/path/to/complex-timesheet.csv",
+					fieldFilePath:       "/path/to/complex-timesheet.csv",
 					"validate_business": true,
 					"max_hours_per_day": 12,
 					"min_rate":          25.0,
@@ -201,8 +201,8 @@ func createImportValidateTool() *MCPTool {
 			{
 				Description: "Validate with client context and historical comparison",
 				Input: map[string]interface{}{
-					"file_path":            "/path/to/monthly-timesheet.csv",
-					"client_name":          "Regular Client Corp",
+					fieldFilePath:          "/path/to/monthly-timesheet.csv",
+					fieldClientName:        "Regular Client Corp",
 					"compare_historical":   true,
 					"validate_consistency": true,
 					"flag_anomalies":       true,
@@ -213,7 +213,7 @@ func createImportValidateTool() *MCPTool {
 			{
 				Description: "Validate malformed CSV file to identify format errors",
 				Input: map[string]interface{}{
-					"file_path":     "/path/to/corrupt-timesheet.csv",
+					fieldFilePath:   "/path/to/corrupt-timesheet.csv",
 					"has_header":    true,
 					"strict_mode":   true,
 					"error_details": true,
@@ -223,10 +223,10 @@ func createImportValidateTool() *MCPTool {
 			},
 		},
 		Category:   CategoryDataImport,
-		CLICommand: "go-invoice",
+		CLICommand: toolCLIName,
 		CLIArgs:    []string{"import", "--validate"},
 		HelpText:   "Validates CSV data structure and content before import execution. Provides comprehensive error reporting, business rule validation, and data quality analysis to ensure successful imports.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    45 * time.Second,
 	}
 }
@@ -244,11 +244,11 @@ func createImportPreviewTool() *MCPTool {
 			{
 				Description: "Preview timesheet import for new invoice creation",
 				Input: map[string]interface{}{
-					"file_path":    "/path/to/timesheet.csv",
-					"client_name":  "Preview Client Inc",
-					"import_mode":  "new_invoice",
-					"show_totals":  true,
-					"show_details": true,
+					fieldFilePath:   "/path/to/timesheet.csv",
+					fieldClientName: "Preview Client Inc",
+					fieldImportMode: "new_invoice",
+					"show_totals":   true,
+					"show_details":  true,
 				},
 				ExpectedOutput: "Complete preview showing work items, calculated totals, and new invoice structure",
 				UseCase:        "Verifying import data before creating client invoices",
@@ -256,9 +256,9 @@ func createImportPreviewTool() *MCPTool {
 			{
 				Description: "Preview append operation with conflict detection",
 				Input: map[string]interface{}{
-					"file_path":        "/path/to/additional-work.csv",
-					"invoice_id":       "INV-2025-005",
-					"import_mode":      "append_invoice",
+					fieldFilePath:      "/path/to/additional-work.csv",
+					fieldInvoiceID:     "INV-2025-005",
+					fieldImportMode:    "append_invoice",
 					"detect_conflicts": true,
 					"show_existing":    true,
 				},
@@ -268,9 +268,9 @@ func createImportPreviewTool() *MCPTool {
 			{
 				Description: "Preview with custom rate transformations",
 				Input: map[string]interface{}{
-					"file_path":         "/path/to/contractor-hours.csv",
-					"client_id":         "contractor_client",
-					"import_mode":       "new_invoice",
+					fieldFilePath:       "/path/to/contractor-hours.csv",
+					fieldClientID:       "contractor_client",
+					fieldImportMode:     "new_invoice",
 					"default_rate":      125.0,
 					"rate_override":     true,
 					"show_before_after": true,
@@ -281,9 +281,9 @@ func createImportPreviewTool() *MCPTool {
 			{
 				Description: "Preview large import with statistical summary",
 				Input: map[string]interface{}{
-					"file_path":       "/path/to/large-dataset.csv",
-					"client_email":    "enterprise@company.com",
-					"import_mode":     "new_invoice",
+					fieldFilePath:     "/path/to/large-dataset.csv",
+					fieldClientEmail:  "enterprise@company.com",
+					fieldImportMode:   "new_invoice",
 					"summary_only":    true,
 					"show_statistics": true,
 					"sample_preview":  true,
@@ -294,9 +294,9 @@ func createImportPreviewTool() *MCPTool {
 			{
 				Description: "Preview with validation warnings and recommendations",
 				Input: map[string]interface{}{
-					"file_path":        "/path/to/questionable-data.csv",
-					"client_name":      "Quality Check Client",
-					"import_mode":      "new_invoice",
+					fieldFilePath:      "/path/to/questionable-data.csv",
+					fieldClientName:    "Quality Check Client",
+					fieldImportMode:    "new_invoice",
 					"show_warnings":    true,
 					"show_suggestions": true,
 					"quality_analysis": true,
@@ -306,10 +306,10 @@ func createImportPreviewTool() *MCPTool {
 			},
 		},
 		Category:   CategoryDataImport,
-		CLICommand: "go-invoice",
+		CLICommand: toolCLIName,
 		CLIArgs:    []string{"import", "--preview"},
 		HelpText:   "Provides comprehensive preview of import operations without making changes. Shows calculated totals, identifies potential issues, and allows verification before execution.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    30 * time.Second,
 	}
 }
