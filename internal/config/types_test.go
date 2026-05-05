@@ -31,7 +31,7 @@ func (suite *ConfigTypesTestSuite) TestConfigJSONMarshaling() {
 			TaxID:        "12-3456789",
 			VATID:        "VAT123456",
 			Website:      "https://test.com",
-			PaymentTerms: "Net 30",
+			PaymentTerms: testNetThirty,
 			BankDetails: BankDetails{
 				Name:                "Test Bank",
 				AccountNumber:       "1234567890",
@@ -45,7 +45,7 @@ func (suite *ConfigTypesTestSuite) TestConfigJSONMarshaling() {
 			Prefix:         "INV",
 			StartNumber:    1000,
 			Footer:         "Thank you for your business",
-			Currency:       "USD",
+			Currency:       testCurrencyUSD,
 			VATRate:        0.15,
 			DefaultDueDays: 30,
 		},
@@ -211,7 +211,7 @@ func (suite *ConfigTypesTestSuite) TestInvoiceConfigJSONMarshaling() {
 			invoice: InvoiceConfig{
 				Prefix:      "MIN",
 				StartNumber: 1,
-				Currency:    "USD",
+				Currency:    testCurrencyUSD,
 			},
 		},
 		{
@@ -328,12 +328,12 @@ func (suite *ConfigTypesTestSuite) TestValidateConfigRequestJSONMarshaling() {
 			Name:         "Test Business",
 			Address:      "123 Test St",
 			Email:        "test@business.com",
-			PaymentTerms: "Net 30",
+			PaymentTerms: testNetThirty,
 		},
 		Invoice: InvoiceConfig{
 			Prefix:      "TEST",
 			StartNumber: 1,
-			Currency:    "USD",
+			Currency:    testCurrencyUSD,
 		},
 		Storage: StorageConfig{
 			DataDir: "/tmp/test",
@@ -385,7 +385,7 @@ func (suite *ConfigTypesTestSuite) TestInvoiceConfigBoundaryValues() {
 			invoiceConfig: InvoiceConfig{
 				Prefix:         "A",
 				StartNumber:    1, // min=1
-				Currency:       "USD",
+				Currency:       testCurrencyUSD,
 				VATRate:        0.0, // min=0
 				DefaultDueDays: 0,   // min=0
 			},
@@ -407,7 +407,7 @@ func (suite *ConfigTypesTestSuite) TestInvoiceConfigBoundaryValues() {
 			invoiceConfig: InvoiceConfig{
 				Prefix:         "INV",
 				StartNumber:    1000,
-				Currency:       "USD",
+				Currency:       testCurrencyUSD,
 				VATRate:        0.20, // 20% VAT
 				DefaultDueDays: 30,
 			},
@@ -491,7 +491,7 @@ func (suite *ConfigTypesTestSuite) TestJSONFieldNames() {
 			Name:         "Test",
 			Address:      "123 St",
 			Email:        "test@example.com",
-			PaymentTerms: "Net 30",
+			PaymentTerms: testNetThirty,
 			TaxID:        "12345", // Include optional fields to test their JSON names
 			VATID:        "VAT123",
 			BankDetails: BankDetails{
@@ -504,7 +504,7 @@ func (suite *ConfigTypesTestSuite) TestJSONFieldNames() {
 		Invoice: InvoiceConfig{
 			Prefix:         "INV",
 			StartNumber:    1,
-			Currency:       "USD",
+			Currency:       testCurrencyUSD,
 			DefaultDueDays: 30,
 			VATRate:        0.1,
 		},
@@ -587,7 +587,7 @@ func (suite *ConfigTypesTestSuite) TestInvalidJSONHandling() {
 		},
 		{
 			name:        "InvalidVATRate",
-			invalidJSON: `{"prefix": "INV", "start_number": 1, "currency": "USD", "vat_rate": "invalid"}`,
+			invalidJSON: `{"prefix": "INV", "start_number": 1, "currency": testCurrencyUSD, "vat_rate": "invalid"}`,
 			targetType:  "InvoiceConfig",
 		},
 		{
@@ -671,7 +671,7 @@ func TestFloatPrecisionHandling(t *testing.T) {
 			invoice := InvoiceConfig{
 				Prefix:      "TEST",
 				StartNumber: 1,
-				Currency:    "USD",
+				Currency:    testCurrencyUSD,
 				VATRate:     tt.vatRate,
 			}
 
@@ -712,7 +712,7 @@ func TestStringFieldLengths(t *testing.T) {
 				Name:         tt.value,
 				Address:      "123 Test St",
 				Email:        "test@example.com",
-				PaymentTerms: "Net 30",
+				PaymentTerms: testNetThirty,
 			}
 
 			if tt.field == "Address" {
