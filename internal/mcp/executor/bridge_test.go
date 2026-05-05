@@ -93,7 +93,7 @@ func (suite *CLIBridgeTestSuite) TestExecuteToolCommandContextCancellation() {
 
 // TestBridgeErrorError tests BridgeError.Error() method
 func (suite *CLIBridgeTestSuite) TestBridgeErrorError() {
-	err := &BridgeError{Op: "test", Msg: "test message"}
+	err := &BridgeError{Op: testStr, Msg: "test message"}
 	suite.Equal("bridge test: test message", err.Error())
 }
 
@@ -176,11 +176,11 @@ func TestBridgeErrorVariables(t *testing.T) {
 		wantMsg string
 	}{
 		{ErrToolNotFound, "ErrToolNotFound", "lookup", "tool not found"},
-		{ErrInvalidToolInput, "ErrInvalidToolInput", "validate", "invalid tool input"},
-		{ErrMissingRequired, "ErrMissingRequired", "validate", "missing required parameter"},
+		{ErrInvalidToolInput, "ErrInvalidToolInput", opValidate, "invalid tool input"},
+		{ErrMissingRequired, "ErrMissingRequired", opValidate, "missing required parameter"},
 		{ErrCommandBuildFailed, "ErrCommandBuildFailed", "build", "failed to build command"},
-		{ErrMissingUpdateFields, "ErrMissingUpdateFields", "validate", "at least one field to update must be provided"},
-		{ErrMissingItemIdentifier, "ErrMissingItemIdentifier", "validate", "either item_id or item_index must be provided"},
+		{ErrMissingUpdateFields, "ErrMissingUpdateFields", opValidate, "at least one field to update must be provided"},
+		{ErrMissingItemIdentifier, "ErrMissingItemIdentifier", opValidate, "either item_id or item_index must be provided"},
 		{ErrCommandFailed, "ErrCommandFailed", "execute", "command execution failed"},
 		{ErrCollectionFailed, "ErrCollectionFailed", "collect", "file collection failed"},
 	}

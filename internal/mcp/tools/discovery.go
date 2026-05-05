@@ -415,7 +415,7 @@ func (s *ToolDiscoveryService) indexTool(tool *MCPTool) {
 			Tool:           tool,
 			RelevanceScore: s.calculateBaseRelevance(tool),
 			MatchContext:   fmt.Sprintf("Matched on: %s", token),
-			MatchedFields:  []string{"name", "description"},
+			MatchedFields:  []string{fieldName, fieldDescription},
 		}
 		s.searchIndex.FullTextIndex[token] = append(s.searchIndex.FullTextIndex[token], result)
 	}
@@ -591,7 +591,7 @@ func (s *ToolDiscoveryService) filterResults(results []ToolSearchResult, criteri
 func (s *ToolDiscoveryService) sortResults(results []ToolSearchResult, criteria *ToolSearchCriteria) []ToolSearchResult {
 	sort.Slice(results, func(i, j int) bool {
 		switch criteria.SortBy {
-		case "name":
+		case fieldName:
 			if criteria.SortOrder == "desc" {
 				return results[i].Tool.Name > results[j].Tool.Name
 			}
@@ -687,10 +687,10 @@ func (s *ToolDiscoveryService) getRecommendedToolsForCategory(_ CategoryType, to
 func (s *ToolDiscoveryService) analyzeWorkflowContext(context string) string {
 	// Simple workflow analysis
 	context = strings.ToLower(context)
-	if strings.Contains(context, "invoice") {
+	if strings.Contains(context, fieldInvoice) {
 		return "invoice_management"
 	}
-	if strings.Contains(context, "client") {
+	if strings.Contains(context, fieldClient) {
 		return "client_management"
 	}
 	if strings.Contains(context, "import") {
@@ -699,7 +699,7 @@ func (s *ToolDiscoveryService) analyzeWorkflowContext(context string) string {
 	if strings.Contains(context, "export") || strings.Contains(context, "generate") {
 		return "data_export"
 	}
-	if strings.Contains(context, "config") {
+	if strings.Contains(context, fieldConfig) {
 		return "configuration"
 	}
 	return "general"

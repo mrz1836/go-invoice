@@ -194,7 +194,7 @@ func (s *TransportTestSuite) TestStdioTransportSendWhenClosed() {
 	response := &types.MCPResponse{
 		JSONRPC: "2.0",
 		ID:      1,
-		Result:  map[string]string{"status": "ok"},
+		Result:  map[string]string{keyStatus: "ok"},
 	}
 
 	err = transport.Send(ctx, response)
@@ -232,7 +232,7 @@ func (s *TransportTestSuite) TestStdioTransportContextCancellation() {
 	response := &types.MCPResponse{
 		JSONRPC: "2.0",
 		ID:      1,
-		Result:  map[string]string{"status": "ok"},
+		Result:  map[string]string{keyStatus: "ok"},
 	}
 
 	err = transport.Send(ctx, response)
@@ -330,13 +330,13 @@ func (s *TransportTestSuite) TestHTTPTransportHandleMCPRequest() {
 		response: &types.MCPResponse{
 			JSONRPC: "2.0",
 			ID:      1,
-			Result:  map[string]string{"status": "ok"},
+			Result:  map[string]string{keyStatus: "ok"},
 		},
 	}
 
 	config := &TransportConfig{
 		Type:           types.TransportHTTP,
-		Host:           "localhost",
+		Host:           defaultHost,
 		Port:           0,
 		MaxMessageSize: 1024 * 1024,
 	}
@@ -458,7 +458,7 @@ func (s *TransportTestSuite) TestHTTPTransportHandleHealthCheck() {
 				var status map[string]interface{}
 				err := json.NewDecoder(w.Body).Decode(&status)
 				s.Require().NoError(err)
-				s.Equal("ok", status["status"])
+				s.Equal("ok", status[keyStatus])
 				s.Equal("http", status["transport"])
 			}
 		})
@@ -597,35 +597,35 @@ func (s *TransportTestSuite) TestDetectTransport() {
 	}{
 		{
 			name:        "StdioFromArgs",
-			args:        []string{"program", "--stdio"},
+			args:        []string{testProgramName, "--stdio"},
 			envVar:      "",
 			expected:    types.TransportStdio,
 			description: "Should detect stdio from command line argument",
 		},
 		{
 			name:        "HTTPFromArgs",
-			args:        []string{"program", "--http"},
+			args:        []string{testProgramName, "--http"},
 			envVar:      "",
 			expected:    types.TransportHTTP,
 			description: "Should detect HTTP from command line argument",
 		},
 		{
 			name:        "StdioFromEnv",
-			args:        []string{"program"},
+			args:        []string{testProgramName},
 			envVar:      "stdio",
 			expected:    types.TransportStdio,
 			description: "Should detect stdio from environment variable",
 		},
 		{
 			name:        "HTTPFromEnv",
-			args:        []string{"program"},
+			args:        []string{testProgramName},
 			envVar:      "http",
 			expected:    types.TransportHTTP,
 			description: "Should detect HTTP from environment variable",
 		},
 		{
 			name:        "DefaultToStdio",
-			args:        []string{"program"},
+			args:        []string{testProgramName},
 			envVar:      "",
 			expected:    types.TransportStdio,
 			description: "Should default to stdio when no explicit transport specified",
@@ -774,7 +774,7 @@ func (s *TransportTestSuite) TestConcurrentAccess() {
 		response: &types.MCPResponse{
 			JSONRPC: "2.0",
 			ID:      1,
-			Result:  map[string]string{"status": "ok"},
+			Result:  map[string]string{keyStatus: "ok"},
 		},
 	}
 
@@ -858,7 +858,7 @@ func (m *mockMCPHandler) HandlePing(_ context.Context, req *types.MCPRequest) (*
 	return &types.MCPResponse{
 		JSONRPC: "2.0",
 		ID:      req.ID,
-		Result:  map[string]string{"status": "ok"},
+		Result:  map[string]string{keyStatus: "ok"},
 	}, nil
 }
 
@@ -1001,7 +1001,7 @@ func (s *TransportTestSuite) TestHTTPTransportIntegration() {
 		response: &types.MCPResponse{
 			JSONRPC: "2.0",
 			ID:      1,
-			Result:  map[string]string{"status": "ok"},
+			Result:  map[string]string{keyStatus: "ok"},
 		},
 	}
 
@@ -1043,19 +1043,19 @@ func (s *TransportTestSuite) TestDetectTransportEdgeCases() {
 	defer func() { os.Args = originalArgs }()
 
 	// Test with multiple flags
-	os.Args = []string{"program", "--verbose", "--stdio", "--debug"}
+	os.Args = []string{testProgramName, "--verbose", "--stdio", "--debug"}
 	result := DetectTransport()
 	s.Equal(types.TransportStdio, result)
 
 	// Test with HTTP flag mixed with other flags
-	os.Args = []string{"program", "--config", "test.json", "--http", "--verbose"}
+	os.Args = []string{testProgramName, "--config", "test.json", "--http", "--verbose"}
 	result = DetectTransport()
 	s.Equal(types.TransportHTTP, result)
 
 	// Test case sensitivity in environment variable
 	err := os.Setenv("MCP_TRANSPORT", "HTTP")
 	s.Require().NoError(err)
-	os.Args = []string{"program"}
+	os.Args = []string{testProgramName}
 	result = DetectTransport()
 	s.Equal(types.TransportType("http"), result) // Converted to lowercase
 

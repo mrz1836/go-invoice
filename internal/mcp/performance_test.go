@@ -184,18 +184,18 @@ func (s *PerformanceTestSuite) setupTransportsBenchmark(b *testing.B) {
 func (s *PerformanceTestSuite) createTestConfig() *Config {
 	return &Config{
 		Server: ServerConfig{
-			Host:        "localhost",
+			Host:        defaultHost,
 			Port:        0,
 			Timeout:     ComplexOperationTarget,
 			ReadTimeout: 30 * time.Second,
 		},
 		CLI: CLIConfig{
-			Path:       "/usr/bin/go-invoice",
+			Path:       "/usr/bin/" + defaultCLIName,
 			WorkingDir: "/tmp/mcp-test",
 			MaxTimeout: ComplexOperationTarget,
 		},
 		Security: SecurityConfig{
-			AllowedCommands:       []string{"go-invoice"},
+			AllowedCommands:       []string{defaultCLIName},
 			WorkingDir:            "/tmp/mcp-test",
 			SandboxEnabled:        true,
 			FileAccessRestricted:  true,
@@ -336,18 +336,18 @@ func BenchmarkColdStart(b *testing.B) {
 			bridge := NewMockCLIBridge()
 			config := &Config{
 				Server: ServerConfig{
-					Host:        "localhost",
+					Host:        defaultHost,
 					Port:        0,
 					Timeout:     5 * time.Second,
 					ReadTimeout: 30 * time.Second,
 				},
 				CLI: CLIConfig{
-					Path:       "/usr/bin/go-invoice",
+					Path:       "/usr/bin/" + defaultCLIName,
 					WorkingDir: "/tmp",
 					MaxTimeout: 5 * time.Second,
 				},
 				Security: SecurityConfig{
-					AllowedCommands: []string{"go-invoice"},
+					AllowedCommands: []string{defaultCLIName},
 				},
 				LogLevel: "error",
 			}
@@ -708,11 +708,11 @@ func (s *PerformanceTestSuite) benchmarkRampUpLoad(ctx context.Context, b *testi
 // createSimpleToolRequest creates a simple tool request for testing
 func (s *PerformanceTestSuite) createSimpleToolRequest() *types.MCPRequest {
 	return &types.MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      "test-1",
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: map[string]interface{}{
-			"name":      "ping",
+			"name":      methodPing,
 			"arguments": map[string]interface{}{},
 		},
 	}
@@ -721,9 +721,9 @@ func (s *PerformanceTestSuite) createSimpleToolRequest() *types.MCPRequest {
 // createToolRequest creates a tool request for a specific tool
 func (s *PerformanceTestSuite) createToolRequest(toolName string, input map[string]interface{}) *types.MCPRequest {
 	return &types.MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      fmt.Sprintf("test-%s", toolName),
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: map[string]interface{}{
 			"name":      toolName,
 			"arguments": input,
@@ -734,9 +734,9 @@ func (s *PerformanceTestSuite) createToolRequest(toolName string, input map[stri
 // createSlowToolRequest creates a request that might take longer to process
 func (s *PerformanceTestSuite) createSlowToolRequest() *types.MCPRequest {
 	return &types.MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      "test-slow",
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: map[string]interface{}{
 			"name": "generate_invoice",
 			"arguments": map[string]interface{}{
@@ -756,9 +756,9 @@ func (s *PerformanceTestSuite) createLargePayloadRequest() *types.MCPRequest {
 	}
 
 	return &types.MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      "test-large",
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: map[string]interface{}{
 			"name":      "import_timesheet",
 			"arguments": largeData,
@@ -789,9 +789,9 @@ func (s *PerformanceTestSuite) createRequestWithPayloadSize(size string) *types.
 	}
 
 	return &types.MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      fmt.Sprintf("test-%s", size),
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: map[string]interface{}{
 			"name":      "validate_config",
 			"arguments": data,
@@ -802,7 +802,7 @@ func (s *PerformanceTestSuite) createRequestWithPayloadSize(size string) *types.
 // isSimpleOperation determines if a tool operation is considered simple
 func (s *PerformanceTestSuite) isSimpleOperation(tool *tools.MCPTool) bool {
 	simpleOperations := map[string]bool{
-		"ping":            true,
+		methodPing:        true,
 		"version":         true,
 		"health_check":    true,
 		"list_clients":    true,

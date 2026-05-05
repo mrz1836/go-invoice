@@ -62,7 +62,7 @@ func DefaultSecurityConfig() *SecurityConfig {
 		Sandbox: SandboxConfig{
 			AllowedCommands: []string{
 				"go-invoice",
-				"invoice",
+				subCmdInvoice,
 				"client",
 				"import",
 				"export",

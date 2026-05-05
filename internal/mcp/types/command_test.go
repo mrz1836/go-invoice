@@ -21,7 +21,7 @@ func (s *CommandTypesTestSuite) TestCommandRequest() {
 			Command:    "go",
 			Args:       []string{"version"},
 			WorkingDir: "/tmp",
-			Env:        map[string]string{"GO_ENV": "test"},
+			Env:        map[string]string{"GO_ENV": testValue},
 			Timeout:    30 * time.Second,
 			ExpectJSON: true,
 			InputFiles: []string{"input.txt"},
@@ -30,7 +30,7 @@ func (s *CommandTypesTestSuite) TestCommandRequest() {
 		s.Equal("go", req.Command)
 		s.Equal([]string{"version"}, req.Args)
 		s.Equal("/tmp", req.WorkingDir)
-		s.Equal(map[string]string{"GO_ENV": "test"}, req.Env)
+		s.Equal(map[string]string{"GO_ENV": testValue}, req.Env)
 		s.Equal(30*time.Second, req.Timeout)
 		s.True(req.ExpectJSON)
 		s.Equal([]string{"input.txt"}, req.InputFiles)
@@ -53,7 +53,7 @@ func (s *CommandTypesTestSuite) TestCommandRequest() {
 
 	s.Run("JSONSerialization", func() {
 		req := CommandRequest{
-			Command:    "test",
+			Command:    testValue,
 			Args:       []string{"arg1", "arg2"},
 			WorkingDir: "/path",
 			Env:        map[string]string{"KEY": "value"},
@@ -87,21 +87,21 @@ func (s *CommandTypesTestSuite) TestCommandRequest() {
 
 	s.Run("NilArgs", func() {
 		req := CommandRequest{
-			Command: "test",
+			Command: testValue,
 		}
 		s.Empty(req.Args)
 	})
 
 	s.Run("NilEnv", func() {
 		req := CommandRequest{
-			Command: "test",
+			Command: testValue,
 		}
 		s.Empty(req.Env)
 	})
 
 	s.Run("NilInputFiles", func() {
 		req := CommandRequest{
-			Command: "test",
+			Command: testValue,
 		}
 		s.Empty(req.InputFiles)
 	})
@@ -198,7 +198,7 @@ func (s *CommandTypesTestSuite) TestCommandRequestValidation() {
 	s.Run("ValidCommands", func() {
 		validCommands := []CommandRequest{
 			{Command: "ls", Args: []string{"-la"}},
-			{Command: "go", Args: []string{"test", "./..."}},
+			{Command: "go", Args: []string{testValue, "./..."}},
 			{Command: "echo", Args: []string{"hello world"}},
 			{Command: "pwd"},
 		}
@@ -228,7 +228,7 @@ func (s *CommandTypesTestSuite) TestCommandRequestValidation() {
 		for i := range manyArgs {
 			manyArgs[i] = "arg"
 		}
-		req4 := CommandRequest{Command: "test", Args: manyArgs}
+		req4 := CommandRequest{Command: testValue, Args: manyArgs}
 		s.Len(req4.Args, 100)
 	})
 }
@@ -266,7 +266,7 @@ func (s *CommandTypesTestSuite) TestCommandResponseAnalysis() {
 func (s *CommandTypesTestSuite) TestJSONOmitEmpty() {
 	s.Run("OmitEmptyFields", func() {
 		req := CommandRequest{
-			Command: "test",
+			Command: testValue,
 			Args:    []string{"arg"},
 		}
 
@@ -284,7 +284,7 @@ func (s *CommandTypesTestSuite) TestJSONOmitEmpty() {
 
 	s.Run("IncludeNonEmptyFields", func() {
 		req := CommandRequest{
-			Command:    "test",
+			Command:    testValue,
 			WorkingDir: "/tmp",
 			ExpectJSON: true,
 		}
@@ -307,9 +307,9 @@ func TestCommandTypesTestSuite(t *testing.T) {
 func BenchmarkCommandRequestMarshal(b *testing.B) {
 	req := CommandRequest{
 		Command:    "go",
-		Args:       []string{"test", "./..."},
+		Args:       []string{testValue, "./..."},
 		WorkingDir: "/tmp",
-		Env:        map[string]string{"GO_ENV": "test"},
+		Env:        map[string]string{"GO_ENV": testValue},
 		Timeout:    30 * time.Second,
 		ExpectJSON: true,
 		InputFiles: []string{"input.txt"},
@@ -355,16 +355,16 @@ func TestCommandRequest_Specific(t *testing.T) {
 
 	t.Run("ArgsHandling", func(t *testing.T) {
 		// Nil args
-		req := CommandRequest{Command: "test"}
+		req := CommandRequest{Command: testValue}
 		assert.Nil(t, req.Args)
 
 		// Empty args
-		req2 := CommandRequest{Command: "test", Args: []string{}}
+		req2 := CommandRequest{Command: testValue, Args: []string{}}
 		assert.NotNil(t, req2.Args)
 		assert.Empty(t, req2.Args)
 
 		// Args with empty strings
-		req3 := CommandRequest{Command: "test", Args: []string{"", "arg", ""}}
+		req3 := CommandRequest{Command: testValue, Args: []string{"", "arg", ""}}
 		assert.Len(t, req3.Args, 3)
 		assert.Empty(t, req3.Args[0])
 		assert.Equal(t, "arg", req3.Args[1])
@@ -425,7 +425,7 @@ func TestCommandResponse_Specific(t *testing.T) {
 func TestCommandTypes_EdgeCases(t *testing.T) {
 	t.Run("JSONEdgeCases", func(t *testing.T) {
 		// Request with nil map
-		req := CommandRequest{Command: "test", Env: nil}
+		req := CommandRequest{Command: testValue, Env: nil}
 		data, err := json.Marshal(req)
 		require.NoError(t, err)
 
@@ -446,8 +446,8 @@ func TestCommandTypes_EdgeCases(t *testing.T) {
 	})
 
 	t.Run("StructEquality", func(t *testing.T) {
-		req1 := CommandRequest{Command: "test", Args: []string{"arg"}}
-		req2 := CommandRequest{Command: "test", Args: []string{"arg"}}
+		req1 := CommandRequest{Command: testValue, Args: []string{"arg"}}
+		req2 := CommandRequest{Command: testValue, Args: []string{"arg"}}
 
 		// Go structs with same field values are equal with ==
 		// but slices and maps need deep comparison

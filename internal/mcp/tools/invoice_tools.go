@@ -72,8 +72,8 @@ func createInvoiceCreateTool() *MCPTool {
 			{
 				Description: "Create a simple invoice for an existing client",
 				Input: map[string]interface{}{
-					"client_name": "Acme Corp",
-					"description": "January 2025 consulting services",
+					fieldClientName:  "Acme Corp",
+					fieldDescription: "January 2025 consulting services",
 				},
 				ExpectedOutput: "Invoice created successfully with auto-generated number and default due date",
 				UseCase:        "Basic invoice creation for regular clients",
@@ -81,22 +81,22 @@ func createInvoiceCreateTool() *MCPTool {
 			{
 				Description: "Create invoice with specific dates and work items",
 				Input: map[string]interface{}{
-					"client_name":  "Tech Solutions Inc",
-					"invoice_date": "2025-08-01",
-					"due_date":     "2025-08-31",
-					"description":  "Website development - Phase 1",
+					fieldClientName:  "Tech Solutions Inc",
+					"invoice_date":   exampleDate,
+					"due_date":       "2025-08-31",
+					fieldDescription: "Website development - Phase 1",
 					"work_items": []map[string]interface{}{
 						{
-							"date":        "2025-08-01",
-							"hours":       8.0,
-							"rate":        125.0,
-							"description": "Frontend development and UI design",
+							fieldDate:        exampleDate,
+							fieldHours:       8.0,
+							fieldRate:        125.0,
+							fieldDescription: "Frontend development and UI design",
 						},
 						{
-							"date":        "2025-08-02",
-							"hours":       4.5,
-							"rate":        125.0,
-							"description": "Backend API integration",
+							fieldDate:        "2025-08-02",
+							fieldHours:       4.5,
+							fieldRate:        125.0,
+							fieldDescription: "Backend API integration",
 						},
 					},
 				},
@@ -106,12 +106,12 @@ func createInvoiceCreateTool() *MCPTool {
 			{
 				Description: "Create invoice and new client in one operation",
 				Input: map[string]interface{}{
-					"client_name":              "New Client LLC",
+					fieldClientName:            "New Client LLC",
 					"create_client_if_missing": true,
 					"new_client_email":         "contact@newclient.com",
 					"new_client_address":       "456 Business Ave, Suite 200, City, State 12345",
 					"new_client_phone":         "+1-555-987-6543",
-					"description":              "Initial consulting engagement",
+					fieldDescription:           "Initial consulting engagement",
 				},
 				ExpectedOutput: "New client created and invoice generated for first engagement",
 				UseCase:        "Onboarding new clients with immediate invoicing",
@@ -119,18 +119,18 @@ func createInvoiceCreateTool() *MCPTool {
 			{
 				Description: "Create invoice using client email for identification",
 				Input: map[string]interface{}{
-					"client_email": "finance@acme.com",
-					"description":  "Monthly retainer - August 2025",
+					fieldClientEmail: "finance@acme.com",
+					fieldDescription: "Monthly retainer - August 2025",
 				},
 				ExpectedOutput: "Invoice created for client identified by email address",
 				UseCase:        "Invoice creation when you know client email but not exact name",
 			},
 		},
 		Category:   CategoryInvoiceManagement,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"invoice", "create"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldInvoice, "create"},
 		HelpText:   "Creates invoices with automatic number generation and flexible client resolution. Supports both simple creation and complex scenarios with work items and new client creation.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    30 * time.Second,
 	}
 }
@@ -148,7 +148,7 @@ func createInvoiceListTool() *MCPTool {
 			{
 				Description: "List all invoices with default formatting",
 				Input: map[string]interface{}{
-					"output_format": "table",
+					fieldOutputFormat: "table",
 				},
 				ExpectedOutput: "Table view of all invoices with number, client, date, status, and amount",
 				UseCase:        "General invoice overview and status checking",
@@ -167,10 +167,10 @@ func createInvoiceListTool() *MCPTool {
 			{
 				Description: "Generate monthly invoice report for specific client",
 				Input: map[string]interface{}{
-					"client_name":     "Acme Corp",
-					"from_date":       "2025-08-01",
+					fieldClientName:   "Acme Corp",
+					"from_date":       exampleDate,
 					"to_date":         "2025-08-31",
-					"output_format":   "json",
+					fieldOutputFormat: typeJSON,
 					"include_summary": true,
 				},
 				ExpectedOutput: "JSON export of all Acme Corp invoices for August 2025 with summary",
@@ -190,20 +190,20 @@ func createInvoiceListTool() *MCPTool {
 			{
 				Description: "Export invoice data for accounting system",
 				Input: map[string]interface{}{
-					"from_date":     "2025-01-01",
-					"to_date":       "2025-12-31",
-					"output_format": "csv",
-					"status":        "paid",
+					"from_date":       "2025-01-01",
+					"to_date":         "2025-12-31",
+					fieldOutputFormat: "csv",
+					"status":          "paid",
 				},
 				ExpectedOutput: "CSV export of all paid invoices for tax year 2025",
 				UseCase:        "Accounting integration and tax preparation",
 			},
 		},
 		Category:   CategoryInvoiceManagement,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"invoice", "list"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldInvoice, "list"},
 		HelpText:   "Provides comprehensive invoice discovery with filtering by status, client, dates, and amounts. Supports table, JSON, and CSV output formats for different workflows.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    20 * time.Second,
 	}
 }
@@ -221,7 +221,7 @@ func createInvoiceShowTool() *MCPTool {
 			{
 				Description: "Show complete invoice details in readable format",
 				Input: map[string]interface{}{
-					"invoice_number":      "INV-001",
+					fieldInvoiceNumber:    exampleInvoiceID,
 					"show_work_items":     true,
 					"show_client_details": true,
 				},
@@ -231,8 +231,8 @@ func createInvoiceShowTool() *MCPTool {
 			{
 				Description: "Export invoice data as JSON for integration",
 				Input: map[string]interface{}{
-					"invoice_id":    "invoice_abc123",
-					"output_format": "json",
+					fieldInvoiceID:    "invoice_abc123",
+					fieldOutputFormat: typeJSON,
 				},
 				ExpectedOutput: "Complete invoice data in JSON format for API integration",
 				UseCase:        "Data export for external systems and integrations",
@@ -240,9 +240,9 @@ func createInvoiceShowTool() *MCPTool {
 			{
 				Description: "Quick invoice summary without work item details",
 				Input: map[string]interface{}{
-					"invoice_number":  "INV-025",
-					"show_work_items": false,
-					"output_format":   "text",
+					fieldInvoiceNumber: "INV-025",
+					"show_work_items":  false,
+					fieldOutputFormat:  "text",
 				},
 				ExpectedOutput: "Concise invoice summary with totals and basic information",
 				UseCase:        "Quick status checks and summary reviews",
@@ -250,18 +250,18 @@ func createInvoiceShowTool() *MCPTool {
 			{
 				Description: "View invoice with YAML output for documentation",
 				Input: map[string]interface{}{
-					"invoice_id":    "INV-2025-001",
-					"output_format": "yaml",
+					fieldInvoiceID:    "INV-2025-001",
+					fieldOutputFormat: "yaml",
 				},
 				ExpectedOutput: "Invoice data in YAML format suitable for documentation",
 				UseCase:        "Documentation and configuration file generation",
 			},
 		},
 		Category:   CategoryInvoiceManagement,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"invoice", "show"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldInvoice, "show"},
 		HelpText:   "Displays comprehensive invoice information with configurable detail levels and output formats. Supports lookup by invoice ID or number.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    15 * time.Second,
 	}
 }
@@ -279,8 +279,8 @@ func createInvoiceUpdateTool() *MCPTool {
 			{
 				Description: "Mark invoice as sent after delivery to client",
 				Input: map[string]interface{}{
-					"invoice_number": "INV-001",
-					"status":         "sent",
+					fieldInvoiceNumber: exampleInvoiceID,
+					"status":           "sent",
 				},
 				ExpectedOutput: "Invoice status updated to 'sent' with timestamp recorded",
 				UseCase:        "Invoice delivery workflow and status tracking",
@@ -288,8 +288,8 @@ func createInvoiceUpdateTool() *MCPTool {
 			{
 				Description: "Extend payment due date for client accommodation",
 				Input: map[string]interface{}{
-					"invoice_id": "invoice_abc123",
-					"due_date":   "2025-09-30",
+					fieldInvoiceID: "invoice_abc123",
+					"due_date":     "2025-09-30",
 				},
 				ExpectedOutput: "Due date updated with change logged for audit trail",
 				UseCase:        "Payment term adjustments and client relations",
@@ -297,8 +297,8 @@ func createInvoiceUpdateTool() *MCPTool {
 			{
 				Description: "Update invoice description for clarity",
 				Input: map[string]interface{}{
-					"invoice_number": "INV-025",
-					"description":    "Q3 2025 Development Services - Updated scope",
+					fieldInvoiceNumber: "INV-025",
+					fieldDescription:   "Q3 2025 Development Services - Updated scope",
 				},
 				ExpectedOutput: "Invoice description updated to reflect scope changes",
 				UseCase:        "Project scope clarification and invoice documentation",
@@ -306,8 +306,8 @@ func createInvoiceUpdateTool() *MCPTool {
 			{
 				Description: "Mark invoice as paid after payment received",
 				Input: map[string]interface{}{
-					"invoice_id": "INV-2025-008",
-					"status":     "paid",
+					fieldInvoiceID: "INV-2025-008",
+					"status":       "paid",
 				},
 				ExpectedOutput: "Invoice marked as paid, affecting financial reporting",
 				UseCase:        "Payment processing and accounts receivable management",
@@ -315,20 +315,20 @@ func createInvoiceUpdateTool() *MCPTool {
 			{
 				Description: "Multiple field update in single operation",
 				Input: map[string]interface{}{
-					"invoice_number": "INV-042",
-					"status":         "sent",
-					"due_date":       "2025-09-15",
-					"description":    "August 2025 Consulting - Terms Updated",
+					fieldInvoiceNumber: "INV-042",
+					"status":           "sent",
+					"due_date":         "2025-09-15",
+					fieldDescription:   "August 2025 Consulting - Terms Updated",
 				},
 				ExpectedOutput: "All specified fields updated with change summary provided",
 				UseCase:        "Comprehensive invoice revision after client review",
 			},
 		},
 		Category:   CategoryInvoiceManagement,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"invoice", "update"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldInvoice, "update"},
 		HelpText:   "Updates invoice properties with business rule validation. Supports status changes, due date adjustments, and description updates while maintaining audit trail.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    20 * time.Second,
 	}
 }
@@ -346,7 +346,7 @@ func createInvoiceDeleteTool() *MCPTool {
 			{
 				Description: "Soft delete draft invoice (recommended approach)",
 				Input: map[string]interface{}{
-					"invoice_number": "INV-001",
+					fieldInvoiceNumber: exampleInvoiceID,
 				},
 				ExpectedOutput: "Invoice marked as deleted but data preserved for audit trail",
 				UseCase:        "Removing incorrect or duplicate draft invoices safely",
@@ -354,8 +354,8 @@ func createInvoiceDeleteTool() *MCPTool {
 			{
 				Description: "Permanently delete invoice with confirmation",
 				Input: map[string]interface{}{
-					"invoice_id":  "invoice_test123",
-					"hard_delete": true,
+					fieldInvoiceID: "invoice_test123",
+					"hard_delete":  true,
 				},
 				ExpectedOutput: "Confirmation prompt followed by permanent data removal",
 				UseCase:        "Complete data removal for test or erroneous invoices",
@@ -363,9 +363,9 @@ func createInvoiceDeleteTool() *MCPTool {
 			{
 				Description: "Force delete without confirmation (use with extreme caution)",
 				Input: map[string]interface{}{
-					"invoice_number": "DRAFT-999",
-					"hard_delete":    true,
-					"force":          true,
+					fieldInvoiceNumber: "DRAFT-999",
+					"hard_delete":      true,
+					"force":            true,
 				},
 				ExpectedOutput: "Immediate permanent deletion without confirmation prompts",
 				UseCase:        "Automated cleanup of test data or bulk operations",
@@ -373,17 +373,17 @@ func createInvoiceDeleteTool() *MCPTool {
 			{
 				Description: "Attempt to delete paid invoice (will be prevented)",
 				Input: map[string]interface{}{
-					"invoice_id": "INV-PAID-001",
+					fieldInvoiceID: "INV-PAID-001",
 				},
 				ExpectedOutput: "Deletion blocked with explanation of business rule violation",
 				UseCase:        "Demonstrates business rule protection for financial integrity",
 			},
 		},
 		Category:   CategoryInvoiceManagement,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"invoice", "delete"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldInvoice, "delete"},
 		HelpText:   "Safely removes invoices with business rule validation. Default soft delete preserves audit trail; hard delete permanently removes data. Paid invoices cannot be deleted.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    25 * time.Second,
 	}
 }
@@ -401,13 +401,13 @@ func createInvoiceAddItemTool() *MCPTool {
 			{
 				Description: "Add single work item to invoice",
 				Input: map[string]interface{}{
-					"invoice_number": "INV-001",
+					fieldInvoiceNumber: exampleInvoiceID,
 					"work_items": []map[string]interface{}{
 						{
-							"date":        "2025-08-03",
-							"hours":       6.0,
-							"rate":        150.0,
-							"description": "Bug fixes and performance optimization",
+							fieldDate:        "2025-08-03",
+							fieldHours:       6.0,
+							fieldRate:        150.0,
+							fieldDescription: "Bug fixes and performance optimization",
 						},
 					},
 				},
@@ -417,25 +417,25 @@ func createInvoiceAddItemTool() *MCPTool {
 			{
 				Description: "Batch add multiple work items for a week's work",
 				Input: map[string]interface{}{
-					"invoice_id": "invoice_abc123",
+					fieldInvoiceID: "invoice_abc123",
 					"work_items": []map[string]interface{}{
 						{
-							"date":        "2025-08-01",
-							"hours":       8.0,
-							"rate":        125.0,
-							"description": "Frontend component development",
+							fieldDate:        exampleDate,
+							fieldHours:       8.0,
+							fieldRate:        125.0,
+							fieldDescription: "Frontend component development",
 						},
 						{
-							"date":        "2025-08-02",
-							"hours":       7.5,
-							"rate":        125.0,
-							"description": "API integration and testing",
+							fieldDate:        "2025-08-02",
+							fieldHours:       7.5,
+							fieldRate:        125.0,
+							fieldDescription: "API integration and testing",
 						},
 						{
-							"date":        "2025-08-03",
-							"hours":       4.0,
-							"rate":        125.0,
-							"description": "Code review and documentation",
+							fieldDate:        "2025-08-03",
+							fieldHours:       4.0,
+							fieldRate:        125.0,
+							fieldDescription: "Code review and documentation",
 						},
 					},
 				},
@@ -445,13 +445,13 @@ func createInvoiceAddItemTool() *MCPTool {
 			{
 				Description: "Add premium rate consulting work",
 				Input: map[string]interface{}{
-					"invoice_number": "INV-CONSULTING-025",
+					fieldInvoiceNumber: "INV-CONSULTING-025",
 					"work_items": []map[string]interface{}{
 						{
-							"date":        "2025-08-01",
-							"hours":       2.5,
-							"rate":        300.0,
-							"description": "Executive strategy consulting session",
+							fieldDate:        exampleDate,
+							fieldHours:       2.5,
+							fieldRate:        300.0,
+							fieldDescription: "Executive strategy consulting session",
 						},
 					},
 				},
@@ -461,13 +461,13 @@ func createInvoiceAddItemTool() *MCPTool {
 			{
 				Description: "Add partial hour work with decimal precision",
 				Input: map[string]interface{}{
-					"invoice_id": "INV-2025-042",
+					fieldInvoiceID: "INV-2025-042",
 					"work_items": []map[string]interface{}{
 						{
-							"date":        "2025-08-03",
-							"hours":       1.25,
-							"rate":        100.0,
-							"description": "Quick bug fix - payment gateway issue",
+							fieldDate:        "2025-08-03",
+							fieldHours:       1.25,
+							fieldRate:        100.0,
+							fieldDescription: "Quick bug fix - payment gateway issue",
 						},
 					},
 				},
@@ -476,10 +476,10 @@ func createInvoiceAddItemTool() *MCPTool {
 			},
 		},
 		Category:   CategoryInvoiceManagement,
-		CLICommand: "go-invoice",
+		CLICommand: toolCLIName,
 		CLIArgs:    []string{"import", "--add-to-invoice"},
 		HelpText:   "Adds work items to draft invoices with automatic total recalculation. Supports flexible time entry and maintains billing accuracy. Only works with draft status invoices.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    25 * time.Second,
 	}
 }
@@ -497,14 +497,14 @@ func createInvoiceAddLineItemTool() *MCPTool {
 			{
 				Description: "Add hourly work item to invoice",
 				Input: map[string]interface{}{
-					"invoice_number": "INV-001",
+					fieldInvoiceNumber: exampleInvoiceID,
 					"line_items": []map[string]interface{}{
 						{
-							"type":        "hourly",
-							"date":        "2025-08-03",
-							"hours":       8.0,
-							"rate":        125.0,
-							"description": "Development work on authentication module",
+							keyType:          "hourly",
+							fieldDate:        "2025-08-03",
+							fieldHours:       8.0,
+							fieldRate:        125.0,
+							fieldDescription: "Development work on authentication module",
 						},
 					},
 				},
@@ -514,13 +514,13 @@ func createInvoiceAddLineItemTool() *MCPTool {
 			{
 				Description: "Add monthly retainer (fixed amount)",
 				Input: map[string]interface{}{
-					"invoice_number": "INV-001",
+					fieldInvoiceNumber: exampleInvoiceID,
 					"line_items": []map[string]interface{}{
 						{
-							"type":        "fixed",
-							"date":        "2025-08-01",
-							"amount":      2000.0,
-							"description": "Monthly Retainer - August 2025",
+							keyType:          "fixed",
+							fieldDate:        exampleDate,
+							fieldAmount:      2000.0,
+							fieldDescription: "Monthly Retainer - August 2025",
 						},
 					},
 				},
@@ -530,14 +530,14 @@ func createInvoiceAddLineItemTool() *MCPTool {
 			{
 				Description: "Add quantity-based items (licenses, materials)",
 				Input: map[string]interface{}{
-					"invoice_number": "INV-001",
+					fieldInvoiceNumber: exampleInvoiceID,
 					"line_items": []map[string]interface{}{
 						{
-							"type":        "quantity",
-							"date":        "2025-08-01",
-							"quantity":    3.0,
-							"unit_price":  50.0,
-							"description": "SSL certificates",
+							keyType:          "quantity",
+							fieldDate:        exampleDate,
+							"quantity":       3.0,
+							"unit_price":     50.0,
+							fieldDescription: "SSL certificates",
 						},
 					},
 				},
@@ -547,27 +547,27 @@ func createInvoiceAddLineItemTool() *MCPTool {
 			{
 				Description: "Mix different billing types on same invoice",
 				Input: map[string]interface{}{
-					"invoice_number": "INV-001",
+					fieldInvoiceNumber: exampleInvoiceID,
 					"line_items": []map[string]interface{}{
 						{
-							"type":        "hourly",
-							"date":        "2025-08-01",
-							"hours":       40.0,
-							"rate":        125.0,
-							"description": "Development work - 40 hours",
+							keyType:          "hourly",
+							fieldDate:        exampleDate,
+							fieldHours:       40.0,
+							fieldRate:        125.0,
+							fieldDescription: "Development work - 40 hours",
 						},
 						{
-							"type":        "fixed",
-							"date":        "2025-08-01",
-							"amount":      500.0,
-							"description": "Project setup fee",
+							keyType:          "fixed",
+							fieldDate:        exampleDate,
+							fieldAmount:      500.0,
+							fieldDescription: "Project setup fee",
 						},
 						{
-							"type":        "quantity",
-							"date":        "2025-08-01",
-							"quantity":    2.0,
-							"unit_price":  25.0,
-							"description": "Hosting licenses",
+							keyType:          "quantity",
+							fieldDate:        exampleDate,
+							"quantity":       2.0,
+							"unit_price":     25.0,
+							fieldDescription: "Hosting licenses",
 						},
 					},
 				},
@@ -577,9 +577,9 @@ func createInvoiceAddLineItemTool() *MCPTool {
 		},
 		Category:   CategoryInvoiceManagement,
 		CLICommand: "go-invoice invoice add-line-item",
-		CLIArgs:    []string{"invoice", "add-line-item"},
+		CLIArgs:    []string{fieldInvoice, "add-line-item"},
 		HelpText:   "Adds flexible line items to draft invoices supporting hourly, fixed, and quantity-based billing. Enables mixed billing models on the same invoice with automatic total recalculation.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    25 * time.Second,
 	}
 }
@@ -597,9 +597,9 @@ func createInvoiceRemoveItemTool() *MCPTool {
 			{
 				Description: "Remove specific work item by ID",
 				Input: map[string]interface{}{
-					"invoice_number": "INV-001",
-					"work_item_id":   "work_item_123",
-					"confirm":        true,
+					fieldInvoiceNumber: exampleInvoiceID,
+					"work_item_id":     "work_item_123",
+					"confirm":          true,
 				},
 				ExpectedOutput: "Specific work item removed with totals recalculated",
 				UseCase:        "Removing incorrectly added or duplicate work items",
@@ -607,7 +607,7 @@ func createInvoiceRemoveItemTool() *MCPTool {
 			{
 				Description: "Remove work items matching description",
 				Input: map[string]interface{}{
-					"invoice_id":            "invoice_abc123",
+					fieldInvoiceID:          "invoice_abc123",
 					"work_item_description": "Bug fixes",
 					"remove_all_matching":   false,
 				},
@@ -617,8 +617,8 @@ func createInvoiceRemoveItemTool() *MCPTool {
 			{
 				Description: "Remove all work from specific date",
 				Input: map[string]interface{}{
-					"invoice_number":      "INV-025",
-					"work_item_date":      "2025-08-01",
+					fieldInvoiceNumber:    "INV-025",
+					"work_item_date":      exampleDate,
 					"remove_all_matching": true,
 					"confirm":             true,
 				},
@@ -628,7 +628,7 @@ func createInvoiceRemoveItemTool() *MCPTool {
 			{
 				Description: "Remove duplicate entries with partial description match",
 				Input: map[string]interface{}{
-					"invoice_id":            "INV-2025-008",
+					fieldInvoiceID:          "INV-2025-008",
 					"work_item_description": "Frontend",
 					"remove_all_matching":   true,
 				},
@@ -638,18 +638,18 @@ func createInvoiceRemoveItemTool() *MCPTool {
 			{
 				Description: "Attempt to remove from non-draft invoice (will be prevented)",
 				Input: map[string]interface{}{
-					"invoice_number": "INV-SENT-001",
-					"work_item_id":   "work_123",
+					fieldInvoiceNumber: "INV-SENT-001",
+					"work_item_id":     "work_123",
 				},
 				ExpectedOutput: "Removal blocked with explanation of business rule",
 				UseCase:        "Demonstrates protection against modifying sent invoices",
 			},
 		},
 		Category:   CategoryInvoiceManagement,
-		CLICommand: "go-invoice",
-		CLIArgs:    []string{"invoice", "remove-item"},
+		CLICommand: toolCLIName,
+		CLIArgs:    []string{fieldInvoice, "remove-item"},
 		HelpText:   "Removes work items from draft invoices using flexible identification. Supports removal by ID, description pattern, or date. Automatically recalculates totals and maintains data integrity.",
-		Version:    "1.0.0",
+		Version:    toolVersion,
 		Timeout:    20 * time.Second,
 	}
 }

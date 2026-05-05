@@ -22,17 +22,17 @@ func (e *BridgeError) Error() string {
 // Bridge errors
 var (
 	ErrToolNotFound               = &BridgeError{Op: "lookup", Msg: "tool not found"}
-	ErrInvalidToolInput           = &BridgeError{Op: "validate", Msg: "invalid tool input"}
-	ErrMissingRequired            = &BridgeError{Op: "validate", Msg: "missing required parameter"}
+	ErrInvalidToolInput           = &BridgeError{Op: opValidate, Msg: "invalid tool input"}
+	ErrMissingRequired            = &BridgeError{Op: opValidate, Msg: "missing required parameter"}
 	ErrCommandBuildFailed         = &BridgeError{Op: "build", Msg: "failed to build command"}
-	ErrMissingUpdateFields        = &BridgeError{Op: "validate", Msg: "at least one field to update must be provided"}
-	ErrMissingItemIdentifier      = &BridgeError{Op: "validate", Msg: "either item_id or item_index must be provided"}
-	ErrMissingClientIdentifier    = &BridgeError{Op: "validate", Msg: "one of client_id, client_name, or client_email must be provided"}
-	ErrMissingClientIDOrName      = &BridgeError{Op: "validate", Msg: "client_id or client_name must be provided"}
-	ErrMissingClientNameForCreate = &BridgeError{Op: "validate", Msg: "client_name required when create_new is true"}
+	ErrMissingUpdateFields        = &BridgeError{Op: opValidate, Msg: "at least one field to update must be provided"}
+	ErrMissingItemIdentifier      = &BridgeError{Op: opValidate, Msg: "either item_id or item_index must be provided"}
+	ErrMissingClientIdentifier    = &BridgeError{Op: opValidate, Msg: "one of client_id, client_name, or client_email must be provided"}
+	ErrMissingClientIDOrName      = &BridgeError{Op: opValidate, Msg: "client_id or client_name must be provided"}
+	ErrMissingClientNameForCreate = &BridgeError{Op: opValidate, Msg: "client_name required when create_new is true"}
 	ErrCommandFailed              = &BridgeError{Op: "execute", Msg: "command execution failed"}
 	ErrCollectionFailed           = &BridgeError{Op: "collect", Msg: "file collection failed"}
-	ErrBatchNotSupported          = &BridgeError{Op: "validate", Msg: "batch invoice generation is not supported by the CLI - please generate invoices individually"}
+	ErrBatchNotSupported          = &BridgeError{Op: opValidate, Msg: "batch invoice generation is not supported by the CLI - please generate invoices individually"}
 )
 
 // ToolCommand represents the mapping from an MCP tool to CLI command.
@@ -236,7 +236,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["invoice_create"] = &ToolCommand{
 		Tool:        "invoice_create",
 		Command:     b.cliPath,
-		SubCommands: []string{"invoice", "create"},
+		SubCommands: []string{subCmdInvoice, "create"},
 		BuildArgs:   b.buildInvoiceCreateArgs,
 		Timeout:     10 * time.Second,
 	}
@@ -244,7 +244,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["invoice_list"] = &ToolCommand{
 		Tool:        "invoice_list",
 		Command:     b.cliPath,
-		SubCommands: []string{"invoice", "list"},
+		SubCommands: []string{subCmdInvoice, "list"},
 		BuildArgs:   b.buildInvoiceListArgs,
 		ExpectJSON:  true,
 		Timeout:     10 * time.Second,
@@ -253,7 +253,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["invoice_show"] = &ToolCommand{
 		Tool:        "invoice_show",
 		Command:     b.cliPath,
-		SubCommands: []string{"invoice", "show"},
+		SubCommands: []string{subCmdInvoice, "show"},
 		BuildArgs:   b.buildInvoiceShowArgs,
 		ExpectJSON:  true,
 		Timeout:     5 * time.Second,
@@ -262,7 +262,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["invoice_update"] = &ToolCommand{
 		Tool:        "invoice_update",
 		Command:     b.cliPath,
-		SubCommands: []string{"invoice", "update"},
+		SubCommands: []string{subCmdInvoice, "update"},
 		BuildArgs:   b.buildInvoiceUpdateArgs,
 		Timeout:     10 * time.Second,
 	}
@@ -270,7 +270,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["invoice_delete"] = &ToolCommand{
 		Tool:        "invoice_delete",
 		Command:     b.cliPath,
-		SubCommands: []string{"invoice", "delete"},
+		SubCommands: []string{subCmdInvoice, "delete"},
 		BuildArgs:   b.buildInvoiceDeleteArgs,
 		Timeout:     5 * time.Second,
 	}
@@ -278,7 +278,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["invoice_add_item"] = &ToolCommand{
 		Tool:        "invoice_add_item",
 		Command:     b.cliPath,
-		SubCommands: []string{"invoice", "add-item"},
+		SubCommands: []string{subCmdInvoice, "add-item"},
 		BuildArgs:   b.buildInvoiceAddItemArgs,
 		Timeout:     10 * time.Second,
 	}
@@ -286,7 +286,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["invoice_remove_item"] = &ToolCommand{
 		Tool:        "invoice_remove_item",
 		Command:     b.cliPath,
-		SubCommands: []string{"invoice", "remove-item"},
+		SubCommands: []string{subCmdInvoice, "remove-item"},
 		BuildArgs:   b.buildInvoiceRemoveItemArgs,
 		Timeout:     10 * time.Second,
 	}
@@ -347,7 +347,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["import_validate"] = &ToolCommand{
 		Tool:          "import_validate",
 		Command:       b.cliPath,
-		SubCommands:   []string{"import", "validate"},
+		SubCommands:   []string{"import", opValidate},
 		BuildArgs:     b.buildImportValidateArgs,
 		RequiresFiles: false, // Temporarily disable file validation to test
 		Timeout:       10 * time.Second,
@@ -356,7 +356,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["import_preview"] = &ToolCommand{
 		Tool:          "import_preview",
 		Command:       b.cliPath,
-		SubCommands:   []string{"import", "validate"},
+		SubCommands:   []string{"import", opValidate},
 		BuildArgs:     b.buildImportPreviewArgs,
 		RequiresFiles: false, // Temporarily disable file validation to test
 		ExpectJSON:    false, // validate command doesn't output JSON by default
@@ -367,7 +367,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["generate_html"] = &ToolCommand{
 		Tool:           "generate_html",
 		Command:        b.cliPath,
-		SubCommands:    []string{"generate", "invoice"},
+		SubCommands:    []string{"generate", subCmdInvoice},
 		BuildArgs:      b.buildGenerateHTMLArgs,
 		OutputPatterns: []string{"invoice-*.html", "*.html"},
 		Timeout:        20 * time.Second,
@@ -405,7 +405,7 @@ func (b *CLIBridge) registerToolCommands() {
 	b.toolCommands["config_validate"] = &ToolCommand{
 		Tool:        "config_validate",
 		Command:     b.cliPath,
-		SubCommands: []string{"config", "validate"},
+		SubCommands: []string{"config", opValidate},
 		BuildArgs:   b.buildConfigValidateArgs,
 		Timeout:     5 * time.Second,
 	}
@@ -521,7 +521,7 @@ func (b *CLIBridge) buildInvoiceShowArgs(input map[string]interface{}) ([]string
 	args := make([]string, 0, 4)
 
 	// Either invoice_id or invoice_number is required
-	invoiceID, hasID := input["invoice_id"].(string)
+	invoiceID, hasID := input[keyInvoiceID].(string)
 	invoiceNumber, hasNumber := input["invoice_number"].(string)
 
 	if (!hasID || invoiceID == "") && (!hasNumber || invoiceNumber == "") {
@@ -547,7 +547,7 @@ func (b *CLIBridge) buildInvoiceUpdateArgs(input map[string]interface{}) ([]stri
 	args := b.getConfigArgs()
 
 	// Required: invoice_id or invoice_number
-	invoiceID, hasID := input["invoice_id"].(string)
+	invoiceID, hasID := input[keyInvoiceID].(string)
 	invoiceNumber, hasNumber := input["invoice_number"].(string)
 
 	if (!hasID || invoiceID == "") && (!hasNumber || invoiceNumber == "") {
@@ -587,7 +587,7 @@ func (b *CLIBridge) buildInvoiceDeleteArgs(input map[string]interface{}) ([]stri
 	args := b.getConfigArgs()
 
 	// Required: invoice_id or invoice_number
-	invoiceID, hasID := input["invoice_id"].(string)
+	invoiceID, hasID := input[keyInvoiceID].(string)
 	invoiceNumber, hasNumber := input["invoice_number"].(string)
 
 	if (!hasID || invoiceID == "") && (!hasNumber || invoiceNumber == "") {
@@ -620,7 +620,7 @@ func (b *CLIBridge) buildInvoiceAddItemArgs(input map[string]interface{}) ([]str
 	args := b.getConfigArgs()
 
 	// Required: invoice_id or invoice_number
-	invoiceID, hasID := input["invoice_id"].(string)
+	invoiceID, hasID := input[keyInvoiceID].(string)
 	invoiceNumber, hasNumber := input["invoice_number"].(string)
 
 	if (!hasID || invoiceID == "") && (!hasNumber || invoiceNumber == "") {
@@ -693,7 +693,7 @@ func (b *CLIBridge) buildInvoiceRemoveItemArgs(input map[string]interface{}) ([]
 	args := b.getConfigArgs()
 
 	// Required: invoice_id or invoice_number
-	invoiceID, hasID := input["invoice_id"].(string)
+	invoiceID, hasID := input[keyInvoiceID].(string)
 	invoiceNumber, hasNumber := input["invoice_number"].(string)
 
 	if (!hasID || invoiceID == "") && (!hasNumber || invoiceNumber == "") {
@@ -901,7 +901,7 @@ func (b *CLIBridge) buildImportCSVArgs(input map[string]interface{}) ([]string, 
 	importMode, hasMode := input["import_mode"].(string)
 	if hasMode && importMode == "append_invoice" {
 		// For append mode, we need an invoice ID
-		if invoiceID, ok := input["invoice_id"].(string); ok && invoiceID != "" {
+		if invoiceID, ok := input[keyInvoiceID].(string); ok && invoiceID != "" {
 			args = append(args, "--invoice", invoiceID)
 		} else if invoiceNumber, ok := input["invoice_number"].(string); ok && invoiceNumber != "" {
 			args = append(args, "--invoice", invoiceNumber)
@@ -1067,7 +1067,7 @@ func (b *CLIBridge) buildGenerateHTMLArgs(input map[string]interface{}) ([]strin
 	args := b.getConfigArgs()
 
 	// Required: invoice identifier (invoice_id or invoice_number)
-	invoiceID, hasID := input["invoice_id"].(string)
+	invoiceID, hasID := input[keyInvoiceID].(string)
 	invoiceNumber, hasNumber := input["invoice_number"].(string)
 
 	if (!hasID || invoiceID == "") && (!hasNumber || invoiceNumber == "") {

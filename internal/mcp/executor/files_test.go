@@ -78,7 +78,7 @@ func (suite *FileHandlerTestSuite) TestNewDefaultFileHandlerPanicsWithNilValidat
 
 // TestFileErrorError tests FileError.Error() method
 func (suite *FileHandlerTestSuite) TestFileErrorError() {
-	err := &FileError{Op: "validate", Msg: "test error"}
+	err := &FileError{Op: opValidate, Msg: "test error"}
 	suite.Equal("file operation validate: test error", err.Error())
 }
 
@@ -406,7 +406,7 @@ func (suite *FileHandlerTestSuite) TestCreateTempFileContextCancellation() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	path, err := suite.handler.CreateTempFile(ctx, "test-*.txt", []byte("test"))
+	path, err := suite.handler.CreateTempFile(ctx, "test-*.txt", []byte(testStr))
 
 	suite.Equal(context.Canceled, err)
 	suite.Empty(path)
@@ -484,15 +484,15 @@ func TestErrorVariables(t *testing.T) {
 		expectedOp  string
 		expectedMsg string
 	}{
-		{ErrFileTooLarge, "validate", "file exceeds maximum size"},
-		{ErrInvalidFileType, "validate", "invalid file type"},
+		{ErrFileTooLarge, opValidate, "file exceeds maximum size"},
+		{ErrInvalidFileType, opValidate, "invalid file type"},
 		{ErrFileNotFound, "read", "file not found"},
 		{ErrWorkspaceCreate, "create", "failed to create workspace"},
-		{ErrNotRegularFile, "validate", "not a regular file"},
-		{ErrPathOutsideAllowed, "validate", "file path is outside allowed directories"},
-		{ErrPathEmpty, "validate", "path cannot be empty"},
-		{ErrPathNotAbsolute, "validate", "path must be absolute"},
-		{ErrPathContainsNullBytes, "validate", "path contains null bytes"},
+		{ErrNotRegularFile, opValidate, "not a regular file"},
+		{ErrPathOutsideAllowed, opValidate, "file path is outside allowed directories"},
+		{ErrPathEmpty, opValidate, "path cannot be empty"},
+		{ErrPathNotAbsolute, opValidate, "path must be absolute"},
+		{ErrPathContainsNullBytes, opValidate, "path contains null bytes"},
 	}
 
 	for _, tt := range tests {

@@ -26,11 +26,11 @@ func (e *Error) Error() string {
 
 // Common errors
 var (
-	ErrCommandNotAllowed = &Error{Op: "validate", Msg: "command not allowed"}
-	ErrInvalidPath       = &Error{Op: "validate", Msg: "invalid path"}
+	ErrCommandNotAllowed = &Error{Op: opValidate, Msg: "command not allowed"}
+	ErrInvalidPath       = &Error{Op: opValidate, Msg: "invalid path"}
 	ErrTimeout           = &Error{Op: "execute", Msg: "command execution timeout"}
 	ErrOutputTooLarge    = &Error{Op: "execute", Msg: "output exceeds maximum size"}
-	ErrInvalidWorkDir    = &Error{Op: "validate", Msg: "invalid working directory"}
+	ErrInvalidWorkDir    = &Error{Op: opValidate, Msg: "invalid working directory"}
 )
 
 // SecureExecutor implements the CommandExecutor interface with security features.

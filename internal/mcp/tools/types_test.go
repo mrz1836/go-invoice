@@ -29,17 +29,17 @@ func (s *TypesTestSuite) TestMCPTool_Structure() {
 		{
 			name: "ValidCompleteToolDefinition",
 			tool: MCPTool{
-				Name:        "test_tool",
+				Name:        testToolName,
 				Description: "Test tool for validation",
 				InputSchema: map[string]interface{}{
-					"type": "object",
-					"properties": map[string]interface{}{
+					keyType: keyObject,
+					keyProperties: map[string]interface{}{
 						"param1": map[string]interface{}{
-							"type":        "string",
-							"description": "Test parameter",
+							keyType:          typeString,
+							fieldDescription: "Test parameter",
 						},
 					},
-					"required": []interface{}{"param1"},
+					keyRequired: []interface{}{"param1"},
 				},
 				Examples: []MCPToolExample{
 					{
@@ -52,10 +52,10 @@ func (s *TypesTestSuite) TestMCPTool_Structure() {
 					},
 				},
 				Category:   CategoryInvoiceManagement,
-				CLICommand: "go-invoice",
-				CLIArgs:    []string{"test"},
+				CLICommand: toolCLIName,
+				CLIArgs:    []string{strTest},
 				HelpText:   "Help text for test tool",
-				Version:    "1.0.0",
+				Version:    toolVersion,
 				Timeout:    30 * time.Second,
 			},
 			expectValid: true,
@@ -67,12 +67,12 @@ func (s *TypesTestSuite) TestMCPTool_Structure() {
 				Name:        "minimal_tool",
 				Description: "Minimal test tool",
 				InputSchema: map[string]interface{}{
-					"type": "object",
+					keyType: keyObject,
 				},
 				Category:   CategoryConfiguration,
-				CLICommand: "go-invoice",
+				CLICommand: toolCLIName,
 				CLIArgs:    []string{"minimal"},
-				Version:    "1.0.0",
+				Version:    toolVersion,
 				Timeout:    15 * time.Second,
 			},
 			expectValid: true,
@@ -83,10 +83,10 @@ func (s *TypesTestSuite) TestMCPTool_Structure() {
 			tool: MCPTool{
 				Name:        "",
 				Description: "Tool with empty name",
-				InputSchema: map[string]interface{}{"type": "object"},
+				InputSchema: map[string]interface{}{keyType: keyObject},
 				Category:    CategoryDataImport,
-				CLICommand:  "go-invoice",
-				Version:     "1.0.0",
+				CLICommand:  toolCLIName,
+				Version:     toolVersion,
 				Timeout:     10 * time.Second,
 			},
 			expectValid: false,
@@ -108,9 +108,9 @@ func (s *TypesTestSuite) TestMCPTool_Structure() {
 
 			// Validate schema structure
 			if tt.tool.InputSchema != nil {
-				schemaType, hasType := tt.tool.InputSchema["type"]
+				schemaType, hasType := tt.tool.InputSchema[keyType]
 				if hasType {
-					s.Equal("object", schemaType, "Schema type should be object")
+					s.Equal(keyObject, schemaType, "Schema type should be object")
 				}
 			}
 
@@ -133,7 +133,7 @@ func (s *TypesTestSuite) TestMCPToolExample_Validation() {
 			name: "CompleteExample",
 			example: MCPToolExample{
 				Description:    "Complete example with all fields",
-				Input:          map[string]interface{}{"param": "value"},
+				Input:          map[string]interface{}{"param": strValue},
 				ExpectedOutput: "Expected result",
 				UseCase:        "Testing scenario",
 			},
@@ -143,7 +143,7 @@ func (s *TypesTestSuite) TestMCPToolExample_Validation() {
 			name: "MinimalExample",
 			example: MCPToolExample{
 				Description: "Minimal example",
-				Input:       map[string]interface{}{"param": "value"},
+				Input:       map[string]interface{}{"param": strValue},
 			},
 			valid: true,
 		},
@@ -151,7 +151,7 @@ func (s *TypesTestSuite) TestMCPToolExample_Validation() {
 			name: "EmptyDescription",
 			example: MCPToolExample{
 				Description: "",
-				Input:       map[string]interface{}{"param": "value"},
+				Input:       map[string]interface{}{"param": strValue},
 			},
 			valid: false,
 		},
@@ -223,7 +223,7 @@ func (s *TypesTestSuite) TestValidationError_Interface() {
 		{
 			name: "ErrorWithFieldAndSuggestions",
 			validationErr: ValidationError{
-				Field:       "client_name",
+				Field:       fieldClientName,
 				Message:     "field is required",
 				Code:        "required_field",
 				Suggestions: []string{"provide client name", "use client_id instead"},
@@ -243,7 +243,7 @@ func (s *TypesTestSuite) TestValidationError_Interface() {
 		{
 			name: "ErrorWithoutSuggestions",
 			validationErr: ValidationError{
-				Field:   "amount",
+				Field:   fieldAmount,
 				Message: "must be positive",
 				Code:    "invalid_value",
 			},
@@ -335,11 +335,11 @@ func (s *TypesTestSuite) TestToolExecutionRequest_Structure() {
 			name: "CompleteRequest",
 			request: ToolExecutionRequest{
 				ToolName:  "invoice_create",
-				Input:     map[string]interface{}{"client_name": "Test Client"},
+				Input:     map[string]interface{}{fieldClientName: "Test Client"},
 				RequestID: "req_123",
 				ClientInfo: &ClientInfo{
 					Name:     "Claude Desktop",
-					Version:  "1.0.0",
+					Version:  toolVersion,
 					Platform: "macos",
 				},
 				ExecutionTimeout: 30 * time.Second,
@@ -349,7 +349,7 @@ func (s *TypesTestSuite) TestToolExecutionRequest_Structure() {
 		{
 			name: "MinimalRequest",
 			request: ToolExecutionRequest{
-				ToolName:         "test_tool",
+				ToolName:         testToolName,
 				Input:            map[string]interface{}{},
 				RequestID:        "req_456",
 				ExecutionTimeout: 15 * time.Second,
@@ -397,7 +397,7 @@ func (s *TypesTestSuite) TestToolExecutionResponse_Structure() {
 				Output:        map[string]interface{}{"result": "success"},
 				ExecutionTime: 2 * time.Second,
 				ResourcesUsed: []string{"file1.json", "file2.txt"},
-				Metadata:      map[string]string{"version": "1.0.0"},
+				Metadata:      map[string]string{"version": toolVersion},
 			},
 			valid: true,
 		},
@@ -455,7 +455,7 @@ func (s *TypesTestSuite) TestClientInfo_Structure() {
 			name: "MinimalClientInfo",
 			client: ClientInfo{
 				Name:    "Test Client",
-				Version: "1.0.0",
+				Version: toolVersion,
 			},
 			valid: true,
 		},
@@ -463,7 +463,7 @@ func (s *TypesTestSuite) TestClientInfo_Structure() {
 			name: "EmptyName",
 			client: ClientInfo{
 				Name:    "",
-				Version: "1.0.0",
+				Version: toolVersion,
 			},
 			valid: false,
 		},
@@ -497,10 +497,10 @@ func (s *TypesTestSuite) TestConcurrentAccess() {
 	tool := &MCPTool{
 		Name:        "concurrent_test",
 		Description: "Test concurrent access",
-		InputSchema: map[string]interface{}{"type": "object"},
+		InputSchema: map[string]interface{}{keyType: keyObject},
 		Category:    CategoryConfiguration,
-		CLICommand:  "test",
-		Version:     "1.0.0",
+		CLICommand:  strTest,
+		Version:     toolVersion,
 		Timeout:     10 * time.Second,
 	}
 
@@ -580,10 +580,10 @@ func TestTypesTestSuite(t *testing.T) {
 // Benchmark tests for performance validation
 func BenchmarkMCPTool_Creation(b *testing.B) {
 	schema := map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
 			"param1": map[string]interface{}{
-				"type": "string",
+				keyType: typeString,
 			},
 		},
 	}
@@ -595,8 +595,8 @@ func BenchmarkMCPTool_Creation(b *testing.B) {
 			Description: "Benchmark test tool",
 			InputSchema: schema,
 			Category:    CategoryConfiguration,
-			CLICommand:  "test",
-			Version:     "1.0.0",
+			CLICommand:  strTest,
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		}
 		_ = tool
@@ -620,12 +620,12 @@ func BenchmarkValidationError_Creation(b *testing.B) {
 func TestMCPTool_EdgeCases(t *testing.T) {
 	t.Run("NilInputSchema", func(t *testing.T) {
 		tool := &MCPTool{
-			Name:        "test_tool",
+			Name:        testToolName,
 			Description: "Test tool",
 			InputSchema: nil,
 			Category:    CategoryConfiguration,
-			CLICommand:  "test",
-			Version:     "1.0.0",
+			CLICommand:  strTest,
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		}
 		assert.Nil(t, tool.InputSchema, "Tool should handle nil schema")
@@ -633,13 +633,13 @@ func TestMCPTool_EdgeCases(t *testing.T) {
 
 	t.Run("EmptyExamplesSlice", func(t *testing.T) {
 		tool := &MCPTool{
-			Name:        "test_tool",
+			Name:        testToolName,
 			Description: "Test tool",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Examples:    []MCPToolExample{},
 			Category:    CategoryConfiguration,
-			CLICommand:  "test",
-			Version:     "1.0.0",
+			CLICommand:  strTest,
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		}
 		assert.Empty(t, tool.Examples, "Tool should handle empty examples slice")
@@ -647,12 +647,12 @@ func TestMCPTool_EdgeCases(t *testing.T) {
 
 	t.Run("LargeTimeout", func(t *testing.T) {
 		tool := &MCPTool{
-			Name:        "test_tool",
+			Name:        testToolName,
 			Description: "Test tool",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryConfiguration,
-			CLICommand:  "test",
-			Version:     "1.0.0",
+			CLICommand:  strTest,
+			Version:     toolVersion,
 			Timeout:     1 * time.Hour,
 		}
 		assert.Equal(t, 1*time.Hour, tool.Timeout, "Tool should accept large timeout values")
@@ -742,10 +742,10 @@ func TestTypes_RaceConditions(t *testing.T) {
 		tool := &MCPTool{
 			Name:        "concurrent",
 			Description: "Test",
-			InputSchema: map[string]interface{}{"type": "object"},
+			InputSchema: map[string]interface{}{keyType: keyObject},
 			Category:    CategoryConfiguration,
-			CLICommand:  "test",
-			Version:     "1.0.0",
+			CLICommand:  strTest,
+			Version:     toolVersion,
 			Timeout:     10 * time.Second,
 		}
 

@@ -25,17 +25,17 @@ func (e *FileError) Error() string {
 
 // File handling errors
 var (
-	ErrFileTooLarge             = &FileError{Op: "validate", Msg: "file exceeds maximum size"}
-	ErrInvalidFileType          = &FileError{Op: "validate", Msg: "invalid file type"}
+	ErrFileTooLarge             = &FileError{Op: opValidate, Msg: "file exceeds maximum size"}
+	ErrInvalidFileType          = &FileError{Op: opValidate, Msg: "invalid file type"}
 	ErrFileNotFound             = &FileError{Op: "read", Msg: "file not found"}
 	ErrWorkspaceCreate          = &FileError{Op: "create", Msg: "failed to create workspace"}
-	ErrNotRegularFile           = &FileError{Op: "validate", Msg: "not a regular file"}
-	ErrPathOutsideAllowed       = &FileError{Op: "validate", Msg: "file path is outside allowed directories"}
-	ErrSrcPathOutsideAllowed    = &FileError{Op: "validate", Msg: "source file path is outside allowed directories"}
-	ErrDestPathOutsideWorkspace = &FileError{Op: "validate", Msg: "destination file path is outside of the workspace directory"}
-	ErrPathEmpty                = &FileError{Op: "validate", Msg: "path cannot be empty"}
-	ErrPathNotAbsolute          = &FileError{Op: "validate", Msg: "path must be absolute"}
-	ErrPathContainsNullBytes    = &FileError{Op: "validate", Msg: "path contains null bytes"}
+	ErrNotRegularFile           = &FileError{Op: opValidate, Msg: "not a regular file"}
+	ErrPathOutsideAllowed       = &FileError{Op: opValidate, Msg: "file path is outside allowed directories"}
+	ErrSrcPathOutsideAllowed    = &FileError{Op: opValidate, Msg: "source file path is outside allowed directories"}
+	ErrDestPathOutsideWorkspace = &FileError{Op: opValidate, Msg: "destination file path is outside of the workspace directory"}
+	ErrPathEmpty                = &FileError{Op: opValidate, Msg: "path cannot be empty"}
+	ErrPathNotAbsolute          = &FileError{Op: opValidate, Msg: "path must be absolute"}
+	ErrPathContainsNullBytes    = &FileError{Op: opValidate, Msg: "path contains null bytes"}
 )
 
 // DefaultFileHandler implements FileHandler with security features.

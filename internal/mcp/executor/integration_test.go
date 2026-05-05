@@ -166,8 +166,8 @@ func (s *MCPExecutorBridgeTestSuite) TestExecuteCommandContextCanceled() {
 	cancel() // Cancel immediately
 
 	req := &types.CommandRequest{
-		Command: "echo",
-		Args:    []string{"test"},
+		Command: testEcho,
+		Args:    []string{testStr},
 	}
 
 	resp, err := bridge.ExecuteCommand(ctx, req)
@@ -181,7 +181,7 @@ func (s *MCPExecutorBridgeTestSuite) TestExecuteCommandSuccess() {
 
 	ctx := context.Background()
 	req := &types.CommandRequest{
-		Command:    "echo",
+		Command:    testEcho,
 		Args:       []string{"hello"},
 		WorkingDir: "/tmp",
 		Timeout:    30 * time.Second,

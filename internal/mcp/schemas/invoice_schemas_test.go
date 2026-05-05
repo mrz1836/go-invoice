@@ -12,24 +12,24 @@ func TestInvoiceCreateSchema(t *testing.T) {
 	schema := InvoiceCreateSchema()
 
 	// Verify basic schema structure
-	assert.Equal(t, "object", schema["type"])
+	assert.Equal(t, keyObject, schema[keyType])
 
-	properties, ok := schema["properties"].(map[string]interface{})
+	properties, ok := schema[keyProperties].(map[string]interface{})
 	require.True(t, ok, "Properties should be a map")
 
 	// Verify required client identification fields
-	assert.Contains(t, properties, "client_name")
-	assert.Contains(t, properties, "client_id")
+	assert.Contains(t, properties, keyClientName)
+	assert.Contains(t, properties, keyClientID)
 	assert.Contains(t, properties, "client_email")
 
 	// Verify optional fields
 	assert.Contains(t, properties, "invoice_date")
 	assert.Contains(t, properties, "due_date")
-	assert.Contains(t, properties, "description")
+	assert.Contains(t, properties, keyDescription)
 	assert.Contains(t, properties, "work_items")
 
 	// Verify that client identification fields are optional in schema (validation logic handles requirements)
-	required, ok := schema["required"].([]string)
+	required, ok := schema[keyRequired].([]string)
 	require.True(t, ok, "required should be a string slice")
 	assert.Empty(t, required, "No fields should be required at schema level (validation logic handles client identification requirement)")
 }
@@ -39,14 +39,14 @@ func TestInvoiceListSchema(t *testing.T) {
 	schema := InvoiceListSchema()
 
 	// Verify basic schema structure
-	assert.Equal(t, "object", schema["type"])
+	assert.Equal(t, keyObject, schema[keyType])
 
-	properties, ok := schema["properties"].(map[string]interface{})
+	properties, ok := schema[keyProperties].(map[string]interface{})
 	require.True(t, ok, "Properties should be a map")
 
 	// Verify filtering fields
 	assert.Contains(t, properties, "status")
-	assert.Contains(t, properties, "client_name")
+	assert.Contains(t, properties, keyClientName)
 	assert.Contains(t, properties, "from_date")
 	assert.Contains(t, properties, "to_date")
 
@@ -67,13 +67,13 @@ func TestInvoiceShowSchema(t *testing.T) {
 	schema := InvoiceShowSchema()
 
 	// Verify basic schema structure
-	assert.Equal(t, "object", schema["type"])
+	assert.Equal(t, keyObject, schema[keyType])
 
-	properties, ok := schema["properties"].(map[string]interface{})
+	properties, ok := schema[keyProperties].(map[string]interface{})
 	require.True(t, ok, "Properties should be a map")
 
 	// Verify identification fields
-	assert.Contains(t, properties, "invoice_id")
+	assert.Contains(t, properties, keyInvoiceID)
 	assert.Contains(t, properties, "invoice_number")
 
 	// Verify display control fields
@@ -82,7 +82,7 @@ func TestInvoiceShowSchema(t *testing.T) {
 	assert.Contains(t, properties, "show_client_details")
 
 	// Verify that fields are optional in schema (validation logic handles requirements)
-	required, ok := schema["required"].([]string)
+	required, ok := schema[keyRequired].([]string)
 	require.True(t, ok, "required should be a string slice")
 	assert.Empty(t, required, "No fields should be required at schema level (validation logic handles invoice identification requirement)")
 }
@@ -92,20 +92,20 @@ func TestInvoiceUpdateSchema(t *testing.T) {
 	schema := InvoiceUpdateSchema()
 
 	// Verify basic schema structure
-	assert.Equal(t, "object", schema["type"])
+	assert.Equal(t, keyObject, schema[keyType])
 
-	properties, ok := schema["properties"].(map[string]interface{})
+	properties, ok := schema[keyProperties].(map[string]interface{})
 	require.True(t, ok, "Properties should be a map")
 
 	// Verify identification and update fields
-	assert.Contains(t, properties, "invoice_id")
+	assert.Contains(t, properties, keyInvoiceID)
 	assert.Contains(t, properties, "invoice_number")
 	assert.Contains(t, properties, "status")
 	assert.Contains(t, properties, "due_date")
-	assert.Contains(t, properties, "description")
+	assert.Contains(t, properties, keyDescription)
 
 	// Verify that fields are optional in schema (validation logic handles requirements)
-	required, ok := schema["required"].([]string)
+	required, ok := schema[keyRequired].([]string)
 	require.True(t, ok, "required should be a string slice")
 	assert.Empty(t, required, "No fields should be required at schema level (validation logic handles identification and update field requirements)")
 }
@@ -115,13 +115,13 @@ func TestInvoiceDeleteSchema(t *testing.T) {
 	schema := InvoiceDeleteSchema()
 
 	// Verify basic schema structure
-	assert.Equal(t, "object", schema["type"])
+	assert.Equal(t, keyObject, schema[keyType])
 
-	properties, ok := schema["properties"].(map[string]interface{})
+	properties, ok := schema[keyProperties].(map[string]interface{})
 	require.True(t, ok, "Properties should be a map")
 
 	// Verify required and optional fields
-	assert.Contains(t, properties, "invoice_id")
+	assert.Contains(t, properties, keyInvoiceID)
 	assert.Contains(t, properties, "invoice_number")
 	assert.Contains(t, properties, "hard_delete")
 	assert.Contains(t, properties, "force")
@@ -139,32 +139,32 @@ func TestInvoiceAddItemSchema(t *testing.T) {
 	schema := InvoiceAddItemSchema()
 
 	// Verify basic schema structure
-	assert.Equal(t, "object", schema["type"])
+	assert.Equal(t, keyObject, schema[keyType])
 
-	properties, ok := schema["properties"].(map[string]interface{})
+	properties, ok := schema[keyProperties].(map[string]interface{})
 	require.True(t, ok, "Properties should be a map")
 
 	// Verify identification and work items fields
-	assert.Contains(t, properties, "invoice_id")
+	assert.Contains(t, properties, keyInvoiceID)
 	assert.Contains(t, properties, "invoice_number")
 	assert.Contains(t, properties, "work_items")
 
 	// Verify work items array structure
 	workItemsField := properties["work_items"].(map[string]interface{})
-	assert.Equal(t, "array", workItemsField["type"])
+	assert.Equal(t, typeArray, workItemsField[keyType])
 	assert.Equal(t, 1, workItemsField["minItems"])
 
 	// Check work item object structure
 	items := workItemsField["items"].(map[string]interface{})
-	itemProperties := items["properties"].(map[string]interface{})
-	assert.Contains(t, itemProperties, "date")
-	assert.Contains(t, itemProperties, "hours")
-	assert.Contains(t, itemProperties, "rate")
-	assert.Contains(t, itemProperties, "description")
+	itemProperties := items[keyProperties].(map[string]interface{})
+	assert.Contains(t, itemProperties, formatDate)
+	assert.Contains(t, itemProperties, keyHours)
+	assert.Contains(t, itemProperties, keyRate)
+	assert.Contains(t, itemProperties, keyDescription)
 
 	// Check required work item fields
-	itemRequired := items["required"].([]string)
-	expectedRequired := []string{"date", "hours", "rate", "description"}
+	itemRequired := items[keyRequired].([]string)
+	expectedRequired := []string{formatDate, keyHours, keyRate, keyDescription}
 	assert.ElementsMatch(t, expectedRequired, itemRequired)
 }
 
@@ -173,13 +173,13 @@ func TestInvoiceRemoveItemSchema(t *testing.T) {
 	schema := InvoiceRemoveItemSchema()
 
 	// Verify basic schema structure
-	assert.Equal(t, "object", schema["type"])
+	assert.Equal(t, keyObject, schema[keyType])
 
-	properties, ok := schema["properties"].(map[string]interface{})
+	properties, ok := schema[keyProperties].(map[string]interface{})
 	require.True(t, ok, "Properties should be a map")
 
 	// Verify identification fields
-	assert.Contains(t, properties, "invoice_id")
+	assert.Contains(t, properties, keyInvoiceID)
 	assert.Contains(t, properties, "invoice_number")
 	assert.Contains(t, properties, "work_item_id")
 	assert.Contains(t, properties, "work_item_description")
@@ -190,7 +190,7 @@ func TestInvoiceRemoveItemSchema(t *testing.T) {
 	assert.Contains(t, properties, "confirm")
 
 	// Verify that fields are optional in schema (validation logic handles requirements)
-	required, ok := schema["required"].([]string)
+	required, ok := schema[keyRequired].([]string)
 	require.True(t, ok, "required should be a string slice")
 	assert.Empty(t, required, "No fields should be required at schema level (validation logic handles invoice and work item identification requirements)")
 }
@@ -218,8 +218,8 @@ func TestGetAllInvoiceSchemas(t *testing.T) {
 
 		schema := schemas[schemaName]
 		assert.NotNil(t, schema, "Schema %s should not be nil", schemaName)
-		assert.Equal(t, "object", schema["type"], "Schema %s should be object type", schemaName)
-		assert.Contains(t, schema, "properties", "Schema %s should have properties", schemaName)
+		assert.Equal(t, keyObject, schema[keyType], "Schema %s should be object type", schemaName)
+		assert.Contains(t, schema, keyProperties, "Schema %s should have properties", schemaName)
 	}
 }
 
@@ -229,7 +229,7 @@ func TestGetInvoiceToolSchema(t *testing.T) {
 	schema, exists := GetInvoiceToolSchema("invoice_create")
 	assert.True(t, exists, "invoice_create schema should exist")
 	assert.NotNil(t, schema, "invoice_create schema should not be nil")
-	assert.Equal(t, "object", schema["type"], "invoice_create should be object type")
+	assert.Equal(t, keyObject, schema[keyType], "invoice_create should be object type")
 
 	// Test non-existing schema
 	schema, exists = GetInvoiceToolSchema("nonexistent_tool")
@@ -243,14 +243,14 @@ func TestSchemaValidation(t *testing.T) {
 
 	for schemaName, schema := range schemas {
 		// Basic structure validation
-		assert.Equal(t, "object", schema["type"], "Schema %s should be object type", schemaName)
+		assert.Equal(t, keyObject, schema[keyType], "Schema %s should be object type", schemaName)
 
-		properties, ok := schema["properties"].(map[string]interface{})
+		properties, ok := schema[keyProperties].(map[string]interface{})
 		assert.True(t, ok, "Schema %s properties should be map", schemaName)
 		assert.NotEmpty(t, properties, "Schema %s should have properties", schemaName)
 
 		// Check additionalProperties is explicitly set to false
-		if additionalProps, exists := schema["additionalProperties"]; exists {
+		if additionalProps, exists := schema[keyAdditionalProperties]; exists {
 			assert.False(t, additionalProps.(bool), "Schema %s should not allow additional properties", schemaName)
 		}
 
@@ -261,7 +261,7 @@ func TestSchemaValidation(t *testing.T) {
 				continue
 			}
 
-			description, hasDesc := fieldMap["description"]
+			description, hasDesc := fieldMap[keyDescription]
 			assert.True(t, hasDesc, "Field %s in schema %s should have description", fieldName, schemaName)
 			assert.NotEmpty(t, description, "Field %s description in schema %s should not be empty", fieldName, schemaName)
 		}

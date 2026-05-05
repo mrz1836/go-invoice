@@ -81,15 +81,15 @@ func (s *ImportToolsTestSuite) TestTimesheetImportTool() {
 
 	s.Run("Schema", func() {
 		s.NotNil(timesheetTool.InputSchema)
-		s.Equal("object", timesheetTool.InputSchema["type"])
+		s.Equal(keyObject, timesheetTool.InputSchema[keyType])
 
 		// Verify expected properties exist
-		properties, hasProperties := timesheetTool.InputSchema["properties"]
+		properties, hasProperties := timesheetTool.InputSchema[keyProperties]
 		s.True(hasProperties, "Should have properties in schema")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have file input field
-			expectedFields := []string{"file", "file_path", "source_file"}
+			expectedFields := []string{"file", fieldFilePath, "source_file"}
 			hasFileField := false
 			for _, field := range expectedFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -100,7 +100,7 @@ func (s *ImportToolsTestSuite) TestTimesheetImportTool() {
 			s.True(hasFileField, "Should have file input field")
 
 			// May have format specification
-			formatFields := []string{"format", "file_format", "type"}
+			formatFields := []string{fieldFormat, "file_format", keyType}
 			for _, field := range formatFields {
 				if fieldDef, hasField := propertiesMap[field]; hasField {
 					s.NotNil(fieldDef, "Format field %s should have definition", field)
@@ -119,7 +119,7 @@ func (s *ImportToolsTestSuite) TestTimesheetImportTool() {
 
 			// Verify example demonstrates file handling
 			hasFileRef := false
-			fileFields := []string{"file", "file_path", "source_file"}
+			fileFields := []string{"file", fieldFilePath, "source_file"}
 			for _, field := range fileFields {
 				if fileVal, hasFile := example.Input[field]; hasFile {
 					s.IsType("", fileVal, "File field should be string")
@@ -159,7 +159,7 @@ func (s *ImportToolsTestSuite) TestClientImportTool() {
 	var clientImportTool *MCPTool
 
 	for _, tool := range tools {
-		if strings.Contains(tool.Name, "client") && strings.Contains(tool.Name, "import") {
+		if strings.Contains(tool.Name, fieldClient) && strings.Contains(tool.Name, "import") {
 			clientImportTool = tool
 			break
 		}
@@ -171,22 +171,22 @@ func (s *ImportToolsTestSuite) TestClientImportTool() {
 	}
 
 	s.Run("BasicStructure", func() {
-		s.Contains(strings.ToLower(clientImportTool.Name), "client")
+		s.Contains(strings.ToLower(clientImportTool.Name), fieldClient)
 		s.NotEmpty(clientImportTool.Description)
-		s.Contains(strings.ToLower(clientImportTool.Description), "client")
+		s.Contains(strings.ToLower(clientImportTool.Description), fieldClient)
 		s.Equal(CategoryDataImport, clientImportTool.Category)
 	})
 
 	s.Run("Schema", func() {
 		s.NotNil(clientImportTool.InputSchema)
-		s.Equal("object", clientImportTool.InputSchema["type"])
+		s.Equal(keyObject, clientImportTool.InputSchema[keyType])
 
-		properties, hasProperties := clientImportTool.InputSchema["properties"]
+		properties, hasProperties := clientImportTool.InputSchema[keyProperties]
 		s.True(hasProperties, "Should have properties")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have file input
-			fileFields := []string{"file", "file_path", "source_file"}
+			fileFields := []string{"file", fieldFilePath, "source_file"}
 			hasFileField := false
 			for _, field := range fileFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -208,7 +208,7 @@ func (s *ImportToolsTestSuite) TestClientImportTool() {
 			// Should demonstrate client-specific import scenarios
 			exampleText := strings.ToLower(example.Description + " " + example.UseCase)
 			s.True(
-				strings.Contains(exampleText, "client") ||
+				strings.Contains(exampleText, fieldClient) ||
 					strings.Contains(exampleText, "customer") ||
 					strings.Contains(exampleText, "contact"),
 				"Example should be client-related",
@@ -222,7 +222,7 @@ func (s *ImportToolsTestSuite) TestImportValidationTool() {
 	var validationTool *MCPTool
 
 	for _, tool := range tools {
-		if strings.Contains(tool.Name, "validate") || strings.Contains(tool.Name, "check") {
+		if strings.Contains(tool.Name, strValidate) || strings.Contains(tool.Name, "check") {
 			validationTool = tool
 			break
 		}
@@ -234,22 +234,22 @@ func (s *ImportToolsTestSuite) TestImportValidationTool() {
 	}
 
 	s.Run("BasicStructure", func() {
-		s.Contains(strings.ToLower(validationTool.Name), "validate")
+		s.Contains(strings.ToLower(validationTool.Name), strValidate)
 		s.NotEmpty(validationTool.Description)
-		s.Contains(strings.ToLower(validationTool.Description), "validate")
+		s.Contains(strings.ToLower(validationTool.Description), strValidate)
 		s.Equal(CategoryDataImport, validationTool.Category)
 	})
 
 	s.Run("Schema", func() {
 		s.NotNil(validationTool.InputSchema)
-		s.Equal("object", validationTool.InputSchema["type"])
+		s.Equal(keyObject, validationTool.InputSchema[keyType])
 
-		properties, hasProperties := validationTool.InputSchema["properties"]
+		properties, hasProperties := validationTool.InputSchema[keyProperties]
 		s.True(hasProperties, "Should have properties")
 
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			// Should have file input for validation
-			fileFields := []string{"file", "file_path", "source_file"}
+			fileFields := []string{"file", fieldFilePath, "source_file"}
 			hasFileField := false
 			for _, field := range fileFields {
 				if _, hasField := propertiesMap[field]; hasField {
@@ -270,7 +270,7 @@ func (s *ImportToolsTestSuite) TestImportValidationTool() {
 
 			// Should demonstrate validation scenarios
 			exampleText := strings.ToLower(example.Description + " " + example.UseCase)
-			validationKeywords := []string{"validate", "check", "verify", "error", "format"}
+			validationKeywords := []string{strValidate, "check", "verify", "error", fieldFormat}
 			hasValidationKeyword := false
 			for _, keyword := range validationKeywords {
 				if strings.Contains(exampleText, keyword) {
@@ -336,7 +336,7 @@ func (s *ImportToolsTestSuite) TestImportToolsIntegration() {
 		}
 
 		// Core import operations
-		importOperations := []string{"import", "validate", "parse"}
+		importOperations := []string{"import", strValidate, "parse"}
 		hasImportOperation := false
 
 		for _, tool := range tools {
@@ -379,7 +379,7 @@ func (s *ImportToolsTestSuite) TestImportToolsIntegration() {
 			// Verify CLI args make sense for import operations
 			hasImportArg := false
 			cliArgsStr := strings.Join(tool.CLIArgs, " ")
-			importKeywords := []string{"import", "parse", "validate"}
+			importKeywords := []string{"import", "parse", strValidate}
 			for _, keyword := range importKeywords {
 				if strings.Contains(cliArgsStr, keyword) {
 					hasImportArg = true
@@ -483,20 +483,20 @@ func (s *ImportToolsTestSuite) TestImportToolsEdgeCases() {
 		tools := CreateDataImportTools()
 
 		for _, tool := range tools {
-			properties, hasProps := tool.InputSchema["properties"]
+			properties, hasProps := tool.InputSchema[keyProperties]
 			if !hasProps {
 				continue
 			}
 
 			if propsMap, ok := properties.(map[string]interface{}); ok {
 				// Look for file-related fields
-				fileFields := []string{"file", "file_path", "source_file", "upload"}
+				fileFields := []string{"file", fieldFilePath, "source_file", "upload"}
 				for _, field := range fileFields {
 					if fieldDef, hasField := propsMap[field]; hasField {
 						if fieldMap, isMap := fieldDef.(map[string]interface{}); isMap {
 							// File fields should be strings
-							if fieldType, hasType := fieldMap["type"]; hasType {
-								s.Equal("string", fieldType, "File field %s should be string type", field)
+							if fieldType, hasType := fieldMap[keyType]; hasType {
+								s.Equal(typeString, fieldType, "File field %s should be string type", field)
 							}
 						}
 					}
@@ -522,7 +522,7 @@ func (s *ImportToolsTestSuite) TestImportToolsEdgeCases() {
 			desc := strings.ToLower(tool.Description)
 
 			// Should indicate what type of data is being imported
-			dataTypes := []string{"timesheet", "client", "invoice", "contact", "data"}
+			dataTypes := []string{"timesheet", fieldClient, fieldInvoice, "contact", "data"}
 			hasDataType := false
 			for _, dataType := range dataTypes {
 				if strings.Contains(desc, dataType) {
@@ -549,7 +549,7 @@ func (s *ImportToolsTestSuite) TestImportToolsPerformance() {
 
 		for _, tool := range tools {
 			// Count schema properties
-			properties, hasProps := tool.InputSchema["properties"]
+			properties, hasProps := tool.InputSchema[keyProperties]
 			if hasProps {
 				if propsMap, ok := properties.(map[string]interface{}); ok {
 					s.LessOrEqual(len(propsMap), 20, "Tool %s should not have excessive schema complexity", tool.Name)
@@ -574,7 +574,7 @@ func (s *ImportToolsTestSuite) validateImportTool(tool *MCPTool) {
 	s.Greater(tool.Timeout, time.Duration(0), "Tool should have positive timeout")
 
 	// Verify schema structure
-	s.Equal("object", tool.InputSchema["type"], "Schema should be object type")
+	s.Equal(keyObject, tool.InputSchema[keyType], "Schema should be object type")
 
 	// Verify examples structure if present
 	for i, example := range tool.Examples {
@@ -631,7 +631,7 @@ func TestImportTools_Specific(t *testing.T) {
 		tools := CreateDataImportTools()
 		for _, tool := range tools {
 			require.NotNil(t, tool.InputSchema, "Tool %s missing schema", tool.Name)
-			assert.Equal(t, "object", tool.InputSchema["type"], "Tool %s should have object schema", tool.Name)
+			assert.Equal(t, keyObject, tool.InputSchema[keyType], "Tool %s should have object schema", tool.Name)
 		}
 	})
 
@@ -642,7 +642,7 @@ func TestImportTools_Specific(t *testing.T) {
 			assert.True(t,
 				strings.Contains(toolName, "import") ||
 					strings.Contains(toolName, "parse") ||
-					strings.Contains(toolName, "validate") ||
+					strings.Contains(toolName, strValidate) ||
 					strings.Contains(toolName, "upload"),
 				"Tool name %s should indicate import purpose", tool.Name,
 			)

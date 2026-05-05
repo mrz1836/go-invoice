@@ -17,7 +17,7 @@ func TestSecureExecutor_BasicFunctionality(t *testing.T) {
 	fileHandler := new(MockFileHandler)
 
 	sandbox := SandboxConfig{
-		AllowedCommands:      []string{"echo", "ls", "cat"},
+		AllowedCommands:      []string{testEcho, "ls", "cat"},
 		MaxExecutionTime:     30000000000, // 30 seconds
 		MaxOutputSize:        1024 * 1024, // 1MB
 		MaxFileSize:          1024 * 1024, // 1MB
@@ -29,7 +29,7 @@ func TestSecureExecutor_BasicFunctionality(t *testing.T) {
 	t.Run("Constructor", func(t *testing.T) {
 		require.NotNil(t, executor)
 		assert.NotNil(t, executor.allowedCmds)
-		assert.True(t, executor.allowedCmds["echo"])
+		assert.True(t, executor.allowedCmds[testEcho])
 		assert.True(t, executor.allowedCmds["ls"])
 		assert.True(t, executor.allowedCmds["cat"])
 		assert.False(t, executor.allowedCmds["rm"])
@@ -39,14 +39,14 @@ func TestSecureExecutor_BasicFunctionality(t *testing.T) {
 		commands, err := executor.GetAllowedCommands(context.Background())
 		require.NoError(t, err)
 		assert.Len(t, commands, 3)
-		assert.Contains(t, commands, "echo")
+		assert.Contains(t, commands, testEcho)
 		assert.Contains(t, commands, "ls")
 		assert.Contains(t, commands, "cat")
 	})
 
 	t.Run("ValidateCommand_Allowed", func(t *testing.T) {
-		validator.On("ValidateCommand", context.Background(), "echo", []string{"test"}).Return(nil).Once()
-		err := executor.ValidateCommand(context.Background(), "echo", []string{"test"})
+		validator.On("ValidateCommand", context.Background(), testEcho, []string{testStr}).Return(nil).Once()
+		err := executor.ValidateCommand(context.Background(), testEcho, []string{testStr})
 		assert.NoError(t, err)
 	})
 
@@ -270,7 +270,7 @@ func TestProgressTracker_BasicFunctionality(t *testing.T) {
 func TestCommandValidator_BasicFunctionality(t *testing.T) {
 	logger := new(MockLogger)
 	sandbox := SandboxConfig{
-		AllowedCommands:      []string{"echo", "ls"},
+		AllowedCommands:      []string{testEcho, "ls"},
 		AllowedPaths:         []string{"/tmp", "/home"},
 		BlockedPaths:         []string{"/etc", "/sys"},
 		EnvironmentWhitelist: []string{"PATH", "HOME"},
@@ -287,10 +287,10 @@ func TestCommandValidator_BasicFunctionality(t *testing.T) {
 
 	t.Run("ValidateCommand_Valid", func(t *testing.T) {
 		logger.On("Debug", "command validated successfully",
-			"command", "echo",
+			"command", testEcho,
 			"argCount", 1).Once()
 
-		err := validator.ValidateCommand(context.Background(), "echo", []string{"hello"})
+		err := validator.ValidateCommand(context.Background(), testEcho, []string{"hello"})
 		assert.NoError(t, err)
 	})
 

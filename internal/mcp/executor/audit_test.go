@@ -76,8 +76,8 @@ func (s *FileAuditLoggerTestSuite) TestLogCommandExecutionSuccess() {
 		Timestamp:  time.Now(),
 		UserID:     "user123",
 		SessionID:  "session456",
-		Command:    "invoice",
-		Args:       []string{"create", "--client", "test"},
+		Command:    subCmdInvoice,
+		Args:       []string{"create", "--client", testStr},
 		WorkingDir: "/tmp",
 		ExitCode:   0,
 		Duration:   100 * time.Millisecond,
@@ -193,7 +193,7 @@ func (s *FileAuditLoggerTestSuite) TestQueryFilterByEventType() {
 		Timestamp: time.Now(),
 		UserID:    "user1",
 		SessionID: "sess1",
-		Command:   "test",
+		Command:   testStr,
 	}
 	s.Require().NoError(auditLogger.LogCommandExecution(context.Background(), cmdEvent))
 
@@ -231,7 +231,7 @@ func (s *FileAuditLoggerTestSuite) TestQueryFilterByTimeRange() {
 	event := &CommandAuditEvent{
 		Timestamp: time.Now(),
 		UserID:    "user1",
-		Command:   "test",
+		Command:   testStr,
 	}
 	s.Require().NoError(auditLogger.LogCommandExecution(context.Background(), event))
 
@@ -383,11 +383,11 @@ func TestContainsHelper(t *testing.T) {
 	})
 
 	t.Run("EmptyString", func(t *testing.T) {
-		assert.False(t, contains("", "test"))
+		assert.False(t, contains("", testStr))
 	})
 
 	t.Run("ExactMatch", func(t *testing.T) {
-		assert.True(t, contains("test", "test"))
+		assert.True(t, contains(testStr, testStr))
 	})
 }
 

@@ -111,11 +111,11 @@ func (v *DefaultInputValidator) ValidateAgainstSchema(ctx context.Context, input
 
 	v.logger.Debug("starting schema validation",
 		"inputKeys", getMapKeys(input),
-		"schemaType", schema["type"])
+		"schemaType", schema[keyType])
 
 	// Validate root object type
-	if schemaType, exists := schema["type"]; exists {
-		if schemaType != "object" {
+	if schemaType, exists := schema[keyType]; exists {
+		if schemaType != keyObject {
 			return v.BuildValidationError(ctx, "",
 				fmt.Sprintf("expected object type, got: %v", schemaType),
 				[]string{"ensure input is a JSON object"})
@@ -123,7 +123,7 @@ func (v *DefaultInputValidator) ValidateAgainstSchema(ctx context.Context, input
 	}
 
 	// Validate required fields
-	if required, exists := schema["required"]; exists {
+	if required, exists := schema[keyRequired]; exists {
 		if requiredFields, ok := required.([]interface{}); ok {
 			var requiredStrings []string
 			for _, field := range requiredFields {
@@ -138,7 +138,7 @@ func (v *DefaultInputValidator) ValidateAgainstSchema(ctx context.Context, input
 	}
 
 	// Validate individual properties
-	if properties, exists := schema["properties"]; exists {
+	if properties, exists := schema[keyProperties]; exists {
 		if propertiesMap, ok := properties.(map[string]interface{}); ok {
 			for fieldName, fieldSchema := range propertiesMap {
 				if fieldValue, hasField := input[fieldName]; hasField {
@@ -155,7 +155,7 @@ func (v *DefaultInputValidator) ValidateAgainstSchema(ctx context.Context, input
 		if additionalProperties == false {
 			// Check for unexpected properties
 			allowedProperties := make(map[string]bool)
-			if properties, exists := schema["properties"]; exists {
+			if properties, exists := schema[keyProperties]; exists {
 				if propertiesMap, ok := properties.(map[string]interface{}); ok {
 					for prop := range propertiesMap {
 						allowedProperties[prop] = true
@@ -280,15 +280,15 @@ func (v *DefaultInputValidator) ValidateFormat(ctx context.Context, fieldName st
 
 	validator, exists := v.formatValidators[format]
 	if !exists {
-		v.logger.Warn("unknown format validator", "format", format, "fieldName", fieldName)
+		v.logger.Warn("unknown format validator", fieldFormat, format, "fieldName", fieldName)
 		return nil // Unknown formats are not validated (lenient approach)
 	}
 
 	if err := validator(ctx, value); err != nil {
 		v.logger.Debug("format validation failed",
 			"fieldName", fieldName,
-			"format", format,
-			"value", value,
+			fieldFormat, format,
+			strValue, value,
 			"error", err.Error())
 
 		return v.BuildValidationError(ctx, fieldName,
@@ -296,7 +296,7 @@ func (v *DefaultInputValidator) ValidateFormat(ctx context.Context, fieldName st
 			[]string{v.getFormatExample(format)})
 	}
 
-	v.logger.Debug("format validation passed", "fieldName", fieldName, "format", format)
+	v.logger.Debug("format validation passed", "fieldName", fieldName, fieldFormat, format)
 	return nil
 }
 
@@ -367,14 +367,14 @@ func (v *DefaultInputValidator) validateField(ctx context.Context, fieldName str
 	}
 
 	// Validate field type
-	if expectedType, exists := schemaMap["type"]; exists {
+	if expectedType, exists := schemaMap[keyType]; exists {
 		if err := v.validateFieldType(ctx, fieldName, value, expectedType); err != nil {
 			return err
 		}
 	}
 
 	// Validate field format
-	if format, exists := schemaMap["format"]; exists {
+	if format, exists := schemaMap[fieldFormat]; exists {
 		if formatStr, ok := format.(string); ok {
 			if err := v.ValidateFormat(ctx, fieldName, value, formatStr); err != nil {
 				return err
@@ -393,8 +393,8 @@ func (v *DefaultInputValidator) validateField(ctx context.Context, fieldName str
 	}
 
 	// Handle nested object validation
-	if expectedType, exists := schemaMap["type"]; exists {
-		if typeStr, ok := expectedType.(string); ok && typeStr == "object" {
+	if expectedType, exists := schemaMap[keyType]; exists {
+		if typeStr, ok := expectedType.(string); ok && typeStr == keyObject {
 			// Value must be a map for object validation
 			if valueMap, ok := value.(map[string]interface{}); ok {
 				// Recursively validate the nested object
@@ -567,9 +567,9 @@ func (v *DefaultInputValidator) validateNumericConstraints(ctx context.Context, 
 // This internal method sets up format validators for common data types
 // used in tool input validation.
 func (v *DefaultInputValidator) registerBuiltinFormatValidators() {
-	v.formatValidators["date"] = v.validateDateFormat
+	v.formatValidators[fieldDate] = v.validateDateFormat
 	v.formatValidators["date-time"] = v.validateDateTimeFormat
-	v.formatValidators["email"] = v.validateEmailFormat
+	v.formatValidators[fieldEmail] = v.validateEmailFormat
 	v.formatValidators["uuid"] = v.validateUUIDFormat
 	v.formatValidators["uri"] = v.validateURIFormat
 }
@@ -662,15 +662,15 @@ func (v *DefaultInputValidator) validateURIFormat(ctx context.Context, value int
 func (v *DefaultInputValidator) getValueType(value interface{}) string {
 	switch value.(type) {
 	case string:
-		return "string"
+		return typeString
 	case float64, int, int64:
-		return "number"
+		return typeNumber
 	case bool:
 		return "boolean"
 	case []interface{}:
 		return "array"
 	case map[string]interface{}:
-		return "object"
+		return keyObject
 	case nil:
 		return "null"
 	default:
@@ -695,10 +695,10 @@ func (v *DefaultInputValidator) isTypeCompatible(actualType, expectedType string
 	}
 
 	// Handle numeric type compatibility
-	if expectedType == "number" && (actualType == "number" || actualType == "integer") {
+	if expectedType == typeNumber && (actualType == typeNumber || actualType == "integer") {
 		return true
 	}
-	if expectedType == "integer" && actualType == "number" {
+	if expectedType == "integer" && actualType == typeNumber {
 		// Check if number is actually an integer
 		return true // Simplified - would need actual value to check
 	}
@@ -745,11 +745,11 @@ func (v *DefaultInputValidator) isEmptyValue(value interface{}) bool {
 // - string: Example of correct format
 func (v *DefaultInputValidator) getFormatExample(format string) string {
 	switch format {
-	case "date":
+	case fieldDate:
 		return "example: 2025-08-03"
 	case "date-time":
 		return "example: 2025-08-03T10:30:00Z"
-	case "email":
+	case fieldEmail:
 		return "example: user@example.com"
 	case "uuid":
 		return "example: 123e4567-e89b-12d3-a456-426614174000"

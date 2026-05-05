@@ -182,13 +182,13 @@ func (suite *BridgeBuildersTestSuite) TestBuildInvoiceListArgsEmpty() {
 // TestBuildInvoiceShowArgsWithID tests invoice show with invoice_id
 func (suite *BridgeBuildersTestSuite) TestBuildInvoiceShowArgsWithID() {
 	input := map[string]interface{}{
-		"invoice_id": "inv-123",
+		keyInvoiceID: testInvoiceID,
 	}
 
 	args, err := suite.bridge.buildInvoiceShowArgs(input)
 
 	suite.Require().NoError(err)
-	suite.Contains(args, "inv-123")
+	suite.Contains(args, testInvoiceID)
 	suite.Contains(args, "--output")
 	suite.Contains(args, "json")
 }
@@ -218,7 +218,7 @@ func (suite *BridgeBuildersTestSuite) TestBuildInvoiceShowArgsMissingIdentifier(
 // TestBuildInvoiceUpdateArgs tests invoice update with fields
 func (suite *BridgeBuildersTestSuite) TestBuildInvoiceUpdateArgs() {
 	input := map[string]interface{}{
-		"invoice_id":  "inv-123",
+		keyInvoiceID:  testInvoiceID,
 		"status":      "paid",
 		"description": "Updated description",
 		"due_date":    "2024-03-01",
@@ -227,7 +227,7 @@ func (suite *BridgeBuildersTestSuite) TestBuildInvoiceUpdateArgs() {
 	args, err := suite.bridge.buildInvoiceUpdateArgs(input)
 
 	suite.Require().NoError(err)
-	suite.Contains(args, "inv-123")
+	suite.Contains(args, testInvoiceID)
 	suite.Contains(args, "--status")
 	suite.Contains(args, "paid")
 	suite.Contains(args, "--description")
@@ -249,7 +249,7 @@ func (suite *BridgeBuildersTestSuite) TestBuildInvoiceUpdateArgsMissingIdentifie
 // TestBuildInvoiceUpdateArgsMissingFields tests update without update fields
 func (suite *BridgeBuildersTestSuite) TestBuildInvoiceUpdateArgsMissingFields() {
 	input := map[string]interface{}{
-		"invoice_id": "inv-123",
+		keyInvoiceID: testInvoiceID,
 	}
 
 	args, err := suite.bridge.buildInvoiceUpdateArgs(input)
@@ -261,14 +261,14 @@ func (suite *BridgeBuildersTestSuite) TestBuildInvoiceUpdateArgsMissingFields() 
 // TestBuildInvoiceDeleteArgs tests invoice delete with force
 func (suite *BridgeBuildersTestSuite) TestBuildInvoiceDeleteArgs() {
 	input := map[string]interface{}{
-		"invoice_id": "inv-123",
+		keyInvoiceID: testInvoiceID,
 		"force":      true,
 	}
 
 	args, err := suite.bridge.buildInvoiceDeleteArgs(input)
 
 	suite.Require().NoError(err)
-	suite.Contains(args, "inv-123")
+	suite.Contains(args, testInvoiceID)
 	suite.Contains(args, "--force")
 }
 
@@ -285,7 +285,7 @@ func (suite *BridgeBuildersTestSuite) TestBuildInvoiceDeleteArgsMissingID() {
 // TestBuildInvoiceAddItemArgs tests adding item with all fields
 func (suite *BridgeBuildersTestSuite) TestBuildInvoiceAddItemArgs() {
 	input := map[string]interface{}{
-		"invoice_id":  "inv-123",
+		keyInvoiceID:  testInvoiceID,
 		"description": "Development work",
 		"hours":       float64(8),
 		"rate":        float64(150),
@@ -295,7 +295,7 @@ func (suite *BridgeBuildersTestSuite) TestBuildInvoiceAddItemArgs() {
 	args, err := suite.bridge.buildInvoiceAddItemArgs(input)
 
 	suite.Require().NoError(err)
-	suite.Contains(args, "inv-123")
+	suite.Contains(args, testInvoiceID)
 	suite.Contains(args, "--description")
 	suite.Contains(args, "--hours")
 	suite.Contains(args, "--rate")
@@ -317,14 +317,14 @@ func (suite *BridgeBuildersTestSuite) TestBuildInvoiceAddItemArgsMissingInvoice(
 // TestBuildInvoiceRemoveItemArgsWithID tests removing item with item_id
 func (suite *BridgeBuildersTestSuite) TestBuildInvoiceRemoveItemArgsWithID() {
 	input := map[string]interface{}{
-		"invoice_id": "inv-123",
+		keyInvoiceID: testInvoiceID,
 		"item_id":    "item-456",
 	}
 
 	args, err := suite.bridge.buildInvoiceRemoveItemArgs(input)
 
 	suite.Require().NoError(err)
-	suite.Contains(args, "inv-123")
+	suite.Contains(args, testInvoiceID)
 	suite.Contains(args, "--item-id")
 	suite.Contains(args, "item-456")
 }
@@ -332,21 +332,21 @@ func (suite *BridgeBuildersTestSuite) TestBuildInvoiceRemoveItemArgsWithID() {
 // TestBuildInvoiceRemoveItemArgsWithIndex tests removing item with item_index
 func (suite *BridgeBuildersTestSuite) TestBuildInvoiceRemoveItemArgsWithIndex() {
 	input := map[string]interface{}{
-		"invoice_id": "inv-123",
+		keyInvoiceID: testInvoiceID,
 		"item_index": float64(1),
 	}
 
 	args, err := suite.bridge.buildInvoiceRemoveItemArgs(input)
 
 	suite.Require().NoError(err)
-	suite.Contains(args, "inv-123")
+	suite.Contains(args, testInvoiceID)
 	suite.Contains(args, "--index")
 }
 
 // TestBuildInvoiceRemoveItemArgsMissingItemIdentifier tests removing item without identifiers
 func (suite *BridgeBuildersTestSuite) TestBuildInvoiceRemoveItemArgsMissingItemIdentifier() {
 	input := map[string]interface{}{
-		"invoice_id": "inv-123",
+		keyInvoiceID: testInvoiceID,
 	}
 
 	args, err := suite.bridge.buildInvoiceRemoveItemArgs(input)
@@ -501,7 +501,7 @@ func (suite *BridgeBuildersTestSuite) TestBuildImportCSVArgsAppendMode() {
 	input := map[string]interface{}{
 		"file_path":   "/tmp/timesheet.csv",
 		"import_mode": "append_invoice",
-		"invoice_id":  "inv-123",
+		keyInvoiceID:  testInvoiceID,
 	}
 
 	args, err := suite.bridge.buildImportCSVArgs(input)
@@ -509,7 +509,7 @@ func (suite *BridgeBuildersTestSuite) TestBuildImportCSVArgsAppendMode() {
 	suite.Require().NoError(err)
 	suite.Contains(args, "/tmp/timesheet.csv")
 	suite.Contains(args, "--invoice")
-	suite.Contains(args, "inv-123")
+	suite.Contains(args, testInvoiceID)
 }
 
 // TestBuildImportCSVArgsMissingFile tests CSV import without file
@@ -527,7 +527,7 @@ func (suite *BridgeBuildersTestSuite) TestBuildImportCSVArgsMissingFile() {
 // TestBuildGenerateHTMLArgs tests HTML generation
 func (suite *BridgeBuildersTestSuite) TestBuildGenerateHTMLArgs() {
 	input := map[string]interface{}{
-		"invoice_id":  "inv-123",
+		keyInvoiceID:  testInvoiceID,
 		"output_path": "/tmp/invoice.html",
 		"template":    "modern",
 	}
@@ -535,7 +535,7 @@ func (suite *BridgeBuildersTestSuite) TestBuildGenerateHTMLArgs() {
 	args, err := suite.bridge.buildGenerateHTMLArgs(input)
 
 	suite.Require().NoError(err)
-	suite.Contains(args, "inv-123")
+	suite.Contains(args, testInvoiceID)
 	suite.Contains(args, "--output")
 	suite.Contains(args, "/tmp/invoice.html")
 	suite.Contains(args, "--template")

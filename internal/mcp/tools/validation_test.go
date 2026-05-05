@@ -47,7 +47,7 @@ func (s *ValidationTestSuite) TestNewDefaultInputValidator() {
 		logger := new(MockLogger)
 		validator := NewDefaultInputValidator(logger)
 
-		expectedFormats := []string{"date", "date-time", "email", "uuid", "uri"}
+		expectedFormats := []string{fieldDate, "date-time", fieldEmail, "uuid", "uri"}
 		for _, format := range expectedFormats {
 			s.Contains(validator.formatValidators, format, "Should have %s format validator", format)
 		}
@@ -65,39 +65,39 @@ func (s *ValidationTestSuite) TestValidateAgainstSchema_BasicValidation() {
 		{
 			name: "ValidObjectWithRequiredFields",
 			input: map[string]interface{}{
-				"name":  "Test Name",
-				"email": "test@example.com",
+				fieldName:  "Test Name",
+				fieldEmail: "test@example.com",
 			},
 			schema: map[string]interface{}{
-				"type": "object",
-				"properties": map[string]interface{}{
-					"name": map[string]interface{}{
-						"type": "string",
+				keyType: keyObject,
+				keyProperties: map[string]interface{}{
+					fieldName: map[string]interface{}{
+						keyType: typeString,
 					},
-					"email": map[string]interface{}{
-						"type": "string",
+					fieldEmail: map[string]interface{}{
+						keyType: typeString,
 					},
 				},
-				"required": []interface{}{"name", "email"},
+				keyRequired: []interface{}{fieldName, fieldEmail},
 			},
 			expectError: false,
 		},
 		{
 			name: "MissingRequiredField",
 			input: map[string]interface{}{
-				"name": "Test Name",
+				fieldName: "Test Name",
 			},
 			schema: map[string]interface{}{
-				"type": "object",
-				"properties": map[string]interface{}{
-					"name": map[string]interface{}{
-						"type": "string",
+				keyType: keyObject,
+				keyProperties: map[string]interface{}{
+					fieldName: map[string]interface{}{
+						keyType: typeString,
 					},
-					"email": map[string]interface{}{
-						"type": "string",
+					fieldEmail: map[string]interface{}{
+						keyType: typeString,
 					},
 				},
-				"required": []interface{}{"name", "email"},
+				keyRequired: []interface{}{fieldName, fieldEmail},
 			},
 			expectError: true,
 			errorMsg:    "missing required fields",
@@ -105,10 +105,10 @@ func (s *ValidationTestSuite) TestValidateAgainstSchema_BasicValidation() {
 		{
 			name: "InvalidSchemaType",
 			input: map[string]interface{}{
-				"name": "Test",
+				fieldName: "Test",
 			},
 			schema: map[string]interface{}{
-				"type": "array",
+				keyType: "array",
 			},
 			expectError: true,
 			errorMsg:    "expected object type",
@@ -116,14 +116,14 @@ func (s *ValidationTestSuite) TestValidateAgainstSchema_BasicValidation() {
 		{
 			name: "AdditionalPropertiesNotAllowed",
 			input: map[string]interface{}{
-				"name":       "Test Name",
-				"unexpected": "value",
+				fieldName:    "Test Name",
+				"unexpected": strValue,
 			},
 			schema: map[string]interface{}{
-				"type": "object",
-				"properties": map[string]interface{}{
-					"name": map[string]interface{}{
-						"type": "string",
+				keyType: keyObject,
+				keyProperties: map[string]interface{}{
+					fieldName: map[string]interface{}{
+						keyType: typeString,
 					},
 				},
 				"additionalProperties": false,
@@ -135,10 +135,10 @@ func (s *ValidationTestSuite) TestValidateAgainstSchema_BasicValidation() {
 			name:  "EmptyInputValidSchema",
 			input: map[string]interface{}{},
 			schema: map[string]interface{}{
-				"type": "object",
-				"properties": map[string]interface{}{
+				keyType: keyObject,
+				keyProperties: map[string]interface{}{
 					"optional": map[string]interface{}{
-						"type": "string",
+						keyType: typeString,
 					},
 				},
 			},
@@ -178,75 +178,75 @@ func (s *ValidationTestSuite) TestValidateRequired() {
 		{
 			name: "AllRequiredFieldsPresent",
 			input: map[string]interface{}{
-				"name":   "John Doe",
-				"email":  "john@example.com",
-				"amount": 100.0,
+				fieldName:   "John Doe",
+				fieldEmail:  "john@example.com",
+				fieldAmount: 100.0,
 			},
-			requiredFields: []string{"name", "email", "amount"},
+			requiredFields: []string{fieldName, fieldEmail, fieldAmount},
 			expectError:    false,
 		},
 		{
 			name: "MissingOneRequiredField",
 			input: map[string]interface{}{
-				"name":  "John Doe",
-				"email": "john@example.com",
+				fieldName:  "John Doe",
+				fieldEmail: "john@example.com",
 			},
-			requiredFields: []string{"name", "email", "amount"},
+			requiredFields: []string{fieldName, fieldEmail, fieldAmount},
 			expectError:    true,
 			errorMsg:       "missing required fields: amount",
 		},
 		{
 			name: "EmptyRequiredField",
 			input: map[string]interface{}{
-				"name":  "",
-				"email": "john@example.com",
+				fieldName:  "",
+				fieldEmail: "john@example.com",
 			},
-			requiredFields: []string{"name", "email"},
+			requiredFields: []string{fieldName, fieldEmail},
 			expectError:    true,
 			errorMsg:       "empty required fields: name",
 		},
 		{
 			name: "NilRequiredField",
 			input: map[string]interface{}{
-				"name":  nil,
-				"email": "john@example.com",
+				fieldName:  nil,
+				fieldEmail: "john@example.com",
 			},
-			requiredFields: []string{"name", "email"},
+			requiredFields: []string{fieldName, fieldEmail},
 			expectError:    true,
 			errorMsg:       "empty required fields: name",
 		},
 		{
 			name: "EmptyArrayField",
 			input: map[string]interface{}{
-				"items": []interface{}{},
-				"name":  "test",
+				"items":   []interface{}{},
+				fieldName: strTest,
 			},
-			requiredFields: []string{"items", "name"},
+			requiredFields: []string{"items", fieldName},
 			expectError:    true,
 			errorMsg:       "empty required fields: items",
 		},
 		{
 			name: "EmptyObjectField",
 			input: map[string]interface{}{
-				"config": map[string]interface{}{},
-				"name":   "test",
+				fieldConfig: map[string]interface{}{},
+				fieldName:   strTest,
 			},
-			requiredFields: []string{"config", "name"},
+			requiredFields: []string{fieldConfig, fieldName},
 			expectError:    true,
 			errorMsg:       "empty required fields: config",
 		},
 		{
 			name: "WhitespaceOnlyString",
 			input: map[string]interface{}{
-				"name": "   \t\n  ",
+				fieldName: "   \t\n  ",
 			},
-			requiredFields: []string{"name"},
+			requiredFields: []string{fieldName},
 			expectError:    true,
 			errorMsg:       "empty required fields: name",
 		},
 		{
 			name:           "NoRequiredFields",
-			input:          map[string]interface{}{"optional": "value"},
+			input:          map[string]interface{}{"optional": strValue},
 			requiredFields: []string{},
 			expectError:    false,
 		},
@@ -285,14 +285,14 @@ func (s *ValidationTestSuite) TestValidateFormat() {
 			name:        "ValidDate",
 			fieldName:   "date_field",
 			value:       "2025-08-03",
-			format:      "date",
+			format:      fieldDate,
 			expectError: false,
 		},
 		{
 			name:        "InvalidDate",
 			fieldName:   "date_field",
 			value:       "2025-13-01",
-			format:      "date",
+			format:      fieldDate,
 			expectError: true,
 			errorMsg:    "invalid date format",
 		},
@@ -313,16 +313,16 @@ func (s *ValidationTestSuite) TestValidateFormat() {
 		},
 		{
 			name:        "ValidEmail",
-			fieldName:   "email",
+			fieldName:   fieldEmail,
 			value:       "user@example.com",
-			format:      "email",
+			format:      fieldEmail,
 			expectError: false,
 		},
 		{
 			name:        "InvalidEmail",
-			fieldName:   "email",
+			fieldName:   fieldEmail,
 			value:       "not-an-email",
-			format:      "email",
+			format:      fieldEmail,
 			expectError: true,
 			errorMsg:    "invalid email format",
 		},
@@ -359,7 +359,7 @@ func (s *ValidationTestSuite) TestValidateFormat() {
 		{
 			name:        "UnknownFormat",
 			fieldName:   "field",
-			value:       "value",
+			value:       strValue,
 			format:      "unknown",
 			expectError: false, // Unknown formats are not validated (lenient approach)
 		},
@@ -367,7 +367,7 @@ func (s *ValidationTestSuite) TestValidateFormat() {
 			name:        "NonStringValueForStringFormat",
 			fieldName:   "field",
 			value:       123,
-			format:      "email",
+			format:      fieldEmail,
 			expectError: true,
 			errorMsg:    "expected string value",
 		},
@@ -405,19 +405,19 @@ func (s *ValidationTestSuite) TestValidateField() {
 	}{
 		{
 			name:      "ValidStringField",
-			fieldName: "name",
+			fieldName: fieldName,
 			value:     "John Doe",
 			fieldSchema: map[string]interface{}{
-				"type": "string",
+				keyType: typeString,
 			},
 			expectError: false,
 		},
 		{
 			name:      "InvalidStringFieldType",
-			fieldName: "name",
+			fieldName: fieldName,
 			value:     123,
 			fieldSchema: map[string]interface{}{
-				"type": "string",
+				keyType: typeString,
 			},
 			expectError: true,
 			errorMsg:    "expected type string, got number",
@@ -427,7 +427,7 @@ func (s *ValidationTestSuite) TestValidateField() {
 			fieldName: "password",
 			value:     "123",
 			fieldSchema: map[string]interface{}{
-				"type":      "string",
+				keyType:     typeString,
 				"minLength": 8.0,
 			},
 			expectError: true,
@@ -438,7 +438,7 @@ func (s *ValidationTestSuite) TestValidateField() {
 			fieldName: "title",
 			value:     "This is a very long title that exceeds the maximum length",
 			fieldSchema: map[string]interface{}{
-				"type":      "string",
+				keyType:     typeString,
 				"maxLength": 20.0,
 			},
 			expectError: true,
@@ -449,7 +449,7 @@ func (s *ValidationTestSuite) TestValidateField() {
 			fieldName: "code",
 			value:     "ABC123",
 			fieldSchema: map[string]interface{}{
-				"type":    "string",
+				keyType:   typeString,
 				"pattern": "^[A-Z]{3}[0-9]{3}$",
 			},
 			expectError: false,
@@ -459,7 +459,7 @@ func (s *ValidationTestSuite) TestValidateField() {
 			fieldName: "code",
 			value:     "abc123",
 			fieldSchema: map[string]interface{}{
-				"type":    "string",
+				keyType:   typeString,
 				"pattern": "^[A-Z]{3}[0-9]{3}$",
 			},
 			expectError: true,
@@ -467,19 +467,19 @@ func (s *ValidationTestSuite) TestValidateField() {
 		},
 		{
 			name:      "ValidNumberField",
-			fieldName: "amount",
+			fieldName: fieldAmount,
 			value:     100.5,
 			fieldSchema: map[string]interface{}{
-				"type": "number",
+				keyType: typeNumber,
 			},
 			expectError: false,
 		},
 		{
 			name:      "NumberTooSmall",
-			fieldName: "amount",
+			fieldName: fieldAmount,
 			value:     -5.0,
 			fieldSchema: map[string]interface{}{
-				"type":    "number",
+				keyType:   typeNumber,
 				"minimum": 0.0,
 			},
 			expectError: true,
@@ -487,10 +487,10 @@ func (s *ValidationTestSuite) TestValidateField() {
 		},
 		{
 			name:      "NumberTooLarge",
-			fieldName: "amount",
+			fieldName: fieldAmount,
 			value:     1000.0,
 			fieldSchema: map[string]interface{}{
-				"type":    "number",
+				keyType:   typeNumber,
 				"maximum": 500.0,
 			},
 			expectError: true,
@@ -501,35 +501,35 @@ func (s *ValidationTestSuite) TestValidateField() {
 			fieldName: "active",
 			value:     true,
 			fieldSchema: map[string]interface{}{
-				"type": "boolean",
+				keyType: "boolean",
 			},
 			expectError: false,
 		},
 		{
 			name:        "InvalidFieldSchemaType",
 			fieldName:   "field",
-			value:       "value",
+			value:       strValue,
 			fieldSchema: "not_a_map",
 			expectError: true,
 			errorMsg:    "invalid field schema definition",
 		},
 		{
 			name:      "ValidEmailFormat",
-			fieldName: "email",
+			fieldName: fieldEmail,
 			value:     "user@example.com",
 			fieldSchema: map[string]interface{}{
-				"type":   "string",
-				"format": "email",
+				keyType:     typeString,
+				fieldFormat: fieldEmail,
 			},
 			expectError: false,
 		},
 		{
 			name:      "InvalidEmailFormat",
-			fieldName: "email",
+			fieldName: fieldEmail,
 			value:     "not-an-email",
 			fieldSchema: map[string]interface{}{
-				"type":   "string",
-				"format": "email",
+				keyType:     typeString,
+				fieldFormat: fieldEmail,
 			},
 			expectError: true,
 			errorMsg:    "invalid email format",
@@ -566,11 +566,11 @@ func (s *ValidationTestSuite) TestBuildValidationError() {
 	}{
 		{
 			name:        "CompleteError",
-			fieldPath:   "client_name",
+			fieldPath:   fieldClientName,
 			message:     "field is required",
 			suggestions: []string{"provide client name", "use client_id instead"},
 			expectedErr: &ValidationError{
-				Field:       "client_name",
+				Field:       fieldClientName,
 				Message:     "field is required",
 				Code:        "validation_failed",
 				Suggestions: []string{"provide client name", "use client_id instead"},
@@ -578,11 +578,11 @@ func (s *ValidationTestSuite) TestBuildValidationError() {
 		},
 		{
 			name:        "ErrorWithoutSuggestions",
-			fieldPath:   "amount",
+			fieldPath:   fieldAmount,
 			message:     "must be positive",
 			suggestions: nil,
 			expectedErr: &ValidationError{
-				Field:       "amount",
+				Field:       fieldAmount,
 				Message:     "must be positive",
 				Code:        "validation_failed",
 				Suggestions: nil,
@@ -639,7 +639,7 @@ func (s *ValidationTestSuite) TestContextCancellation() {
 		{
 			name: "ValidateFormatCancellation",
 			testFunc: func(ctx context.Context) error {
-				return s.validator.ValidateFormat(ctx, "field", "value", "unknown")
+				return s.validator.ValidateFormat(ctx, "field", strValue, "unknown")
 			},
 		},
 		{
@@ -665,13 +665,13 @@ func (s *ValidationTestSuite) TestContextCancellation() {
 func (s *ValidationTestSuite) TestConcurrentValidation() {
 	ctx := context.Background()
 	schema := map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"name": map[string]interface{}{
-				"type": "string",
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			fieldName: map[string]interface{}{
+				keyType: typeString,
 			},
 		},
-		"required": []interface{}{"name"},
+		keyRequired: []interface{}{fieldName},
 	}
 
 	// Setup logger expectations for concurrent access
@@ -683,7 +683,7 @@ func (s *ValidationTestSuite) TestConcurrentValidation() {
 			defer func() { done <- true }()
 
 			input := map[string]interface{}{
-				"name": "concurrent_test",
+				fieldName: "concurrent_test",
 			}
 
 			err := s.validator.ValidateAgainstSchema(ctx, input, schema)
@@ -707,7 +707,7 @@ func (s *ValidationTestSuite) TestFormatValidatorEdgeCases() {
 	}{
 		{
 			name:        "DateWithTime",
-			format:      "date",
+			format:      fieldDate,
 			value:       "2025-08-03T10:30:00Z",
 			expectError: true,
 		},
@@ -719,7 +719,7 @@ func (s *ValidationTestSuite) TestFormatValidatorEdgeCases() {
 		},
 		{
 			name:        "EmailWithDisplayName",
-			format:      "email",
+			format:      fieldEmail,
 			value:       "John Doe <john@example.com>",
 			expectError: false,
 		},
@@ -767,44 +767,44 @@ func (s *ValidationTestSuite) TestFormatValidatorEdgeCases() {
 func (s *ValidationTestSuite) TestComplexSchemaValidation() {
 	ctx := context.Background()
 	complexSchema := map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"invoice": map[string]interface{}{
-				"type": "object",
-				"properties": map[string]interface{}{
-					"number": map[string]interface{}{
-						"type":    "string",
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			fieldInvoice: map[string]interface{}{
+				keyType: keyObject,
+				keyProperties: map[string]interface{}{
+					typeNumber: map[string]interface{}{
+						keyType:   typeString,
 						"pattern": "^INV-[0-9]{3,6}$",
 					},
-					"amount": map[string]interface{}{
-						"type":    "number",
+					fieldAmount: map[string]interface{}{
+						keyType:   typeNumber,
 						"minimum": 0.01,
 						"maximum": 1000000.0,
 					},
 					"due_date": map[string]interface{}{
-						"type":   "string",
-						"format": "date",
+						keyType:     typeString,
+						fieldFormat: fieldDate,
 					},
 				},
-				"required": []interface{}{"number", "amount"},
+				keyRequired: []interface{}{typeNumber, fieldAmount},
 			},
-			"client": map[string]interface{}{
-				"type": "object",
-				"properties": map[string]interface{}{
-					"email": map[string]interface{}{
-						"type":   "string",
-						"format": "email",
+			fieldClient: map[string]interface{}{
+				keyType: keyObject,
+				keyProperties: map[string]interface{}{
+					fieldEmail: map[string]interface{}{
+						keyType:     typeString,
+						fieldFormat: fieldEmail,
 					},
-					"name": map[string]interface{}{
-						"type":      "string",
+					fieldName: map[string]interface{}{
+						keyType:     typeString,
 						"minLength": 1.0,
 						"maxLength": 100.0,
 					},
 				},
-				"required": []interface{}{"email", "name"},
+				keyRequired: []interface{}{fieldEmail, fieldName},
 			},
 		},
-		"required": []interface{}{"invoice", "client"},
+		keyRequired: []interface{}{fieldInvoice, fieldClient},
 	}
 
 	tests := []struct {
@@ -816,14 +816,14 @@ func (s *ValidationTestSuite) TestComplexSchemaValidation() {
 		{
 			name: "ValidComplexInput",
 			input: map[string]interface{}{
-				"invoice": map[string]interface{}{
-					"number":   "INV-12345",
-					"amount":   250.75,
-					"due_date": "2025-09-01",
+				fieldInvoice: map[string]interface{}{
+					typeNumber:  "INV-12345",
+					fieldAmount: 250.75,
+					"due_date":  "2025-09-01",
 				},
-				"client": map[string]interface{}{
-					"email": "client@example.com",
-					"name":  "Acme Corporation",
+				fieldClient: map[string]interface{}{
+					fieldEmail: "client@example.com",
+					fieldName:  "Acme Corporation",
 				},
 			},
 			expectError: false,
@@ -832,13 +832,13 @@ func (s *ValidationTestSuite) TestComplexSchemaValidation() {
 		{
 			name: "InvalidInvoiceNumber",
 			input: map[string]interface{}{
-				"invoice": map[string]interface{}{
-					"number": "INVALID",
-					"amount": 250.75,
+				fieldInvoice: map[string]interface{}{
+					typeNumber:  "INVALID",
+					fieldAmount: 250.75,
 				},
-				"client": map[string]interface{}{
-					"email": "client@example.com",
-					"name":  "Acme Corporation",
+				fieldClient: map[string]interface{}{
+					fieldEmail: "client@example.com",
+					fieldName:  "Acme Corporation",
 				},
 			},
 			expectError: true,
@@ -847,12 +847,12 @@ func (s *ValidationTestSuite) TestComplexSchemaValidation() {
 		{
 			name: "MissingNestedRequired",
 			input: map[string]interface{}{
-				"invoice": map[string]interface{}{
-					"amount": 250.75,
+				fieldInvoice: map[string]interface{}{
+					fieldAmount: 250.75,
 				},
-				"client": map[string]interface{}{
-					"email": "client@example.com",
-					"name":  "Acme Corporation",
+				fieldClient: map[string]interface{}{
+					fieldEmail: "client@example.com",
+					fieldName:  "Acme Corporation",
 				},
 			},
 			expectError: true,
@@ -889,27 +889,27 @@ func BenchmarkDefaultInputValidator_ValidateAgainstSchema(b *testing.B) {
 	ctx := context.Background()
 
 	input := map[string]interface{}{
-		"name":   "Test Name",
-		"email":  "test@example.com",
-		"amount": 100.0,
+		fieldName:   "Test Name",
+		fieldEmail:  "test@example.com",
+		fieldAmount: 100.0,
 	}
 
 	schema := map[string]interface{}{
-		"type": "object",
-		"properties": map[string]interface{}{
-			"name": map[string]interface{}{
-				"type": "string",
+		keyType: keyObject,
+		keyProperties: map[string]interface{}{
+			fieldName: map[string]interface{}{
+				keyType: typeString,
 			},
-			"email": map[string]interface{}{
-				"type":   "string",
-				"format": "email",
+			fieldEmail: map[string]interface{}{
+				keyType:     typeString,
+				fieldFormat: fieldEmail,
 			},
-			"amount": map[string]interface{}{
-				"type":    "number",
+			fieldAmount: map[string]interface{}{
+				keyType:   typeNumber,
 				"minimum": 0.0,
 			},
 		},
-		"required": []interface{}{"name", "email", "amount"},
+		keyRequired: []interface{}{fieldName, fieldEmail, fieldAmount},
 	}
 
 	b.ResetTimer()
@@ -927,7 +927,7 @@ func BenchmarkDefaultInputValidator_ValidateFormat(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = validator.ValidateFormat(ctx, "email", "test@example.com", "email")
+		_ = validator.ValidateFormat(ctx, fieldEmail, "test@example.com", fieldEmail)
 	}
 }
 
@@ -942,7 +942,7 @@ func TestDefaultInputValidator_EdgeCases(t *testing.T) {
 
 	t.Run("EmptyInput", func(t *testing.T) {
 		err := validator.ValidateAgainstSchema(ctx, map[string]interface{}{}, map[string]interface{}{
-			"type": "object",
+			keyType: keyObject,
 		})
 		assert.NoError(t, err, "Empty input should be valid for object schema without required fields")
 	})
@@ -954,23 +954,23 @@ func TestDefaultInputValidator_EdgeCases(t *testing.T) {
 
 	t.Run("SchemaWithoutType", func(t *testing.T) {
 		err := validator.ValidateAgainstSchema(ctx, map[string]interface{}{}, map[string]interface{}{
-			"properties": map[string]interface{}{},
+			keyProperties: map[string]interface{}{},
 		})
 		assert.NoError(t, err, "Should handle schema without type field")
 	})
 
 	t.Run("InvalidPatternInSchema", func(t *testing.T) {
 		schema := map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
+			keyType: keyObject,
+			keyProperties: map[string]interface{}{
 				"field": map[string]interface{}{
-					"type":    "string",
+					keyType:   typeString,
 					"pattern": "[",
 				},
 			},
 		}
 		input := map[string]interface{}{
-			"field": "test",
+			"field": strTest,
 		}
 		err := validator.ValidateAgainstSchema(ctx, input, schema)
 		assert.Error(t, err, "Should return error for invalid regex pattern")
@@ -985,12 +985,12 @@ func TestFormatValidators_EdgeCases(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("LeapYearDate", func(t *testing.T) {
-		err := validator.ValidateFormat(ctx, "date", "2024-02-29", "date")
+		err := validator.ValidateFormat(ctx, fieldDate, "2024-02-29", fieldDate)
 		assert.NoError(t, err, "Should handle leap year dates")
 	})
 
 	t.Run("InvalidLeapYearDate", func(t *testing.T) {
-		err := validator.ValidateFormat(ctx, "date", "2023-02-29", "date")
+		err := validator.ValidateFormat(ctx, fieldDate, "2023-02-29", fieldDate)
 		assert.Error(t, err, "Should reject invalid leap year dates")
 	})
 
@@ -1000,7 +1000,7 @@ func TestFormatValidators_EdgeCases(t *testing.T) {
 	})
 
 	t.Run("EmailWithSpecialCharacters", func(t *testing.T) {
-		err := validator.ValidateFormat(ctx, "email", "test+tag@example.co.uk", "email")
+		err := validator.ValidateFormat(ctx, fieldEmail, "test+tag@example.co.uk", fieldEmail)
 		assert.NoError(t, err, "Should handle email with special characters")
 	})
 
@@ -1028,7 +1028,7 @@ func TestValidation_RaceConditions(t *testing.T) {
 		for i := 0; i < 100; i++ {
 			go func(_ int) {
 				defer func() { done <- true }()
-				err := validator.ValidateFormat(ctx, "email", "test@example.com", "email")
+				err := validator.ValidateFormat(ctx, fieldEmail, "test@example.com", fieldEmail)
 				assert.NoError(t, err)
 			}(i)
 		}
@@ -1040,10 +1040,10 @@ func TestValidation_RaceConditions(t *testing.T) {
 
 	t.Run("ConcurrentSchemaValidation", func(t *testing.T) {
 		schema := map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"name": map[string]interface{}{
-					"type": "string",
+			keyType: keyObject,
+			keyProperties: map[string]interface{}{
+				fieldName: map[string]interface{}{
+					keyType: typeString,
 				},
 			},
 		}
@@ -1053,7 +1053,7 @@ func TestValidation_RaceConditions(t *testing.T) {
 			go func(_ int) {
 				defer func() { done <- true }()
 				input := map[string]interface{}{
-					"name": "concurrent_test",
+					fieldName: "concurrent_test",
 				}
 				err := validator.ValidateAgainstSchema(ctx, input, schema)
 				assert.NoError(t, err)

@@ -241,7 +241,7 @@ func (s *ConfigTestSuite) TestApplyEnvironmentOverrides() {
 func (s *ConfigTestSuite) TestGetConfigPath() {
 	// Test command line argument
 	originalArgs := os.Args
-	os.Args = []string{"program", "--config", "/test/config.json"}
+	os.Args = []string{testProgramName, "--config", "/test/config.json"}
 	defer func() { os.Args = originalArgs }()
 
 	path := getConfigPath()
@@ -251,7 +251,7 @@ func (s *ConfigTestSuite) TestGetConfigPath() {
 func (s *ConfigTestSuite) TestGetConfigPathEnvironment() {
 	// Clear args and test environment
 	originalArgs := os.Args
-	os.Args = []string{"program"}
+	os.Args = []string{testProgramName}
 	defer func() { os.Args = originalArgs }()
 
 	err := os.Setenv("MCP_CONFIG_PATH", "/env/config.json")

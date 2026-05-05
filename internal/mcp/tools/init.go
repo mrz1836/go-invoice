@@ -350,7 +350,7 @@ func (tsi *ToolSystemInitializer) validateSystemIntegrity(ctx context.Context) e
 
 	// Validate discovery service is functional
 	searchCriteria := &ToolSearchCriteria{
-		Query:      "invoice",
+		Query:      fieldInvoice,
 		MaxResults: 10,
 	}
 

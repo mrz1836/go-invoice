@@ -17,22 +17,22 @@ func (s *GenerateSchemasTestSuite) TestGenerateHTMLSchema() {
 
 	s.Run("BasicStructure", func() {
 		s.NotNil(schema, "Schema should not be nil")
-		s.Equal("object", schema["type"], "Schema type should be object")
+		s.Equal(keyObject, schema[keyType], "Schema type should be object")
 
 		// Should have properties
-		properties, hasProperties := schema["properties"]
+		properties, hasProperties := schema[keyProperties]
 		s.True(hasProperties, "Schema should have properties")
 		s.IsType(map[string]interface{}{}, properties, "Properties should be a map")
 	})
 
 	s.Run("InvoiceIdentifierFields", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 
 		// Should have invoice_id field
-		if invoiceIDField, hasID := properties["invoice_id"]; hasID {
+		if invoiceIDField, hasID := properties[keyInvoiceID]; hasID {
 			if idMap, ok := invoiceIDField.(map[string]interface{}); ok {
-				s.Equal("string", idMap["type"], "Invoice ID should be string type")
-				s.Contains(idMap, "minLength", "Invoice ID should have minimum length")
+				s.Equal(typeString, idMap[keyType], "Invoice ID should be string type")
+				s.Contains(idMap, keyMinLength, "Invoice ID should have minimum length")
 				s.Contains(idMap, "examples", "Invoice ID should have examples")
 			}
 		}
@@ -40,8 +40,8 @@ func (s *GenerateSchemasTestSuite) TestGenerateHTMLSchema() {
 		// Should have invoice_number field
 		if invoiceNumField, hasNum := properties["invoice_number"]; hasNum {
 			if numMap, ok := invoiceNumField.(map[string]interface{}); ok {
-				s.Equal("string", numMap["type"], "Invoice number should be string type")
-				s.Contains(numMap, "minLength", "Invoice number should have minimum length")
+				s.Equal(typeString, numMap[keyType], "Invoice number should be string type")
+				s.Contains(numMap, keyMinLength, "Invoice number should have minimum length")
 				s.Contains(numMap, "examples", "Invoice number should have examples")
 			}
 		}
@@ -49,15 +49,15 @@ func (s *GenerateSchemasTestSuite) TestGenerateHTMLSchema() {
 		// Should have batch_invoices field
 		if batchField, hasBatch := properties["batch_invoices"]; hasBatch {
 			if batchMap, ok := batchField.(map[string]interface{}); ok {
-				s.Equal("array", batchMap["type"], "Batch invoices should be array type")
+				s.Equal(typeArray, batchMap[keyType], "Batch invoices should be array type")
 				s.Contains(batchMap, "minItems", "Batch invoices should have minimum items")
 				s.Contains(batchMap, "maxItems", "Batch invoices should have maximum items")
 
 				// Check items schema
 				if items, hasItems := batchMap["items"]; hasItems {
 					if itemsMap, ok := items.(map[string]interface{}); ok {
-						s.Equal("string", itemsMap["type"], "Batch invoice items should be strings")
-						s.Contains(itemsMap, "minLength", "Batch invoice items should have minimum length")
+						s.Equal(typeString, itemsMap[keyType], "Batch invoice items should be strings")
+						s.Contains(itemsMap, keyMinLength, "Batch invoice items should have minimum length")
 					}
 				}
 			}
@@ -65,12 +65,12 @@ func (s *GenerateSchemasTestSuite) TestGenerateHTMLSchema() {
 	})
 
 	s.Run("TemplateField", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		templateField, hasTemplate := properties["template"]
 		s.True(hasTemplate, "Should have template field")
 
 		if templateMap, ok := templateField.(map[string]interface{}); ok {
-			s.Equal("string", templateMap["type"], "Template should be string type")
+			s.Equal(typeString, templateMap[keyType], "Template should be string type")
 			s.Equal("default", templateMap["default"], "Template should default to 'default'")
 
 			// Should have valid template options
@@ -86,12 +86,12 @@ func (s *GenerateSchemasTestSuite) TestGenerateHTMLSchema() {
 	})
 
 	s.Run("CustomizationFields", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 
 		// Test custom_css field
 		if cssField, hasCSS := properties["custom_css"]; hasCSS {
 			if cssMap, ok := cssField.(map[string]interface{}); ok {
-				s.Equal("string", cssMap["type"], "Custom CSS should be string type")
+				s.Equal(typeString, cssMap[keyType], "Custom CSS should be string type")
 				s.Contains(cssMap, "examples", "Custom CSS should have examples")
 			}
 		}
@@ -99,8 +99,8 @@ func (s *GenerateSchemasTestSuite) TestGenerateHTMLSchema() {
 		// Test company_name field
 		if companyField, hasCompany := properties["company_name"]; hasCompany {
 			if companyMap, ok := companyField.(map[string]interface{}); ok {
-				s.Equal("string", companyMap["type"], "Company name should be string type")
-				s.Contains(companyMap, "maxLength", "Company name should have max length")
+				s.Equal(typeString, companyMap[keyType], "Company name should be string type")
+				s.Contains(companyMap, keyMaxLength, "Company name should have max length")
 				s.Contains(companyMap, "examples", "Company name should have examples")
 			}
 		}
@@ -108,22 +108,22 @@ func (s *GenerateSchemasTestSuite) TestGenerateHTMLSchema() {
 		// Test footer_text field
 		if footerField, hasFooter := properties["footer_text"]; hasFooter {
 			if footerMap, ok := footerField.(map[string]interface{}); ok {
-				s.Equal("string", footerMap["type"], "Footer text should be string type")
-				s.Contains(footerMap, "maxLength", "Footer text should have max length")
+				s.Equal(typeString, footerMap[keyType], "Footer text should be string type")
+				s.Contains(footerMap, keyMaxLength, "Footer text should have max length")
 				s.Contains(footerMap, "examples", "Footer text should have examples")
 			}
 		}
 	})
 
 	s.Run("BooleanFields", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		booleanFields := []string{"include_logo", "include_notes", "auto_name", "web_preview", "return_html"}
 
 		for _, fieldName := range booleanFields {
 			if field, hasField := properties[fieldName]; hasField {
 				if fieldMap, ok := field.(map[string]interface{}); ok {
-					s.Equal("boolean", fieldMap["type"], "Field %s should be boolean type", fieldName)
-					s.Contains(fieldMap, "description", "Field %s should have description", fieldName)
+					s.Equal(typeBoolean, fieldMap[keyType], "Field %s should be boolean type", fieldName)
+					s.Contains(fieldMap, keyDescription, "Field %s should have description", fieldName)
 					// Some boolean fields should have defaults
 					if fieldName == "include_logo" || fieldName == "include_notes" || fieldName == "auto_name" || fieldName == "web_preview" || fieldName == "return_html" {
 						s.Contains(fieldMap, "default", "Field %s should have default", fieldName)
@@ -134,12 +134,12 @@ func (s *GenerateSchemasTestSuite) TestGenerateHTMLSchema() {
 	})
 
 	s.Run("OutputFields", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 
 		// Test output_path field
 		if pathField, hasPath := properties["output_path"]; hasPath {
 			if pathMap, ok := pathField.(map[string]interface{}); ok {
-				s.Equal("string", pathMap["type"], "Output path should be string type")
+				s.Equal(typeString, pathMap[keyType], "Output path should be string type")
 				s.Contains(pathMap, "examples", "Output path should have examples")
 			}
 		}
@@ -147,7 +147,7 @@ func (s *GenerateSchemasTestSuite) TestGenerateHTMLSchema() {
 		// Test output_dir field
 		if dirField, hasDir := properties["output_dir"]; hasDir {
 			if dirMap, ok := dirField.(map[string]interface{}); ok {
-				s.Equal("string", dirMap["type"], "Output dir should be string type")
+				s.Equal(typeString, dirMap[keyType], "Output dir should be string type")
 				s.Contains(dirMap, "examples", "Output dir should have examples")
 			}
 		}
@@ -164,7 +164,7 @@ func (s *GenerateSchemasTestSuite) TestGenerateHTMLSchema() {
 		}
 
 		// Should not allow additional properties
-		additionalProps, hasAdditional := schema["additionalProperties"]
+		additionalProps, hasAdditional := schema[keyAdditionalProperties]
 		s.True(hasAdditional, "Should specify additionalProperties")
 		s.False(additionalProps.(bool), "Should not allow additional properties")
 	})
@@ -175,17 +175,17 @@ func (s *GenerateSchemasTestSuite) TestGenerateSummarySchema() {
 
 	s.Run("BasicStructure", func() {
 		s.NotNil(schema, "Schema should not be nil")
-		s.Equal("object", schema["type"], "Schema type should be object")
-		s.Contains(schema, "properties", "Schema should have properties")
+		s.Equal(keyObject, schema[keyType], "Schema type should be object")
+		s.Contains(schema, keyProperties, "Schema should have properties")
 	})
 
 	s.Run("SummaryTypeField", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		summaryTypeField, hasSummaryType := properties["summary_type"]
 		s.True(hasSummaryType, "Should have summary_type field")
 
 		if summaryMap, ok := summaryTypeField.(map[string]interface{}); ok {
-			s.Equal("string", summaryMap["type"], "Summary type should be string type")
+			s.Equal(typeString, summaryMap[keyType], "Summary type should be string type")
 			s.Equal("revenue", summaryMap["default"], "Summary type should default to 'revenue'")
 
 			// Should have valid summary type options
@@ -201,18 +201,18 @@ func (s *GenerateSchemasTestSuite) TestGenerateSummarySchema() {
 	})
 
 	s.Run("PeriodField", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		periodField, hasPeriod := properties["period"]
 		s.True(hasPeriod, "Should have period field")
 
 		if periodMap, ok := periodField.(map[string]interface{}); ok {
-			s.Equal("string", periodMap["type"], "Period should be string type")
+			s.Equal(typeString, periodMap[keyType], "Period should be string type")
 		}
 	})
 
 	s.Run("ValidationStructure", func() {
 		// Should follow same validation patterns as other schemas
-		additionalProps, hasAdditional := schema["additionalProperties"]
+		additionalProps, hasAdditional := schema[keyAdditionalProperties]
 		s.True(hasAdditional, "Should specify additionalProperties")
 		s.False(additionalProps.(bool), "Should not allow additional properties")
 	})
@@ -223,19 +223,19 @@ func (s *GenerateSchemasTestSuite) TestExportDataSchema() {
 
 	s.Run("BasicStructure", func() {
 		s.NotNil(schema, "Schema should not be nil")
-		s.Equal("object", schema["type"], "Schema type should be object")
-		s.Contains(schema, "properties", "Schema should have properties")
+		s.Equal(keyObject, schema[keyType], "Schema type should be object")
+		s.Contains(schema, keyProperties, "Schema should have properties")
 	})
 
 	s.Run("SchemaValidation", func() {
 		// Should follow same validation patterns as other schemas
-		additionalProps, hasAdditional := schema["additionalProperties"]
+		additionalProps, hasAdditional := schema[keyAdditionalProperties]
 		s.True(hasAdditional, "Should specify additionalProperties")
 		s.False(additionalProps.(bool), "Should not allow additional properties")
 	})
 
 	s.Run("PropertyValidation", func() {
-		properties, hasProps := schema["properties"]
+		properties, hasProps := schema[keyProperties]
 		s.True(hasProps, "Schema should have properties")
 
 		if propsMap, ok := properties.(map[string]interface{}); ok {
@@ -247,8 +247,8 @@ func (s *GenerateSchemasTestSuite) TestExportDataSchema() {
 				s.IsType(map[string]interface{}{}, fieldDef, "Field %s should have definition map", fieldName)
 
 				if fieldMap, ok := fieldDef.(map[string]interface{}); ok {
-					s.Contains(fieldMap, "type", "Field %s should have type", fieldName)
-					s.Contains(fieldMap, "description", "Field %s should have description", fieldName)
+					s.Contains(fieldMap, keyType, "Field %s should have type", fieldName)
+					s.Contains(fieldMap, keyDescription, "Field %s should have description", fieldName)
 				}
 			}
 		}
@@ -266,17 +266,17 @@ func (s *GenerateSchemasTestSuite) TestGetAllGenerationSchemas() {
 			schema, exists := schemas[expectedSchema]
 			s.True(exists, "Should have schema: %s", expectedSchema)
 			s.NotNil(schema, "Schema %s should not be nil", expectedSchema)
-			s.Equal("object", schema["type"], "Schema %s should be object type", expectedSchema)
+			s.Equal(keyObject, schema[keyType], "Schema %s should be object type", expectedSchema)
 		}
 	})
 
 	s.Run("SchemaConsistency", func() {
 		// All schemas should have consistent structure
 		for schemaName, schema := range schemas {
-			s.Contains(schema, "type", "Schema %s should have type", schemaName)
-			s.Contains(schema, "properties", "Schema %s should have properties", schemaName)
-			s.Contains(schema, "additionalProperties", "Schema %s should specify additionalProperties", schemaName)
-			s.False(schema["additionalProperties"].(bool), "Schema %s should not allow additional properties", schemaName)
+			s.Contains(schema, keyType, "Schema %s should have type", schemaName)
+			s.Contains(schema, keyProperties, "Schema %s should have properties", schemaName)
+			s.Contains(schema, keyAdditionalProperties, "Schema %s should specify additionalProperties", schemaName)
+			s.False(schema[keyAdditionalProperties].(bool), "Schema %s should not allow additional properties", schemaName)
 		}
 	})
 
@@ -292,7 +292,7 @@ func (s *GenerateSchemasTestSuite) TestGetAllGenerationSchemas() {
 
 			schema1 := schemas1[schemaName]
 			schema2 := schemas2[schemaName]
-			s.Equal(schema1["type"], schema2["type"], "Schema %s type should be consistent", schemaName)
+			s.Equal(schema1[keyType], schema2[keyType], "Schema %s type should be consistent", schemaName)
 		}
 	})
 }
@@ -305,7 +305,7 @@ func (s *GenerateSchemasTestSuite) TestGetGenerationToolSchema() {
 			schema, exists := GetGenerationToolSchema(schemaName)
 			s.True(exists, "Schema %s should exist", schemaName)
 			s.NotNil(schema, "Schema %s should not be nil", schemaName)
-			s.Equal("object", schema["type"], "Schema %s should be object type", schemaName)
+			s.Equal(keyObject, schema[keyType], "Schema %s should be object type", schemaName)
 		}
 	})
 
@@ -347,11 +347,11 @@ func (s *GenerateSchemasTestSuite) TestSchemaConsistency() {
 	s.Run("TemplateFieldConsistency", func() {
 		// HTML generation schema should have template field with consistent structure
 		htmlSchema := GenerateHTMLSchema()
-		props, _ := htmlSchema["properties"].(map[string]interface{})
+		props, _ := htmlSchema[keyProperties].(map[string]interface{})
 
 		if templateField, hasTemplate := props["template"]; hasTemplate {
 			if templateMap, ok := templateField.(map[string]interface{}); ok {
-				s.Equal("string", templateMap["type"], "Template type should be string")
+				s.Equal(typeString, templateMap[keyType], "Template type should be string")
 				s.Contains(templateMap, "enum", "Template should have enum values")
 				s.Contains(templateMap, "default", "Template should have default value")
 			}
@@ -361,13 +361,13 @@ func (s *GenerateSchemasTestSuite) TestSchemaConsistency() {
 	s.Run("OutputFieldConsistency", func() {
 		// Output-related fields should be consistent across schemas
 		htmlSchema := GenerateHTMLSchema()
-		props, _ := htmlSchema["properties"].(map[string]interface{})
+		props, _ := htmlSchema[keyProperties].(map[string]interface{})
 
 		outputFields := []string{"output_path", "output_dir"}
 		for _, fieldName := range outputFields {
 			if field, hasField := props[fieldName]; hasField {
 				if fieldMap, ok := field.(map[string]interface{}); ok {
-					s.Equal("string", fieldMap["type"], "Output field %s should be string type", fieldName)
+					s.Equal(typeString, fieldMap[keyType], "Output field %s should be string type", fieldName)
 					s.Contains(fieldMap, "examples", "Output field %s should have examples", fieldName)
 				}
 			}
@@ -377,7 +377,7 @@ func (s *GenerateSchemasTestSuite) TestSchemaConsistency() {
 	s.Run("BooleanDefaultConsistency", func() {
 		// Boolean fields should have consistent default values where logical
 		htmlSchema := GenerateHTMLSchema()
-		props, _ := htmlSchema["properties"].(map[string]interface{})
+		props, _ := htmlSchema[keyProperties].(map[string]interface{})
 
 		// These boolean fields should default to false for safety
 		falseDefaultFields := []string{"include_logo", "include_notes", "auto_name", "web_preview", "return_html"}
@@ -403,8 +403,8 @@ func (s *GenerateSchemasTestSuite) TestSchemaEdgeCases() {
 		for _, schemaFunc := range schemas {
 			schema := schemaFunc()
 			s.NotEmpty(schema, "Schema should not be empty")
-			s.Contains(schema, "type", "Schema should have type field")
-			s.Contains(schema, "properties", "Schema should have properties field")
+			s.Contains(schema, keyType, "Schema should have type field")
+			s.Contains(schema, keyProperties, "Schema should have properties field")
 		}
 	})
 
@@ -418,7 +418,7 @@ func (s *GenerateSchemasTestSuite) TestSchemaEdgeCases() {
 
 		for schemaName, schemaFunc := range schemas {
 			schema := schemaFunc()
-			props, _ := schema["properties"].(map[string]interface{})
+			props, _ := schema[keyProperties].(map[string]interface{})
 			s.Greater(len(props), 3, "Schema %s should have more than 3 properties", schemaName)
 			s.Less(len(props), 50, "Schema %s should have fewer than 50 properties", schemaName)
 		}
@@ -433,11 +433,11 @@ func (s *GenerateSchemasTestSuite) TestSchemaEdgeCases() {
 		}
 
 		for i, schema := range schemas {
-			props, _ := schema["properties"].(map[string]interface{})
+			props, _ := schema[keyProperties].(map[string]interface{})
 			for propName, propDef := range props {
 				if propMap, ok := propDef.(map[string]interface{}); ok {
-					s.Contains(propMap, "description", "Property %s in schema %d should have description", propName, i)
-					if desc, hasDesc := propMap["description"]; hasDesc {
+					s.Contains(propMap, keyDescription, "Property %s in schema %d should have description", propName, i)
+					if desc, hasDesc := propMap[keyDescription]; hasDesc {
 						s.NotEmpty(desc, "Description for property %s should not be empty", propName)
 					}
 				}
@@ -448,7 +448,7 @@ func (s *GenerateSchemasTestSuite) TestSchemaEdgeCases() {
 	s.Run("EnumValidation", func() {
 		// Test that enum values are valid and consistent
 		htmlSchema := GenerateHTMLSchema()
-		props, _ := htmlSchema["properties"].(map[string]interface{})
+		props, _ := htmlSchema[keyProperties].(map[string]interface{})
 
 		if templateField, hasTemplate := props["template"]; hasTemplate {
 			if templateMap, ok := templateField.(map[string]interface{}); ok {
@@ -470,15 +470,15 @@ func (s *GenerateSchemasTestSuite) TestSchemaEdgeCases() {
 	s.Run("LengthConstraints", func() {
 		// Test that string fields with length constraints are properly configured
 		htmlSchema := GenerateHTMLSchema()
-		props, _ := htmlSchema["properties"].(map[string]interface{})
+		props, _ := htmlSchema[keyProperties].(map[string]interface{})
 
 		// Fields that should have length constraints
 		lengthFields := []string{"company_name", "footer_text"}
 		for _, fieldName := range lengthFields {
 			if field, hasField := props[fieldName]; hasField {
 				if fieldMap, ok := field.(map[string]interface{}); ok {
-					s.Contains(fieldMap, "maxLength", "Field %s should have maxLength constraint", fieldName)
-					if maxLength, hasMax := fieldMap["maxLength"]; hasMax {
+					s.Contains(fieldMap, keyMaxLength, "Field %s should have maxLength constraint", fieldName)
+					if maxLength, hasMax := fieldMap[keyMaxLength]; hasMax {
 						s.IsType(0, maxLength, "MaxLength should be numeric for field %s", fieldName)
 						s.Positive(maxLength.(int), "MaxLength should be positive for field %s", fieldName)
 					}
@@ -491,11 +491,11 @@ func (s *GenerateSchemasTestSuite) TestSchemaEdgeCases() {
 // Helper method to validate JSON Schema structure
 func (s *GenerateSchemasTestSuite) validateJSONSchema(schema map[string]interface{}, schemaName string) {
 	// Basic JSON Schema requirements
-	s.Contains(schema, "type", "%s should have type field", schemaName)
-	s.Equal("object", schema["type"], "%s should be object type", schemaName)
+	s.Contains(schema, keyType, "%s should have type field", schemaName)
+	s.Equal(keyObject, schema[keyType], "%s should be object type", schemaName)
 
 	// Properties validation
-	if properties, hasProps := schema["properties"]; hasProps {
+	if properties, hasProps := schema[keyProperties]; hasProps {
 		s.IsType(map[string]interface{}{}, properties, "%s properties should be map", schemaName)
 
 		if propsMap, ok := properties.(map[string]interface{}); ok {
@@ -505,20 +505,20 @@ func (s *GenerateSchemasTestSuite) validateJSONSchema(schema map[string]interfac
 
 				if fieldMap, ok := fieldDef.(map[string]interface{}); ok {
 					// Each field should have a type
-					if fieldType, hasType := fieldMap["type"]; hasType {
-						validTypes := []string{"string", "number", "boolean", "array", "object", "null"}
+					if fieldType, hasType := fieldMap[keyType]; hasType {
+						validTypes := []string{typeString, typeNumber, typeBoolean, typeArray, keyObject, "null"}
 						s.Contains(validTypes, fieldType, "Field %s should have valid type", fieldName)
 					}
 
 					// Each field should have a description
-					s.Contains(fieldMap, "description", "Field %s should have description", fieldName)
+					s.Contains(fieldMap, keyDescription, "Field %s should have description", fieldName)
 				}
 			}
 		}
 	}
 
 	// Additional properties should be explicitly set
-	s.Contains(schema, "additionalProperties", "%s should specify additionalProperties", schemaName)
+	s.Contains(schema, keyAdditionalProperties, "%s should specify additionalProperties", schemaName)
 }
 
 // TestGenerateSchemasTestSuite runs the complete generate schemas test suite
@@ -572,7 +572,7 @@ func TestGenerateSchemas_Specific(t *testing.T) {
 			schema := schemaFunc()
 			assert.NotNil(t, schema)
 			assert.IsType(t, map[string]interface{}{}, schema)
-			assert.Contains(t, schema, "type")
+			assert.Contains(t, schema, keyType)
 		}
 	})
 
@@ -606,12 +606,12 @@ func TestGenerateSchemas_Specific(t *testing.T) {
 
 	t.Run("ArrayFieldValidation", func(t *testing.T) {
 		schema := GenerateHTMLSchema()
-		props, _ := schema["properties"].(map[string]interface{})
+		props, _ := schema[keyProperties].(map[string]interface{})
 
 		// batch_invoices should have proper array constraints
 		if batchField, hasBatch := props["batch_invoices"]; hasBatch {
 			if batchMap, ok := batchField.(map[string]interface{}); ok {
-				assert.Equal(t, "array", batchMap["type"])
+				assert.Equal(t, typeArray, batchMap[keyType])
 				assert.Contains(t, batchMap, "minItems")
 				assert.Contains(t, batchMap, "maxItems")
 				assert.Contains(t, batchMap, "items")
@@ -636,27 +636,27 @@ func TestGenerateSchemas_EdgeCases(t *testing.T) {
 		}
 
 		for i, schema := range schemas {
-			assert.Contains(t, schema, "type", "Schema %d should have type", i)
-			assert.Equal(t, "object", schema["type"], "Schema %d should be object type", i)
-			assert.Contains(t, schema, "properties", "Schema %d should have properties", i)
+			assert.Contains(t, schema, keyType, "Schema %d should have type", i)
+			assert.Equal(t, keyObject, schema[keyType], "Schema %d should be object type", i)
+			assert.Contains(t, schema, keyProperties, "Schema %d should have properties", i)
 		}
 	})
 
 	t.Run("DefaultValueTypes", func(t *testing.T) {
 		// Test that default values match their field types
 		htmlSchema := GenerateHTMLSchema()
-		props, _ := htmlSchema["properties"].(map[string]interface{})
+		props, _ := htmlSchema[keyProperties].(map[string]interface{})
 
 		for fieldName, fieldDef := range props {
 			if fieldMap, ok := fieldDef.(map[string]interface{}); ok {
 				if defaultVal, hasDefault := fieldMap["default"]; hasDefault {
-					if fieldType, hasType := fieldMap["type"]; hasType {
+					if fieldType, hasType := fieldMap[keyType]; hasType {
 						switch fieldType {
-						case "boolean":
+						case typeBoolean:
 							assert.IsType(t, true, defaultVal, "Default for boolean field %s should be boolean", fieldName)
-						case "string":
+						case typeString:
 							assert.IsType(t, "", defaultVal, "Default for string field %s should be string", fieldName)
-						case "number":
+						case typeNumber:
 							// JSON unmarshaling can produce either int or float64
 							assert.True(t,
 								assert.IsType(t, 0, defaultVal) || assert.IsType(t, 0.0, defaultVal),
@@ -671,9 +671,9 @@ func TestGenerateSchemas_EdgeCases(t *testing.T) {
 	t.Run("ExamplesValidation", func(t *testing.T) {
 		// Test that example values are provided and valid
 		htmlSchema := GenerateHTMLSchema()
-		props, _ := htmlSchema["properties"].(map[string]interface{})
+		props, _ := htmlSchema[keyProperties].(map[string]interface{})
 
-		fieldsWithExamples := []string{"invoice_id", "invoice_number", "custom_css", "company_name", "footer_text", "output_path", "output_dir"}
+		fieldsWithExamples := []string{keyInvoiceID, "invoice_number", "custom_css", "company_name", "footer_text", "output_path", "output_dir"}
 		for _, fieldName := range fieldsWithExamples {
 			if field, hasField := props[fieldName]; hasField {
 				if fieldMap, ok := field.(map[string]interface{}); ok {

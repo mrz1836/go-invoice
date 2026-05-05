@@ -18,27 +18,27 @@ func (s *ConfigSchemasTestSuite) TestConfigShowSchema() {
 
 	s.Run("BasicStructure", func() {
 		s.NotNil(schema, "Schema should not be nil")
-		s.Equal("object", schema["type"], "Schema type should be object")
+		s.Equal(keyObject, schema[keyType], "Schema type should be object")
 
 		// Should have properties
-		properties, hasProperties := schema["properties"]
+		properties, hasProperties := schema[keyProperties]
 		s.True(hasProperties, "Schema should have properties")
 		s.IsType(map[string]interface{}{}, properties, "Properties should be a map")
 	})
 
 	s.Run("SectionField", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		sectionField, hasSection := properties["section"]
 		s.True(hasSection, "Should have section field")
 
 		if sectionMap, ok := sectionField.(map[string]interface{}); ok {
-			s.Equal("string", sectionMap["type"], "Section should be string type")
+			s.Equal(typeString, sectionMap[keyType], "Section should be string type")
 			s.Equal("all", sectionMap["default"], "Section should default to 'all'")
 
 			// Should have valid enum values
 			if enum, hasEnum := sectionMap["enum"]; hasEnum {
 				if enumSlice, ok := enum.([]string); ok {
-					expectedSections := []string{"all", "invoice_settings", "database", "email", "templates", "security", "integrations"}
+					expectedSections := []string{"all", "invoice_settings", "database", keyEmail, "templates", "security", "integrations"}
 					for _, expectedSection := range expectedSections {
 						s.Contains(enumSlice, expectedSection, "Should contain section: %s", expectedSection)
 					}
@@ -48,18 +48,18 @@ func (s *ConfigSchemasTestSuite) TestConfigShowSchema() {
 	})
 
 	s.Run("OutputFormatField", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		formatField, hasFormat := properties["output_format"]
 		s.True(hasFormat, "Should have output_format field")
 
 		if formatMap, ok := formatField.(map[string]interface{}); ok {
-			s.Equal("string", formatMap["type"], "Output format should be string type")
+			s.Equal(typeString, formatMap[keyType], "Output format should be string type")
 			s.Equal("yaml", formatMap["default"], "Output format should default to 'yaml'")
 
 			// Should have valid format options
 			if enum, hasEnum := formatMap["enum"]; hasEnum {
 				if enumSlice, ok := enum.([]string); ok {
-					expectedFormats := []string{"yaml", "json", "table", "text"}
+					expectedFormats := []string{"yaml", typeJSON, "table", "text"}
 					for _, expectedFormat := range expectedFormats {
 						s.Contains(enumSlice, expectedFormat, "Should contain format: %s", expectedFormat)
 					}
@@ -69,7 +69,7 @@ func (s *ConfigSchemasTestSuite) TestConfigShowSchema() {
 	})
 
 	s.Run("BooleanFields", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		booleanFields := []string{
 			"include_defaults", "show_descriptions", "exclude_sensitive",
 			"include_metadata", "include_sources", "show_overrides",
@@ -79,20 +79,20 @@ func (s *ConfigSchemasTestSuite) TestConfigShowSchema() {
 		for _, fieldName := range booleanFields {
 			if field, hasField := properties[fieldName]; hasField {
 				if fieldMap, ok := field.(map[string]interface{}); ok {
-					s.Equal("boolean", fieldMap["type"], "Field %s should be boolean type", fieldName)
-					s.Contains(fieldMap, "description", "Field %s should have description", fieldName)
+					s.Equal(typeBoolean, fieldMap[keyType], "Field %s should be boolean type", fieldName)
+					s.Contains(fieldMap, keyDescription, "Field %s should have description", fieldName)
 				}
 			}
 		}
 	})
 
 	s.Run("EnvironmentField", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		envField, hasEnv := properties["environment"]
 		s.True(hasEnv, "Should have environment field")
 
 		if envMap, ok := envField.(map[string]interface{}); ok {
-			s.Equal("string", envMap["type"], "Environment should be string type")
+			s.Equal(typeString, envMap[keyType], "Environment should be string type")
 
 			// Should have valid environment options
 			if enum, hasEnum := envMap["enum"]; hasEnum {
@@ -107,13 +107,13 @@ func (s *ConfigSchemasTestSuite) TestConfigShowSchema() {
 	})
 
 	s.Run("OutputPathField", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		pathField, hasPath := properties["output_path"]
 		s.True(hasPath, "Should have output_path field")
 
 		if pathMap, ok := pathField.(map[string]interface{}); ok {
-			s.Equal("string", pathMap["type"], "Output path should be string type")
-			s.Contains(pathMap, "description", "Output path should have description")
+			s.Equal(typeString, pathMap[keyType], "Output path should be string type")
+			s.Contains(pathMap, keyDescription, "Output path should have description")
 
 			// Should have examples
 			if examples, hasExamples := pathMap["examples"]; hasExamples {
@@ -123,7 +123,7 @@ func (s *ConfigSchemasTestSuite) TestConfigShowSchema() {
 	})
 
 	s.Run("NoAdditionalProperties", func() {
-		additionalProps, hasAdditional := schema["additionalProperties"]
+		additionalProps, hasAdditional := schema[keyAdditionalProperties]
 		s.True(hasAdditional, "Should specify additionalProperties")
 		s.False(additionalProps.(bool), "Should not allow additional properties")
 	})
@@ -134,12 +134,12 @@ func (s *ConfigSchemasTestSuite) TestConfigValidateSchema() {
 
 	s.Run("BasicStructure", func() {
 		s.NotNil(schema, "Schema should not be nil")
-		s.Equal("object", schema["type"], "Schema type should be object")
-		s.Contains(schema, "properties", "Schema should have properties")
+		s.Equal(keyObject, schema[keyType], "Schema type should be object")
+		s.Contains(schema, keyProperties, "Schema should have properties")
 	})
 
 	s.Run("ValidationFeatures", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		validationFields := []string{
 			"comprehensive", "check_dependencies", "test_connections",
 			"security_check", "performance_check", "compliance_check",
@@ -149,20 +149,20 @@ func (s *ConfigSchemasTestSuite) TestConfigValidateSchema() {
 		for _, fieldName := range validationFields {
 			if field, hasField := properties[fieldName]; hasField {
 				if fieldMap, ok := field.(map[string]interface{}); ok {
-					s.Equal("boolean", fieldMap["type"], "Field %s should be boolean type", fieldName)
-					s.Contains(fieldMap, "description", "Field %s should have description", fieldName)
+					s.Equal(typeBoolean, fieldMap[keyType], "Field %s should be boolean type", fieldName)
+					s.Contains(fieldMap, keyDescription, "Field %s should have description", fieldName)
 				}
 			}
 		}
 	})
 
 	s.Run("AutoFixFeatures", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 
 		// Test auto_fix_safe field
 		if autoFixField, hasAutoFix := properties["auto_fix_safe"]; hasAutoFix {
 			if autoFixMap, ok := autoFixField.(map[string]interface{}); ok {
-				s.Equal("boolean", autoFixMap["type"], "Auto fix should be boolean")
+				s.Equal(typeBoolean, autoFixMap[keyType], "Auto fix should be boolean")
 				s.Equal(false, autoFixMap["default"], "Auto fix should default to false")
 			}
 		}
@@ -170,25 +170,25 @@ func (s *ConfigSchemasTestSuite) TestConfigValidateSchema() {
 		// Test backup_before_fix field
 		if backupField, hasBackup := properties["backup_before_fix"]; hasBackup {
 			if backupMap, ok := backupField.(map[string]interface{}); ok {
-				s.Equal("boolean", backupMap["type"], "Backup should be boolean")
+				s.Equal(typeBoolean, backupMap[keyType], "Backup should be boolean")
 				s.Equal(true, backupMap["default"], "Backup should default to true")
 			}
 		}
 	})
 
 	s.Run("OutputFormatOptions", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		formatField, hasFormat := properties["output_format"]
 		s.True(hasFormat, "Should have output_format field")
 
 		if formatMap, ok := formatField.(map[string]interface{}); ok {
-			s.Equal("string", formatMap["type"], "Output format should be string type")
+			s.Equal(typeString, formatMap[keyType], "Output format should be string type")
 			s.Equal("detailed", formatMap["default"], "Output format should default to 'detailed'")
 
 			// Should have valid format options
 			if enum, hasEnum := formatMap["enum"]; hasEnum {
 				if enumSlice, ok := enum.([]string); ok {
-					expectedFormats := []string{"detailed", "summary", "json", "report", "interactive"}
+					expectedFormats := []string{"detailed", "summary", typeJSON, "report", "interactive"}
 					for _, expectedFormat := range expectedFormats {
 						s.Contains(enumSlice, expectedFormat, "Should contain format: %s", expectedFormat)
 					}
@@ -198,12 +198,12 @@ func (s *ConfigSchemasTestSuite) TestConfigValidateSchema() {
 	})
 
 	s.Run("EnvironmentValidation", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		envField, hasEnv := properties["environment"]
 		s.True(hasEnv, "Should have environment field")
 
 		if envMap, ok := envField.(map[string]interface{}); ok {
-			s.Equal("string", envMap["type"], "Environment should be string type")
+			s.Equal(typeString, envMap[keyType], "Environment should be string type")
 
 			if enum, hasEnum := envMap["enum"]; hasEnum {
 				if enumSlice, ok := enum.([]string); ok {
@@ -220,17 +220,17 @@ func (s *ConfigSchemasTestSuite) TestConfigInitSchema() {
 
 	s.Run("BasicStructure", func() {
 		s.NotNil(schema, "Schema should not be nil")
-		s.Equal("object", schema["type"], "Schema type should be object")
-		s.Contains(schema, "properties", "Schema should have properties")
+		s.Equal(keyObject, schema[keyType], "Schema type should be object")
+		s.Contains(schema, keyProperties, "Schema should have properties")
 	})
 
 	s.Run("TemplateField", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		templateField, hasTemplate := properties["template"]
 		s.True(hasTemplate, "Should have template field")
 
 		if templateMap, ok := templateField.(map[string]interface{}); ok {
-			s.Equal("string", templateMap["type"], "Template should be string type")
+			s.Equal(typeString, templateMap[keyType], "Template should be string type")
 			s.Equal("default", templateMap["default"], "Template should default to 'default'")
 
 			// Should have valid template options
@@ -246,13 +246,13 @@ func (s *ConfigSchemasTestSuite) TestConfigInitSchema() {
 	})
 
 	s.Run("CompanyConfigFields", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 
 		// Test company_name field
 		if companyField, hasCompany := properties["company_name"]; hasCompany {
 			if companyMap, ok := companyField.(map[string]interface{}); ok {
-				s.Equal("string", companyMap["type"], "Company name should be string type")
-				s.Contains(companyMap, "maxLength", "Company name should have max length")
+				s.Equal(typeString, companyMap[keyType], "Company name should be string type")
+				s.Contains(companyMap, keyMaxLength, "Company name should have max length")
 				s.Contains(companyMap, "examples", "Company name should have examples")
 			}
 		}
@@ -260,18 +260,18 @@ func (s *ConfigSchemasTestSuite) TestConfigInitSchema() {
 		// Test default_tax_rate field
 		if taxField, hasTax := properties["default_tax_rate"]; hasTax {
 			if taxMap, ok := taxField.(map[string]interface{}); ok {
-				s.Equal("number", taxMap["type"], "Tax rate should be number type")
-				s.Contains(taxMap, "minimum", "Tax rate should have minimum")
-				s.Contains(taxMap, "maximum", "Tax rate should have maximum")
-				s.Equal(0, taxMap["minimum"], "Tax rate minimum should be 0")
-				s.Equal(100, taxMap["maximum"], "Tax rate maximum should be 100")
+				s.Equal(typeNumber, taxMap[keyType], "Tax rate should be number type")
+				s.Contains(taxMap, keyMinimum, "Tax rate should have minimum")
+				s.Contains(taxMap, keyMaximum, "Tax rate should have maximum")
+				s.Equal(0, taxMap[keyMinimum], "Tax rate minimum should be 0")
+				s.Equal(100, taxMap[keyMaximum], "Tax rate maximum should be 100")
 			}
 		}
 
 		// Test currency field
 		if currencyField, hasCurrency := properties["currency"]; hasCurrency {
 			if currencyMap, ok := currencyField.(map[string]interface{}); ok {
-				s.Equal("string", currencyMap["type"], "Currency should be string type")
+				s.Equal(typeString, currencyMap[keyType], "Currency should be string type")
 				s.Equal("USD", currencyMap["default"], "Currency should default to USD")
 
 				if enum, hasEnum := currencyMap["enum"]; hasEnum {
@@ -287,34 +287,34 @@ func (s *ConfigSchemasTestSuite) TestConfigInitSchema() {
 	})
 
 	s.Run("CustomValuesField", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		customField, hasCustom := properties["custom_values"]
 		s.True(hasCustom, "Should have custom_values field")
 
 		if customMap, ok := customField.(map[string]interface{}); ok {
-			s.Equal("object", customMap["type"], "Custom values should be object type")
-			s.Equal(true, customMap["additionalProperties"], "Custom values should allow additional properties")
+			s.Equal(keyObject, customMap[keyType], "Custom values should be object type")
+			s.Equal(true, customMap[keyAdditionalProperties], "Custom values should allow additional properties")
 			s.Contains(customMap, "examples", "Custom values should have examples")
 		}
 	})
 
 	s.Run("IntegrationsField", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		integrationsField, hasIntegrations := properties["enable_integrations"]
 		s.True(hasIntegrations, "Should have enable_integrations field")
 
 		if integrationsMap, ok := integrationsField.(map[string]interface{}); ok {
-			s.Equal("array", integrationsMap["type"], "Integrations should be array type")
+			s.Equal(typeArray, integrationsMap[keyType], "Integrations should be array type")
 			s.Equal(true, integrationsMap["uniqueItems"], "Integrations should have unique items")
 
 			// Check items schema
 			if items, hasItems := integrationsMap["items"]; hasItems {
 				if itemsMap, ok := items.(map[string]interface{}); ok {
-					s.Equal("string", itemsMap["type"], "Integration items should be strings")
+					s.Equal(typeString, itemsMap[keyType], "Integration items should be strings")
 
 					if enum, hasEnum := itemsMap["enum"]; hasEnum {
 						if enumSlice, ok := enum.([]string); ok {
-							expectedIntegrations := []string{"quickbooks", "stripe", "email", "slack", "webhooks"}
+							expectedIntegrations := []string{"quickbooks", "stripe", keyEmail, "slack", "webhooks"}
 							for _, expectedIntegration := range expectedIntegrations {
 								s.Contains(enumSlice, expectedIntegration, "Should contain integration: %s", expectedIntegration)
 							}
@@ -326,14 +326,14 @@ func (s *ConfigSchemasTestSuite) TestConfigInitSchema() {
 	})
 
 	s.Run("FilePathFields", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		pathFields := []string{"config_path", "config_file", "import_from"}
 
 		for _, fieldName := range pathFields {
 			if field, hasField := properties[fieldName]; hasField {
 				if fieldMap, ok := field.(map[string]interface{}); ok {
-					s.Equal("string", fieldMap["type"], "Field %s should be string type", fieldName)
-					s.Contains(fieldMap, "description", "Field %s should have description", fieldName)
+					s.Equal(typeString, fieldMap[keyType], "Field %s should be string type", fieldName)
+					s.Contains(fieldMap, keyDescription, "Field %s should have description", fieldName)
 					s.Contains(fieldMap, "examples", "Field %s should have examples", fieldName)
 				}
 			}
@@ -341,7 +341,7 @@ func (s *ConfigSchemasTestSuite) TestConfigInitSchema() {
 	})
 
 	s.Run("BackupAndValidationFields", func() {
-		properties, _ := schema["properties"].(map[string]interface{})
+		properties, _ := schema[keyProperties].(map[string]interface{})
 		backupAndValidationFields := map[string]bool{
 			"backup_existing":  true,  // should default to true
 			"backup_original":  true,  // should default to true
@@ -357,7 +357,7 @@ func (s *ConfigSchemasTestSuite) TestConfigInitSchema() {
 		for fieldName, expectedDefault := range backupAndValidationFields {
 			if field, hasField := properties[fieldName]; hasField {
 				if fieldMap, ok := field.(map[string]interface{}); ok {
-					s.Equal("boolean", fieldMap["type"], "Field %s should be boolean type", fieldName)
+					s.Equal(typeBoolean, fieldMap[keyType], "Field %s should be boolean type", fieldName)
 					s.Equal(expectedDefault, fieldMap["default"], "Field %s should default to %v", fieldName, expectedDefault)
 				}
 			}
@@ -376,17 +376,17 @@ func (s *ConfigSchemasTestSuite) TestGetAllConfigSchemas() {
 			schema, exists := schemas[expectedSchema]
 			s.True(exists, "Should have schema: %s", expectedSchema)
 			s.NotNil(schema, "Schema %s should not be nil", expectedSchema)
-			s.Equal("object", schema["type"], "Schema %s should be object type", expectedSchema)
+			s.Equal(keyObject, schema[keyType], "Schema %s should be object type", expectedSchema)
 		}
 	})
 
 	s.Run("SchemaConsistency", func() {
 		// All schemas should have consistent structure
 		for schemaName, schema := range schemas {
-			s.Contains(schema, "type", "Schema %s should have type", schemaName)
-			s.Contains(schema, "properties", "Schema %s should have properties", schemaName)
-			s.Contains(schema, "additionalProperties", "Schema %s should specify additionalProperties", schemaName)
-			s.Equal(false, schema["additionalProperties"], "Schema %s should not allow additional properties", schemaName)
+			s.Contains(schema, keyType, "Schema %s should have type", schemaName)
+			s.Contains(schema, keyProperties, "Schema %s should have properties", schemaName)
+			s.Contains(schema, keyAdditionalProperties, "Schema %s should specify additionalProperties", schemaName)
+			s.Equal(false, schema[keyAdditionalProperties], "Schema %s should not allow additional properties", schemaName)
 		}
 	})
 
@@ -402,7 +402,7 @@ func (s *ConfigSchemasTestSuite) TestGetAllConfigSchemas() {
 
 			schema1 := schemas1[schemaName]
 			schema2 := schemas2[schemaName]
-			s.Equal(schema1["type"], schema2["type"], "Schema %s type should be consistent", schemaName)
+			s.Equal(schema1[keyType], schema2[keyType], "Schema %s type should be consistent", schemaName)
 		}
 	})
 }
@@ -415,7 +415,7 @@ func (s *ConfigSchemasTestSuite) TestGetConfigToolSchema() {
 			schema, exists := GetConfigToolSchema(schemaName)
 			s.True(exists, "Schema %s should exist", schemaName)
 			s.NotNil(schema, "Schema %s should not be nil", schemaName)
-			s.Equal("object", schema["type"], "Schema %s should be object type", schemaName)
+			s.Equal(keyObject, schema[keyType], "Schema %s should be object type", schemaName)
 		}
 	})
 
@@ -459,15 +459,15 @@ func (s *ConfigSchemasTestSuite) TestSchemaConsistency() {
 		showSchema := ConfigShowSchema()
 		validateSchema := ConfigValidateSchema()
 
-		showProps, _ := showSchema["properties"].(map[string]interface{})
-		validateProps, _ := validateSchema["properties"].(map[string]interface{})
+		showProps, _ := showSchema[keyProperties].(map[string]interface{})
+		validateProps, _ := validateSchema[keyProperties].(map[string]interface{})
 
 		if showSection, hasShow := showProps["section"]; hasShow {
 			if validateSection, hasValidate := validateProps["section"]; hasValidate {
 				showSectionMap := showSection.(map[string]interface{})
 				validateSectionMap := validateSection.(map[string]interface{})
 
-				s.Equal(showSectionMap["type"], validateSectionMap["type"], "Section type should be consistent")
+				s.Equal(showSectionMap[keyType], validateSectionMap[keyType], "Section type should be consistent")
 				s.Equal(showSectionMap["default"], validateSectionMap["default"], "Section default should be consistent")
 				s.Equal(showSectionMap["enum"], validateSectionMap["enum"], "Section enum should be consistent")
 			}
@@ -484,7 +484,7 @@ func (s *ConfigSchemasTestSuite) TestSchemaConsistency() {
 
 		var firstEnumValues []string
 		for i, schema := range schemas {
-			props, _ := schema["properties"].(map[string]interface{})
+			props, _ := schema[keyProperties].(map[string]interface{})
 			if envField, hasEnv := props["environment"]; hasEnv {
 				if envMap, ok := envField.(map[string]interface{}); ok {
 					if enum, hasEnum := envMap["enum"]; hasEnum {
@@ -504,7 +504,7 @@ func (s *ConfigSchemasTestSuite) TestSchemaConsistency() {
 	s.Run("BooleanDefaultConsistency", func() {
 		// Similar boolean fields should have consistent defaults where logical
 		initSchema := ConfigInitSchema()
-		props, _ := initSchema["properties"].(map[string]interface{})
+		props, _ := initSchema[keyProperties].(map[string]interface{})
 
 		// Backup-related fields should default to true for safety
 		backupFields := []string{"backup_existing", "backup_original"}
@@ -540,8 +540,8 @@ func (s *ConfigSchemasTestSuite) TestSchemaEdgeCases() {
 		for _, schemaFunc := range schemas {
 			schema := schemaFunc()
 			s.NotEmpty(schema, "Schema should not be empty")
-			s.Contains(schema, "type", "Schema should have type field")
-			s.Contains(schema, "properties", "Schema should have properties field")
+			s.Contains(schema, keyType, "Schema should have type field")
+			s.Contains(schema, keyProperties, "Schema should have properties field")
 		}
 	})
 
@@ -555,7 +555,7 @@ func (s *ConfigSchemasTestSuite) TestSchemaEdgeCases() {
 
 		for schemaName, schemaFunc := range schemas {
 			schema := schemaFunc()
-			props, _ := schema["properties"].(map[string]interface{})
+			props, _ := schema[keyProperties].(map[string]interface{})
 			s.Greater(len(props), 5, "Schema %s should have more than 5 properties", schemaName)
 			s.Less(len(props), 50, "Schema %s should have fewer than 50 properties", schemaName)
 		}
@@ -570,11 +570,11 @@ func (s *ConfigSchemasTestSuite) TestSchemaEdgeCases() {
 		}
 
 		for i, schema := range schemas {
-			props, _ := schema["properties"].(map[string]interface{})
+			props, _ := schema[keyProperties].(map[string]interface{})
 			for propName, propDef := range props {
 				if propMap, ok := propDef.(map[string]interface{}); ok {
-					s.Contains(propMap, "description", "Property %s in schema %d should have description", propName, i)
-					if desc, hasDesc := propMap["description"]; hasDesc {
+					s.Contains(propMap, keyDescription, "Property %s in schema %d should have description", propName, i)
+					if desc, hasDesc := propMap[keyDescription]; hasDesc {
 						s.NotEmpty(desc, "Description for property %s should not be empty", propName)
 					}
 				}
@@ -586,11 +586,11 @@ func (s *ConfigSchemasTestSuite) TestSchemaEdgeCases() {
 // Helper method to validate JSON Schema structure
 func (s *ConfigSchemasTestSuite) validateJSONSchema(schema map[string]interface{}, schemaName string) {
 	// Basic JSON Schema requirements
-	s.Contains(schema, "type", "%s should have type field", schemaName)
-	s.Equal("object", schema["type"], "%s should be object type", schemaName)
+	s.Contains(schema, keyType, "%s should have type field", schemaName)
+	s.Equal(keyObject, schema[keyType], "%s should be object type", schemaName)
 
 	// Properties validation
-	if properties, hasProps := schema["properties"]; hasProps {
+	if properties, hasProps := schema[keyProperties]; hasProps {
 		s.IsType(map[string]interface{}{}, properties, "%s properties should be map", schemaName)
 
 		if propsMap, ok := properties.(map[string]interface{}); ok {
@@ -600,20 +600,20 @@ func (s *ConfigSchemasTestSuite) validateJSONSchema(schema map[string]interface{
 
 				if fieldMap, ok := fieldDef.(map[string]interface{}); ok {
 					// Each field should have a type
-					if fieldType, hasType := fieldMap["type"]; hasType {
-						validTypes := []string{"string", "number", "boolean", "array", "object", "null"}
+					if fieldType, hasType := fieldMap[keyType]; hasType {
+						validTypes := []string{typeString, typeNumber, typeBoolean, typeArray, keyObject, "null"}
 						s.Contains(validTypes, fieldType, "Field %s should have valid type", fieldName)
 					}
 
 					// Each field should have a description
-					s.Contains(fieldMap, "description", "Field %s should have description", fieldName)
+					s.Contains(fieldMap, keyDescription, "Field %s should have description", fieldName)
 				}
 			}
 		}
 	}
 
 	// Additional properties should be explicitly set
-	s.Contains(schema, "additionalProperties", "%s should specify additionalProperties", schemaName)
+	s.Contains(schema, keyAdditionalProperties, "%s should specify additionalProperties", schemaName)
 }
 
 // TestConfigSchemasTestSuite runs the complete config schemas test suite
@@ -667,7 +667,7 @@ func TestConfigSchemas_Specific(t *testing.T) {
 			schema := schemaFunc()
 			assert.NotNil(t, schema)
 			assert.IsType(t, map[string]interface{}{}, schema)
-			assert.Contains(t, schema, "type")
+			assert.Contains(t, schema, keyType)
 		}
 	})
 
@@ -691,22 +691,22 @@ func TestConfigSchemas_Specific(t *testing.T) {
 	t.Run("SchemaFieldValidation", func(t *testing.T) {
 		// Test specific field validations
 		initSchema := ConfigInitSchema()
-		props, _ := initSchema["properties"].(map[string]interface{})
+		props, _ := initSchema[keyProperties].(map[string]interface{})
 
 		// Tax rate field should have proper bounds
 		if taxField, hasTax := props["default_tax_rate"]; hasTax {
 			if taxMap, ok := taxField.(map[string]interface{}); ok {
-				assert.Equal(t, "number", taxMap["type"])
-				assert.Equal(t, 0, taxMap["minimum"])
-				assert.Equal(t, 100, taxMap["maximum"])
+				assert.Equal(t, typeNumber, taxMap[keyType])
+				assert.Equal(t, 0, taxMap[keyMinimum])
+				assert.Equal(t, 100, taxMap[keyMaximum])
 			}
 		}
 
 		// Company name should have max length
 		if companyField, hasCompany := props["company_name"]; hasCompany {
 			if companyMap, ok := companyField.(map[string]interface{}); ok {
-				assert.Equal(t, "string", companyMap["type"])
-				assert.Contains(t, companyMap, "maxLength")
+				assert.Equal(t, typeString, companyMap[keyType])
+				assert.Contains(t, companyMap, keyMaxLength)
 			}
 		}
 	})
@@ -728,9 +728,9 @@ func TestConfigSchemas_EdgeCases(t *testing.T) {
 		}
 
 		for i, schema := range schemas {
-			assert.Contains(t, schema, "type", "Schema %d should have type", i)
-			assert.Equal(t, "object", schema["type"], "Schema %d should be object type", i)
-			assert.Contains(t, schema, "properties", "Schema %d should have properties", i)
+			assert.Contains(t, schema, keyType, "Schema %d should have type", i)
+			assert.Equal(t, keyObject, schema[keyType], "Schema %d should be object type", i)
+			assert.Contains(t, schema, keyProperties, "Schema %d should have properties", i)
 		}
 	})
 
@@ -742,7 +742,7 @@ func TestConfigSchemas_EdgeCases(t *testing.T) {
 		}
 
 		for _, schema := range schemas {
-			props, _ := schema["properties"].(map[string]interface{})
+			props, _ := schema[keyProperties].(map[string]interface{})
 			if sectionField, hasSection := props["section"]; hasSection {
 				if sectionMap, ok := sectionField.(map[string]interface{}); ok {
 					if enum, hasEnum := sectionMap["enum"]; hasEnum {
@@ -759,18 +759,18 @@ func TestConfigSchemas_EdgeCases(t *testing.T) {
 	t.Run("DefaultValueTypes", func(t *testing.T) {
 		// Test that default values match their field types
 		initSchema := ConfigInitSchema()
-		props, _ := initSchema["properties"].(map[string]interface{})
+		props, _ := initSchema[keyProperties].(map[string]interface{})
 
 		for fieldName, fieldDef := range props {
 			if fieldMap, ok := fieldDef.(map[string]interface{}); ok {
 				if defaultVal, hasDefault := fieldMap["default"]; hasDefault {
-					if fieldType, hasType := fieldMap["type"]; hasType {
+					if fieldType, hasType := fieldMap[keyType]; hasType {
 						switch fieldType {
-						case "boolean":
+						case typeBoolean:
 							assert.IsType(t, true, defaultVal, "Default for boolean field %s should be boolean", fieldName)
-						case "string":
+						case typeString:
 							assert.IsType(t, "", defaultVal, "Default for string field %s should be string", fieldName)
-						case "number":
+						case typeNumber:
 							// JSON unmarshaling can produce either int or float64
 							assert.True(t,
 								assert.IsType(t, 0, defaultVal) || assert.IsType(t, 0.0, defaultVal),

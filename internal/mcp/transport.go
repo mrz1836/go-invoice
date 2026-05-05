@@ -76,7 +76,7 @@ type TransportConfig struct {
 func DefaultTransportConfig() *TransportConfig {
 	return &TransportConfig{
 		Type:           types.TransportStdio,
-		Host:           "localhost",
+		Host:           defaultHost,
 		Port:           0, // Auto-assign
 		ReadTimeout:    30 * time.Second,
 		WriteTimeout:   30 * time.Second,

@@ -185,7 +185,7 @@ func (cm *CategoryManager) GetCategoryMetadata(ctx context.Context, category Cat
 		return nil, fmt.Errorf("category %s: %w", category, ErrUnknownCategory)
 	}
 
-	cm.logger.Debug("category metadata retrieved", "category", category, "name", metadata.Name)
+	cm.logger.Debug("category metadata retrieved", "category", category, fieldName, metadata.Name)
 
 	// Return defensive copy to prevent external modification
 	metadataCopy := *metadata
@@ -483,7 +483,7 @@ func (cm *CategoryManager) initializeCategoryMetadata() {
 	cm.categoryMetadata[CategoryInvoiceManagement] = &CategoryMetadata{
 		Name:        "Invoice Management",
 		Description: "Tools for creating, updating, and managing invoices throughout their lifecycle",
-		Keywords:    []string{"invoice", "create", "update", "manage", "billing", "payment", "due date", "client"},
+		Keywords:    []string{fieldInvoice, "create", "update", "manage", "billing", "payment", "due date", fieldClient},
 		UseCases: []string{
 			"Creating new invoices for clients",
 			"Updating invoice details and metadata",
@@ -497,7 +497,7 @@ func (cm *CategoryManager) initializeCategoryMetadata() {
 	cm.categoryMetadata[CategoryDataImport] = &CategoryMetadata{
 		Name:        "Data Import",
 		Description: "Tools for importing timesheet data, client information, and other external data",
-		Keywords:    []string{"import", "csv", "timesheet", "data", "upload", "file", "spreadsheet", "hours"},
+		Keywords:    []string{"import", "csv", "timesheet", "data", "upload", "file", "spreadsheet", fieldHours},
 		UseCases: []string{
 			"Importing timesheet data from CSV files",
 			"Loading client information from external sources",
@@ -512,7 +512,7 @@ func (cm *CategoryManager) initializeCategoryMetadata() {
 	cm.categoryMetadata[CategoryDataExport] = &CategoryMetadata{
 		Name:        "Data Export",
 		Description: "Tools for generating and exporting invoice documents, reports, and data",
-		Keywords:    []string{"export", "generate", "html", "pdf", "report", "document", "download", "template"},
+		Keywords:    []string{"export", "generate", "html", "pdf", "report", "document", "download", fieldTemplate},
 		UseCases: []string{
 			"Generating HTML invoices for clients",
 			"Creating PDF documents for printing",
@@ -526,7 +526,7 @@ func (cm *CategoryManager) initializeCategoryMetadata() {
 	cm.categoryMetadata[CategoryClientManagement] = &CategoryMetadata{
 		Name:        "Client Management",
 		Description: "Tools for managing client information, contacts, and relationships",
-		Keywords:    []string{"client", "customer", "contact", "company", "address", "email", "phone", "manage"},
+		Keywords:    []string{fieldClient, "customer", "contact", "company", "address", fieldEmail, "phone", "manage"},
 		UseCases: []string{
 			"Adding new clients to the system",
 			"Updating client contact information",
@@ -540,7 +540,7 @@ func (cm *CategoryManager) initializeCategoryMetadata() {
 	cm.categoryMetadata[CategoryConfiguration] = &CategoryMetadata{
 		Name:        "Configuration",
 		Description: "Tools for system configuration, settings management, and validation",
-		Keywords:    []string{"config", "settings", "setup", "validate", "preferences", "options", "system"},
+		Keywords:    []string{fieldConfig, "settings", "setup", strValidate, "preferences", "options", "system"},
 		UseCases: []string{
 			"Configuring invoice templates and formats",
 			"Setting up payment terms and tax rates",
@@ -773,7 +773,7 @@ func (cm *CategoryManager) sortCategorySummaries(summaries []*CategorySummary, s
 			}
 			return summaries[i].ToolCount > summaries[j].ToolCount
 		})
-	case "name":
+	case fieldName:
 		sort.Slice(summaries, func(i, j int) bool {
 			return summaries[i].Metadata.Name < summaries[j].Metadata.Name
 		})

@@ -32,18 +32,18 @@ func (s *ServerTestSuite) SetupTest() {
 	s.bridge = NewMockCLIBridge()
 	s.config = &Config{
 		Server: ServerConfig{
-			Host:        "localhost",
+			Host:        defaultHost,
 			Port:        0,
 			Timeout:     30 * time.Second,
 			ReadTimeout: 10 * time.Second,
 		},
 		CLI: CLIConfig{
-			Path:       "go-invoice",
+			Path:       defaultCLIName,
 			WorkingDir: "/tmp",
 			MaxTimeout: 60 * time.Second,
 		},
 		Security: SecurityConfig{
-			AllowedCommands: []string{"go-invoice"},
+			AllowedCommands: []string{defaultCLIName},
 		},
 		LogLevel: "debug",
 	}
@@ -54,9 +54,9 @@ func (s *ServerTestSuite) TestHandleInitializeRequest() {
 	ctx := context.Background()
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      1,
-		Method:  "initialize",
+		Method:  methodInitialize,
 		Params: map[string]interface{}{
 			"protocolVersion": "2024-11-05",
 			"capabilities":    map[string]interface{}{},
@@ -70,7 +70,7 @@ func (s *ServerTestSuite) TestHandleInitializeRequest() {
 	resp, err := s.server.HandleRequest(ctx, req)
 	s.Require().NoError(err)
 	s.NotNil(resp)
-	s.Equal("2.0", resp.JSONRPC)
+	s.Equal(jsonRPCVersion, resp.JSONRPC) //nolint:testifylint // JSONRPC is a version string, not JSON-encoded data
 	s.Equal(1, resp.ID)
 	s.Nil(resp.Error)
 
@@ -87,15 +87,15 @@ func (s *ServerTestSuite) TestHandlePingRequest() {
 	ctx := context.Background()
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      2,
-		Method:  "ping",
+		Method:  methodPing,
 	}
 
 	resp, err := s.server.HandleRequest(ctx, req)
 	s.Require().NoError(err)
 	s.NotNil(resp)
-	s.Equal("2.0", resp.JSONRPC)
+	s.Equal(jsonRPCVersion, resp.JSONRPC) //nolint:testifylint // JSONRPC is a version string, not JSON-encoded data
 	s.Equal(2, resp.ID)
 	s.Nil(resp.Error)
 
@@ -108,15 +108,15 @@ func (s *ServerTestSuite) TestHandleToolsListRequest() {
 	ctx := context.Background()
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      3,
-		Method:  "tools/list",
+		Method:  methodToolsList,
 	}
 
 	resp, err := s.server.HandleRequest(ctx, req)
 	s.Require().NoError(err)
 	s.NotNil(resp)
-	s.Equal("2.0", resp.JSONRPC)
+	s.Equal(jsonRPCVersion, resp.JSONRPC) //nolint:testifylint // JSONRPC is a version string, not JSON-encoded data
 	s.Equal(3, resp.ID)
 	s.Nil(resp.Error)
 
@@ -129,7 +129,7 @@ func (s *ServerTestSuite) TestHandleToolsListRequest() {
 	for i, tool := range result.Tools {
 		toolNames[i] = tool.Name
 	}
-	s.Contains(toolNames, "ping")
+	s.Contains(toolNames, methodPing)
 	s.Contains(toolNames, "version")
 }
 
@@ -145,11 +145,11 @@ func (s *ServerTestSuite) TestHandleToolCallPing() {
 	}, nil)
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      4,
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: ToolCallParams{
-			Name:      "ping",
+			Name:      methodPing,
 			Arguments: map[string]interface{}{},
 		},
 	}
@@ -178,9 +178,9 @@ func (s *ServerTestSuite) TestHandleToolCallVersion() {
 	}, nil)
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      5,
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: ToolCallParams{
 			Name:      "version",
 			Arguments: map[string]interface{}{},
@@ -206,11 +206,11 @@ func (s *ServerTestSuite) TestHandleToolCallError() {
 	s.bridge.SetResponse(nil, assert.AnError)
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      6,
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: ToolCallParams{
-			Name:      "ping",
+			Name:      methodPing,
 			Arguments: map[string]interface{}{},
 		},
 	}
@@ -231,7 +231,7 @@ func (s *ServerTestSuite) TestHandleUnknownMethod() {
 	ctx := context.Background()
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      7,
 		Method:  "unknown/method",
 	}
@@ -248,9 +248,9 @@ func (s *ServerTestSuite) TestHandleUnknownTool() {
 	ctx := context.Background()
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      8,
-		Method:  "tools/call",
+		Method:  methodToolsCall,
 		Params: ToolCallParams{
 			Name:      "unknown-tool",
 			Arguments: map[string]interface{}{},
@@ -270,9 +270,9 @@ func (s *ServerTestSuite) TestHandleRequestContextCancellation() {
 	cancel() // Immediately cancel
 
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      9,
-		Method:  "ping",
+		Method:  methodPing,
 	}
 
 	_, err := s.server.HandleRequest(ctx, req)
@@ -306,7 +306,7 @@ func (s *ServerTestSuite) TestHTTPTransportHandler() {
 	var resp MCPResponse
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	s.Require().NoError(err)
-	s.Equal("2.0", resp.JSONRPC)
+	s.Equal(jsonRPCVersion, resp.JSONRPC) //nolint:testifylint // JSONRPC is a version string, not JSON-encoded data
 	// JSON unmarshaling converts numbers to float64, so we need to handle that
 	s.InDelta(float64(1), resp.ID, 0.001)
 }
@@ -385,7 +385,7 @@ func (m *MockCLIBridge) GetAllowedCommands(ctx context.Context) ([]string, error
 		return nil, ctx.Err()
 	default:
 	}
-	return []string{"go-invoice"}, nil
+	return []string{defaultCLIName}, nil
 }
 
 // Benchmark tests for server performance validation
@@ -393,15 +393,15 @@ func BenchmarkServerHandleRequest(b *testing.B) {
 	logger := NewTestLogger()
 	bridge := NewMockCLIBridge()
 	config := &Config{
-		CLI: CLIConfig{Path: "go-invoice"},
+		CLI: CLIConfig{Path: defaultCLIName},
 	}
 	server := NewServer(logger, bridge, config)
 
 	ctx := context.Background()
 	req := &MCPRequest{
-		JSONRPC: "2.0",
+		JSONRPC: jsonRPCVersion,
 		ID:      1,
-		Method:  "ping",
+		Method:  methodPing,
 	}
 
 	b.ResetTimer()
