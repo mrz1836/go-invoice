@@ -522,7 +522,7 @@ func (s *ErrorsTestSuite) TestErrorMessagesAreDescriptive() {
 			name:          "ErrRateExceedsLimit",
 			err:           ErrRateExceedsLimit,
 			minLength:     20,
-			shouldContain: []string{"rate", "exceed", "$10,000", "hour"},
+			shouldContain: []string{testFieldRate, "exceed", "$10,000", "hour"},
 			shouldNotBe:   []string{"error"},
 		},
 	}

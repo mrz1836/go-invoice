@@ -14,13 +14,13 @@ func TestNewHourlyLineItem(t *testing.T) {
 
 	t.Run("ValidHourlyLineItem", func(t *testing.T) {
 		date := time.Now()
-		item, err := NewHourlyLineItem(ctx, "item-1", date, 8.0, 125.0, "Development work")
+		item, err := NewHourlyLineItem(ctx, "item-1", date, 8.0, 125.0, testDevWork)
 
 		require.NoError(t, err)
 		assert.Equal(t, "item-1", item.ID)
 		assert.Equal(t, LineItemTypeHourly, item.Type)
 		assert.Equal(t, date, item.Date)
-		assert.Equal(t, "Development work", item.Description)
+		assert.Equal(t, testDevWork, item.Description)
 		assert.NotNil(t, item.Hours)
 		assert.InDelta(t, 8.0, *item.Hours, 1e-9)
 		assert.NotNil(t, item.Rate)
@@ -33,21 +33,21 @@ func TestNewHourlyLineItem(t *testing.T) {
 
 	t.Run("InvalidHoursZero", func(t *testing.T) {
 		date := time.Now()
-		_, err := NewHourlyLineItem(ctx, "item-1", date, 0.0, 125.0, "Development work")
+		_, err := NewHourlyLineItem(ctx, "item-1", date, 0.0, 125.0, testDevWork)
 
 		require.Error(t, err)
 	})
 
 	t.Run("InvalidHoursExceedLimit", func(t *testing.T) {
 		date := time.Now()
-		_, err := NewHourlyLineItem(ctx, "item-1", date, 25.0, 125.0, "Development work")
+		_, err := NewHourlyLineItem(ctx, "item-1", date, 25.0, 125.0, testDevWork)
 
 		require.Error(t, err)
 	})
 
 	t.Run("InvalidRateZero", func(t *testing.T) {
 		date := time.Now()
-		_, err := NewHourlyLineItem(ctx, "item-1", date, 8.0, 0.0, "Development work")
+		_, err := NewHourlyLineItem(ctx, "item-1", date, 8.0, 0.0, testDevWork)
 
 		require.Error(t, err)
 	})
@@ -292,11 +292,11 @@ func TestConvertWorkItemToLineItem(t *testing.T) {
 	t.Run("ValidConversion", func(t *testing.T) {
 		date := time.Now()
 		wi := WorkItem{
-			ID:          "work-1",
+			ID:          testWorkItemID1,
 			Date:        date,
 			Hours:       8.0,
 			Rate:        125.0,
-			Description: "Development work",
+			Description: testDevWork,
 			Total:       1000.0,
 			CreatedAt:   time.Now(),
 		}

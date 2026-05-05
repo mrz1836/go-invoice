@@ -38,7 +38,7 @@ func createTestInvoice(t *testing.T, _ context.Context) *Invoice {
 		Number:    "TEST-001",
 		Date:      time.Now(),
 		DueDate:   time.Now().AddDate(0, 0, 30),
-		Client:    Client{ID: "CLIENT-001", Name: "Test Client"},
+		Client:    Client{ID: testClientID001, Name: testClientName},
 		Status:    StatusDraft,
 		TaxRate:   0.0,
 		WorkItems: []WorkItem{},
@@ -65,14 +65,14 @@ func (suite *InvoiceTestSuite) TestNewInvoice() {
 	}{
 		{
 			name:    "ValidInvoice",
-			id:      "INV-001",
-			number:  "INV-2024-001",
+			id:      testInvoiceID001,
+			number:  testInvoiceNum,
 			date:    time.Now(),
 			dueDate: time.Now().AddDate(0, 0, 30),
 			client: Client{
-				ID:        "CLIENT-001",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				ID:        testClientID001,
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Active:    true,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
@@ -83,13 +83,13 @@ func (suite *InvoiceTestSuite) TestNewInvoice() {
 		{
 			name:    "EmptyID",
 			id:      "",
-			number:  "INV-2024-001",
+			number:  testInvoiceNum,
 			date:    time.Now(),
 			dueDate: time.Now().AddDate(0, 0, 30),
 			client: Client{
-				ID:        "CLIENT-001",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				ID:        testClientID001,
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Active:    true,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
@@ -100,14 +100,14 @@ func (suite *InvoiceTestSuite) TestNewInvoice() {
 		},
 		{
 			name:    "InvalidInvoiceNumber",
-			id:      "INV-001",
+			id:      testInvoiceID001,
 			number:  "inv-2024-001", // lowercase not allowed
 			date:    time.Now(),
 			dueDate: time.Now().AddDate(0, 0, 30),
 			client: Client{
-				ID:        "CLIENT-001",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				ID:        testClientID001,
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Active:    true,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
@@ -118,14 +118,14 @@ func (suite *InvoiceTestSuite) TestNewInvoice() {
 		},
 		{
 			name:    "DueDateBeforeInvoiceDate",
-			id:      "INV-001",
-			number:  "INV-2024-001",
+			id:      testInvoiceID001,
+			number:  testInvoiceNum,
 			date:    time.Now(),
 			dueDate: time.Now().AddDate(0, 0, -1), // yesterday
 			client: Client{
-				ID:        "CLIENT-001",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				ID:        testClientID001,
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Active:    true,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
@@ -136,14 +136,14 @@ func (suite *InvoiceTestSuite) TestNewInvoice() {
 		},
 		{
 			name:    "InvalidTaxRate",
-			id:      "INV-001",
-			number:  "INV-2024-001",
+			id:      testInvoiceID001,
+			number:  testInvoiceNum,
 			date:    time.Now(),
 			dueDate: time.Now().AddDate(0, 0, 30),
 			client: Client{
-				ID:        "CLIENT-001",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				ID:        testClientID001,
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Active:    true,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
@@ -154,14 +154,14 @@ func (suite *InvoiceTestSuite) TestNewInvoice() {
 		},
 		{
 			name:    "InvalidClient",
-			id:      "INV-001",
-			number:  "INV-2024-001",
+			id:      testInvoiceID001,
+			number:  testInvoiceNum,
 			date:    time.Now(),
 			dueDate: time.Now().AddDate(0, 0, 30),
 			client: Client{
 				ID:        "",
-				Name:      "Test Client",
-				Email:     "test@example.com",
+				Name:      testClientName,
+				Email:     testClientEmail,
 				Active:    true,
 				CreatedAt: time.Now(),
 				UpdatedAt: time.Now(),
@@ -205,15 +205,15 @@ func (suite *InvoiceTestSuite) TestNewInvoiceWithContext() {
 	cancel() // Cancel immediately
 
 	client := Client{
-		ID:        "CLIENT-001",
-		Name:      "Test Client",
-		Email:     "test@example.com",
+		ID:        testClientID001,
+		Name:      testClientName,
+		Email:     testClientEmail,
 		Active:    true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
 
-	invoice, err := NewInvoice(ctx, "INV-001", "INV-2024-001", time.Now(), time.Now().AddDate(0, 0, 30), client, 0.1)
+	invoice, err := NewInvoice(ctx, testInvoiceID001, testInvoiceNum, time.Now(), time.Now().AddDate(0, 0, 30), client, 0.1)
 	require.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
 	assert.Nil(t, invoice)
@@ -231,14 +231,14 @@ func (suite *InvoiceTestSuite) TestInvoiceValidate() {
 		{
 			name: "ValidInvoice",
 			invoice: Invoice{
-				ID:      "INV-001",
-				Number:  "INV-2024-001",
+				ID:      testInvoiceID001,
+				Number:  testInvoiceNum,
 				Date:    time.Now(),
 				DueDate: time.Now().AddDate(0, 0, 30),
 				Client: Client{
-					ID:        "CLIENT-001",
-					Name:      "Test Client",
-					Email:     "test@example.com",
+					ID:        testClientID001,
+					Name:      testClientName,
+					Email:     testClientEmail,
 					Active:    true,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -258,13 +258,13 @@ func (suite *InvoiceTestSuite) TestInvoiceValidate() {
 			name: "EmptyID",
 			invoice: Invoice{
 				ID:      "",
-				Number:  "INV-2024-001",
+				Number:  testInvoiceNum,
 				Date:    time.Now(),
 				DueDate: time.Now().AddDate(0, 0, 30),
 				Client: Client{
-					ID:        "CLIENT-001",
-					Name:      "Test Client",
-					Email:     "test@example.com",
+					ID:        testClientID001,
+					Name:      testClientName,
+					Email:     testClientEmail,
 					Active:    true,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -281,14 +281,14 @@ func (suite *InvoiceTestSuite) TestInvoiceValidate() {
 		{
 			name: "InvalidStatus",
 			invoice: Invoice{
-				ID:      "INV-001",
-				Number:  "INV-2024-001",
+				ID:      testInvoiceID001,
+				Number:  testInvoiceNum,
 				Date:    time.Now(),
 				DueDate: time.Now().AddDate(0, 0, 30),
 				Client: Client{
-					ID:        "CLIENT-001",
-					Name:      "Test Client",
-					Email:     "test@example.com",
+					ID:        testClientID001,
+					Name:      testClientName,
+					Email:     testClientEmail,
 					Active:    true,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -305,14 +305,14 @@ func (suite *InvoiceTestSuite) TestInvoiceValidate() {
 		{
 			name: "NegativeSubtotal",
 			invoice: Invoice{
-				ID:      "INV-001",
-				Number:  "INV-2024-001",
+				ID:      testInvoiceID001,
+				Number:  testInvoiceNum,
 				Date:    time.Now(),
 				DueDate: time.Now().AddDate(0, 0, 30),
 				Client: Client{
-					ID:        "CLIENT-001",
-					Name:      "Test Client",
-					Email:     "test@example.com",
+					ID:        testClientID001,
+					Name:      testClientName,
+					Email:     testClientEmail,
 					Active:    true,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -330,14 +330,14 @@ func (suite *InvoiceTestSuite) TestInvoiceValidate() {
 		{
 			name: "InvalidVersion",
 			invoice: Invoice{
-				ID:      "INV-001",
-				Number:  "INV-2024-001",
+				ID:      testInvoiceID001,
+				Number:  testInvoiceNum,
 				Date:    time.Now(),
 				DueDate: time.Now().AddDate(0, 0, 30),
 				Client: Client{
-					ID:        "CLIENT-001",
-					Name:      "Test Client",
-					Email:     "test@example.com",
+					ID:        testClientID001,
+					Name:      testClientName,
+					Email:     testClientEmail,
 					Active:    true,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -354,14 +354,14 @@ func (suite *InvoiceTestSuite) TestInvoiceValidate() {
 		{
 			name: "UpdatedBeforeCreated",
 			invoice: Invoice{
-				ID:      "INV-001",
-				Number:  "INV-2024-001",
+				ID:      testInvoiceID001,
+				Number:  testInvoiceNum,
 				Date:    time.Now(),
 				DueDate: time.Now().AddDate(0, 0, 30),
 				Client: Client{
-					ID:        "CLIENT-001",
-					Name:      "Test Client",
-					Email:     "test@example.com",
+					ID:        testClientID001,
+					Name:      testClientName,
+					Email:     testClientEmail,
 					Active:    true,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -395,8 +395,8 @@ func (suite *InvoiceTestSuite) TestAddWorkItem() {
 	t := suite.T()
 
 	invoice := &Invoice{
-		ID:        "INV-001",
-		Number:    "INV-2024-001",
+		ID:        testInvoiceID001,
+		Number:    testInvoiceNum,
 		Date:      time.Now(),
 		DueDate:   time.Now().AddDate(0, 0, 30),
 		Status:    StatusDraft,
@@ -406,11 +406,11 @@ func (suite *InvoiceTestSuite) TestAddWorkItem() {
 	}
 
 	workItem := WorkItem{
-		ID:          "ITEM-001",
+		ID:          testItemID001,
 		Date:        time.Now(),
 		Hours:       8.0,
 		Rate:        100.0,
-		Description: "Development work",
+		Description: testDevWork,
 		Total:       800.0,
 		CreatedAt:   time.Now(),
 	}
@@ -449,8 +449,8 @@ func (suite *InvoiceTestSuite) TestAddWorkItemValidation() {
 	t := suite.T()
 
 	invoice := &Invoice{
-		ID:        "INV-001",
-		Number:    "INV-2024-001",
+		ID:        testInvoiceID001,
+		Number:    testInvoiceNum,
 		Date:      time.Now(),
 		DueDate:   time.Now().AddDate(0, 0, 30),
 		Status:    StatusDraft,
@@ -465,7 +465,7 @@ func (suite *InvoiceTestSuite) TestAddWorkItemValidation() {
 		Date:        time.Now(),
 		Hours:       8.0,
 		Rate:        100.0,
-		Description: "Development work",
+		Description: testDevWork,
 		Total:       800.0,
 		CreatedAt:   time.Now(),
 	}
@@ -481,19 +481,19 @@ func (suite *InvoiceTestSuite) TestRemoveWorkItem() {
 	t := suite.T()
 
 	invoice := &Invoice{
-		ID:      "INV-001",
-		Number:  "INV-2024-001",
+		ID:      testInvoiceID001,
+		Number:  testInvoiceNum,
 		Date:    time.Now(),
 		DueDate: time.Now().AddDate(0, 0, 30),
 		Status:  StatusDraft,
 		TaxRate: 0.1,
 		WorkItems: []WorkItem{
 			{
-				ID:          "ITEM-001",
+				ID:          testItemID001,
 				Date:        time.Now(),
 				Hours:       8.0,
 				Rate:        100.0,
-				Description: "Development work",
+				Description: testDevWork,
 				Total:       800.0,
 				CreatedAt:   time.Now(),
 			},
@@ -514,7 +514,7 @@ func (suite *InvoiceTestSuite) TestRemoveWorkItem() {
 	}
 
 	// Remove first item
-	err := invoice.RemoveWorkItem(suite.ctx, "ITEM-001")
+	err := invoice.RemoveWorkItem(suite.ctx, testItemID001)
 	require.NoError(t, err)
 
 	assert.Len(t, invoice.WorkItems, 1)
@@ -617,7 +617,7 @@ func (suite *InvoiceTestSuite) TestUpdateStatus() {
 	t := suite.T()
 
 	invoice := &Invoice{
-		ID:        "INV-001",
+		ID:        testInvoiceID001,
 		Status:    StatusDraft,
 		Version:   1,
 		UpdatedAt: time.Now().Add(-1 * time.Hour),
@@ -893,8 +893,8 @@ func (suite *InvoiceTestSuite) TestSetCryptoFee() {
 		suite.Run(tt.name, func() {
 			// Create invoice with work item
 			invoice := &Invoice{
-				ID:        "INV-001",
-				Number:    "INV-2024-001",
+				ID:        testInvoiceID001,
+				Number:    testInvoiceNum,
 				Date:      time.Now(),
 				DueDate:   time.Now().AddDate(0, 0, 30),
 				Status:    StatusDraft,
@@ -908,7 +908,7 @@ func (suite *InvoiceTestSuite) TestSetCryptoFee() {
 			// Add work item if specified
 			if tt.workItemTotal > 0 {
 				workItem := WorkItem{
-					ID:          "ITEM-001",
+					ID:          testItemID001,
 					Date:        time.Now(),
 					Hours:       8.0,
 					Rate:        tt.workItemTotal / 8.0,
@@ -1043,10 +1043,10 @@ func (suite *InvoiceTestSuite) TestInvoiceAddLineItem() {
 		hours := 8.0
 		rate := 125.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeHourly,
 			Date:        time.Now(),
-			Description: "Development work",
+			Description: testDevWork,
 			Hours:       &hours,
 			Rate:        &rate,
 			Total:       1000.0,
@@ -1064,7 +1064,7 @@ func (suite *InvoiceTestSuite) TestInvoiceAddLineItem() {
 
 		amount := 2000.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeFixed,
 			Date:        time.Now(),
 			Description: "Monthly Retainer",
@@ -1085,7 +1085,7 @@ func (suite *InvoiceTestSuite) TestInvoiceAddLineItem() {
 		quantity := 3.0
 		unitPrice := 50.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeQuantity,
 			Date:        time.Now(),
 			Description: "SSL Certificates",
@@ -1108,7 +1108,7 @@ func (suite *InvoiceTestSuite) TestInvoiceAddLineItem() {
 		hours := 8.0
 		rate := 125.0
 		lineItem1 := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeHourly,
 			Date:        time.Now(),
 			Description: "Development",
@@ -1143,7 +1143,7 @@ func (suite *InvoiceTestSuite) TestInvoiceAddLineItem() {
 
 		// Missing required fields
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeHourly,
 			Date:        time.Now(),
 			Description: "Invalid",
@@ -1168,7 +1168,7 @@ func (suite *InvoiceTestSuite) TestInvoiceRemoveLineItem() {
 		hours := 8.0
 		rate := 125.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeHourly,
 			Date:        time.Now(),
 			Description: "Development",
@@ -1181,7 +1181,7 @@ func (suite *InvoiceTestSuite) TestInvoiceRemoveLineItem() {
 		require.NoError(t, err)
 
 		// Remove it
-		err = invoice.RemoveLineItem(ctx, "line-1")
+		err = invoice.RemoveLineItem(ctx, testLineItemID1)
 		require.NoError(t, err)
 		assert.Empty(t, invoice.LineItems)
 		assert.InDelta(t, 0.0, invoice.Subtotal, 1e-9)
@@ -1206,7 +1206,7 @@ func (suite *InvoiceTestSuite) TestInvoiceMigrateWorkItemsToLineItems() {
 
 		// Add work items (old format)
 		workItem := WorkItem{
-			ID:          "work-1",
+			ID:          testWorkItemID1,
 			Date:        time.Now(),
 			Hours:       8.0,
 			Rate:        125.0,
@@ -1231,7 +1231,7 @@ func (suite *InvoiceTestSuite) TestInvoiceMigrateWorkItemsToLineItems() {
 
 		// Add work item
 		workItem := WorkItem{
-			ID:          "work-1",
+			ID:          testWorkItemID1,
 			Date:        time.Now(),
 			Hours:       8.0,
 			Rate:        125.0,
@@ -1245,7 +1245,7 @@ func (suite *InvoiceTestSuite) TestInvoiceMigrateWorkItemsToLineItems() {
 		hours := 4.0
 		rate := 150.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeHourly,
 			Date:        time.Now(),
 			Description: "Other work",
@@ -1278,7 +1278,7 @@ func (suite *InvoiceTestSuite) TestInvoiceRecalculateTotals() {
 		hours := 8.0
 		rate := 125.0
 		lineItem1 := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeHourly,
 			Date:        time.Now(),
 			Description: "Development",
@@ -1314,7 +1314,7 @@ func (suite *InvoiceTestSuite) TestInvoiceRecalculateTotals() {
 
 		// Add work item
 		workItem := WorkItem{
-			ID:          "work-1",
+			ID:          testWorkItemID1,
 			Date:        time.Now(),
 			Hours:       4.0,
 			Rate:        100.0,
@@ -1328,7 +1328,7 @@ func (suite *InvoiceTestSuite) TestInvoiceRecalculateTotals() {
 		hours := 8.0
 		rate := 125.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeHourly,
 			Date:        time.Now(),
 			Description: "New work",
@@ -1354,7 +1354,7 @@ func (suite *InvoiceTestSuite) TestInvoiceRecalculateTotals() {
 		// Add $5000 fixed line item (simulating the exact bug scenario)
 		amount := 5000.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeFixed,
 			Date:        time.Now(),
 			Description: "Repository Maintenance",
@@ -1386,7 +1386,7 @@ func (suite *InvoiceTestSuite) TestInvoiceRecalculateTotals() {
 		hours := 10.0
 		rate := 150.0
 		hourlyItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeHourly,
 			Date:        time.Now(),
 			Description: "Development",
@@ -1448,7 +1448,7 @@ func (suite *InvoiceTestSuite) TestInvoiceRecalculateTotals() {
 
 		// Add legacy work items only
 		workItem1 := WorkItem{
-			ID:          "work-1",
+			ID:          testWorkItemID1,
 			Date:        time.Now(),
 			Hours:       8.0,
 			Rate:        100.0,
@@ -1490,7 +1490,7 @@ func (suite *InvoiceTestSuite) TestInvoiceSetCryptoFee() {
 		// Add $5000 line item (the exact bug scenario)
 		amount := 5000.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeFixed,
 			Date:        time.Now(),
 			Description: "Repository Maintenance",
@@ -1522,7 +1522,7 @@ func (suite *InvoiceTestSuite) TestInvoiceSetCryptoFee() {
 
 		// Add work item
 		workItem := WorkItem{
-			ID:          "work-1",
+			ID:          testWorkItemID1,
 			Date:        time.Now(),
 			Hours:       10.0,
 			Rate:        100.0,
@@ -1550,7 +1550,7 @@ func (suite *InvoiceTestSuite) TestInvoiceSetCryptoFee() {
 
 		// Add work item
 		workItem := WorkItem{
-			ID:          "work-1",
+			ID:          testWorkItemID1,
 			Date:        time.Now(),
 			Hours:       5.0,
 			Rate:        100.0,
@@ -1563,7 +1563,7 @@ func (suite *InvoiceTestSuite) TestInvoiceSetCryptoFee() {
 		// Add line item
 		amount := 1000.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeFixed,
 			Date:        time.Now(),
 			Description: "New work",
@@ -1593,7 +1593,7 @@ func (suite *InvoiceTestSuite) TestInvoiceSetCryptoFee() {
 
 		amount := 1000.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeFixed,
 			Date:        time.Now(),
 			Description: "Work",
@@ -1623,7 +1623,7 @@ func (suite *InvoiceTestSuite) TestInvoiceSetCryptoFee() {
 
 		amount := 5000.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeFixed,
 			Date:        time.Now(),
 			Description: "Repository Maintenance",
@@ -1655,7 +1655,7 @@ func (suite *InvoiceTestSuite) TestInvoiceHelperMethods() {
 	t.Run("HasOnlyWorkItems", func(t *testing.T) {
 		invoice := createTestInvoice(t, ctx)
 		workItem := WorkItem{
-			ID:          "work-1",
+			ID:          testWorkItemID1,
 			Date:        time.Now(),
 			Hours:       8.0,
 			Rate:        125.0,
@@ -1674,7 +1674,7 @@ func (suite *InvoiceTestSuite) TestInvoiceHelperMethods() {
 		hours := 8.0
 		rate := 125.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeHourly,
 			Date:        time.Now(),
 			Description: "Development",
@@ -1694,7 +1694,7 @@ func (suite *InvoiceTestSuite) TestInvoiceHelperMethods() {
 
 		// Add work item
 		workItem := WorkItem{
-			ID:          "work-1",
+			ID:          testWorkItemID1,
 			Date:        time.Now(),
 			Hours:       4.0,
 			Rate:        100.0,
@@ -1708,7 +1708,7 @@ func (suite *InvoiceTestSuite) TestInvoiceHelperMethods() {
 		hours := 8.0
 		rate := 125.0
 		lineItem := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeHourly,
 			Date:        time.Now(),
 			Description: "New work",
@@ -1728,7 +1728,7 @@ func (suite *InvoiceTestSuite) TestInvoiceHelperMethods() {
 
 		// Add work item
 		workItem := WorkItem{
-			ID:          "work-1",
+			ID:          testWorkItemID1,
 			Date:        time.Now(),
 			Hours:       4.0,
 			Rate:        100.0,
@@ -1742,7 +1742,7 @@ func (suite *InvoiceTestSuite) TestInvoiceHelperMethods() {
 		hours := 8.0
 		rate := 125.0
 		lineItem1 := LineItem{
-			ID:          "line-1",
+			ID:          testLineItemID1,
 			Type:        LineItemTypeHourly,
 			Date:        time.Now(),
 			Description: "New work",

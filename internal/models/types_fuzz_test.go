@@ -15,10 +15,10 @@ func FuzzValidationBuilder(f *testing.F) {
 	stringSeeds := []string{
 		"valid string",
 		"",
-		"   ",
+		testBlankStr,
 		"a",
 		strings.Repeat("a", 1000),
-		"test@example.com",
+		testClientEmail,
 		"invalid.email",
 		"special!@#$%chars",
 		"unicode🚀string",
@@ -44,7 +44,7 @@ func FuzzValidationBuilder(f *testing.F) {
 	}
 
 	for _, num := range numericSeeds {
-		f.Add("test", "test@example.com", "description", int(num), num, num)
+		f.Add("test", testClientEmail, "description", int(num), num, num)
 	}
 
 	f.Fuzz(func(t *testing.T, name, email, description string, intVal int, floatVal1, floatVal2 float64) {
@@ -173,7 +173,7 @@ func FuzzValidationBuilder(f *testing.F) {
 func FuzzEmailValidation(f *testing.F) {
 	// Seed with various email examples
 	emails := []string{
-		"test@example.com",
+		testClientEmail,
 		"user.name@domain.co.uk",
 		"user+tag@domain.com",
 		"user_name@domain-name.com",
@@ -464,7 +464,7 @@ func FuzzDateValidation(f *testing.F) {
 func FuzzValidationBuilderChaining(f *testing.F) {
 	// Seed with various combinations
 	for i := 0; i < 10; i++ {
-		f.Add(i, "test", "test@example.com", 100.0, -50.0, 1000)
+		f.Add(i, "test", testClientEmail, 100.0, -50.0, 1000)
 	}
 
 	f.Fuzz(func(t *testing.T, scenario int, str1, str2 string, val1, val2 float64, intVal int) {
