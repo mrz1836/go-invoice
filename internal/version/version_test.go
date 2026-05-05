@@ -349,20 +349,20 @@ func TestCompareVersions(t *testing.T) {
 	}{
 		{
 			name:     "V1Greater",
-			v1:       "1.2.3",
+			v1:       testVersion123,
 			v2:       "1.2.2",
 			expected: 1,
 		},
 		{
 			name:     "V2Greater",
 			v1:       "1.2.2",
-			v2:       "1.2.3",
+			v2:       testVersion123,
 			expected: -1,
 		},
 		{
 			name:     "Equal",
-			v1:       "1.2.3",
-			v2:       "1.2.3",
+			v1:       testVersion123,
+			v2:       testVersion123,
 			expected: 0,
 		},
 		{
@@ -386,18 +386,18 @@ func TestCompareVersions(t *testing.T) {
 		{
 			name:     "MixedVPrefix",
 			v1:       "v1.2.3",
-			v2:       "1.2.3",
+			v2:       testVersion123,
 			expected: 0,
 		},
 		{
 			name:     "DevVersionVsRelease",
 			v1:       "dev",
-			v2:       "1.2.3",
+			v2:       testVersion123,
 			expected: -1,
 		},
 		{
 			name:     "ReleaseVsDevVersion",
-			v1:       "1.2.3",
+			v1:       testVersion123,
 			v2:       "dev",
 			expected: 1,
 		},
@@ -410,25 +410,25 @@ func TestCompareVersions(t *testing.T) {
 		{
 			name:     "CommitHashVsRelease",
 			v1:       "abc123def456",
-			v2:       "1.2.3",
+			v2:       testVersion123,
 			expected: -1,
 		},
 		{
 			name:     "ReleaseVsCommitHash",
-			v1:       "1.2.3",
+			v1:       testVersion123,
 			v2:       "abc123def456",
 			expected: 1,
 		},
 		{
 			name:     "EmptyVersionVsRelease",
 			v1:       "",
-			v2:       "1.2.3",
+			v2:       testVersion123,
 			expected: -1,
 		},
 		{
 			name:     "VersionWithSuffix",
 			v1:       "1.2.3-rc1",
-			v2:       "1.2.3",
+			v2:       testVersion123,
 			expected: 0, // Suffixes are ignored in basic comparison
 		},
 		{
@@ -485,31 +485,31 @@ func TestIsNewerVersion(t *testing.T) {
 		{
 			name:           "NewerAvailable",
 			currentVersion: "1.2.2",
-			latestVersion:  "1.2.3",
+			latestVersion:  testVersion123,
 			expected:       true,
 		},
 		{
 			name:           "SameVersion",
-			currentVersion: "1.2.3",
-			latestVersion:  "1.2.3",
+			currentVersion: testVersion123,
+			latestVersion:  testVersion123,
 			expected:       false,
 		},
 		{
 			name:           "CurrentNewer",
 			currentVersion: "1.2.4",
-			latestVersion:  "1.2.3",
+			latestVersion:  testVersion123,
 			expected:       false,
 		},
 		{
 			name:           "DevVersionNeedsUpgrade",
 			currentVersion: "dev",
-			latestVersion:  "1.2.3",
+			latestVersion:  testVersion123,
 			expected:       true,
 		},
 		{
 			name:           "CommitHashNeedsUpgrade",
 			currentVersion: "abc123def456",
-			latestVersion:  "1.2.3",
+			latestVersion:  testVersion123,
 			expected:       true,
 		},
 	}
@@ -535,37 +535,37 @@ func TestNormalizeVersion(t *testing.T) {
 		{
 			name:     "WithVPrefix",
 			version:  "v1.2.3",
-			expected: "1.2.3",
+			expected: testVersion123,
 		},
 		{
 			name:     "WithoutVPrefix",
-			version:  "1.2.3",
-			expected: "1.2.3",
+			version:  testVersion123,
+			expected: testVersion123,
 		},
 		{
 			name:     "WithDashSuffix",
 			version:  "1.2.3-rc1",
-			expected: "1.2.3",
+			expected: testVersion123,
 		},
 		{
 			name:     "WithPlusSuffix",
 			version:  "1.2.3+build123",
-			expected: "1.2.3",
+			expected: testVersion123,
 		},
 		{
 			name:     "WithSpaces",
 			version:  "  1.2.3  ",
-			expected: "1.2.3",
+			expected: testVersion123,
 		},
 		{
 			name:     "WithVPrefixAndDirtySuffix",
 			version:  "v1.2.3-dirty",
-			expected: "1.2.3",
+			expected: testVersion123,
 		},
 		{
 			name:     "WithVPrefixAndBuildSuffix",
 			version:  "v1.2.3+build456",
-			expected: "1.2.3",
+			expected: testVersion123,
 		},
 		{
 			name:     "EmptyString",
@@ -580,7 +580,7 @@ func TestNormalizeVersion(t *testing.T) {
 		{
 			name:     "ComplexSuffix",
 			version:  "1.2.3-rc1+build.456",
-			expected: "1.2.3",
+			expected: testVersion123,
 		},
 	}
 
@@ -649,7 +649,7 @@ func TestIsCommitHash(t *testing.T) {
 		},
 		{
 			name:     "StandardVersion",
-			version:  "1.2.3",
+			version:  testVersion123,
 			expected: false,
 		},
 		{
@@ -714,7 +714,7 @@ func TestParseVersion(t *testing.T) {
 	}{
 		{
 			name:     "StandardVersion",
-			version:  "1.2.3",
+			version:  testVersion123,
 			expected: []int{1, 2, 3},
 		},
 		{
@@ -779,12 +779,12 @@ func TestVersionInfo(t *testing.T) {
 
 	info := Info{
 		Current: "1.2.2",
-		Latest:  "1.2.3",
+		Latest:  testVersion123,
 		IsNewer: true,
 	}
 
 	assert.Equal(t, "1.2.2", info.Current)
-	assert.Equal(t, "1.2.3", info.Latest)
+	assert.Equal(t, testVersion123, info.Latest)
 	assert.True(t, info.IsNewer)
 }
 
@@ -846,13 +846,13 @@ func TestClientConcurrentUse(t *testing.T) {
 // Benchmarks
 func BenchmarkCompareVersions(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		CompareVersions("1.2.3", "1.2.4")
+		CompareVersions(testVersion123, "1.2.4")
 	}
 }
 
 func BenchmarkIsNewerVersion(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		IsNewerVersion("1.2.3", "1.2.4")
+		IsNewerVersion(testVersion123, "1.2.4")
 	}
 }
 
@@ -880,13 +880,13 @@ func BenchmarkNewClient(b *testing.B) {
 // Fuzz tests
 func FuzzCompareVersions(f *testing.F) {
 	// Seed corpus
-	f.Add("1.2.3", "1.2.4")
+	f.Add(testVersion123, "1.2.4")
 	f.Add("v1.0.0", "2.0.0")
 	f.Add("dev", "1.0.0")
 	f.Add("abc123def", "1.0.0")
 	f.Add("", "")
-	f.Add("1.2.3-rc1", "1.2.3")
-	f.Add("1.2.3+build", "1.2.3")
+	f.Add("1.2.3-rc1", testVersion123)
+	f.Add("1.2.3+build", testVersion123)
 	f.Add("999999999.0.0", "0.0.1")
 
 	f.Fuzz(func(t *testing.T, v1, v2 string) {
@@ -916,7 +916,7 @@ func FuzzCompareVersions(f *testing.F) {
 }
 
 func FuzzParseVersion(f *testing.F) {
-	f.Add("1.2.3")
+	f.Add(testVersion123)
 	f.Add("v1.0.0-rc1")
 	f.Add("1.2.3+build")
 	f.Add("")
