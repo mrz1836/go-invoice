@@ -96,11 +96,13 @@ func (suite *ConfigTestSuite) TestLoadConfigFromEnv() {
 				"INVOICE_START_NUMBER": "5000",
 				"CURRENCY":             "EUR",
 				"VAT_RATE":             "0.20",
+				"ETHERSCAN_API_KEY":    "test-etherscan-key",
 			},
 			expected: func(c *Config) bool {
 				return c.Business.Name == "Complete Business" &&
 					c.Business.Phone == "+1-555-0123" &&
 					c.Business.TaxID == "12-3456789" &&
+					c.Business.CryptoPayments.EtherscanAPIKey == "test-etherscan-key" &&
 					c.Invoice.Prefix == "CB" &&
 					c.Invoice.StartNumber == 5000 &&
 					c.Invoice.Currency == "EUR" &&

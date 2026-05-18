@@ -158,10 +158,11 @@ func (s *ConfigService) buildConfigFromEnv(ctx context.Context) (*Config, error)
 				ACHEnabled:          getEnvBool("ACH_ENABLED", false),
 			},
 			CryptoPayments: CryptoPayments{
-				USDCAddress: getEnv("USDC_ADDRESS", ""),
-				USDCEnabled: getEnvBool("USDC_ENABLED", false),
-				BSVAddress:  getEnv("BSV_ADDRESS", ""),
-				BSVEnabled:  getEnvBool("BSV_ENABLED", false),
+				USDCAddress:     getEnv("USDC_ADDRESS", ""),
+				USDCEnabled:     getEnvBool("USDC_ENABLED", false),
+				BSVAddress:      getEnv("BSV_ADDRESS", ""),
+				BSVEnabled:      getEnvBool("BSV_ENABLED", false),
+				EtherscanAPIKey: getEnv("ETHERSCAN_API_KEY", ""),
 			},
 		},
 		Invoice: InvoiceConfig{
