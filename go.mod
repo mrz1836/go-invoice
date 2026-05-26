@@ -3,7 +3,7 @@ module github.com/mrz1836/go-invoice
 go 1.25.0
 
 require (
-	github.com/joho/godotenv v1.6.0-pre.2
+	github.com/joho/godotenv v1.6.0-pre.4
 	github.com/magefile/mage v1.17.2
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
