@@ -10,6 +10,8 @@ import (
 	"strings"
 	"syscall"
 
+	selfupdate "github.com/mrz1836/go-selfupdate"
+	"github.com/mrz1836/go-selfupdate/cobracmd"
 	"github.com/spf13/cobra"
 
 	"github.com/mrz1836/go-invoice/internal/cli"
@@ -97,7 +99,23 @@ Key features:
 	rootCmd.AddCommand(a.buildGenerateCommand())
 	rootCmd.AddCommand(a.buildMigrateLateFeeCommand())
 	rootCmd.AddCommand(a.buildPaymentCommand())
-	rootCmd.AddCommand(a.buildUpgradeCommand())
+
+	// Self-update: one call registers the `update` command (alias `upgrade`, flags
+	// --check/--force/--verbose) and the passive "a new version is available" banner,
+	// both derived from this single config. go-selfupdate installs only from GitHub
+	// release archives — verifying the SHA-256 checksum and atomically replacing the
+	// binary — and refuses to overwrite a binary owned by `go install` or Homebrew.
+	// AppName derives from BinaryName, giving the GO_INVOICE_ env prefix (opt out with
+	// GO_INVOICE_NO_UPDATE_CHECK; the shared NO_UPDATE_CHECK and CI also disable it).
+	// The deprecated --use-binary flag is kept, hidden and inert, so old invocations
+	// do not error now that a release archive is the only install route.
+	cobracmd.Attach(rootCmd, selfupdate.Config{ //nolint:gosec // G101 false positive: TokenEnvVar is an environment variable name, not a credential
+		Owner:          "mrz1836",
+		Repo:           "go-invoice",
+		BinaryName:     "go-invoice",
+		CurrentVersion: version,
+		TokenEnvVar:    "GO_INVOICE_GITHUB_TOKEN",
+	}, cobracmd.WithDeprecatedUseBinaryFlag())
 
 	return rootCmd
 }
