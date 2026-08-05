@@ -81,7 +81,8 @@ func (s *JSONStorage) Initialize(ctx context.Context) error {
 	for _, dir := range dirs {
 		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return storage.NewStorageUnavailableError(
-				fmt.Sprintf("failed to create directory %s", dir), err)
+				fmt.Sprintf("failed to create directory %s", dir), err,
+			)
 		}
 	}
 
@@ -179,7 +180,8 @@ func (s *JSONStorage) Validate(ctx context.Context) error {
 	for _, dir := range dirs {
 		if _, err := os.Stat(dir); err != nil {
 			return storage.NewStorageUnavailableError(
-				fmt.Sprintf("directory %s is not accessible", dir), err)
+				fmt.Sprintf("directory %s is not accessible", dir), err,
+			)
 		}
 	}
 
