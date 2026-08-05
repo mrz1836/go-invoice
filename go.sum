@@ -7,8 +7,8 @@ github.com/joho/godotenv v1.6.0-pre.4 h1:MriZ01JMXaPpLaojyAPBkDBLhqQQe7OglrpLwaX
 github.com/joho/godotenv v1.6.0-pre.4/go.mod h1:ighh19AHocFWtkz1hVxZTOWlDT9KbfZhvEGDUPUoN7E=
 github.com/magefile/mage v1.17.2 h1:fyXVu1eadI8Ap1HCCNgEhJ5McIWiYhLR8uol64ZZc40=
 github.com/magefile/mage v1.17.2/go.mod h1:Yj51kqllmsgFpvvSzgrZPK9WtluG3kUhFaBUVLo4feA=
-github.com/mrz1836/go-selfupdate v0.1.2 h1:R1p8ZBL4GMzEo/XbQlc7C3bmZCy59ns0CEN9Q1hm/TM=
-github.com/mrz1836/go-selfupdate v0.1.2/go.mod h1:w9jWTnJEqpKjjUkgc9YN7RYwdUPFIwhEYKl/mp1Lhjc=
+github.com/mrz1836/go-selfupdate v0.1.3 h1:jcAe4FP7ayObOhYsTjHdfwAT2RSlHsuReJjUQg/2zqA=
+github.com/mrz1836/go-selfupdate v0.1.3/go.mod h1:w9jWTnJEqpKjjUkgc9YN7RYwdUPFIwhEYKl/mp1Lhjc=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
