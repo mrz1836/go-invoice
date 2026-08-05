@@ -102,8 +102,8 @@
 ### Natural Language Setup (Recommended)
 
 ```bash
-# 1. Install go-invoice
-go install github.com/mrz1836/go-invoice/cmd/go-invoice@latest
+# 1. Install go-invoice — see the one-command release install in "Installation" below.
+#    For the optional Claude Desktop integration, also install the MCP server:
 go install github.com/mrz1836/go-invoice/cmd/go-invoice-mcp@latest
 
 # 2. Initialize storage and set up your business configuration
@@ -122,8 +122,7 @@ go-invoice config setup-claude
 <summary><strong>Traditional CLI Quick Start</strong></summary>
 
 ```bash
-# Install go-invoice
-go install github.com/mrz1836/go-invoice/cmd/go-invoice@latest
+# Install go-invoice — see the one-command release install in "Installation" below
 
 # Initialize storage and set up your business configuration
 go-invoice init
@@ -597,34 +596,56 @@ go-invoice invoice create \
 
 ## 📦 Installation
 
-<details>
-<summary><strong>Installation Options</strong></summary>
-
-### Prerequisites
-- **Go 1.25 or later** – [Download Go](https://golang.org/dl/)
-- **Git** – For version control
-
-### Install from Source
+Install the latest prebuilt release for your platform with a single copy‑paste. It
+lands in `~/.local/bin` — a user‑writable directory, so no `sudo`, and `go-invoice
+update` can self‑update in place afterward:
 
 ```bash
-# Clone the repository
+# Install the latest go-invoice release into ~/.local/bin
+VER=$(curl -fsSL https://api.github.com/repos/mrz1836/go-invoice/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | tr -d v)
+OS=$(uname -s | tr '[:upper:]' '[:lower:]'); ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+mkdir -p ~/.local/bin
+curl -fsSL "https://github.com/mrz1836/go-invoice/releases/download/v${VER}/go-invoice_${VER}_${OS}_${ARCH}.tar.gz" | tar -xzf - -C ~/.local/bin go-invoice
+go-invoice --version
+```
+
+If `go-invoice` isn't found afterward, add `~/.local/bin` to your `PATH` (put
+`export PATH="$HOME/.local/bin:$PATH"` in your `~/.zshrc` or `~/.bashrc`).
+
+### Keeping it up to date
+
+`go-invoice update` (alias `go-invoice upgrade`) downloads the latest release, verifies
+its SHA‑256 checksum against the published `go-invoice_<ver>_checksums.txt`, and
+atomically replaces the running binary — no `sudo` when it lives in `~/.local/bin`.
+
+```bash
+go-invoice update            # download & install the latest release
+go-invoice update --check    # report whether a newer version is available
+go-invoice update --force    # reinstall the latest even if already current
+go-invoice update --verbose  # narrate each step
+```
+
+Every other command also runs a passive, cached background check and prints a one‑line
+"a new version is available" notice. It never blocks or fails a command, is skipped for
+development builds, and is silenced by `GO_INVOICE_NO_UPDATE_CHECK=1` (or the shared
+`NO_UPDATE_CHECK` / `CI`). A GitHub token, if you hit API rate limits, is read from
+`GO_INVOICE_GITHUB_TOKEN`, then `GITHUB_TOKEN`, then `GH_TOKEN`.
+
+> **Heads up:** a binary that another installer owns — `go install`'s `~/go/bin`, or a
+> Homebrew prefix — is **refused** by `go-invoice update` rather than overwritten (that
+> would break the tool that owns it). Install the release binary into `~/.local/bin` as
+> above to keep self‑update working.
+
+<details>
+<summary><strong>Build from source (contributors)</strong></summary>
+
+Requires **Go 1.25+** and **Git**. A source checkout is also what the Claude/MCP
+integration needs — `go-invoice config setup-claude` builds the MCP server from it.
+
+```bash
 git clone https://github.com/mrz1836/go-invoice.git
 cd go-invoice
-
-# Build the application
 magex devBuild
-```
-
-### Install via Go
-
-```bash
-go install github.com/mrz1836/go-invoice@latest
-```
-
-### Verify Installation
-
-```bash
-go-invoice --version
 ```
 
 </details>
