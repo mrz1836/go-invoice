@@ -598,14 +598,22 @@ go-invoice invoice create \
 
 Install the latest prebuilt release for your platform with a single copy‑paste. It
 lands in `~/.local/bin` — a user‑writable directory, so no `sudo`, and `go-invoice
-update` can self‑update in place afterward:
+update` can self‑update in place afterward.
+
+No `curl … | sudo bash` here — we don't ask you to pipe a mystery script into your shell
+and hope for the best. Every line below is in the open, and the download is checked against
+the release's published SHA‑256 checksums before anything lands on your `PATH`:
 
 ```bash
-# Install the latest go-invoice release into ~/.local/bin
-VER=$(curl -fsSL https://api.github.com/repos/mrz1836/go-invoice/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | tr -d v)
-OS=$(uname -s | tr '[:upper:]' '[:lower:]'); ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
-mkdir -p ~/.local/bin
-curl -fsSL "https://github.com/mrz1836/go-invoice/releases/download/v${VER}/go-invoice_${VER}_${OS}_${ARCH}.tar.gz" | tar -xzf - -C ~/.local/bin go-invoice
+# Install the latest go-invoice release into ~/.local/bin, verified against checksums.txt
+VER=$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/mrz1836/go-invoice/releases/latest | sed 's#.*/v##')
+OS=$(uname -s | tr '[:upper:]' '[:lower:]'); ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+F="go-invoice_${VER}_${OS}_${ARCH}.tar.gz"; U="https://github.com/mrz1836/go-invoice/releases/download/v${VER}"
+mkdir -p ~/.local/bin && cd "$(mktemp -d)" && curl -fsSLO "$U/$F" \
+  && WANT=$(curl -fsSL "$U/go-invoice_${VER}_checksums.txt" | awk -v f="$F" '$2==f{print $1}') \
+  && GOT=$( { command -v sha256sum >/dev/null && sha256sum "$F" || shasum -a 256 "$F"; } | awk '{print $1}') \
+  && [ -n "$WANT" ] && [ "$WANT" = "$GOT" ] \
+  && tar -xzf "$F" -C ~/.local/bin go-invoice
 go-invoice --version
 ```
 
