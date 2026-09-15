@@ -647,7 +647,7 @@ development builds, and is silenced by `GO_INVOICE_NO_UPDATE_CHECK=1` (or the sh
 <details>
 <summary><strong>Build from source (contributors)</strong></summary>
 
-Requires **Go 1.25+** and **Git**. A source checkout is also what the Claude/MCP
+Requires **Go 1.26+** and **Git**. A source checkout is also what the Claude/MCP
 integration needs — `go-invoice config setup-claude` builds the MCP server from it.
 
 ```bash
