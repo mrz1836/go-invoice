@@ -318,7 +318,7 @@ func (s *ClientToolsTestSuite) TestClientUpdateTool() {
 
 			// Should demonstrate updating different fields
 			updateFieldCount := 0
-			updatableFields := []string{fieldName, fieldEmail, "address", "phone"}
+			updatableFields := []string{fieldName, fieldEmail, "address", "phone", fieldWireFee, fieldWireFeeAmount, fieldWireType}
 			for _, field := range updatableFields {
 				if _, hasField := example.Input[field]; hasField {
 					updateFieldCount++
@@ -636,6 +636,78 @@ func TestClientTools_Specific(t *testing.T) {
 		for _, tool := range tools {
 			require.NotNil(t, tool.InputSchema, "Tool %s missing schema", tool.Name)
 			assert.Equal(t, keyObject, tool.InputSchema[keyType], "Tool %s should have object schema", tool.Name)
+		}
+	})
+}
+
+// TestClientTools_WireTransferInputValidation verifies how the MCP input validator treats wire settings
+func TestClientTools_WireTransferInputValidation(t *testing.T) {
+	ctx := context.Background()
+	validator := NewDefaultInputValidator(&TestLogger{})
+
+	createInput := func(overrides map[string]interface{}) map[string]interface{} {
+		input := map[string]interface{}{
+			fieldName:  "Acme Corp",
+			fieldEmail: "ap@acme.example",
+		}
+		for key, value := range overrides {
+			input[key] = value
+		}
+		return input
+	}
+
+	t.Run("CreateAcceptsWireSettings", func(t *testing.T) {
+		input := createInput(map[string]interface{}{
+			fieldWireFee:       true,
+			fieldWireFeeAmount: 20.0,
+			fieldWireType:      "international",
+		})
+		require.NoError(t, validator.ValidateAgainstSchema(ctx, input, createClientCreateTool().InputSchema))
+	})
+
+	t.Run("UpdateAcceptsExplicitFalse", func(t *testing.T) {
+		input := map[string]interface{}{
+			fieldClientID: "client-001",
+			fieldWireFee:  false,
+		}
+		require.NoError(t, validator.ValidateAgainstSchema(ctx, input, createClientUpdateTool().InputSchema))
+	})
+
+	rejected := []struct {
+		name  string
+		field string
+		value interface{}
+	}{
+		{"NegativeAmount", fieldWireFeeAmount, -1.0},
+		{"AmountOverCap", fieldWireFeeAmount, 10000.01},
+		{"AmountNotANumber", fieldWireFeeAmount, "twenty"},
+		{"EnabledNotABoolean", fieldWireFee, "yes"},
+		{"WireTypeNotAString", fieldWireType, 1.0},
+	}
+	for _, tc := range rejected {
+		t.Run("Rejects"+tc.name, func(t *testing.T) {
+			createErr := validator.ValidateAgainstSchema(ctx,
+				createInput(map[string]interface{}{tc.field: tc.value}), createClientCreateTool().InputSchema)
+			require.Error(t, createErr)
+
+			updateErr := validator.ValidateAgainstSchema(ctx,
+				map[string]interface{}{fieldClientID: "client-001", tc.field: tc.value}, createClientUpdateTool().InputSchema)
+			require.Error(t, updateErr)
+		})
+	}
+
+	t.Run("WireExamplesValidateAgainstSchema", func(t *testing.T) {
+		for _, tool := range []*MCPTool{createClientCreateTool(), createClientUpdateTool()} {
+			found := false
+			for _, example := range tool.Examples {
+				if _, hasWireType := example.Input[fieldWireType]; !hasWireType {
+					continue
+				}
+				found = true
+				require.NoError(t, validator.ValidateAgainstSchema(ctx, example.Input, tool.InputSchema),
+					"%s example %q should satisfy its schema", tool.Name, example.Description)
+			}
+			assert.True(t, found, "%s should include a wire transfer example", tool.Name)
 		}
 	})
 }
