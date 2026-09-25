@@ -6,6 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 // ClientSchemasTestSuite provides comprehensive tests for client schema definitions
@@ -544,6 +546,89 @@ func TestClientSchemas_EdgeCases(t *testing.T) {
 			for fieldName, fieldDef := range propsMap {
 				assert.NotEmpty(t, fieldName, "Field name should not be empty")
 				assert.IsType(t, map[string]interface{}{}, fieldDef, "Field definition should be map")
+			}
+		}
+	})
+}
+
+// TestClientSchemas_WireTransferFields verifies the wire transfer settings on client create and update
+func TestClientSchemas_WireTransferFields(t *testing.T) {
+	wireFields := []string{keyWireFeeEnabled, keyWireFeeAmount, keyWireType}
+	expectedTypes := map[string]string{
+		keyWireFeeEnabled: typeBoolean,
+		keyWireFeeAmount:  typeNumber,
+		keyWireType:       typeString,
+	}
+
+	fieldDef := func(t *testing.T, schema map[string]interface{}, field string) map[string]interface{} {
+		t.Helper()
+		properties, ok := schema[keyProperties].(map[string]interface{})
+		require.True(t, ok, "schema should have properties")
+		def, ok := properties[field].(map[string]interface{})
+		require.True(t, ok, "schema should define %s", field)
+		return def
+	}
+
+	schemasByTool := map[string]map[string]interface{}{
+		"client_create": ClientCreateSchema(),
+		"client_update": ClientUpdateSchema(),
+	}
+
+	for toolName, schema := range schemasByTool {
+		t.Run(toolName+"/FieldTypes", func(t *testing.T) {
+			for _, field := range wireFields {
+				def := fieldDef(t, schema, field)
+				assert.Equal(t, expectedTypes[field], def[keyType], "%s type", field)
+				assert.NotEmpty(t, def[keyDescription], "%s description", field)
+			}
+		})
+
+		t.Run(toolName+"/WireTypeEnumMatchesModel", func(t *testing.T) {
+			def := fieldDef(t, schema, keyWireType)
+			enum, ok := def[keyEnum].([]interface{})
+			require.True(t, ok, "wire_type should declare an enum")
+
+			values := make([]string, 0, len(enum))
+			for _, value := range enum {
+				str, isString := value.(string)
+				require.True(t, isString, "enum values should be strings")
+				values = append(values, str)
+			}
+			assert.ElementsMatch(t, models.ValidWireTypes, values)
+		})
+
+		t.Run(toolName+"/WireFeeAmountBounds", func(t *testing.T) {
+			def := fieldDef(t, schema, keyWireFeeAmount)
+			// The validator only enforces float64 bounds, so the type matters as well as the value
+			assert.IsType(t, float64(0), def[keyMinimum])
+			assert.IsType(t, float64(0), def[keyMaximum])
+			assert.InDelta(t, 0.0, def[keyMinimum], 0.0001)
+			assert.InDelta(t, models.MaxWireFeeAmount, def[keyMaximum], 0.0001)
+		})
+	}
+
+	t.Run("CreateDefaultsMatchCLI", func(t *testing.T) {
+		schema := ClientCreateSchema()
+		enabledDefault, ok := fieldDef(t, schema, keyWireFeeEnabled)[keyDefault].(bool)
+		require.True(t, ok, "wire_fee_enabled should default to a boolean")
+		assert.False(t, enabledDefault)
+		assert.InDelta(t, models.DefaultWireFeeAmount, fieldDef(t, schema, keyWireFeeAmount)[keyDefault], 0.0001)
+		assert.Equal(t, string(models.WireTypeNone), fieldDef(t, schema, keyWireType)[keyDefault])
+	})
+
+	t.Run("UpdateHasNoDefaults", func(t *testing.T) {
+		// An omitted update field must leave the stored client value unchanged
+		schema := ClientUpdateSchema()
+		for _, field := range wireFields {
+			assert.NotContains(t, fieldDef(t, schema, field), keyDefault, "%s must not declare a default", field)
+		}
+	})
+
+	t.Run("WireFieldsAreOptional", func(t *testing.T) {
+		for toolName, schema := range schemasByTool {
+			required, _ := schema[keyRequired].([]interface{})
+			for _, field := range wireFields {
+				assert.NotContains(t, required, field, "%s should be optional for %s", field, toolName)
 			}
 		}
 	})

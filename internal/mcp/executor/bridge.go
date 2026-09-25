@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
+
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 // BridgeError represents tool bridge errors.
@@ -33,6 +36,9 @@ var (
 	ErrCommandFailed              = &BridgeError{Op: "execute", Msg: "command execution failed"}
 	ErrCollectionFailed           = &BridgeError{Op: "collect", Msg: "file collection failed"}
 	ErrBatchNotSupported          = &BridgeError{Op: opValidate, Msg: "batch invoice generation is not supported by the CLI - please generate invoices individually"}
+	ErrInvalidWireType            = &BridgeError{Op: opValidate, Msg: "wire_type must be one of: " + strings.Join(models.ValidWireTypes, ", ")}
+	ErrInvalidWireFeeEnabled      = &BridgeError{Op: opValidate, Msg: "wire_fee_enabled must be true or false"}
+	ErrInvalidWireFeeAmount       = &BridgeError{Op: opValidate, Msg: "wire_fee_amount must be a number"}
 )
 
 // ToolCommand represents the mapping from an MCP tool to CLI command.
@@ -778,6 +784,11 @@ func (b *CLIBridge) buildClientCreateArgs(input map[string]interface{}) ([]strin
 		args = append(args, "--tax-id", taxID)
 	}
 
+	args, _, err := appendClientWireArgs(args, input)
+	if err != nil {
+		return nil, err
+	}
+
 	return args, nil
 }
 
@@ -851,6 +862,13 @@ func (b *CLIBridge) buildClientUpdateArgs(input map[string]interface{}) ([]strin
 		args = append(args, "--address", address)
 		hasUpdate = true
 	}
+	args, hasWireUpdate, err := appendClientWireArgs(args, input)
+	if err != nil {
+		return nil, err
+	}
+	if hasWireUpdate {
+		hasUpdate = true
+	}
 	if active, ok := input["active"].(bool); ok {
 		if active {
 			args = append(args, "--activate")
@@ -865,6 +883,50 @@ func (b *CLIBridge) buildClientUpdateArgs(input map[string]interface{}) ([]strin
 	}
 
 	return args, nil
+}
+
+// appendClientWireArgs translates the wire transfer settings of a client create or update
+// request into CLI flags and reports whether any were added. A present wire_fee_enabled is
+// always emitted, so an explicit false turns the fee off instead of being dropped. Values of
+// the wrong type and unknown wire types are rejected here because schema validation does
+// not enforce enum values and a silently dropped setting would leave the client unchanged.
+func appendClientWireArgs(args []string, input map[string]interface{}) ([]string, bool, error) {
+	added := false
+
+	if rawEnabled, ok := input["wire_fee_enabled"]; ok && rawEnabled != nil {
+		enabled, isBool := rawEnabled.(bool)
+		if !isBool {
+			return nil, false, fmt.Errorf("%w: got %v", ErrInvalidWireFeeEnabled, rawEnabled)
+		}
+		if enabled {
+			args = append(args, "--wire-fee")
+		} else {
+			args = append(args, "--wire-fee=false")
+		}
+		added = true
+	}
+
+	if rawAmount, ok := input["wire_fee_amount"]; ok && rawAmount != nil {
+		amount, isNumber := getFloatValue(rawAmount)
+		if !isNumber {
+			return nil, false, fmt.Errorf("%w: got %v", ErrInvalidWireFeeAmount, rawAmount)
+		}
+		args = append(args, "--wire-fee-amount", fmt.Sprintf("%.2f", amount))
+		added = true
+	}
+
+	if rawType, ok := input["wire_type"]; ok && rawType != nil {
+		wireType, isString := rawType.(string)
+		if !isString || (wireType != "" && !slices.Contains(models.ValidWireTypes, wireType)) {
+			return nil, false, fmt.Errorf("%w: got %v", ErrInvalidWireType, rawType)
+		}
+		if wireType != "" {
+			args = append(args, "--wire-type", wireType)
+			added = true
+		}
+	}
+
+	return args, added, nil
 }
 
 func (b *CLIBridge) buildClientDeleteArgs(input map[string]interface{}) ([]string, error) {

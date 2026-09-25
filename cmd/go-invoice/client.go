@@ -39,6 +39,9 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 	var name, email, phone, address, taxID string
 	var cryptoFeeEnabled bool
 	var cryptoFeeAmount float64
+	var wireFeeEnabled bool
+	var wireFeeAmount float64
+	var wireType string
 	var lateFeeEnabled bool
 
 	cmd := &cobra.Command{
@@ -47,7 +50,8 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 		Long:  "Create a new client with contact information",
 		Example: `  go-invoice client create --name "Acme Corp" --email "contact@acme.com"
   go-invoice client create --name "John Smith" --email "john@example.com" --phone "+1-555-123-4567"
-  go-invoice client create --name "Acme Company" --email "billing@acme.com" --crypto-fee --crypto-fee-amount 25.00 --late-fee`,
+  go-invoice client create --name "Acme Company" --email "billing@acme.com" --crypto-fee --crypto-fee-amount 25.00 --late-fee
+  go-invoice client create --name "Example Ltd" --email "ap@example.com" --wire-type international --wire-fee --wire-fee-amount 20.00`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 
@@ -72,6 +76,9 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 				TaxID:            taxID,
 				CryptoFeeEnabled: cryptoFeeEnabled,
 				CryptoFeeAmount:  cryptoFeeAmount,
+				WireFeeEnabled:   wireFeeEnabled,
+				WireFeeAmount:    wireFeeAmount,
+				WireType:         models.WireType(wireType),
 				LateFeeEnabled:   lateFeeEnabled,
 			}
 
@@ -83,6 +90,12 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 			a.logger.Info("Client created successfully", "name", client.Name, "id", client.ID)
 			if cryptoFeeEnabled {
 				a.logger.Printf("💰 Crypto service fee enabled: $%.2f\n", cryptoFeeAmount)
+			}
+			if client.WireType != models.WireTypeNone {
+				a.logger.Printf("🏦 Wire transfer instructions: %s\n", client.WireType)
+			}
+			if wireFeeEnabled {
+				a.logger.Printf("🏦 Wire transfer service fee enabled: $%.2f\n", wireFeeAmount)
 			}
 			if lateFeeEnabled {
 				a.logger.Printf("⚠️  Late fee policy enabled (1.5%% per month / 18%% APR)\n")
@@ -98,6 +111,9 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&taxID, "tax-id", "", "Tax ID (EIN, VAT number, etc.)")
 	cmd.Flags().BoolVar(&cryptoFeeEnabled, "crypto-fee", false, "Enable cryptocurrency service fee for this client")
 	cmd.Flags().Float64Var(&cryptoFeeAmount, "crypto-fee-amount", 25.00, "Cryptocurrency service fee amount")
+	cmd.Flags().BoolVar(&wireFeeEnabled, "wire-fee", false, "Enable wire transfer service fee for this client")
+	cmd.Flags().Float64Var(&wireFeeAmount, "wire-fee-amount", models.DefaultWireFeeAmount, "Wire transfer service fee amount")
+	cmd.Flags().StringVar(&wireType, "wire-type", string(models.WireTypeNone), "Wire transfer instructions shown to this client (domestic|international|none)")
 	cmd.Flags().BoolVar(&lateFeeEnabled, "late-fee", true, "Enable late fee policy on invoices (default: true)")
 
 	if err := cmd.MarkFlagRequired("name"); err != nil {
@@ -342,6 +358,9 @@ func (a *App) buildClientUpdateCommand() *cobra.Command {
 	var activate, deactivate bool
 	var cryptoFeeEnabled bool
 	var cryptoFeeAmount float64
+	var wireFeeEnabled bool
+	var wireFeeAmount float64
+	var wireType string
 	var lateFeeEnabled bool
 
 	cmd := &cobra.Command{
@@ -431,6 +450,18 @@ func (a *App) buildClientUpdateCommand() *cobra.Command {
 				client.CryptoFeeAmount = cryptoFeeAmount
 				updated = true
 			}
+			if cmd.Flags().Changed("wire-fee") {
+				client.WireFeeEnabled = wireFeeEnabled
+				updated = true
+			}
+			if cmd.Flags().Changed("wire-fee-amount") {
+				client.WireFeeAmount = wireFeeAmount
+				updated = true
+			}
+			if cmd.Flags().Changed("wire-type") {
+				client.WireType = models.WireType(wireType)
+				updated = true
+			}
 			if cmd.Flags().Changed("late-fee") {
 				client.LateFeeEnabled = lateFeeEnabled
 				updated = true
@@ -450,6 +481,12 @@ func (a *App) buildClientUpdateCommand() *cobra.Command {
 			if client.CryptoFeeEnabled {
 				a.logger.Printf("💰 Crypto service fee: $%.2f\n", client.CryptoFeeAmount)
 			}
+			if client.WireType != models.WireTypeNone {
+				a.logger.Printf("🏦 Wire transfer instructions: %s\n", client.WireType)
+			}
+			if client.WireFeeEnabled {
+				a.logger.Printf("🏦 Wire transfer service fee: $%.2f\n", client.WireFeeAmount)
+			}
 			if client.LateFeeEnabled {
 				a.logger.Printf("⚠️  Late fee policy enabled (1.5%% per month / 18%% APR)\n")
 			} else {
@@ -468,6 +505,9 @@ func (a *App) buildClientUpdateCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&deactivate, "deactivate", false, "Deactivate client")
 	cmd.Flags().BoolVar(&cryptoFeeEnabled, "crypto-fee", false, "Enable cryptocurrency service fee for this client")
 	cmd.Flags().Float64Var(&cryptoFeeAmount, "crypto-fee-amount", 25.00, "Cryptocurrency service fee amount")
+	cmd.Flags().BoolVar(&wireFeeEnabled, "wire-fee", false, "Enable wire transfer service fee for this client")
+	cmd.Flags().Float64Var(&wireFeeAmount, "wire-fee-amount", models.DefaultWireFeeAmount, "Wire transfer service fee amount")
+	cmd.Flags().StringVar(&wireType, "wire-type", string(models.WireTypeNone), "Wire transfer instructions shown to this client (domestic|international|none)")
 	cmd.Flags().BoolVar(&lateFeeEnabled, "late-fee", true, "Enable late fee policy on invoices")
 
 	return cmd

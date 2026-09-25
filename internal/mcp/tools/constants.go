@@ -24,6 +24,9 @@ const (
 	fieldInvoiceNumber = "invoice_number"
 	fieldName          = "name"
 	fieldRate          = "rate"
+	fieldWireFee       = "wire_fee_enabled"
+	fieldWireFeeAmount = "wire_fee_amount"
+	fieldWireType      = "wire_type"
 
 	// Schema keys
 	keyObject     = "object"

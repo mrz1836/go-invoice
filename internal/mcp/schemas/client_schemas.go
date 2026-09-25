@@ -67,6 +67,25 @@ func ClientCreateSchema() map[string]interface{} {
 				keyMaxLength:   500.0,
 				keyExamples:    []interface{}{"John Doe, Finance Dept", "Jane Smith", "HR Department, Accounting Team"},
 			},
+			keyWireFeeEnabled: map[string]interface{}{
+				keyType:        typeBoolean,
+				keyDefault:     false,
+				keyDescription: "Add a wire transfer service fee to this client's invoices. The fee is added before tax, like other service fees.",
+			},
+			keyWireFeeAmount: map[string]interface{}{
+				keyType:        typeNumber,
+				keyMinimum:     0.0,
+				keyMaximum:     maxWireFeeAmount,
+				keyDefault:     defaultWireFeeAmount,
+				keyDescription: "Wire transfer service fee amount in USD, applied when wire_fee_enabled is true.",
+				keyExamples:    []interface{}{20.00, 35.00},
+			},
+			keyWireType: map[string]interface{}{
+				keyType:        typeString,
+				keyEnum:        wireTypeEnum(),
+				keyDefault:     wireTypeNone,
+				keyDescription: "Which wire transfer instructions appear on this client's invoices: " + wireTypeDescriptionHint,
+			},
 		},
 		keyRequired:             []interface{}{keyName, keyEmail},
 		keyAdditionalProperties: false,
@@ -283,6 +302,22 @@ func ClientUpdateSchema() map[string]interface{} {
 				keyDescription: "Update approver contacts (names or departments) who should be shown on the invoice.",
 				keyMaxLength:   500.0,
 				keyExamples:    []interface{}{"John Doe, Finance Dept", "Jane Smith", "HR Department, Accounting Team"},
+			},
+			keyWireFeeEnabled: map[string]interface{}{
+				keyType:        typeBoolean,
+				keyDescription: "Enable (true) or disable (false) the wire transfer service fee for this client. Omit to leave it unchanged.",
+			},
+			keyWireFeeAmount: map[string]interface{}{
+				keyType:        typeNumber,
+				keyMinimum:     0.0,
+				keyMaximum:     maxWireFeeAmount,
+				keyDescription: "Update the wire transfer service fee amount in USD. Omit to leave it unchanged.",
+				keyExamples:    []interface{}{20.00, 35.00},
+			},
+			keyWireType: map[string]interface{}{
+				keyType:        typeString,
+				keyEnum:        wireTypeEnum(),
+				keyDescription: "Change which wire transfer instructions appear on this client's invoices: " + wireTypeDescriptionHint + " Omit to leave it unchanged.",
 			},
 			"activate": map[string]interface{}{
 				keyType:        typeBoolean,

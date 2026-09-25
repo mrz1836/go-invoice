@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,6 +19,16 @@ import (
 	"github.com/mrz1836/go-invoice/internal/services"
 	jsonStorage "github.com/mrz1836/go-invoice/internal/storage/json"
 	"github.com/mrz1836/go-invoice/internal/templates"
+)
+
+// Wire transfer generation errors
+var (
+	// ErrWireTransferDisabled indicates the client's wire transfer set is not enabled in the configuration
+	ErrWireTransferDisabled = errors.New("wire transfer instructions are not enabled")
+	// ErrWireTransferIncomplete indicates the client's wire transfer set is missing required fields
+	ErrWireTransferIncomplete = errors.New("wire transfer instructions are incomplete")
+	// ErrUnknownWireType indicates the client's wire type is not a recognized value
+	ErrUnknownWireType = errors.New("unknown wire type")
 )
 
 // buildGenerateCommand creates the generate command with subcommands
@@ -200,7 +211,7 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 		return validateErr
 	}
 
-	// Fetch fresh client data first to get latest crypto fee settings
+	// Fetch fresh client data first to get latest fee and wire transfer settings
 	clientService := a.createClientService(config.Storage.DataDir)
 	freshClient, err := clientService.GetClient(ctx, invoice.Client.ID)
 	if err != nil {
@@ -213,6 +224,13 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 		a.logger.Debug("using fresh client data", "client_id", freshClient.ID, "crypto_fee_enabled", freshClient.CryptoFeeEnabled)
 	}
 
+	// Resolve the client's wire transfer instructions before any fee is applied or saved,
+	// so an invoice is never produced with missing or disabled wire details
+	wireEnabled, err := resolveWireTransfer(freshClient.WireType, config.Business)
+	if err != nil {
+		return fmt.Errorf("cannot generate invoice %s: %w", invoice.Number, err)
+	}
+
 	// Apply crypto service fee if enabled for this client (using fresh client data)
 	cryptoEnabled := config.Business.CryptoPayments.USDCEnabled || config.Business.CryptoPayments.BSVEnabled
 	feeEnabled := freshClient.CryptoFeeEnabled
@@ -223,12 +241,17 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 		return fmt.Errorf("failed to set crypto fee: %w", cryptoErr)
 	}
 
-	// Save the updated invoice with crypto fee back to storage
+	// Apply wire transfer fee if client has it enabled
+	if wireErr := invoice.SetWireFee(ctx, wireEnabled, freshClient.WireFeeEnabled, freshClient.WireFeeAmount); wireErr != nil {
+		return fmt.Errorf("failed to set wire fee: %w", wireErr)
+	}
+
+	// Save the updated invoice with service fees back to storage
 	if updateErr := invoiceService.UpdateInvoiceDirectly(ctx, invoice); updateErr != nil {
-		a.logger.Error("failed to save invoice with crypto fee", "error", updateErr)
+		a.logger.Error("failed to save invoice with service fees", "error", updateErr)
 		// Continue anyway - we can still generate the HTML even if save fails
 	} else {
-		a.logger.Debug("invoice updated with crypto fee", "crypto_fee", invoice.CryptoFee, "new_total", invoice.Total)
+		a.logger.Debug("invoice updated with service fees", "crypto_fee", invoice.CryptoFee, "wire_fee", invoice.WireFee, "new_total", invoice.Total)
 	}
 
 	// Create data structure for template (client is already fresh in invoice now)
@@ -250,6 +273,92 @@ func (a *App) executeGenerateInvoice(ctx context.Context, invoiceID, configPath 
 	a.displayGenerationResults(outputPath, html, options, time.Since(start))
 
 	return nil
+}
+
+// wireField pairs a wire transfer setting's environment variable name with its configured value
+type wireField struct {
+	name  string
+	value string
+}
+
+// missingWireFields returns the names of the fields that have no value
+func missingWireFields(fields []wireField) []string {
+	var missing []string
+	for _, field := range fields {
+		if strings.TrimSpace(field.value) == "" {
+			missing = append(missing, field.name)
+		}
+	}
+	return missing
+}
+
+// missingDomesticWireFields lists the domestic wire settings required to render the instructions
+func missingDomesticWireFields(wire config.DomesticWire) []string {
+	return missingWireFields([]wireField{
+		{name: "WIRE_DOMESTIC_BENEFICIARY", value: wire.BeneficiaryName},
+		{name: "WIRE_DOMESTIC_BANK_NAME", value: wire.BankName},
+		{name: "WIRE_DOMESTIC_ACCOUNT", value: wire.AccountNumber},
+		{name: "WIRE_DOMESTIC_ROUTING", value: wire.RoutingNumber},
+		{name: "WIRE_DOMESTIC_ACCOUNT_TYPE", value: wire.AccountType},
+	})
+}
+
+// missingInternationalWireFields lists the international wire settings required to render the instructions.
+// Either an IBAN or an account number is required, and an intermediary bank and its SWIFT/BIC
+// are optional but must be provided together.
+func missingInternationalWireFields(wire config.InternationalWire) []string {
+	missing := missingWireFields([]wireField{
+		{name: "WIRE_INTL_BENEFICIARY", value: wire.BeneficiaryName},
+		{name: "WIRE_INTL_BENEFICIARY_ADDRESS", value: wire.BeneficiaryAddress},
+		{name: "WIRE_INTL_BANK_NAME", value: wire.BankName},
+		{name: "WIRE_INTL_BANK_ADDRESS", value: wire.BankAddress},
+		{name: "WIRE_INTL_SWIFT", value: wire.SWIFT},
+	})
+
+	if strings.TrimSpace(wire.IBAN) == "" && strings.TrimSpace(wire.AccountNumber) == "" {
+		missing = append(missing, "WIRE_INTL_IBAN or WIRE_INTL_ACCOUNT")
+	}
+
+	hasIntermediaryBank := strings.TrimSpace(wire.IntermediaryBank) != ""
+	hasIntermediarySWIFT := strings.TrimSpace(wire.IntermediarySWIFT) != ""
+	switch {
+	case hasIntermediaryBank && !hasIntermediarySWIFT:
+		missing = append(missing, "WIRE_INTL_INTERMEDIARY_SWIFT (required with WIRE_INTL_INTERMEDIARY_BANK)")
+	case hasIntermediarySWIFT && !hasIntermediaryBank:
+		missing = append(missing, "WIRE_INTL_INTERMEDIARY_BANK (required with WIRE_INTL_INTERMEDIARY_SWIFT)")
+	}
+
+	return missing
+}
+
+// resolveWireTransfer reports whether wire transfer instructions apply to a client with the given
+// wire type. It fails when the selected set is disabled or missing required fields so that an
+// invoice is never generated with incomplete wire details.
+func resolveWireTransfer(wireType models.WireType, business config.BusinessConfig) (bool, error) {
+	var enabled bool
+	var missing []string
+
+	switch models.NormalizeWireType(wireType) {
+	case models.WireTypeNone:
+		return false, nil
+	case models.WireTypeDomestic:
+		enabled = business.DomesticWire.Enabled
+		missing = missingDomesticWireFields(business.DomesticWire)
+	case models.WireTypeInternational:
+		enabled = business.InternationalWire.Enabled
+		missing = missingInternationalWireFields(business.InternationalWire)
+	default:
+		return false, fmt.Errorf("%w: %q (expected domestic, international, or none)", ErrUnknownWireType, wireType)
+	}
+
+	if !enabled {
+		return false, fmt.Errorf("%w: client uses %s wire transfer but it is not enabled in the configuration", ErrWireTransferDisabled, wireType)
+	}
+	if len(missing) > 0 {
+		return false, fmt.Errorf("%w: %s wire transfer is missing %s", ErrWireTransferIncomplete, wireType, strings.Join(missing, ", "))
+	}
+
+	return true, nil
 }
 
 // setupGenerateServices sets up configuration and services for invoice generation
@@ -603,15 +712,17 @@ func (a *App) createInvoiceData(invoice *models.Invoice, config *config.Config) 
 	return &InvoiceData{
 		Invoice: *invoice,
 		Business: BusinessInfo{
-			Name:           config.Business.Name,
-			Address:        config.Business.Address,
-			Phone:          config.Business.Phone,
-			Email:          config.Business.Email,
-			Website:        config.Business.Website,
-			TaxID:          config.Business.TaxID,
-			PaymentTerms:   config.Business.PaymentTerms,
-			BankDetails:    config.Business.BankDetails,
-			CryptoPayments: config.Business.CryptoPayments,
+			Name:                config.Business.Name,
+			Address:             config.Business.Address,
+			Phone:               config.Business.Phone,
+			Email:               config.Business.Email,
+			Website:             config.Business.Website,
+			TaxID:               config.Business.TaxID,
+			PaymentTerms:        config.Business.PaymentTerms,
+			PaymentInstructions: config.Business.PaymentInstructions,
+			DomesticWire:        config.Business.DomesticWire,
+			InternationalWire:   config.Business.InternationalWire,
+			CryptoPayments:      config.Business.CryptoPayments,
 		},
 		Config: ConfigInfo{
 			Currency:       config.Invoice.Currency,
@@ -763,15 +874,17 @@ type InvoiceData struct {
 }
 
 type BusinessInfo struct {
-	Name           string                `json:"name"`
-	Address        string                `json:"address"`
-	Phone          string                `json:"phone"`
-	Email          string                `json:"email"`
-	Website        string                `json:"website"`
-	TaxID          string                `json:"tax_id"`
-	PaymentTerms   string                `json:"payment_terms"`
-	BankDetails    config.BankDetails    `json:"bank_details"`
-	CryptoPayments config.CryptoPayments `json:"crypto_payments"`
+	Name                string                   `json:"name"`
+	Address             string                   `json:"address"`
+	Phone               string                   `json:"phone"`
+	Email               string                   `json:"email"`
+	Website             string                   `json:"website"`
+	TaxID               string                   `json:"tax_id"`
+	PaymentTerms        string                   `json:"payment_terms"`
+	PaymentInstructions string                   `json:"payment_instructions"`
+	DomesticWire        config.DomesticWire      `json:"domestic_wire"`
+	InternationalWire   config.InternationalWire `json:"international_wire"`
+	CryptoPayments      config.CryptoPayments    `json:"crypto_payments"`
 }
 
 type ConfigInfo struct {

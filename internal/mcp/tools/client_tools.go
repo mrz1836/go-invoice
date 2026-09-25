@@ -61,7 +61,7 @@ func CreateClientManagementTools() []*MCPTool {
 func createClientCreateTool() *MCPTool {
 	return &MCPTool{
 		Name:        "client_create",
-		Description: "Create and register a new client with contact information and business details. This tool will create comprehensive client records and validate email uniqueness and contact information completeness.",
+		Description: "Create and register a new client with contact information, business details, and wire transfer payment settings. This tool will create comprehensive client records and validate email uniqueness and contact information completeness.",
 		InputSchema: schemas.ClientCreateSchema(),
 		Examples: []MCPToolExample{
 			{
@@ -108,11 +108,24 @@ func createClientCreateTool() *MCPTool {
 				ExpectedOutput: "International client created with European contact format and VAT number",
 				UseCase:        "Managing international business relationships and compliance",
 			},
+			{
+				Description: "Create an international client who pays by wire transfer with a wire service fee",
+				Input: map[string]interface{}{
+					fieldName:          "Global Imports Ltd",
+					fieldEmail:         "ap@globalimports.example",
+					"address":          "10 King Street, London EC1A 1AA, United Kingdom",
+					fieldWireType:      "international",
+					fieldWireFee:       true,
+					fieldWireFeeAmount: 20.00,
+				},
+				ExpectedOutput: "Client created with international wire transfer instructions and a $20.00 wire transfer service fee on each invoice",
+				UseCase:        "Billing clients who pay by bank wire transfer",
+			},
 		},
 		Category:   CategoryClientManagement,
 		CLICommand: toolCLIName,
 		CLIArgs:    []string{fieldClient, "create"},
-		HelpText:   "Creates clients with automatic ID generation and contact validation. Ensures email uniqueness and validates contact information format for professional correspondence.",
+		HelpText:   "Creates clients with automatic ID generation and contact validation. Ensures email uniqueness and validates contact information format for professional correspondence. Optional wire_type (domestic, international, or none) selects the wire transfer instructions shown on invoices, and wire_fee_enabled/wire_fee_amount add a wire transfer service fee (default $20.00).",
 		Version:    toolVersion,
 		Timeout:    30 * time.Second,
 	}
@@ -276,7 +289,7 @@ func createClientShowTool() *MCPTool {
 func createClientUpdateTool() *MCPTool {
 	return &MCPTool{
 		Name:        "client_update",
-		Description: "Update client contact information, business details, and status. Validates email uniqueness and maintains contact information integrity.",
+		Description: "Update client contact information, business details, wire transfer payment settings, and status. Validates email uniqueness and maintains contact information integrity.",
 		InputSchema: schemas.ClientUpdateSchema(),
 		Examples: []MCPToolExample{
 			{
@@ -330,11 +343,21 @@ func createClientUpdateTool() *MCPTool {
 				ExpectedOutput: "Client profile completed with all missing contact and business information",
 				UseCase:        "Data completion and client relationship enhancement",
 			},
+			{
+				Description: "Switch a client to domestic wire transfer and remove the wire service fee",
+				Input: map[string]interface{}{
+					fieldClientName: "Acme Corporation",
+					fieldWireType:   "domestic",
+					fieldWireFee:    false,
+				},
+				ExpectedOutput: "Client invoices now show domestic wire transfer instructions without a wire transfer service fee",
+				UseCase:        "Changing how a client pays after they move their banking to a domestic account",
+			},
 		},
 		Category:   CategoryClientManagement,
 		CLICommand: toolCLIName,
 		CLIArgs:    []string{fieldClient, "update"},
-		HelpText:   "Updates client information with validation and business rule enforcement. Supports contact information changes, business detail updates, and maintains data integrity with uniqueness checking.",
+		HelpText:   "Updates client information with validation and business rule enforcement. Supports contact information changes, business detail updates, and wire transfer settings (wire_type, wire_fee_enabled, wire_fee_amount); omitted fields are left unchanged. Maintains data integrity with uniqueness checking.",
 		Version:    toolVersion,
 		Timeout:    20 * time.Second,
 	}

@@ -523,14 +523,17 @@ func (a *App) generateConfigFileContent(
 
 	if bankName != "" || bankAccount != "" || bankRouting != "" || paymentInstructions != "" {
 		content.WriteString("# Banking Information\n")
+		if bankName != "" || bankAccount != "" || bankRouting != "" {
+			content.WriteString("# Domestic wire details; set WIRE_DOMESTIC_ENABLED=true once all required fields are configured\n")
+		}
 		if bankName != "" {
-			fmt.Fprintf(&content, "BANK_NAME=%s\n", bankName)
+			fmt.Fprintf(&content, "WIRE_DOMESTIC_BANK_NAME=%s\n", bankName)
 		}
 		if bankAccount != "" {
-			fmt.Fprintf(&content, "BANK_ACCOUNT=%s\n", bankAccount)
+			fmt.Fprintf(&content, "WIRE_DOMESTIC_ACCOUNT=%s\n", bankAccount)
 		}
 		if bankRouting != "" {
-			fmt.Fprintf(&content, "BANK_ROUTING=%s\n", bankRouting)
+			fmt.Fprintf(&content, "WIRE_DOMESTIC_ROUTING=%s\n", bankRouting)
 		}
 		if paymentInstructions != "" {
 			fmt.Fprintf(&content, "PAYMENT_INSTRUCTIONS=%s\n", paymentInstructions)

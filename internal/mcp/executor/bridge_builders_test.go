@@ -1,10 +1,13 @@
 package executor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/mrz1836/go-invoice/internal/models"
 )
 
 // BridgeBuildersTestSuite tests the arg builder functions
@@ -593,6 +596,192 @@ func (suite *BridgeBuildersTestSuite) TestBuildConfigInitArgs() {
 	suite.Contains(args, "--force")
 	suite.Contains(args, "--template")
 	suite.Contains(args, "default")
+}
+
+// TestBuildClientCreateArgsWireSettings tests that wire settings map to the exact client create flags
+func (suite *BridgeBuildersTestSuite) TestBuildClientCreateArgsWireSettings() {
+	input := map[string]interface{}{
+		testFieldName:      "Acme Corp",
+		"email":            "ap@acme.example",
+		"wire_fee_enabled": true,
+		"wire_fee_amount":  20.0,
+		testFieldWireType:  "international",
+	}
+
+	args, err := suite.bridge.buildClientCreateArgs(input)
+
+	suite.Require().NoError(err)
+	expected := append(suite.bridge.getConfigArgs(),
+		"--name", "Acme Corp",
+		"--email", "ap@acme.example",
+		"--wire-fee",
+		"--wire-fee-amount", "20.00",
+		"--wire-type", "international",
+	)
+	suite.Equal(expected, args)
+}
+
+// TestBuildClientCreateArgsWireFeeExplicitFalse tests that an explicit false is passed through on create
+func (suite *BridgeBuildersTestSuite) TestBuildClientCreateArgsWireFeeExplicitFalse() {
+	input := map[string]interface{}{
+		testFieldName:      "Acme Corp",
+		"wire_fee_enabled": false,
+	}
+
+	args, err := suite.bridge.buildClientCreateArgs(input)
+
+	suite.Require().NoError(err)
+	suite.Contains(args, "--wire-fee=false")
+	suite.NotContains(args, "--wire-fee")
+}
+
+// TestBuildClientCreateArgsWithoutWireSettings tests that omitted wire settings leave the CLI defaults in place
+func (suite *BridgeBuildersTestSuite) TestBuildClientCreateArgsWithoutWireSettings() {
+	input := map[string]interface{}{
+		testFieldName:     "Acme Corp",
+		testFieldWireType: "",
+	}
+
+	args, err := suite.bridge.buildClientCreateArgs(input)
+
+	suite.Require().NoError(err)
+	for _, arg := range args {
+		suite.NotContains(arg, "--wire", "no wire flag expected when wire settings are omitted")
+	}
+}
+
+// TestBuildClientCreateArgsAcceptsEveryWireType tests every model wire type is accepted
+func (suite *BridgeBuildersTestSuite) TestBuildClientCreateArgsAcceptsEveryWireType() {
+	for _, wireType := range models.ValidWireTypes {
+		args, err := suite.bridge.buildClientCreateArgs(map[string]interface{}{
+			testFieldName:     "Acme Corp",
+			testFieldWireType: wireType,
+		})
+
+		suite.Require().NoError(err, "wire type %s", wireType)
+		suite.Equal([]string{"--wire-type", wireType}, args[len(args)-2:])
+	}
+}
+
+// TestBuildClientUpdateArgsWireSettings tests that each wire setting alone is a valid client update
+func (suite *BridgeBuildersTestSuite) TestBuildClientUpdateArgsWireSettings() {
+	testCases := []struct {
+		name     string
+		input    map[string]interface{}
+		expected []string
+	}{
+		{
+			name:     "EnableFee",
+			input:    map[string]interface{}{"wire_fee_enabled": true},
+			expected: []string{"--wire-fee"},
+		},
+		{
+			name:     "ExplicitFalseDisablesFee",
+			input:    map[string]interface{}{"wire_fee_enabled": false},
+			expected: []string{"--wire-fee=false"},
+		},
+		{
+			name:     "AmountOnly",
+			input:    map[string]interface{}{"wire_fee_amount": 35},
+			expected: []string{"--wire-fee-amount", "35.00"},
+		},
+		{
+			name:     "WireTypeOnly",
+			input:    map[string]interface{}{testFieldWireType: "domestic"},
+			expected: []string{"--wire-type", "domestic"},
+		},
+		{
+			name: "AllWireSettings",
+			input: map[string]interface{}{
+				"wire_fee_enabled": false,
+				"wire_fee_amount":  12.5,
+				testFieldWireType:  "none",
+			},
+			expected: []string{"--wire-fee=false", "--wire-fee-amount", "12.50", "--wire-type", "none"},
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			input := map[string]interface{}{testFieldClientID: testClientID}
+			for key, value := range tc.input {
+				input[key] = value
+			}
+
+			args, err := suite.bridge.buildClientUpdateArgs(input)
+
+			suite.Require().NoError(err)
+			expected := append(suite.bridge.getConfigArgs(), testClientID)
+			expected = append(expected, tc.expected...)
+			suite.Equal(expected, args)
+		})
+	}
+}
+
+// TestBuildClientUpdateArgsEmptyWireTypeIsNotAnUpdate tests that an empty wire type does not count as an update
+func (suite *BridgeBuildersTestSuite) TestBuildClientUpdateArgsEmptyWireTypeIsNotAnUpdate() {
+	args, err := suite.bridge.buildClientUpdateArgs(map[string]interface{}{
+		testFieldClientID: testClientID,
+		testFieldWireType: "",
+	})
+
+	suite.Require().ErrorIs(err, ErrMissingUpdateFields)
+	suite.Nil(args)
+}
+
+// TestBuildClientArgsRejectInvalidWireSettings tests invalid wire settings are rejected for create and update
+func (suite *BridgeBuildersTestSuite) TestBuildClientArgsRejectInvalidWireSettings() {
+	testCases := []struct {
+		name     string
+		field    string
+		value    interface{}
+		expected error
+	}{
+		{"UnknownWireType", testFieldWireType, "carrier-pigeon", ErrInvalidWireType},
+		{"WireTypeWrongCase", testFieldWireType, "International", ErrInvalidWireType},
+		{"WireTypeNotAString", testFieldWireType, 1.0, ErrInvalidWireType},
+		{"AmountNotANumber", "wire_fee_amount", "twenty", ErrInvalidWireFeeAmount},
+		{"EnabledNotABoolean", "wire_fee_enabled", "yes", ErrInvalidWireFeeEnabled},
+	}
+
+	for _, tc := range testCases {
+		suite.Run(tc.name, func() {
+			createArgs, createErr := suite.bridge.buildClientCreateArgs(map[string]interface{}{
+				testFieldName: "Acme Corp",
+				tc.field:      tc.value,
+			})
+			suite.Require().ErrorIs(createErr, tc.expected)
+			suite.Nil(createArgs)
+
+			updateArgs, updateErr := suite.bridge.buildClientUpdateArgs(map[string]interface{}{
+				testFieldClientID: testClientID,
+				testFieldName:     "Acme Corp",
+				tc.field:          tc.value,
+			})
+			suite.Require().ErrorIs(updateErr, tc.expected)
+			suite.Nil(updateArgs)
+		})
+	}
+}
+
+// TestExecuteToolCommandRejectsInvalidWireTypeBeforeRunning tests an invalid wire type never reaches the CLI
+func (suite *BridgeBuildersTestSuite) TestExecuteToolCommandRejectsInvalidWireTypeBeforeRunning() {
+	suite.logger.On("Error", "argument building failed",
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Times(2)
+
+	for _, toolName := range []string{"client_create", "client_update"} {
+		resp, err := suite.bridge.ExecuteToolCommand(context.Background(), toolName, map[string]interface{}{
+			testFieldClientID: testClientID,
+			testFieldName:     "Acme Corp",
+			testFieldWireType: "carrier-pigeon",
+		})
+
+		suite.Require().ErrorIs(err, ErrCommandBuildFailed, toolName)
+		suite.Require().ErrorIs(err, ErrInvalidWireType, toolName)
+		suite.Nil(resp)
+	}
+	suite.executor.AssertNotCalled(suite.T(), "Execute", mock.Anything, mock.Anything)
+	suite.logger.AssertExpectations(suite.T())
 }
 
 func TestBridgeBuildersTestSuite(t *testing.T) {

@@ -344,3 +344,44 @@ func TestCommandValidator_BasicFunctionality(t *testing.T) {
 		assert.ErrorIs(t, err, ErrPathTraversal)
 	})
 }
+
+// TestDefaultSecurityConfig_ForwardsWireEnvironment verifies wire transfer settings supplied to the
+// server environment reach the CLI, while variables outside the whitelist are still dropped
+func TestDefaultSecurityConfig_ForwardsWireEnvironment(t *testing.T) {
+	wireKeys := []string{
+		"WIRE_DOMESTIC_ENABLED",
+		"WIRE_DOMESTIC_BENEFICIARY",
+		"WIRE_DOMESTIC_BANK_NAME",
+		"WIRE_DOMESTIC_ACCOUNT",
+		"WIRE_DOMESTIC_ROUTING",
+		"WIRE_DOMESTIC_ACCOUNT_TYPE",
+		"WIRE_INTL_ENABLED",
+		"WIRE_INTL_BENEFICIARY",
+		"WIRE_INTL_BENEFICIARY_ADDRESS",
+		"WIRE_INTL_BANK_NAME",
+		"WIRE_INTL_BANK_ADDRESS",
+		"WIRE_INTL_SWIFT",
+		"WIRE_INTL_IBAN",
+		"WIRE_INTL_ACCOUNT",
+		"WIRE_INTL_INTERMEDIARY_BANK",
+		"WIRE_INTL_INTERMEDIARY_SWIFT",
+	}
+
+	config := DefaultSecurityConfig()
+	for _, key := range wireKeys {
+		assert.Contains(t, config.Sandbox.EnvironmentWhitelist, key)
+	}
+
+	t.Setenv("WIRE_INTL_SWIFT", "EXAMPLEX1")
+	t.Setenv("WIRE_DOMESTIC_ACCOUNT", "000123456789")
+	t.Setenv("GO_INVOICE_UNLISTED_SETTING", "not-forwarded")
+
+	executor := NewSecureExecutor(new(MockLogger), new(MockCommandValidator), config.Sandbox, new(MockFileHandler))
+	env := executor.buildEnvironment(nil)
+
+	assert.Contains(t, env, "WIRE_INTL_SWIFT=EXAMPLEX1")
+	assert.Contains(t, env, "WIRE_DOMESTIC_ACCOUNT=000123456789")
+	for _, entry := range env {
+		assert.NotContains(t, entry, "GO_INVOICE_UNLISTED_SETTING")
+	}
+}

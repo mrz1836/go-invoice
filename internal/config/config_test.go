@@ -176,6 +176,132 @@ CURRENCY=GBP
 	suite.Equal("GBP", config.Invoice.Currency)
 }
 
+// wireTestEnvVars lists every wire transfer environment variable read by the config loader
+func wireTestEnvVars() []string {
+	return []string{
+		"WIRE_DOMESTIC_ENABLED", "WIRE_DOMESTIC_BENEFICIARY", "WIRE_DOMESTIC_BANK_NAME",
+		"WIRE_DOMESTIC_ACCOUNT", "WIRE_DOMESTIC_ROUTING", "WIRE_DOMESTIC_ACCOUNT_TYPE",
+		"WIRE_INTL_ENABLED", "WIRE_INTL_BENEFICIARY", "WIRE_INTL_BENEFICIARY_ADDRESS",
+		"WIRE_INTL_BANK_NAME", "WIRE_INTL_BANK_ADDRESS", "WIRE_INTL_SWIFT", "WIRE_INTL_IBAN",
+		"WIRE_INTL_ACCOUNT", "WIRE_INTL_INTERMEDIARY_BANK", "WIRE_INTL_INTERMEDIARY_SWIFT",
+	}
+}
+
+// setMinimalBusinessEnv sets the environment variables required for a valid config
+func (suite *ConfigTestSuite) setMinimalBusinessEnv() {
+	suite.Require().NoError(os.Setenv("BUSINESS_NAME", "Wire Business"))
+	suite.Require().NoError(os.Setenv("BUSINESS_ADDRESS", "1 Example Way"))
+	suite.Require().NoError(os.Setenv("BUSINESS_EMAIL", "billing@example.com"))
+	suite.Require().NoError(os.Setenv("PAYMENT_TERMS", testNetThirty))
+}
+
+// TestLoadWireConfigFromEnv tests loading the domestic and international wire sets
+func (suite *ConfigTestSuite) TestLoadWireConfigFromEnv() {
+	suite.Run("DefaultsDisabledAndEmpty", func() {
+		suite.clearTestEnv()
+		defer suite.clearTestEnv()
+		suite.setMinimalBusinessEnv()
+
+		config, err := suite.service.LoadConfig(context.Background(), "nonexistent.env")
+		suite.Require().NoError(err)
+		suite.Equal(DomesticWire{}, config.Business.DomesticWire)
+		suite.Equal(InternationalWire{}, config.Business.InternationalWire)
+		suite.Empty(config.Business.PaymentInstructions)
+	})
+
+	suite.Run("AllFieldsLoaded", func() {
+		suite.clearTestEnv()
+		defer suite.clearTestEnv()
+		suite.setMinimalBusinessEnv()
+
+		envVars := map[string]string{
+			"PAYMENT_INSTRUCTIONS":          "Include the invoice number with your payment",
+			"WIRE_DOMESTIC_ENABLED":         "true",
+			"WIRE_DOMESTIC_BENEFICIARY":     testWireBeneficiary,
+			"WIRE_DOMESTIC_BANK_NAME":       testWireBankName,
+			"WIRE_DOMESTIC_ACCOUNT":         "0000123456",
+			"WIRE_DOMESTIC_ROUTING":         "123456789",
+			"WIRE_DOMESTIC_ACCOUNT_TYPE":    "Checking",
+			"WIRE_INTL_ENABLED":             "true",
+			"WIRE_INTL_BENEFICIARY":         testWireBeneficiary,
+			"WIRE_INTL_BENEFICIARY_ADDRESS": "1 Example Way, Springfield, US",
+			"WIRE_INTL_BANK_NAME":           testWireBankName,
+			"WIRE_INTL_BANK_ADDRESS":        "2 Example Plaza, Springfield, US",
+			"WIRE_INTL_SWIFT":               testWireSWIFT,
+			"WIRE_INTL_IBAN":                "GB00TEST00000000000000",
+			"WIRE_INTL_ACCOUNT":             "0000654321",
+			"WIRE_INTL_INTERMEDIARY_BANK":   "Example Correspondent Bank",
+			"WIRE_INTL_INTERMEDIARY_SWIFT":  "TESTUS44",
+		}
+		for key, value := range envVars {
+			suite.Require().NoError(os.Setenv(key, value))
+		}
+
+		config, err := suite.service.LoadConfig(context.Background(), "nonexistent.env")
+		suite.Require().NoError(err)
+
+		suite.Equal("Include the invoice number with your payment", config.Business.PaymentInstructions)
+		suite.Equal(DomesticWire{
+			Enabled:         true,
+			BeneficiaryName: testWireBeneficiary,
+			BankName:        testWireBankName,
+			AccountNumber:   "0000123456",
+			RoutingNumber:   "123456789",
+			AccountType:     "Checking",
+		}, config.Business.DomesticWire)
+		suite.Equal(InternationalWire{
+			Enabled:            true,
+			BeneficiaryName:    testWireBeneficiary,
+			BeneficiaryAddress: "1 Example Way, Springfield, US",
+			BankName:           testWireBankName,
+			BankAddress:        "2 Example Plaza, Springfield, US",
+			SWIFT:              testWireSWIFT,
+			IBAN:               "GB00TEST00000000000000",
+			AccountNumber:      "0000654321",
+			IntermediaryBank:   "Example Correspondent Bank",
+			IntermediarySWIFT:  "TESTUS44",
+		}, config.Business.InternationalWire)
+	})
+
+	suite.Run("EnabledTogglesAreIndependent", func() {
+		suite.clearTestEnv()
+		defer suite.clearTestEnv()
+		suite.setMinimalBusinessEnv()
+		suite.Require().NoError(os.Setenv("WIRE_DOMESTIC_ENABLED", "false"))
+		suite.Require().NoError(os.Setenv("WIRE_INTL_ENABLED", "true"))
+
+		config, err := suite.service.LoadConfig(context.Background(), "nonexistent.env")
+		suite.Require().NoError(err)
+		suite.False(config.Business.DomesticWire.Enabled)
+		suite.True(config.Business.InternationalWire.Enabled)
+	})
+
+	suite.Run("ProcessEnvironmentOverridesConfigFile", func() {
+		suite.clearTestEnv()
+		defer suite.clearTestEnv()
+
+		envContent := `BUSINESS_NAME=Wire File Business
+BUSINESS_ADDRESS=1 Example Way
+BUSINESS_EMAIL=billing@example.com
+PAYMENT_TERMS=Net 30
+WIRE_INTL_ENABLED=true
+WIRE_INTL_BANK_NAME=File Bank
+WIRE_INTL_SWIFT=FILEUS33
+`
+		envFile := filepath.Join(suite.tempDir, "wire.env")
+		suite.Require().NoError(os.WriteFile(envFile, []byte(envContent), 0o600))
+
+		// Values supplied by the runtime environment must win over the config file
+		suite.Require().NoError(os.Setenv("WIRE_INTL_SWIFT", testWireSWIFT))
+
+		config, err := suite.service.LoadConfig(context.Background(), envFile)
+		suite.Require().NoError(err)
+		suite.True(config.Business.InternationalWire.Enabled)
+		suite.Equal("File Bank", config.Business.InternationalWire.BankName)
+		suite.Equal(testWireSWIFT, config.Business.InternationalWire.SWIFT)
+	})
+}
+
 // TestLoadConfigContextCancellation tests context cancellation
 func (suite *ConfigTestSuite) TestLoadConfigContextCancellation() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -338,13 +464,15 @@ func (suite *ConfigTestSuite) clearTestEnv() {
 	testEnvVars := []string{
 		"BUSINESS_NAME", "BUSINESS_ADDRESS", "BUSINESS_EMAIL", "BUSINESS_PHONE",
 		"BUSINESS_TAX_ID", "BUSINESS_VAT_ID", "BUSINESS_WEBSITE", "PAYMENT_TERMS",
-		"BANK_NAME", "BANK_ACCOUNT", "BANK_ROUTING", "BANK_IBAN", "BANK_SWIFT",
 		"PAYMENT_INSTRUCTIONS", "INVOICE_PREFIX", "INVOICE_START_NUMBER",
 		"INVOICE_FOOTER", "CURRENCY", "VAT_RATE", "INVOICE_DUE_DAYS",
 		"DATA_DIR", "BACKUP_DIR", "RETENTION_DAYS", "AUTO_BACKUP", "BACKUP_INTERVAL",
 	}
 
 	for _, envVar := range testEnvVars {
+		_ = os.Unsetenv(envVar) // Cleanup, ignore error
+	}
+	for _, envVar := range wireTestEnvVars() {
 		_ = os.Unsetenv(envVar) // Cleanup, ignore error
 	}
 }

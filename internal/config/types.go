@@ -11,27 +11,42 @@ type Config struct {
 
 // BusinessConfig contains business information for invoices
 type BusinessConfig struct {
-	Name           string         `json:"name" validate:"required"`
-	Address        string         `json:"address" validate:"required"`
-	Phone          string         `json:"phone,omitempty"`
-	Email          string         `json:"email" validate:"required,email"`
-	TaxID          string         `json:"tax_id,omitempty"`
-	VATID          string         `json:"vat_id,omitempty"`
-	Website        string         `json:"website,omitempty"`
-	PaymentTerms   string         `json:"payment_terms" validate:"required"`
-	BankDetails    BankDetails    `json:"bank_details,omitempty"`
-	CryptoPayments CryptoPayments `json:"crypto_payments,omitempty"`
+	Name                string            `json:"name" validate:"required"`
+	Address             string            `json:"address" validate:"required"`
+	Phone               string            `json:"phone,omitempty"`
+	Email               string            `json:"email" validate:"required,email"`
+	TaxID               string            `json:"tax_id,omitempty"`
+	VATID               string            `json:"vat_id,omitempty"`
+	Website             string            `json:"website,omitempty"`
+	PaymentTerms        string            `json:"payment_terms" validate:"required"`
+	PaymentInstructions string            `json:"payment_instructions,omitempty"`
+	DomesticWire        DomesticWire      `json:"domestic_wire,omitempty"`
+	InternationalWire   InternationalWire `json:"international_wire,omitempty"`
+	CryptoPayments      CryptoPayments    `json:"crypto_payments,omitempty"`
 }
 
-// BankDetails contains banking information for payments
-type BankDetails struct {
-	Name                string `json:"name,omitempty"`
-	AccountNumber       string `json:"account_number,omitempty"`
-	RoutingNumber       string `json:"routing_number,omitempty"`
-	IBAN                string `json:"iban,omitempty"`
-	SWIFT               string `json:"swift,omitempty"`
-	PaymentInstructions string `json:"payment_instructions,omitempty"`
-	ACHEnabled          bool   `json:"ach_enabled"`
+// DomesticWire contains the details a US bank needs to send a domestic USD wire
+type DomesticWire struct {
+	Enabled         bool   `json:"enabled"`
+	BeneficiaryName string `json:"beneficiary_name,omitempty"`
+	BankName        string `json:"bank_name,omitempty"`
+	AccountNumber   string `json:"account_number,omitempty"`
+	RoutingNumber   string `json:"routing_number,omitempty"`
+	AccountType     string `json:"account_type,omitempty"`
+}
+
+// InternationalWire contains the details a foreign bank needs to send a USD wire
+type InternationalWire struct {
+	Enabled            bool   `json:"enabled"`
+	BeneficiaryName    string `json:"beneficiary_name,omitempty"`
+	BeneficiaryAddress string `json:"beneficiary_address,omitempty"`
+	BankName           string `json:"bank_name,omitempty"`
+	BankAddress        string `json:"bank_address,omitempty"`
+	SWIFT              string `json:"swift,omitempty"`
+	IBAN               string `json:"iban,omitempty"`
+	AccountNumber      string `json:"account_number,omitempty"`
+	IntermediaryBank   string `json:"intermediary_bank,omitempty"`
+	IntermediarySWIFT  string `json:"intermediary_swift,omitempty"`
 }
 
 // CryptoPayments contains cryptocurrency payment addresses

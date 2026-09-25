@@ -697,7 +697,7 @@ Total:                        $5,527.50
 Cryptocurrency Service Fee Notice:
 A $25.00 service fee has been applied for cryptocurrency
 payment processing and conversion.
-To avoid this fee, please use ACH Bank Transfer (USD).
+To avoid this fee, please pay by bank wire transfer (USD).
 ```
 
 ### Example: Enable for Specific Client
@@ -740,7 +740,7 @@ Then enable the crypto fee for specific clients using the CLI commands above.
 - **Cost Recovery**: Recover cryptocurrency exchange and processing fees
 - **Transparency**: Clearly communicate fees to clients upfront
 - **Flexibility**: Configurable amount per client or use global default
-- **ACH Incentive**: Encourages clients to use fee-free ACH transfers
+- **Wire Incentive**: Encourages clients to pay by bank wire transfer instead
 
 ### Update Existing Client
 
@@ -938,7 +938,8 @@ TAX_RATE=0.10  # 10% tax
 TAX_ENABLED=true
 
 # Payment Methods
-ACH_ENABLED=true
+WIRE_DOMESTIC_ENABLED=false
+WIRE_INTL_ENABLED=false
 USDC_ENABLED=false
 USDC_ADDRESS="0xYourUSDCWalletAddress"
 BSV_ENABLED=false

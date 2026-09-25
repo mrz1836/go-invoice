@@ -98,10 +98,15 @@ BUSINESS_PHONE=+1-555-123-4567
 BUSINESS_WEBSITE=https://acmeconsulting.com
 PAYMENT_TERMS=Net 30
 
-# Banking Information (optional)
-BANK_NAME=First National Bank
-BANK_ACCOUNT=****1234
-BANK_ROUTING=021000021
+# Wire Transfer Information (optional)
+# Keep account details out of version control; supplying them through the
+# runtime environment is recommended (environment values override this file)
+WIRE_DOMESTIC_ENABLED=true
+WIRE_DOMESTIC_BENEFICIARY=Acme Consulting LLC
+WIRE_DOMESTIC_BANK_NAME=Example Bank
+WIRE_DOMESTIC_ACCOUNT=0000001234
+WIRE_DOMESTIC_ROUTING=123456789
+WIRE_DOMESTIC_ACCOUNT_TYPE=Checking
 PAYMENT_INSTRUCTIONS=Please remit payment within 30 days
 
 # Invoice Settings

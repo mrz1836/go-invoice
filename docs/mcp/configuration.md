@@ -56,19 +56,33 @@ PAYMENT_LATE_FEE="2.5%"               # Monthly late fee percentage
 PAYMENT_DISCOUNT_TERMS="2/10 Net 30"  # Early payment discount
 ```
 
-### Banking Information
+### Wire Transfer Information
+
+Wire details are grouped into a domestic (US) set and an international set. Each
+client selects which set appears on its invoices. Keep account details out of
+version control; supplying them through the runtime environment is recommended
+(environment values override the config file).
 
 ```bash
-# Primary bank account
-BANK_NAME="Your Bank Name"
-BANK_ACCOUNT="****1234"               # Masked account number
-BANK_ROUTING="123456789"              # US routing number
-BANK_IBAN="GB29 NWBK 6016 1331 9268 19"  # International IBAN
-BANK_SWIFT="ABCDGB2L"                 # SWIFT/BIC code
+# Domestic (US) wire
+WIRE_DOMESTIC_ENABLED=true
+WIRE_DOMESTIC_BENEFICIARY="Your Business LLC"
+WIRE_DOMESTIC_BANK_NAME="Example Bank"
+WIRE_DOMESTIC_ACCOUNT="0000001234"
+WIRE_DOMESTIC_ROUTING="123456789"            # ABA routing number
+WIRE_DOMESTIC_ACCOUNT_TYPE="Checking"
 
-# Secondary accounts (optional)
-BANK_NAME_2="Secondary Bank"
-BANK_ACCOUNT_2="****5678"
+# International wire
+WIRE_INTL_ENABLED=true
+WIRE_INTL_BENEFICIARY="Your Business LLC"
+WIRE_INTL_BENEFICIARY_ADDRESS="1 Example Way, Springfield, US"
+WIRE_INTL_BANK_NAME="Example Bank"
+WIRE_INTL_BANK_ADDRESS="2 Example Plaza, Springfield, US"
+WIRE_INTL_SWIFT="TESTUS33"                   # SWIFT/BIC code
+WIRE_INTL_IBAN=""                            # IBAN, or use WIRE_INTL_ACCOUNT
+WIRE_INTL_ACCOUNT="0000001234"
+WIRE_INTL_INTERMEDIARY_BANK=""               # Optional correspondent bank
+WIRE_INTL_INTERMEDIARY_SWIFT=""              # Required with an intermediary bank
 ```
 
 ### Invoice Defaults

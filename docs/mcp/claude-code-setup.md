@@ -89,12 +89,13 @@ BUSINESS_VAT_ID="GB123456789"  # If applicable
 PAYMENT_TERMS="Net 30"
 PAYMENT_INSTRUCTIONS="Payment due within 30 days. Late fees may apply."
 
-# Banking Details
-BANK_NAME="Your Bank Name"
-BANK_ACCOUNT="****1234"
-BANK_ROUTING="123456789"
-BANK_IBAN="GB29 NWBK 6016 1331 9268 19"  # If applicable
-BANK_SWIFT="ABCDGB2L"  # If applicable
+# Wire Transfer Details (domestic US set; see WIRE_INTL_* for international)
+WIRE_DOMESTIC_ENABLED=true
+WIRE_DOMESTIC_BENEFICIARY="Your Business Name"
+WIRE_DOMESTIC_BANK_NAME="Example Bank"
+WIRE_DOMESTIC_ACCOUNT="0000001234"
+WIRE_DOMESTIC_ROUTING="123456789"
+WIRE_DOMESTIC_ACCOUNT_TYPE="Checking"
 
 # Invoice Settings
 INVOICE_PREFIX="INV"
