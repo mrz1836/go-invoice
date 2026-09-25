@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -611,4 +613,50 @@ func TestExecuteGenerateInvoiceWireTransfer(t *testing.T) {
 		assert.InDelta(t, 0.0, stored.WireFee, 0.001)
 		assert.False(t, f.outputExists(), "invoice must not be rendered")
 	})
+}
+
+// captureStdout runs fn and returns everything it wrote to standard output
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+
+	reader, writer, err := os.Pipe()
+	require.NoError(t, err)
+
+	output := make(chan string, 1)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, reader)
+		output <- buf.String()
+	}()
+
+	original := os.Stdout
+	os.Stdout = writer
+	defer func() { os.Stdout = original }()
+
+	fn()
+
+	os.Stdout = original
+	require.NoError(t, writer.Close())
+	return <-output
+}
+
+func TestInvoiceRecalculateIncludesWireFee(t *testing.T) {
+	f := newWireGenerateFixture(t, nil, nil, func(inv *models.Invoice) {
+		// Stored totals are stale until the recalculate command folds the fee in
+		inv.WireFee = models.DefaultWireFeeAmount
+	})
+
+	var runErr error
+	output := captureStdout(t, func() {
+		runErr = runClientCommand(t, f.app.buildInvoiceRecalculateCommand(), f.configPath, string(f.invoice.ID))
+	})
+	require.NoError(t, runErr)
+
+	assert.Contains(t, output, "Wire Fee:    $20.00")
+	assert.NotContains(t, output, "Crypto Fee:")
+
+	stored := f.stored(t)
+	assert.InDelta(t, 1000.0, stored.Subtotal, 0.001)
+	assert.InDelta(t, 102.0, stored.TaxAmount, 0.001, "wire fee is taxed")
+	assert.InDelta(t, 1122.0, stored.Total, 0.001)
 }
