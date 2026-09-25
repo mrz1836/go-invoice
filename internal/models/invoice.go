@@ -21,6 +21,7 @@ type Invoice struct {
 	Description         string     `json:"description,omitempty"`
 	Subtotal            float64    `json:"subtotal"`
 	CryptoFee           float64    `json:"crypto_fee"`
+	WireFee             float64    `json:"wire_fee"`
 	TaxRate             float64    `json:"tax_rate"`
 	TaxAmount           float64    `json:"tax_amount"`
 	Total               float64    `json:"total"`
@@ -54,6 +55,8 @@ type Client struct {
 	Active           bool      `json:"active"`
 	CryptoFeeEnabled bool      `json:"crypto_fee_enabled"`
 	CryptoFeeAmount  float64   `json:"crypto_fee_amount,omitempty"`
+	WireFeeEnabled   bool      `json:"wire_fee_enabled"`
+	WireFeeAmount    float64   `json:"wire_fee_amount,omitempty"`
 	LateFeeEnabled   bool      `json:"late_fee_enabled"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
@@ -414,11 +417,11 @@ func (i *Invoice) RecalculateTotals(ctx context.Context) error {
 	// Round to avoid floating point precision issues
 	i.Subtotal = math.Round(subtotal*100) / 100
 
-	// Calculate tax amount on (subtotal + crypto fee)
-	taxableAmount := i.Subtotal + i.CryptoFee
+	// Calculate tax amount on (subtotal + crypto fee + wire fee)
+	taxableAmount := i.Subtotal + i.CryptoFee + i.WireFee
 	i.TaxAmount = math.Round(taxableAmount*i.TaxRate*100) / 100
 
-	// Calculate total (subtotal + crypto fee + tax)
+	// Calculate total (subtotal + crypto fee + wire fee + tax)
 	i.Total = math.Round((taxableAmount+i.TaxAmount)*100) / 100
 
 	return nil
@@ -440,6 +443,29 @@ func (i *Invoice) SetCryptoFee(ctx context.Context, cryptoPaymentsEnabled, feeEn
 	}
 
 	// Recalculate totals with the new crypto fee
+	return i.RecalculateTotals(ctx)
+}
+
+// SetWireFee sets the wire transfer service fee if applicable.
+// When the fee is enabled with a non-positive amount, DefaultWireFeeAmount is applied.
+func (i *Invoice) SetWireFee(ctx context.Context, wireEnabled, feeEnabled bool, feeAmount float64) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	// Apply wire service fee if wire payments are enabled and fee is enabled
+	if wireEnabled && feeEnabled {
+		if feeAmount <= 0 {
+			feeAmount = DefaultWireFeeAmount
+		}
+		i.WireFee = feeAmount
+	} else {
+		i.WireFee = 0.0
+	}
+
+	// Recalculate totals with the new wire fee
 	return i.RecalculateTotals(ctx)
 }
 

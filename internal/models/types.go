@@ -25,6 +25,14 @@ const (
 	StatusVoided  = "voided"
 )
 
+// Wire transfer service fee amounts
+const (
+	// DefaultWireFeeAmount is applied when the wire fee is enabled without a positive amount
+	DefaultWireFeeAmount = 20.00
+	// MaxWireFeeAmount is the upper bound accepted for a client's wire fee amount
+	MaxWireFeeAmount = 10000.00
+)
+
 // ValidInvoiceStatuses contains all valid invoice status values
 var ValidInvoiceStatuses = []string{StatusDraft, StatusSent, StatusPaid, StatusOverdue, StatusVoided} //nolint:gochecknoglobals // Constant-like status validation slice
 

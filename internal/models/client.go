@@ -52,6 +52,9 @@ func (c *Client) Validate(ctx context.Context) error {
 		AddMaxLength("address", c.Address, 500).
 		AddMaxLength("tax_id", c.TaxID, 50).
 		AddMaxLength("approver_contacts", c.ApproverContacts, 500).
+		AddValidFloat("wire_fee_amount", c.WireFeeAmount).
+		AddNonNegative("wire_fee_amount", c.WireFeeAmount).
+		AddIf(c.WireFeeAmount > MaxWireFeeAmount, "wire_fee_amount", "must not exceed 10000", c.WireFeeAmount).
 		AddTimeRequired("created_at", c.CreatedAt).
 		AddTimeRequired("updated_at", c.UpdatedAt).
 		AddTimeOrder("updated_at", c.CreatedAt, c.UpdatedAt, "created_at", "updated_at").
@@ -240,6 +243,8 @@ type CreateClientRequest struct {
 	ApproverContacts string  `json:"approver_contacts,omitempty"`
 	CryptoFeeEnabled bool    `json:"crypto_fee_enabled"`
 	CryptoFeeAmount  float64 `json:"crypto_fee_amount,omitempty"`
+	WireFeeEnabled   bool    `json:"wire_fee_enabled"`
+	WireFeeAmount    float64 `json:"wire_fee_amount,omitempty"`
 	LateFeeEnabled   bool    `json:"late_fee_enabled"`
 }
 
@@ -260,5 +265,8 @@ func (r *CreateClientRequest) Validate(ctx context.Context) error {
 		AddMaxLength("address", r.Address, 500).
 		AddMaxLength("tax_id", r.TaxID, 50).
 		AddMaxLength("approver_contacts", r.ApproverContacts, 500).
+		AddValidFloat("wire_fee_amount", r.WireFeeAmount).
+		AddNonNegative("wire_fee_amount", r.WireFeeAmount).
+		AddIf(r.WireFeeAmount > MaxWireFeeAmount, "wire_fee_amount", "must not exceed 10000", r.WireFeeAmount).
 		Build(ErrCreateClientRequestInvalid)
 }

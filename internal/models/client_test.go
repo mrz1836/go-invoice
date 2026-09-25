@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -1115,6 +1116,93 @@ func (suite *ClientTestSuite) TestLateFeeEnabled() {
 			}
 
 			assert.Equal(t, tt.expected, client.LateFeeEnabled)
+		})
+	}
+}
+
+func (suite *ClientTestSuite) TestWireFeeAmountValidation() {
+	t := suite.T()
+
+	tests := []struct {
+		name        string
+		enabled     bool
+		amount      float64
+		expectError bool
+		errorMsg    string
+	}{
+		{name: "DisabledZeroAmount", enabled: false, amount: 0, expectError: false},
+		{name: "EnabledDefaultAmount", enabled: true, amount: DefaultWireFeeAmount, expectError: false},
+		{name: "EnabledZeroAmount", enabled: true, amount: 0, expectError: false},
+		{name: "ExactlyMaxAmount", enabled: true, amount: MaxWireFeeAmount, expectError: false},
+		{
+			name:        "NegativeAmount",
+			enabled:     true,
+			amount:      -1,
+			expectError: true,
+			errorMsg:    "validation failed for field 'wire_fee_amount': must be non-negative",
+		},
+		{
+			name:        "OverMaxAmount",
+			enabled:     true,
+			amount:      MaxWireFeeAmount + 0.01,
+			expectError: true,
+			errorMsg:    "validation failed for field 'wire_fee_amount': must not exceed 10000",
+		},
+		{
+			name:        "NaNAmount",
+			enabled:     true,
+			amount:      math.NaN(),
+			expectError: true,
+			errorMsg:    "validation failed for field 'wire_fee_amount': must be a valid number",
+		},
+		{
+			name:        "InfAmount",
+			enabled:     true,
+			amount:      math.Inf(1),
+			expectError: true,
+			errorMsg:    "validation failed for field 'wire_fee_amount': must be a valid number",
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run("Client/"+tt.name, func() {
+			client := Client{
+				ID:             testClientID001,
+				Name:           testClientName,
+				Email:          testClientEmail,
+				Active:         true,
+				WireFeeEnabled: tt.enabled,
+				WireFeeAmount:  tt.amount,
+				CreatedAt:      time.Now(),
+				UpdatedAt:      time.Now(),
+			}
+
+			err := client.Validate(suite.ctx)
+			if tt.expectError {
+				require.Error(t, err)
+				require.ErrorIs(t, err, ErrClientValidationFailed)
+				assert.Contains(t, err.Error(), tt.errorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+
+		suite.Run("CreateClientRequest/"+tt.name, func() {
+			request := CreateClientRequest{
+				Name:           testClientName,
+				Email:          testClientEmail,
+				WireFeeEnabled: tt.enabled,
+				WireFeeAmount:  tt.amount,
+			}
+
+			err := request.Validate(suite.ctx)
+			if tt.expectError {
+				require.Error(t, err)
+				require.ErrorIs(t, err, ErrCreateClientRequestInvalid)
+				assert.Contains(t, err.Error(), tt.errorMsg)
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }

@@ -1032,6 +1032,272 @@ func (suite *InvoiceTestSuite) TestRecalculateTotalsWithCryptoFee() {
 	}
 }
 
+func (suite *InvoiceTestSuite) TestSetWireFee() {
+	t := suite.T()
+
+	tests := []struct {
+		name              string
+		wireEnabled       bool
+		feeEnabled        bool
+		feeAmount         float64
+		workItemTotal     float64
+		taxRate           float64
+		expectedWireFee   float64
+		expectedSubtotal  float64
+		expectedTaxAmount float64
+		expectedTotal     float64
+	}{
+		{
+			name:              "WireEnabledAndFeeEnabled",
+			wireEnabled:       true,
+			feeEnabled:        true,
+			feeAmount:         35.00,
+			workItemTotal:     1000.00,
+			taxRate:           0.10,
+			expectedWireFee:   35.00,
+			expectedSubtotal:  1000.00,
+			expectedTaxAmount: 103.50,  // Tax on (1000 + 35)
+			expectedTotal:     1138.50, // 1000 + 35 + 103.50
+		},
+		{
+			name:              "ZeroFeeAmountUsesDefault",
+			wireEnabled:       true,
+			feeEnabled:        true,
+			feeAmount:         0.00,
+			workItemTotal:     1000.00,
+			taxRate:           0.10,
+			expectedWireFee:   DefaultWireFeeAmount,
+			expectedSubtotal:  1000.00,
+			expectedTaxAmount: 102.00,  // Tax on (1000 + 20)
+			expectedTotal:     1122.00, // 1000 + 20 + 102
+		},
+		{
+			name:              "NegativeFeeAmountUsesDefault",
+			wireEnabled:       true,
+			feeEnabled:        true,
+			feeAmount:         -5.00,
+			workItemTotal:     1000.00,
+			taxRate:           0.10,
+			expectedWireFee:   DefaultWireFeeAmount,
+			expectedSubtotal:  1000.00,
+			expectedTaxAmount: 102.00,
+			expectedTotal:     1122.00,
+		},
+		{
+			name:              "WireEnabledButFeeDisabled",
+			wireEnabled:       true,
+			feeEnabled:        false,
+			feeAmount:         20.00,
+			workItemTotal:     1000.00,
+			taxRate:           0.10,
+			expectedWireFee:   0.00,
+			expectedSubtotal:  1000.00,
+			expectedTaxAmount: 100.00,
+			expectedTotal:     1100.00,
+		},
+		{
+			name:              "WireDisabledFeeEnabled",
+			wireEnabled:       false,
+			feeEnabled:        true,
+			feeAmount:         20.00,
+			workItemTotal:     1000.00,
+			taxRate:           0.10,
+			expectedWireFee:   0.00,
+			expectedSubtotal:  1000.00,
+			expectedTaxAmount: 100.00,
+			expectedTotal:     1100.00,
+		},
+		{
+			name:              "BothDisabled",
+			wireEnabled:       false,
+			feeEnabled:        false,
+			feeAmount:         20.00,
+			workItemTotal:     1000.00,
+			taxRate:           0.10,
+			expectedWireFee:   0.00,
+			expectedSubtotal:  1000.00,
+			expectedTaxAmount: 100.00,
+			expectedTotal:     1100.00,
+		},
+		{
+			name:              "NoWorkItemsWithWireFee",
+			wireEnabled:       true,
+			feeEnabled:        true,
+			feeAmount:         20.00,
+			workItemTotal:     0.00,
+			taxRate:           0.10,
+			expectedWireFee:   20.00,
+			expectedSubtotal:  0.00,
+			expectedTaxAmount: 2.00,  // Tax on 20
+			expectedTotal:     22.00, // 0 + 20 + 2
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			invoice := &Invoice{
+				ID:        testInvoiceID001,
+				Number:    testInvoiceNum,
+				Date:      time.Now(),
+				DueDate:   time.Now().AddDate(0, 0, 30),
+				Status:    StatusDraft,
+				TaxRate:   tt.taxRate,
+				WorkItems: []WorkItem{},
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+				Version:   1,
+			}
+
+			if tt.workItemTotal > 0 {
+				invoice.WorkItems = append(invoice.WorkItems, WorkItem{
+					ID:          testItemID001,
+					Date:        time.Now(),
+					Hours:       8.0,
+					Rate:        tt.workItemTotal / 8.0,
+					Description: "Test work",
+					Total:       tt.workItemTotal,
+					CreatedAt:   time.Now(),
+				})
+			}
+
+			err := invoice.RecalculateTotals(suite.ctx)
+			require.NoError(t, err)
+
+			err = invoice.SetWireFee(suite.ctx, tt.wireEnabled, tt.feeEnabled, tt.feeAmount)
+			require.NoError(t, err)
+
+			assert.InDelta(t, tt.expectedWireFee, invoice.WireFee, 1e-9, "wire fee mismatch")
+			assert.InDelta(t, tt.expectedSubtotal, invoice.Subtotal, 1e-9, "subtotal mismatch")
+			assert.InDelta(t, tt.expectedTaxAmount, invoice.TaxAmount, 1e-9, "tax amount mismatch")
+			assert.InDelta(t, tt.expectedTotal, invoice.Total, 1e-9, "total mismatch")
+		})
+	}
+}
+
+func (suite *InvoiceTestSuite) TestSetWireFeeContextCanceled() {
+	t := suite.T()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	invoice := &Invoice{WorkItems: []WorkItem{{Total: 1000.0}}, TaxRate: 0.10}
+	err := invoice.SetWireFee(ctx, true, true, 20.00)
+	require.Error(t, err)
+	require.ErrorIs(t, err, context.Canceled)
+	assert.InDelta(t, 0.0, invoice.WireFee, 1e-9, "wire fee must not change on canceled context")
+	assert.InDelta(t, 0.0, invoice.Total, 1e-9, "totals must not be recalculated on canceled context")
+}
+
+func (suite *InvoiceTestSuite) TestRecalculateTotalsWithCryptoAndWireFees() {
+	t := suite.T()
+
+	tests := []struct {
+		name             string
+		cryptoFee        float64
+		wireFee          float64
+		taxRate          float64
+		expectedSubtotal float64
+		expectedTax      float64
+		expectedTotal    float64
+	}{
+		{
+			name:             "BothFees",
+			cryptoFee:        25.00,
+			wireFee:          20.00,
+			taxRate:          0.10,
+			expectedSubtotal: 1000.00,
+			expectedTax:      104.50,  // (1000 + 25 + 20) * 0.10
+			expectedTotal:    1149.50, // 1000 + 25 + 20 + 104.50
+		},
+		{
+			name:             "WireOnly",
+			cryptoFee:        0.00,
+			wireFee:          20.00,
+			taxRate:          0.10,
+			expectedSubtotal: 1000.00,
+			expectedTax:      102.00,  // (1000 + 20) * 0.10
+			expectedTotal:    1122.00, // 1000 + 20 + 102
+		},
+		{
+			name:             "CryptoOnly",
+			cryptoFee:        25.00,
+			wireFee:          0.00,
+			taxRate:          0.10,
+			expectedSubtotal: 1000.00,
+			expectedTax:      102.50,  // (1000 + 25) * 0.10
+			expectedTotal:    1127.50, // 1000 + 25 + 102.50
+		},
+		{
+			name:             "Neither",
+			cryptoFee:        0.00,
+			wireFee:          0.00,
+			taxRate:          0.10,
+			expectedSubtotal: 1000.00,
+			expectedTax:      100.00,
+			expectedTotal:    1100.00,
+		},
+		{
+			name:             "WireOnlyFractionalTax",
+			cryptoFee:        0.00,
+			wireFee:          20.00,
+			taxRate:          0.005,
+			expectedSubtotal: 1000.00,
+			expectedTax:      5.10,    // (1000 + 20) * 0.005
+			expectedTotal:    1025.10, // 1000 + 20 + 5.10
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			invoice := &Invoice{
+				WorkItems: []WorkItem{{Total: 1000.0}},
+				CryptoFee: tt.cryptoFee,
+				WireFee:   tt.wireFee,
+				TaxRate:   tt.taxRate,
+			}
+
+			err := invoice.RecalculateTotals(suite.ctx)
+			require.NoError(t, err)
+
+			assert.InDelta(t, tt.expectedSubtotal, invoice.Subtotal, 1e-9, "subtotal mismatch")
+			assert.InDelta(t, tt.expectedTax, invoice.TaxAmount, 1e-9, "tax amount mismatch")
+			assert.InDelta(t, tt.expectedTotal, invoice.Total, 1e-9, "total mismatch")
+		})
+	}
+}
+
+func (suite *InvoiceTestSuite) TestSetCryptoAndWireFeesTogether() {
+	t := suite.T()
+	ctx := suite.ctx
+
+	invoice := createTestInvoice(t, ctx)
+	invoice.TaxRate = 0.10
+	amount := 1000.0
+	invoice.LineItems = append(invoice.LineItems, LineItem{
+		ID:          testLineItemID1,
+		Type:        LineItemTypeFixed,
+		Date:        time.Now(),
+		Description: testDevWork,
+		Amount:      &amount,
+		Total:       1000.0,
+		CreatedAt:   time.Now(),
+	})
+
+	require.NoError(t, invoice.SetCryptoFee(ctx, true, true, 25.0))
+	require.NoError(t, invoice.SetWireFee(ctx, true, true, 0))
+
+	assert.InDelta(t, 25.0, invoice.CryptoFee, 1e-9)
+	assert.InDelta(t, DefaultWireFeeAmount, invoice.WireFee, 1e-9)
+	assert.InDelta(t, 104.50, invoice.TaxAmount, 1e-9, "tax is calculated on subtotal + both fees")
+	assert.InDelta(t, 1149.50, invoice.Total, 1e-9)
+
+	// Disabling the wire fee leaves the crypto fee intact
+	require.NoError(t, invoice.SetWireFee(ctx, false, false, 0))
+	assert.InDelta(t, 0.0, invoice.WireFee, 1e-9)
+	assert.InDelta(t, 25.0, invoice.CryptoFee, 1e-9)
+	assert.InDelta(t, 1127.50, invoice.Total, 1e-9)
+}
+
 // TestInvoiceAddLineItem tests adding line items to invoices
 func (suite *InvoiceTestSuite) TestInvoiceAddLineItem() {
 	t := suite.T()
