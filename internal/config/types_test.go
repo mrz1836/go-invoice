@@ -24,21 +24,35 @@ func TestConfigTypesTestSuite(t *testing.T) {
 func (suite *ConfigTypesTestSuite) TestConfigJSONMarshaling() {
 	original := &Config{
 		Business: BusinessConfig{
-			Name:         "Test Business",
-			Address:      "123 Test Street",
-			Phone:        "+1-555-0123",
-			Email:        "test@business.com",
-			TaxID:        "12-3456789",
-			VATID:        "VAT123456",
-			Website:      "https://test.com",
-			PaymentTerms: testNetThirty,
-			BankDetails: BankDetails{
-				Name:                "Test Bank",
-				AccountNumber:       "1234567890",
-				RoutingNumber:       "987654321",
-				IBAN:                "DE89370400440532013000",
-				SWIFT:               "DEUTDEFF",
-				PaymentInstructions: "Wire transfer only",
+			Name:                "Test Business",
+			Address:             "123 Test Street",
+			Phone:               "+1-555-0123",
+			Email:               "test@business.com",
+			TaxID:               "12-3456789",
+			VATID:               "VAT123456",
+			Website:             "https://test.com",
+			PaymentTerms:        testNetThirty,
+			PaymentInstructions: "Wire transfer only",
+			DomesticWire: DomesticWire{
+				Enabled:         true,
+				BeneficiaryName: testWireBeneficiary,
+				BankName:        testWireBankName,
+				AccountNumber:   "0000123456",
+				RoutingNumber:   "123456789",
+				AccountType:     "Checking",
+				Reference:       testWireReference,
+			},
+			InternationalWire: InternationalWire{
+				Enabled:            true,
+				BeneficiaryName:    testWireBeneficiary,
+				BeneficiaryAddress: "1 Example Way, Springfield, US",
+				BankName:           testWireBankName,
+				BankAddress:        "2 Example Plaza, Springfield, US",
+				SWIFT:              testWireSWIFT,
+				IBAN:               "GB00TEST00000000000000",
+				IntermediaryBank:   "Example Correspondent Bank",
+				IntermediarySWIFT:  "TESTUS44",
+				Reference:          testWireReference,
 			},
 		},
 		Invoice: InvoiceConfig{
@@ -77,7 +91,9 @@ func (suite *ConfigTypesTestSuite) TestConfigJSONMarshaling() {
 	suite.Equal(original.Business.VATID, unmarshaled.Business.VATID)
 	suite.Equal(original.Business.Website, unmarshaled.Business.Website)
 	suite.Equal(original.Business.PaymentTerms, unmarshaled.Business.PaymentTerms)
-	suite.Equal(original.Business.BankDetails, unmarshaled.Business.BankDetails)
+	suite.Equal(original.Business.PaymentInstructions, unmarshaled.Business.PaymentInstructions)
+	suite.Equal(original.Business.DomesticWire, unmarshaled.Business.DomesticWire)
+	suite.Equal(original.Business.InternationalWire, unmarshaled.Business.InternationalWire)
 
 	suite.Equal(original.Invoice.Prefix, unmarshaled.Invoice.Prefix)
 	suite.Equal(original.Invoice.StartNumber, unmarshaled.Invoice.StartNumber)
@@ -102,21 +118,33 @@ func (suite *ConfigTypesTestSuite) TestBusinessConfigJSONMarshaling() {
 		{
 			name: "CompleteBusinessConfig",
 			business: BusinessConfig{
-				Name:         "Complete Business",
-				Address:      "456 Complete Ave",
-				Phone:        "+1-555-9876",
-				Email:        "complete@business.com",
-				TaxID:        "98-7654321",
-				VATID:        "VAT987654",
-				Website:      "https://complete.com",
-				PaymentTerms: "Due upon receipt",
-				BankDetails: BankDetails{
-					Name:                "Complete Bank",
-					AccountNumber:       "9876543210",
-					RoutingNumber:       "123456789",
-					IBAN:                "GB82WEST12345698765432",
-					SWIFT:               "WESTGB2L",
-					PaymentInstructions: "ACH preferred",
+				Name:                "Complete Business",
+				Address:             "456 Complete Ave",
+				Phone:               "+1-555-9876",
+				Email:               "complete@business.com",
+				TaxID:               "98-7654321",
+				VATID:               "VAT987654",
+				Website:             "https://complete.com",
+				PaymentTerms:        "Due upon receipt",
+				PaymentInstructions: "Wire transfer preferred",
+				DomesticWire: DomesticWire{
+					Enabled:         true,
+					BeneficiaryName: "Complete Business",
+					BankName:        testWireBankName,
+					AccountNumber:   "0000987654",
+					RoutingNumber:   "123456789",
+					AccountType:     "Savings",
+					Reference:       testWireReference,
+				},
+				InternationalWire: InternationalWire{
+					Enabled:            true,
+					BeneficiaryName:    "Complete Business",
+					BeneficiaryAddress: "456 Complete Ave",
+					BankName:           testWireBankName,
+					BankAddress:        "2 Example Plaza",
+					SWIFT:              "TESTGB2L",
+					AccountNumber:      "0000987654",
+					Reference:          testWireReference,
 				},
 			},
 		},
@@ -145,46 +173,97 @@ func (suite *ConfigTypesTestSuite) TestBusinessConfigJSONMarshaling() {
 	}
 }
 
-// TestBankDetailsJSONMarshaling tests JSON marshaling for BankDetails
-func (suite *ConfigTypesTestSuite) TestBankDetailsJSONMarshaling() {
+// TestDomesticWireJSONMarshaling tests JSON marshaling for DomesticWire
+func (suite *ConfigTypesTestSuite) TestDomesticWireJSONMarshaling() {
 	tests := []struct {
-		name        string
-		bankDetails BankDetails
+		name string
+		wire DomesticWire
 	}{
 		{
-			name: "CompleteBankDetails",
-			bankDetails: BankDetails{
-				Name:                "Test Bank Corp",
-				AccountNumber:       "1111222233334444",
-				RoutingNumber:       "555666777",
-				IBAN:                "FR1420041010050500013M02606",
-				SWIFT:               "BNPAFRPP",
-				PaymentInstructions: "International wire transfers accepted",
+			name: "CompleteDomesticWire",
+			wire: DomesticWire{
+				Enabled:         true,
+				BeneficiaryName: testWireBeneficiary,
+				BankName:        testWireBankName,
+				AccountNumber:   "0000111122",
+				RoutingNumber:   "123456789",
+				AccountType:     "Checking",
+				Reference:       testWireReference,
 			},
 		},
 		{
-			name:        "EmptyBankDetails",
-			bankDetails: BankDetails{},
+			name: "EmptyDomesticWire",
+			wire: DomesticWire{},
 		},
 		{
-			name: "PartialBankDetails",
-			bankDetails: BankDetails{
-				Name:          "Partial Bank",
-				AccountNumber: "123456789",
+			name: "PartialDomesticWire",
+			wire: DomesticWire{
+				BankName:      "Partial Bank",
+				AccountNumber: "0000333344",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
-			jsonData, err := json.Marshal(tt.bankDetails)
+			jsonData, err := json.Marshal(tt.wire)
 			suite.Require().NoError(err)
 
-			var unmarshaled BankDetails
+			var unmarshaled DomesticWire
 			err = json.Unmarshal(jsonData, &unmarshaled)
 			suite.Require().NoError(err)
 
-			suite.Equal(tt.bankDetails, unmarshaled)
+			suite.Equal(tt.wire, unmarshaled)
+		})
+	}
+}
+
+// TestInternationalWireJSONMarshaling tests JSON marshaling for InternationalWire
+func (suite *ConfigTypesTestSuite) TestInternationalWireJSONMarshaling() {
+	tests := []struct {
+		name string
+		wire InternationalWire
+	}{
+		{
+			name: "CompleteInternationalWireWithIntermediary",
+			wire: InternationalWire{
+				Enabled:            true,
+				BeneficiaryName:    testWireBeneficiary,
+				BeneficiaryAddress: "1 Example Way, Springfield, US",
+				BankName:           testWireBankName,
+				BankAddress:        "2 Example Plaza, Springfield, US",
+				SWIFT:              testWireSWIFT,
+				IBAN:               "GB00TEST00000000000000",
+				AccountNumber:      "0000555566",
+				IntermediaryBank:   "Example Correspondent Bank",
+				IntermediarySWIFT:  "TESTUS44",
+				Reference:          testWireReference,
+			},
+		},
+		{
+			name: "EmptyInternationalWire",
+			wire: InternationalWire{},
+		},
+		{
+			name: "AccountNumberWithoutIBAN",
+			wire: InternationalWire{
+				Enabled:       true,
+				SWIFT:         testWireSWIFT,
+				AccountNumber: "0000777788",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			jsonData, err := json.Marshal(tt.wire)
+			suite.Require().NoError(err)
+
+			var unmarshaled InternationalWire
+			err = json.Unmarshal(jsonData, &unmarshaled)
+			suite.Require().NoError(err)
+
+			suite.Equal(tt.wire, unmarshaled)
 		})
 	}
 }
@@ -488,17 +567,30 @@ func (suite *ConfigTypesTestSuite) TestStorageConfigBoundaryValues() {
 func (suite *ConfigTypesTestSuite) TestJSONFieldNames() {
 	config := Config{
 		Business: BusinessConfig{
-			Name:         "Test",
-			Address:      "123 St",
-			Email:        "test@example.com",
-			PaymentTerms: testNetThirty,
-			TaxID:        "12345", // Include optional fields to test their JSON names
-			VATID:        "VAT123",
-			BankDetails: BankDetails{
-				Name:                "Bank",
-				AccountNumber:       "123456",
-				RoutingNumber:       "789",
-				PaymentInstructions: "Wire transfer",
+			Name:                "Test",
+			Address:             "123 St",
+			Email:               "test@example.com",
+			PaymentTerms:        testNetThirty,
+			TaxID:               "12345", // Include optional fields to test their JSON names
+			VATID:               "VAT123",
+			PaymentInstructions: "Wire transfer",
+			DomesticWire: DomesticWire{
+				Enabled:         true,
+				BeneficiaryName: testWireBeneficiary,
+				BankName:        "Bank",
+				AccountNumber:   "123456",
+				RoutingNumber:   "789",
+				AccountType:     "Checking",
+				Reference:       testWireReference,
+			},
+			InternationalWire: InternationalWire{
+				Enabled:            true,
+				BeneficiaryAddress: "1 Example Way",
+				BankAddress:        "2 Example Plaza",
+				SWIFT:              testWireSWIFT,
+				IBAN:               "GB00TEST00000000000000",
+				IntermediaryBank:   "Example Correspondent Bank",
+				IntermediarySWIFT:  "TESTUS44",
 			},
 		},
 		Invoice: InvoiceConfig{
@@ -529,10 +621,24 @@ func (suite *ConfigTypesTestSuite) TestJSONFieldNames() {
 	suite.Contains(jsonStr, `"tax_id":`)
 	suite.Contains(jsonStr, `"vat_id":`)
 	suite.Contains(jsonStr, `"payment_terms":`)
-	suite.Contains(jsonStr, `"bank_details":`)
+	suite.Contains(jsonStr, `"payment_instructions":`)
+	suite.Contains(jsonStr, `"domestic_wire":`)
+	suite.Contains(jsonStr, `"international_wire":`)
+	suite.Contains(jsonStr, `"enabled":`)
+	suite.Contains(jsonStr, `"beneficiary_name":`)
+	suite.Contains(jsonStr, `"bank_name":`)
 	suite.Contains(jsonStr, `"account_number":`)
 	suite.Contains(jsonStr, `"routing_number":`)
-	suite.Contains(jsonStr, `"payment_instructions":`)
+	suite.Contains(jsonStr, `"account_type":`)
+	suite.Contains(jsonStr, `"reference":`)
+	suite.Contains(jsonStr, `"beneficiary_address":`)
+	suite.Contains(jsonStr, `"bank_address":`)
+	suite.Contains(jsonStr, `"swift":`)
+	suite.Contains(jsonStr, `"iban":`)
+	suite.Contains(jsonStr, `"intermediary_bank":`)
+	suite.Contains(jsonStr, `"intermediary_swift":`)
+	suite.NotContains(jsonStr, `"bank_details":`)
+	suite.NotContains(jsonStr, `"ach_enabled":`)
 	suite.Contains(jsonStr, `"start_number":`)
 	suite.Contains(jsonStr, `"vat_rate":`)
 	suite.Contains(jsonStr, `"default_due_days":`)
@@ -557,15 +663,25 @@ func (suite *ConfigTypesTestSuite) TestEmptyConfigSerialization() {
 	suite.Equal(emptyConfig, unmarshaled)
 
 	// Test empty nested structs
-	emptyBankDetails := BankDetails{}
-	jsonData, err = json.Marshal(emptyBankDetails)
+	emptyDomesticWire := DomesticWire{}
+	jsonData, err = json.Marshal(emptyDomesticWire)
 	suite.Require().NoError(err)
 
-	var unmarshaledBank BankDetails
-	err = json.Unmarshal(jsonData, &unmarshaledBank)
+	var unmarshaledDomestic DomesticWire
+	err = json.Unmarshal(jsonData, &unmarshaledDomestic)
 	suite.Require().NoError(err)
 
-	suite.Equal(emptyBankDetails, unmarshaledBank)
+	suite.Equal(emptyDomesticWire, unmarshaledDomestic)
+
+	emptyInternationalWire := InternationalWire{}
+	jsonData, err = json.Marshal(emptyInternationalWire)
+	suite.Require().NoError(err)
+
+	var unmarshaledInternational InternationalWire
+	err = json.Unmarshal(jsonData, &unmarshaledInternational)
+	suite.Require().NoError(err)
+
+	suite.Equal(emptyInternationalWire, unmarshaledInternational)
 }
 
 // TestInvalidJSONHandling tests handling of invalid JSON

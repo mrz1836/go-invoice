@@ -603,15 +603,17 @@ func (a *App) createInvoiceData(invoice *models.Invoice, config *config.Config) 
 	return &InvoiceData{
 		Invoice: *invoice,
 		Business: BusinessInfo{
-			Name:           config.Business.Name,
-			Address:        config.Business.Address,
-			Phone:          config.Business.Phone,
-			Email:          config.Business.Email,
-			Website:        config.Business.Website,
-			TaxID:          config.Business.TaxID,
-			PaymentTerms:   config.Business.PaymentTerms,
-			BankDetails:    config.Business.BankDetails,
-			CryptoPayments: config.Business.CryptoPayments,
+			Name:                config.Business.Name,
+			Address:             config.Business.Address,
+			Phone:               config.Business.Phone,
+			Email:               config.Business.Email,
+			Website:             config.Business.Website,
+			TaxID:               config.Business.TaxID,
+			PaymentTerms:        config.Business.PaymentTerms,
+			PaymentInstructions: config.Business.PaymentInstructions,
+			DomesticWire:        config.Business.DomesticWire,
+			InternationalWire:   config.Business.InternationalWire,
+			CryptoPayments:      config.Business.CryptoPayments,
 		},
 		Config: ConfigInfo{
 			Currency:       config.Invoice.Currency,
@@ -763,15 +765,17 @@ type InvoiceData struct {
 }
 
 type BusinessInfo struct {
-	Name           string                `json:"name"`
-	Address        string                `json:"address"`
-	Phone          string                `json:"phone"`
-	Email          string                `json:"email"`
-	Website        string                `json:"website"`
-	TaxID          string                `json:"tax_id"`
-	PaymentTerms   string                `json:"payment_terms"`
-	BankDetails    config.BankDetails    `json:"bank_details"`
-	CryptoPayments config.CryptoPayments `json:"crypto_payments"`
+	Name                string                   `json:"name"`
+	Address             string                   `json:"address"`
+	Phone               string                   `json:"phone"`
+	Email               string                   `json:"email"`
+	Website             string                   `json:"website"`
+	TaxID               string                   `json:"tax_id"`
+	PaymentTerms        string                   `json:"payment_terms"`
+	PaymentInstructions string                   `json:"payment_instructions"`
+	DomesticWire        config.DomesticWire      `json:"domestic_wire"`
+	InternationalWire   config.InternationalWire `json:"international_wire"`
+	CryptoPayments      config.CryptoPayments    `json:"crypto_payments"`
 }
 
 type ConfigInfo struct {

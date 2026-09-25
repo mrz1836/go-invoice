@@ -538,24 +538,13 @@
                 <div class="payment-terms">
                     {{.Business.PaymentTerms}}
 
-                    {{if or (and .Business.BankDetails.ACHEnabled (or .Business.BankDetails.Name .Business.BankDetails.AccountNumber .Business.BankDetails.RoutingNumber .Business.BankDetails.IBAN .Business.BankDetails.SWIFT .Business.BankDetails.PaymentInstructions)) (and .Business.CryptoPayments.USDCEnabled .Business.CryptoPayments.USDCAddress) (and .Business.CryptoPayments.BSVEnabled .Business.CryptoPayments.BSVAddress)}}
-                    <br><br>
-                    <strong>Payment Methods:</strong>
-                    {{end}}
-
-                    {{if and .Business.BankDetails.ACHEnabled (or .Business.BankDetails.Name .Business.BankDetails.AccountNumber .Business.BankDetails.RoutingNumber .Business.BankDetails.IBAN .Business.BankDetails.SWIFT)}}
-                    <br><br>
-                    <strong>ACH Bank Transfer:</strong><br>
-                    {{if .Business.BankDetails.Name}}Bank: {{.Business.BankDetails.Name}}<br>{{end}}
-                    {{if .Business.BankDetails.AccountNumber}}Account: {{.Business.BankDetails.AccountNumber}}<br>{{end}}
-                    {{if .Business.BankDetails.RoutingNumber}}Routing: {{.Business.BankDetails.RoutingNumber}}<br>{{end}}
-                    {{if .Business.BankDetails.IBAN}}IBAN: {{.Business.BankDetails.IBAN}}<br>{{end}}
-                    {{if .Business.BankDetails.SWIFT}}SWIFT: {{.Business.BankDetails.SWIFT}}<br>{{end}}
-                    {{end}}
+                    {{/* The "Payment Methods" heading is emitted by the first payment method block that renders */}}
+                    {{$paymentMethodsHeading := false}}
 
                     {{if .Business.CryptoPayments.USDCEnabled}}
                     {{$usdcAddr := .Invoice.GetUSDCAddress .Business.CryptoPayments.USDCAddress}}
                     {{if $usdcAddr}}
+                    {{if not $paymentMethodsHeading}}{{$paymentMethodsHeading = true}}<br><br><strong>Payment Methods:</strong>{{end}}
                     <br><br>
                     <strong>USDC Cryptocurrency:</strong><br>
                     {{$usdcAddr}}
@@ -565,15 +554,16 @@
                     {{if .Business.CryptoPayments.BSVEnabled}}
                     {{$bsvAddr := .Invoice.GetBSVAddress .Business.CryptoPayments.BSVAddress}}
                     {{if $bsvAddr}}
+                    {{if not $paymentMethodsHeading}}{{$paymentMethodsHeading = true}}<br><br><strong>Payment Methods:</strong>{{end}}
                     <br><br>
                     <strong>BSV (Bitcoin SV) Cryptocurrency:</strong><br>
                     {{$bsvAddr}}
                     {{end}}
                     {{end}}
 
-                    {{if .Business.BankDetails.PaymentInstructions}}
+                    {{if .Business.PaymentInstructions}}
                     <br><br>
-                    {{.Business.BankDetails.PaymentInstructions}}
+                    {{.Business.PaymentInstructions}}
                     {{end}}
 
                     {{if gt .CryptoFee 0.0}}
@@ -581,7 +571,7 @@
                     <div style="padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; color: #856404;">
                         <strong>💰 Cryptocurrency Service Fee Notice:</strong><br>
                         A {{formatCurrency .CryptoFee .Config.Currency}} service fee has been applied for cryptocurrency payment processing and conversion.<br>
-                        <em>To avoid this fee, please use ACH Bank Transfer (USD).</em>
+                        <em>To avoid this fee, please pay by bank wire transfer (USD).</em>
                     </div>
                     {{end}}
                 </div>

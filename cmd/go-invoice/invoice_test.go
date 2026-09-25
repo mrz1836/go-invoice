@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -262,5 +264,123 @@ func TestCreateInvoiceData(t *testing.T) {
 		assert.Equal(t, cfg.Business.Name, data.Business.Name, "Business info should be populated")
 		assert.Equal(t, "USD", data.Config.Currency, "Config should be populated")
 		assert.Equal(t, "$", data.Config.CurrencySymbol, "Currency symbol should be set")
+	})
+
+	t.Run("WirePaymentDetailsPropagated", func(t *testing.T) {
+		wireCfg := *cfg
+		wireCfg.Business.PaymentInstructions = "Include the invoice number with your payment"
+		wireCfg.Business.DomesticWire = config.DomesticWire{
+			Enabled:         true,
+			BeneficiaryName: "Acme Corp",
+			BankName:        "Example Bank",
+			AccountNumber:   "0000123456",
+			RoutingNumber:   "123456789",
+			AccountType:     "Checking",
+			Reference:       "Invoice number",
+		}
+		wireCfg.Business.InternationalWire = config.InternationalWire{
+			Enabled:            true,
+			BeneficiaryName:    "Acme Corp",
+			BeneficiaryAddress: "1 Example Way, Springfield, US",
+			BankName:           "Example Bank",
+			BankAddress:        "2 Example Plaza, Springfield, US",
+			SWIFT:              "TESTUS33",
+			IBAN:               "GB00TEST00000000000000",
+			Reference:          "Invoice number",
+		}
+
+		data := app.createInvoiceData(&models.Invoice{ID: "wire-007", Number: "WIRE-007"}, &wireCfg)
+
+		assert.Equal(t, wireCfg.Business.PaymentInstructions, data.Business.PaymentInstructions)
+		assert.Equal(t, wireCfg.Business.DomesticWire, data.Business.DomesticWire)
+		assert.Equal(t, wireCfg.Business.InternationalWire, data.Business.InternationalWire)
+	})
+}
+
+func TestRenderDefaultTemplatePaymentSection(t *testing.T) {
+	app := &App{
+		logger: cli.NewLogger(false),
+	}
+
+	baseConfig := func() *config.Config {
+		return &config.Config{
+			Business: config.BusinessConfig{
+				Name:         "Test Business",
+				Address:      "123 Test St",
+				Email:        "test@example.com",
+				PaymentTerms: "Net 30",
+			},
+			Invoice: config.InvoiceConfig{
+				Currency: "USD",
+			},
+		}
+	}
+
+	renderHTML := func(t *testing.T, cfg *config.Config, invoice *models.Invoice) string {
+		t.Helper()
+		ctx := context.Background()
+		renderer, err := app.createRenderService(ctx, cfg)
+		require.NoError(t, err)
+
+		html, err := app.renderInvoice(ctx, renderer, app.createInvoiceData(invoice, cfg), "default")
+		require.NoError(t, err)
+		return html
+	}
+
+	newInvoice := func() *models.Invoice {
+		return &models.Invoice{
+			ID:      "render-001",
+			Number:  "RENDER-001",
+			Date:    time.Now(),
+			DueDate: time.Now().AddDate(0, 0, 30),
+			Client:  models.Client{ID: "client-001", Name: "Acme Corp"},
+		}
+	}
+
+	t.Run("NoPaymentMethodsOmitsHeading", func(t *testing.T) {
+		html := renderHTML(t, baseConfig(), newInvoice())
+
+		assert.Contains(t, html, "Payment Terms")
+		assert.NotContains(t, html, "Payment Methods:")
+		assert.NotContains(t, html, "ACH")
+	})
+
+	t.Run("RenderedMethodEmitsHeadingOnce", func(t *testing.T) {
+		cfg := baseConfig()
+		cfg.Business.CryptoPayments.USDCEnabled = true
+		cfg.Business.CryptoPayments.USDCAddress = "0x0000000000000000000000000000000000000001"
+
+		html := renderHTML(t, cfg, newInvoice())
+
+		assert.Equal(t, 1, strings.Count(html, "Payment Methods:"))
+		assert.Contains(t, html, "USDC Cryptocurrency:")
+	})
+
+	t.Run("EnabledMethodWithoutAddressOmitsHeading", func(t *testing.T) {
+		cfg := baseConfig()
+		cfg.Business.CryptoPayments.USDCEnabled = true
+
+		html := renderHTML(t, cfg, newInvoice())
+
+		assert.NotContains(t, html, "Payment Methods:")
+	})
+
+	t.Run("PaymentInstructionsRendered", func(t *testing.T) {
+		cfg := baseConfig()
+		cfg.Business.PaymentInstructions = "Include the invoice number with your payment"
+
+		html := renderHTML(t, cfg, newInvoice())
+
+		assert.Contains(t, html, "Include the invoice number with your payment")
+	})
+
+	t.Run("CryptoFeeNoticeRecommendsWireTransfer", func(t *testing.T) {
+		invoice := newInvoice()
+		invoice.CryptoFee = 25.0
+
+		html := renderHTML(t, baseConfig(), invoice)
+
+		assert.Contains(t, html, "please pay by bank wire transfer (USD)")
+		assert.NotContains(t, html, "ACH Bank Transfer")
 	})
 }
