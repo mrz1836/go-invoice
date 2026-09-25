@@ -517,6 +517,12 @@
                         <td class="amount">{{formatCurrency .CryptoFee .Config.Currency}}</td>
                     </tr>
                     {{end}}
+                    {{if gt .WireFee 0.0}}
+                    <tr>
+                        <td class="label">Wire Transfer Service Fee:</td>
+                        <td class="amount">{{formatCurrency .WireFee .Config.Currency}}</td>
+                    </tr>
+                    {{end}}
                     {{if gt .TaxRate 0.0}}
                     <tr>
                         <td class="label">Tax ({{formatFloat (multiply .TaxRate 100) 1}}%):</td>
@@ -540,6 +546,37 @@
 
                     {{/* The "Payment Methods" heading is emitted by the first payment method block that renders */}}
                     {{$paymentMethodsHeading := false}}
+
+                    {{/* Only the wire transfer set selected by the client renders, and only when that set is enabled */}}
+                    {{if and (eq .Client.WireType "domestic") .Business.DomesticWire.Enabled}}
+                    {{$wire := .Business.DomesticWire}}
+                    {{if not $paymentMethodsHeading}}{{$paymentMethodsHeading = true}}<br><br><strong>Payment Methods:</strong>{{end}}
+                    <br><br>
+                    <strong>Domestic Wire Transfer (USD):</strong><br>
+                    {{if $wire.BeneficiaryName}}Beneficiary: {{$wire.BeneficiaryName}}<br>{{end}}
+                    {{if $wire.BankName}}Bank: {{$wire.BankName}}<br>{{end}}
+                    {{if $wire.AccountNumber}}Account Number: {{$wire.AccountNumber}}<br>{{end}}
+                    {{if $wire.RoutingNumber}}ABA Routing Number: {{$wire.RoutingNumber}}<br>{{end}}
+                    {{if $wire.AccountType}}Account Type: {{$wire.AccountType}}<br>{{end}}
+                    {{if $wire.Reference}}Reference: {{$wire.Reference}}<br>{{end}}
+                    {{end}}
+
+                    {{if and (eq .Client.WireType "international") .Business.InternationalWire.Enabled}}
+                    {{$wire := .Business.InternationalWire}}
+                    {{if not $paymentMethodsHeading}}{{$paymentMethodsHeading = true}}<br><br><strong>Payment Methods:</strong>{{end}}
+                    <br><br>
+                    <strong>International Wire Transfer (USD):</strong><br>
+                    {{if $wire.BeneficiaryName}}Beneficiary: {{$wire.BeneficiaryName}}<br>{{end}}
+                    {{if $wire.BeneficiaryAddress}}Beneficiary Address: {{$wire.BeneficiaryAddress}}<br>{{end}}
+                    {{if $wire.BankName}}Beneficiary Bank: {{$wire.BankName}}<br>{{end}}
+                    {{if $wire.BankAddress}}Bank Address: {{$wire.BankAddress}}<br>{{end}}
+                    {{if $wire.SWIFT}}SWIFT/BIC: {{$wire.SWIFT}}<br>{{end}}
+                    {{if $wire.IBAN}}IBAN: {{$wire.IBAN}}<br>{{end}}
+                    {{if $wire.AccountNumber}}Account Number: {{$wire.AccountNumber}}<br>{{end}}
+                    {{if $wire.IntermediaryBank}}Intermediary Bank: {{$wire.IntermediaryBank}}<br>{{end}}
+                    {{if $wire.IntermediarySWIFT}}Intermediary SWIFT/BIC: {{$wire.IntermediarySWIFT}}<br>{{end}}
+                    {{if $wire.Reference}}Reference: {{$wire.Reference}}<br>{{end}}
+                    {{end}}
 
                     {{if .Business.CryptoPayments.USDCEnabled}}
                     {{$usdcAddr := .Invoice.GetUSDCAddress .Business.CryptoPayments.USDCAddress}}
@@ -572,6 +609,14 @@
                         <strong>💰 Cryptocurrency Service Fee Notice:</strong><br>
                         A {{formatCurrency .CryptoFee .Config.Currency}} service fee has been applied for cryptocurrency payment processing and conversion.<br>
                         <em>To avoid this fee, please pay by bank wire transfer (USD).</em>
+                    </div>
+                    {{end}}
+
+                    {{if gt .WireFee 0.0}}
+                    <br><br>
+                    <div style="padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; color: #856404;">
+                        <strong>🏦 Wire Transfer Service Fee Notice:</strong><br>
+                        A {{formatCurrency .WireFee .Config.Currency}} service fee has been applied for bank wire transfer processing.
                     </div>
                     {{end}}
                 </div>
