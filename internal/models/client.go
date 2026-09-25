@@ -42,6 +42,8 @@ func (c *Client) Validate(ctx context.Context) error {
 	default:
 	}
 
+	c.WireType = NormalizeWireType(c.WireType)
+
 	return NewValidationBuilder().
 		AddRequired("id", string(c.ID)).
 		AddRequired("name", c.Name).
@@ -55,6 +57,7 @@ func (c *Client) Validate(ctx context.Context) error {
 		AddValidFloat("wire_fee_amount", c.WireFeeAmount).
 		AddNonNegative("wire_fee_amount", c.WireFeeAmount).
 		AddIf(c.WireFeeAmount > MaxWireFeeAmount, "wire_fee_amount", "must not exceed 10000", c.WireFeeAmount).
+		AddValidOption("wire_type", string(c.WireType), ValidWireTypes).
 		AddTimeRequired("created_at", c.CreatedAt).
 		AddTimeRequired("updated_at", c.UpdatedAt).
 		AddTimeOrder("updated_at", c.CreatedAt, c.UpdatedAt, "created_at", "updated_at").
@@ -235,17 +238,18 @@ func (c *Client) HasCompleteInfo() bool {
 
 // CreateClientRequest represents a request to create a new client
 type CreateClientRequest struct {
-	Name             string  `json:"name"`
-	Email            string  `json:"email"`
-	Phone            string  `json:"phone,omitempty"`
-	Address          string  `json:"address,omitempty"`
-	TaxID            string  `json:"tax_id,omitempty"`
-	ApproverContacts string  `json:"approver_contacts,omitempty"`
-	CryptoFeeEnabled bool    `json:"crypto_fee_enabled"`
-	CryptoFeeAmount  float64 `json:"crypto_fee_amount,omitempty"`
-	WireFeeEnabled   bool    `json:"wire_fee_enabled"`
-	WireFeeAmount    float64 `json:"wire_fee_amount,omitempty"`
-	LateFeeEnabled   bool    `json:"late_fee_enabled"`
+	Name             string   `json:"name"`
+	Email            string   `json:"email"`
+	Phone            string   `json:"phone,omitempty"`
+	Address          string   `json:"address,omitempty"`
+	TaxID            string   `json:"tax_id,omitempty"`
+	ApproverContacts string   `json:"approver_contacts,omitempty"`
+	CryptoFeeEnabled bool     `json:"crypto_fee_enabled"`
+	CryptoFeeAmount  float64  `json:"crypto_fee_amount,omitempty"`
+	WireFeeEnabled   bool     `json:"wire_fee_enabled"`
+	WireFeeAmount    float64  `json:"wire_fee_amount,omitempty"`
+	WireType         WireType `json:"wire_type,omitempty"`
+	LateFeeEnabled   bool     `json:"late_fee_enabled"`
 }
 
 // Validate validates the create client request
@@ -255,6 +259,8 @@ func (r *CreateClientRequest) Validate(ctx context.Context) error {
 		return ctx.Err()
 	default:
 	}
+
+	r.WireType = NormalizeWireType(r.WireType)
 
 	return NewValidationBuilder().
 		AddRequired("name", r.Name).
@@ -268,5 +274,6 @@ func (r *CreateClientRequest) Validate(ctx context.Context) error {
 		AddValidFloat("wire_fee_amount", r.WireFeeAmount).
 		AddNonNegative("wire_fee_amount", r.WireFeeAmount).
 		AddIf(r.WireFeeAmount > MaxWireFeeAmount, "wire_fee_amount", "must not exceed 10000", r.WireFeeAmount).
+		AddValidOption("wire_type", string(r.WireType), ValidWireTypes).
 		Build(ErrCreateClientRequestInvalid)
 }

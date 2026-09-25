@@ -33,6 +33,35 @@ const (
 	MaxWireFeeAmount = 10000.00
 )
 
+// WireType selects which wire transfer instructions apply to a client
+type WireType string
+
+const (
+	// WireTypeNone means the client does not pay by wire transfer
+	WireTypeNone WireType = "none"
+	// WireTypeDomestic selects the domestic (US) wire transfer instructions
+	WireTypeDomestic WireType = "domestic"
+	// WireTypeInternational selects the international wire transfer instructions
+	WireTypeInternational WireType = "international"
+)
+
+// ValidWireTypes contains all valid wire type values
+//
+//nolint:gochecknoglobals // Constant-like type validation slice required for validation
+var ValidWireTypes = []string{
+	string(WireTypeNone),
+	string(WireTypeDomestic),
+	string(WireTypeInternational),
+}
+
+// NormalizeWireType returns WireTypeNone for an unset wire type and the value unchanged otherwise
+func NormalizeWireType(wireType WireType) WireType {
+	if wireType == "" {
+		return WireTypeNone
+	}
+	return wireType
+}
+
 // ValidInvoiceStatuses contains all valid invoice status values
 var ValidInvoiceStatuses = []string{StatusDraft, StatusSent, StatusPaid, StatusOverdue, StatusVoided} //nolint:gochecknoglobals // Constant-like status validation slice
 

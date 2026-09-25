@@ -57,6 +57,7 @@ type Client struct {
 	CryptoFeeAmount  float64   `json:"crypto_fee_amount,omitempty"`
 	WireFeeEnabled   bool      `json:"wire_fee_enabled"`
 	WireFeeAmount    float64   `json:"wire_fee_amount,omitempty"`
+	WireType         WireType  `json:"wire_type,omitempty"`
 	LateFeeEnabled   bool      `json:"late_fee_enabled"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`

@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"strings"
 	"testing"
@@ -1205,6 +1206,100 @@ func (suite *ClientTestSuite) TestWireFeeAmountValidation() {
 			}
 		})
 	}
+}
+
+func (suite *ClientTestSuite) TestWireTypeValidation() {
+	t := suite.T()
+
+	tests := []struct {
+		name        string
+		wireType    WireType
+		expected    WireType
+		expectError bool
+	}{
+		{name: "EmptyDefaultsToNone", wireType: "", expected: WireTypeNone},
+		{name: "None", wireType: WireTypeNone, expected: WireTypeNone},
+		{name: "Domestic", wireType: WireTypeDomestic, expected: WireTypeDomestic},
+		{name: "International", wireType: WireTypeInternational, expected: WireTypeInternational},
+		{name: "UnknownValue", wireType: "swift", expectError: true},
+		{name: "WrongCase", wireType: "Domestic", expectError: true},
+		{name: "Whitespace", wireType: " ", expectError: true},
+	}
+
+	const errorMsg = "validation failed for field 'wire_type': must be one of: none, domestic, international"
+
+	for _, tt := range tests {
+		suite.Run("Client/"+tt.name, func() {
+			client := Client{
+				ID:        testClientID001,
+				Name:      testClientName,
+				Email:     testClientEmail,
+				Active:    true,
+				WireType:  tt.wireType,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}
+
+			err := client.Validate(suite.ctx)
+			if tt.expectError {
+				require.Error(t, err)
+				require.ErrorIs(t, err, ErrClientValidationFailed)
+				assert.Contains(t, err.Error(), errorMsg)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, client.WireType)
+		})
+
+		suite.Run("CreateClientRequest/"+tt.name, func() {
+			request := CreateClientRequest{
+				Name:     testClientName,
+				Email:    testClientEmail,
+				WireType: tt.wireType,
+			}
+
+			err := request.Validate(suite.ctx)
+			if tt.expectError {
+				require.Error(t, err)
+				require.ErrorIs(t, err, ErrCreateClientRequestInvalid)
+				assert.Contains(t, err.Error(), errorMsg)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, request.WireType)
+		})
+	}
+}
+
+func (suite *ClientTestSuite) TestNewClientDefaultsWireTypeToNone() {
+	client, err := NewClient(suite.ctx, testClientID001, testClientName, testClientEmail)
+	suite.Require().NoError(err)
+	suite.Equal(WireTypeNone, client.WireType)
+}
+
+func (suite *ClientTestSuite) TestWireTypeJSONRoundTrip() {
+	client := Client{
+		ID:             testClientID001,
+		Name:           testClientName,
+		Email:          testClientEmail,
+		WireType:       WireTypeInternational,
+		WireFeeEnabled: true,
+		WireFeeAmount:  DefaultWireFeeAmount,
+	}
+
+	data, err := json.Marshal(client)
+	suite.Require().NoError(err)
+	suite.Contains(string(data), `"wire_type":"international"`)
+
+	var decoded Client
+	suite.Require().NoError(json.Unmarshal(data, &decoded))
+	suite.Equal(WireTypeInternational, decoded.WireType)
+
+	// Records written before wire types existed decode as unset and validate as none
+	var legacy Client
+	suite.Require().NoError(json.Unmarshal([]byte(`{"id":"acme-001","name":"Acme Corp"}`), &legacy))
+	suite.Equal(WireType(""), legacy.WireType)
+	suite.Equal(WireTypeNone, NormalizeWireType(legacy.WireType))
 }
 
 func (suite *ClientTestSuite) TestCreateClientRequestValidate() {
