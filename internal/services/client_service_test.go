@@ -97,6 +97,41 @@ func (suite *ClientServiceTestSuite) TestCreateClient() {
 		assert.Equal(t, "123 Test St", client.Address)
 		assert.Equal(t, "TAX-123", client.TaxID)
 		assert.True(t, client.Active)
+		assert.False(t, client.WireFeeEnabled)
+		assert.InDelta(t, 0.0, client.WireFeeAmount, 0.001)
+		assert.Equal(t, models.WireTypeNone, client.WireType, "unset wire type defaults to none")
+	})
+
+	suite.Run("WireSettingsPassedThrough", func() {
+		wireRequest := request
+		wireRequest.WireFeeEnabled = true
+		wireRequest.WireFeeAmount = 20.00
+		wireRequest.WireType = models.WireTypeInternational
+
+		suite.clientStorage.On("FindClientByEmail", suite.ctx, testClientEmail).Return(nil, storage.NewNotFoundError("client", "email:test@example.com")).Once()
+		suite.idGen.On("GenerateClientID", suite.ctx).Return(models.ClientID(testClientID), nil).Once()
+		suite.clientStorage.On("CreateClient", suite.ctx, mock.MatchedBy(func(c *models.Client) bool {
+			return c.WireFeeEnabled && c.WireFeeAmount == 20.00 && c.WireType == models.WireTypeInternational
+		})).Return(nil).Once()
+
+		client, err := suite.service.CreateClient(suite.ctx, wireRequest)
+
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		assert.True(t, client.WireFeeEnabled)
+		assert.InDelta(t, 20.00, client.WireFeeAmount, 0.001)
+		assert.Equal(t, models.WireTypeInternational, client.WireType)
+	})
+
+	suite.Run("InvalidWireTypeRejected", func() {
+		wireRequest := request
+		wireRequest.WireType = models.WireType("carrier-pigeon")
+
+		client, err := suite.service.CreateClient(suite.ctx, wireRequest)
+
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Contains(t, err.Error(), "wire_type")
 	})
 
 	// Duplicate email

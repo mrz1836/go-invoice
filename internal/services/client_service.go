@@ -101,6 +101,11 @@ func (s *ClientService) CreateClient(ctx context.Context, req models.CreateClien
 	client.CryptoFeeEnabled = req.CryptoFeeEnabled
 	client.CryptoFeeAmount = req.CryptoFeeAmount
 
+	// Set wire transfer settings
+	client.WireFeeEnabled = req.WireFeeEnabled
+	client.WireFeeAmount = req.WireFeeAmount
+	client.WireType = req.WireType
+
 	// Set late fee settings
 	client.LateFeeEnabled = req.LateFeeEnabled
 

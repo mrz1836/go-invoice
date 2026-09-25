@@ -1590,7 +1590,7 @@ func (a *App) buildInvoiceRecalculateCommand() *cobra.Command {
 This command is useful when invoice totals are out of sync due to data migration,
 bugs, or manual edits. It will:
   - Recalculate subtotal from all work items and line items
-  - Apply any crypto service fees
+  - Apply any crypto and wire transfer service fees
   - Update all total fields
   - Preserve all other invoice data`,
 		Example: `  # Recalculate totals for an invoice
@@ -1674,6 +1674,9 @@ func (a *App) runInvoiceRecalculate(cmd *cobra.Command, args []string) error {
 	a.logger.Printf("  Line Items:  %d items\n", len(invoice.LineItems))
 	if invoice.CryptoFee > 0 {
 		a.logger.Printf("  Crypto Fee:  $%.2f\n", invoice.CryptoFee)
+	}
+	if invoice.WireFee > 0 {
+		a.logger.Printf("  Wire Fee:    $%.2f\n", invoice.WireFee)
 	}
 
 	return nil
