@@ -40,7 +40,6 @@ func (suite *ConfigTypesTestSuite) TestConfigJSONMarshaling() {
 				AccountNumber:   "0000123456",
 				RoutingNumber:   "123456789",
 				AccountType:     "Checking",
-				Reference:       testWireReference,
 			},
 			InternationalWire: InternationalWire{
 				Enabled:            true,
@@ -52,7 +51,6 @@ func (suite *ConfigTypesTestSuite) TestConfigJSONMarshaling() {
 				IBAN:               "GB00TEST00000000000000",
 				IntermediaryBank:   "Example Correspondent Bank",
 				IntermediarySWIFT:  "TESTUS44",
-				Reference:          testWireReference,
 			},
 		},
 		Invoice: InvoiceConfig{
@@ -134,7 +132,6 @@ func (suite *ConfigTypesTestSuite) TestBusinessConfigJSONMarshaling() {
 					AccountNumber:   "0000987654",
 					RoutingNumber:   "123456789",
 					AccountType:     "Savings",
-					Reference:       testWireReference,
 				},
 				InternationalWire: InternationalWire{
 					Enabled:            true,
@@ -144,7 +141,6 @@ func (suite *ConfigTypesTestSuite) TestBusinessConfigJSONMarshaling() {
 					BankAddress:        "2 Example Plaza",
 					SWIFT:              "TESTGB2L",
 					AccountNumber:      "0000987654",
-					Reference:          testWireReference,
 				},
 			},
 		},
@@ -188,7 +184,6 @@ func (suite *ConfigTypesTestSuite) TestDomesticWireJSONMarshaling() {
 				AccountNumber:   "0000111122",
 				RoutingNumber:   "123456789",
 				AccountType:     "Checking",
-				Reference:       testWireReference,
 			},
 		},
 		{
@@ -237,7 +232,6 @@ func (suite *ConfigTypesTestSuite) TestInternationalWireJSONMarshaling() {
 				AccountNumber:      "0000555566",
 				IntermediaryBank:   "Example Correspondent Bank",
 				IntermediarySWIFT:  "TESTUS44",
-				Reference:          testWireReference,
 			},
 		},
 		{
@@ -581,7 +575,6 @@ func (suite *ConfigTypesTestSuite) TestJSONFieldNames() {
 				AccountNumber:   "123456",
 				RoutingNumber:   "789",
 				AccountType:     "Checking",
-				Reference:       testWireReference,
 			},
 			InternationalWire: InternationalWire{
 				Enabled:            true,
@@ -630,11 +623,11 @@ func (suite *ConfigTypesTestSuite) TestJSONFieldNames() {
 	suite.Contains(jsonStr, `"account_number":`)
 	suite.Contains(jsonStr, `"routing_number":`)
 	suite.Contains(jsonStr, `"account_type":`)
-	suite.Contains(jsonStr, `"reference":`)
 	suite.Contains(jsonStr, `"beneficiary_address":`)
 	suite.Contains(jsonStr, `"bank_address":`)
 	suite.Contains(jsonStr, `"swift":`)
 	suite.Contains(jsonStr, `"iban":`)
+	suite.NotContains(jsonStr, `"reference":`, "wire reference is derived from the invoice number, not configured")
 	suite.Contains(jsonStr, `"intermediary_bank":`)
 	suite.Contains(jsonStr, `"intermediary_swift":`)
 	suite.NotContains(jsonStr, `"bank_details":`)

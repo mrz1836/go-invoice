@@ -558,7 +558,7 @@
                     {{if $wire.AccountNumber}}Account Number: {{$wire.AccountNumber}}<br>{{end}}
                     {{if $wire.RoutingNumber}}ABA Routing Number: {{$wire.RoutingNumber}}<br>{{end}}
                     {{if $wire.AccountType}}Account Type: {{$wire.AccountType}}<br>{{end}}
-                    {{if $wire.Reference}}Reference: {{$wire.Reference}}<br>{{end}}
+                    Reference: {{$.Number}}<br>
                     {{end}}
 
                     {{if and (eq .Client.WireType "international") .Business.InternationalWire.Enabled}}
@@ -575,7 +575,7 @@
                     {{if $wire.AccountNumber}}Account Number: {{$wire.AccountNumber}}<br>{{end}}
                     {{if $wire.IntermediaryBank}}Intermediary Bank: {{$wire.IntermediaryBank}}<br>{{end}}
                     {{if $wire.IntermediarySWIFT}}Intermediary SWIFT/BIC: {{$wire.IntermediarySWIFT}}<br>{{end}}
-                    {{if $wire.Reference}}Reference: {{$wire.Reference}}<br>{{end}}
+                    Reference: {{$.Number}}<br>
                     {{end}}
 
                     {{if .Business.CryptoPayments.USDCEnabled}}

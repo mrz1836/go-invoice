@@ -71,7 +71,6 @@ WIRE_DOMESTIC_BANK_NAME="Example Bank"
 WIRE_DOMESTIC_ACCOUNT="0000001234"
 WIRE_DOMESTIC_ROUTING="123456789"            # ABA routing number
 WIRE_DOMESTIC_ACCOUNT_TYPE="Checking"
-WIRE_DOMESTIC_REFERENCE="Invoice number"
 
 # International wire
 WIRE_INTL_ENABLED=true
@@ -84,7 +83,6 @@ WIRE_INTL_IBAN=""                            # IBAN, or use WIRE_INTL_ACCOUNT
 WIRE_INTL_ACCOUNT="0000001234"
 WIRE_INTL_INTERMEDIARY_BANK=""               # Optional correspondent bank
 WIRE_INTL_INTERMEDIARY_SWIFT=""              # Required with an intermediary bank
-WIRE_INTL_REFERENCE="Invoice number"
 ```
 
 ### Invoice Defaults

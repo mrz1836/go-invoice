@@ -7,5 +7,4 @@ const (
 	testWireBeneficiary = "Acme Corp"
 	testWireBankName    = "Example Bank"
 	testWireSWIFT       = "TESTUS33"
-	testWireReference   = "Invoice number"
 )

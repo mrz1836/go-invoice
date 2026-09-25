@@ -300,7 +300,6 @@ func missingDomesticWireFields(wire config.DomesticWire) []string {
 		{name: "WIRE_DOMESTIC_ACCOUNT", value: wire.AccountNumber},
 		{name: "WIRE_DOMESTIC_ROUTING", value: wire.RoutingNumber},
 		{name: "WIRE_DOMESTIC_ACCOUNT_TYPE", value: wire.AccountType},
-		{name: "WIRE_DOMESTIC_REFERENCE", value: wire.Reference},
 	})
 }
 
@@ -314,7 +313,6 @@ func missingInternationalWireFields(wire config.InternationalWire) []string {
 		{name: "WIRE_INTL_BANK_NAME", value: wire.BankName},
 		{name: "WIRE_INTL_BANK_ADDRESS", value: wire.BankAddress},
 		{name: "WIRE_INTL_SWIFT", value: wire.SWIFT},
-		{name: "WIRE_INTL_REFERENCE", value: wire.Reference},
 	})
 
 	if strings.TrimSpace(wire.IBAN) == "" && strings.TrimSpace(wire.AccountNumber) == "" {

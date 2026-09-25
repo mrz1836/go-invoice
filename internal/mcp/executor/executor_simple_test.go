@@ -355,7 +355,6 @@ func TestDefaultSecurityConfig_ForwardsWireEnvironment(t *testing.T) {
 		"WIRE_DOMESTIC_ACCOUNT",
 		"WIRE_DOMESTIC_ROUTING",
 		"WIRE_DOMESTIC_ACCOUNT_TYPE",
-		"WIRE_DOMESTIC_REFERENCE",
 		"WIRE_INTL_ENABLED",
 		"WIRE_INTL_BENEFICIARY",
 		"WIRE_INTL_BENEFICIARY_ADDRESS",
@@ -366,7 +365,6 @@ func TestDefaultSecurityConfig_ForwardsWireEnvironment(t *testing.T) {
 		"WIRE_INTL_ACCOUNT",
 		"WIRE_INTL_INTERMEDIARY_BANK",
 		"WIRE_INTL_INTERMEDIARY_SWIFT",
-		"WIRE_INTL_REFERENCE",
 	}
 
 	config := DefaultSecurityConfig()

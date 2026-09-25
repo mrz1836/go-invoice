@@ -156,7 +156,6 @@ func (s *ConfigService) buildConfigFromEnv(ctx context.Context) (*Config, error)
 				AccountNumber:   getEnv("WIRE_DOMESTIC_ACCOUNT", ""),
 				RoutingNumber:   getEnv("WIRE_DOMESTIC_ROUTING", ""),
 				AccountType:     getEnv("WIRE_DOMESTIC_ACCOUNT_TYPE", ""),
-				Reference:       getEnv("WIRE_DOMESTIC_REFERENCE", ""),
 			},
 			InternationalWire: InternationalWire{
 				Enabled:            getEnvBool("WIRE_INTL_ENABLED", false),
@@ -169,7 +168,6 @@ func (s *ConfigService) buildConfigFromEnv(ctx context.Context) (*Config, error)
 				AccountNumber:      getEnv("WIRE_INTL_ACCOUNT", ""),
 				IntermediaryBank:   getEnv("WIRE_INTL_INTERMEDIARY_BANK", ""),
 				IntermediarySWIFT:  getEnv("WIRE_INTL_INTERMEDIARY_SWIFT", ""),
-				Reference:          getEnv("WIRE_INTL_REFERENCE", ""),
 			},
 			CryptoPayments: CryptoPayments{
 				USDCAddress:     getEnv("USDC_ADDRESS", ""),

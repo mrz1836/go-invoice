@@ -276,7 +276,6 @@ func TestCreateInvoiceData(t *testing.T) {
 			AccountNumber:   "0000123456",
 			RoutingNumber:   "123456789",
 			AccountType:     "Checking",
-			Reference:       "Invoice number",
 		}
 		wireCfg.Business.InternationalWire = config.InternationalWire{
 			Enabled:            true,
@@ -286,7 +285,6 @@ func TestCreateInvoiceData(t *testing.T) {
 			BankAddress:        "2 Example Plaza, Springfield, US",
 			SWIFT:              "TESTUS33",
 			IBAN:               "GB00TEST00000000000000",
-			Reference:          "Invoice number",
 		}
 
 		data := app.createInvoiceData(&models.Invoice{ID: "wire-007", Number: "WIRE-007"}, &wireCfg)
@@ -405,7 +403,6 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 					AccountNumber:   "0000123456",
 					RoutingNumber:   "123456789",
 					AccountType:     "Checking",
-					Reference:       "Domestic memo",
 				},
 				InternationalWire: config.InternationalWire{
 					Enabled:            true,
@@ -417,7 +414,6 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 					IBAN:               "GB00TEST00000000000000",
 					IntermediaryBank:   "Example Correspondent Bank",
 					IntermediarySWIFT:  "CORRUS33",
-					Reference:          "International memo",
 				},
 			},
 			Invoice: config.InvoiceConfig{
@@ -452,8 +448,8 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 		}
 	}
 
-	domesticOnly := []string{"Domestic Wire Transfer (USD):", "ABA Routing Number: 123456789", "Account Number: 0000123456", "Domestic memo"}
-	internationalOnly := []string{"International Wire Transfer (USD):", "SWIFT/BIC: TESTUS33", "IBAN: GB00TEST00000000000000", "International memo"}
+	domesticOnly := []string{"Domestic Wire Transfer (USD):", "ABA Routing Number: 123456789", "Account Number: 0000123456"}
+	internationalOnly := []string{"International Wire Transfer (USD):", "SWIFT/BIC: TESTUS33", "IBAN: GB00TEST00000000000000"}
 
 	t.Run("WireFeeRendersTotalsLineAndNotice", func(t *testing.T) {
 		invoice := newInvoice(models.WireTypeInternational)
@@ -497,6 +493,7 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 		assert.Contains(t, html, "Beneficiary: Acme Corp")
 		assert.Contains(t, html, "Bank: Example Bank")
 		assert.Contains(t, html, "Account Type: Checking")
+		assert.Contains(t, html, "Reference: RENDER-WIRE-001", "wire reference is the invoice number")
 		for _, absent := range internationalOnly {
 			assert.NotContains(t, html, absent)
 		}
@@ -513,6 +510,7 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 		assert.Contains(t, html, "Beneficiary: Acme Corp")
 		assert.Contains(t, html, "Beneficiary Address: 1 Example Way, Springfield, US")
 		assert.Contains(t, html, "Beneficiary Bank: Example Bank")
+		assert.Contains(t, html, "Reference: RENDER-WIRE-001", "wire reference is the invoice number")
 		assert.Contains(t, html, "Bank Address: 2 Example Plaza, Springfield, US")
 		assert.Contains(t, html, "Intermediary Bank: Example Correspondent Bank")
 		assert.Contains(t, html, "Intermediary SWIFT/BIC: CORRUS33")

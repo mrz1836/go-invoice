@@ -181,11 +181,9 @@ func wireTestEnvVars() []string {
 	return []string{
 		"WIRE_DOMESTIC_ENABLED", "WIRE_DOMESTIC_BENEFICIARY", "WIRE_DOMESTIC_BANK_NAME",
 		"WIRE_DOMESTIC_ACCOUNT", "WIRE_DOMESTIC_ROUTING", "WIRE_DOMESTIC_ACCOUNT_TYPE",
-		"WIRE_DOMESTIC_REFERENCE",
 		"WIRE_INTL_ENABLED", "WIRE_INTL_BENEFICIARY", "WIRE_INTL_BENEFICIARY_ADDRESS",
 		"WIRE_INTL_BANK_NAME", "WIRE_INTL_BANK_ADDRESS", "WIRE_INTL_SWIFT", "WIRE_INTL_IBAN",
 		"WIRE_INTL_ACCOUNT", "WIRE_INTL_INTERMEDIARY_BANK", "WIRE_INTL_INTERMEDIARY_SWIFT",
-		"WIRE_INTL_REFERENCE",
 	}
 }
 
@@ -224,7 +222,6 @@ func (suite *ConfigTestSuite) TestLoadWireConfigFromEnv() {
 			"WIRE_DOMESTIC_ACCOUNT":         "0000123456",
 			"WIRE_DOMESTIC_ROUTING":         "123456789",
 			"WIRE_DOMESTIC_ACCOUNT_TYPE":    "Checking",
-			"WIRE_DOMESTIC_REFERENCE":       testWireReference,
 			"WIRE_INTL_ENABLED":             "true",
 			"WIRE_INTL_BENEFICIARY":         testWireBeneficiary,
 			"WIRE_INTL_BENEFICIARY_ADDRESS": "1 Example Way, Springfield, US",
@@ -235,7 +232,6 @@ func (suite *ConfigTestSuite) TestLoadWireConfigFromEnv() {
 			"WIRE_INTL_ACCOUNT":             "0000654321",
 			"WIRE_INTL_INTERMEDIARY_BANK":   "Example Correspondent Bank",
 			"WIRE_INTL_INTERMEDIARY_SWIFT":  "TESTUS44",
-			"WIRE_INTL_REFERENCE":           testWireReference,
 		}
 		for key, value := range envVars {
 			suite.Require().NoError(os.Setenv(key, value))
@@ -252,7 +248,6 @@ func (suite *ConfigTestSuite) TestLoadWireConfigFromEnv() {
 			AccountNumber:   "0000123456",
 			RoutingNumber:   "123456789",
 			AccountType:     "Checking",
-			Reference:       testWireReference,
 		}, config.Business.DomesticWire)
 		suite.Equal(InternationalWire{
 			Enabled:            true,
@@ -265,7 +260,6 @@ func (suite *ConfigTestSuite) TestLoadWireConfigFromEnv() {
 			AccountNumber:      "0000654321",
 			IntermediaryBank:   "Example Correspondent Bank",
 			IntermediarySWIFT:  "TESTUS44",
-			Reference:          testWireReference,
 		}, config.Business.InternationalWire)
 	})
 

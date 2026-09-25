@@ -33,7 +33,6 @@ type DomesticWire struct {
 	AccountNumber   string `json:"account_number,omitempty"`
 	RoutingNumber   string `json:"routing_number,omitempty"`
 	AccountType     string `json:"account_type,omitempty"`
-	Reference       string `json:"reference,omitempty"`
 }
 
 // InternationalWire contains the details a foreign bank needs to send a USD wire
@@ -48,7 +47,6 @@ type InternationalWire struct {
 	AccountNumber      string `json:"account_number,omitempty"`
 	IntermediaryBank   string `json:"intermediary_bank,omitempty"`
 	IntermediarySWIFT  string `json:"intermediary_swift,omitempty"`
-	Reference          string `json:"reference,omitempty"`
 }
 
 // CryptoPayments contains cryptocurrency payment addresses

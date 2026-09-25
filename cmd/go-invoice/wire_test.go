@@ -35,7 +35,6 @@ func wireEnvKeys() []string {
 		"WIRE_DOMESTIC_ACCOUNT",
 		"WIRE_DOMESTIC_ROUTING",
 		"WIRE_DOMESTIC_ACCOUNT_TYPE",
-		"WIRE_DOMESTIC_REFERENCE",
 		"WIRE_INTL_ENABLED",
 		"WIRE_INTL_BENEFICIARY",
 		"WIRE_INTL_BENEFICIARY_ADDRESS",
@@ -46,7 +45,6 @@ func wireEnvKeys() []string {
 		"WIRE_INTL_ACCOUNT",
 		"WIRE_INTL_INTERMEDIARY_BANK",
 		"WIRE_INTL_INTERMEDIARY_SWIFT",
-		"WIRE_INTL_REFERENCE",
 	}
 }
 
@@ -58,7 +56,6 @@ func completeDomesticWire() config.DomesticWire {
 		AccountNumber:   testWireAccount,
 		RoutingNumber:   testWireRouting,
 		AccountType:     "Checking",
-		Reference:       "Invoice number",
 	}
 }
 
@@ -71,7 +68,6 @@ func completeInternationalWire() config.InternationalWire {
 		BankAddress:        "2 Example Plaza, Springfield, US",
 		SWIFT:              "TESTGB2L",
 		IBAN:               testWireIBAN,
-		Reference:          "Invoice number",
 	}
 }
 
@@ -134,11 +130,10 @@ func TestResolveWireTransfer(t *testing.T) {
 				wire := completeDomesticWire()
 				wire.AccountNumber = ""
 				wire.RoutingNumber = "   "
-				wire.Reference = ""
 				return config.BusinessConfig{DomesticWire: wire}
 			},
 			wantErr:     ErrWireTransferIncomplete,
-			wantInError: []string{"WIRE_DOMESTIC_ACCOUNT", "WIRE_DOMESTIC_ROUTING", "WIRE_DOMESTIC_REFERENCE"},
+			wantInError: []string{"WIRE_DOMESTIC_ACCOUNT", "WIRE_DOMESTIC_ROUTING"},
 		},
 		{
 			name:     "DomesticNotSatisfiedByInternationalSet",
@@ -499,7 +494,6 @@ func internationalWireEnv() map[string]string {
 		"WIRE_INTL_BANK_ADDRESS":        "2 Example Plaza, Springfield, US",
 		"WIRE_INTL_SWIFT":               "TESTGB2L",
 		"WIRE_INTL_IBAN":                testWireIBAN,
-		"WIRE_INTL_REFERENCE":           "Invoice number",
 	}
 }
 
@@ -511,7 +505,6 @@ func domesticWireEnv() map[string]string {
 		"WIRE_DOMESTIC_ACCOUNT":      testWireAccount,
 		"WIRE_DOMESTIC_ROUTING":      testWireRouting,
 		"WIRE_DOMESTIC_ACCOUNT_TYPE": "Checking",
-		"WIRE_DOMESTIC_REFERENCE":    "Invoice number",
 	}
 }
 
