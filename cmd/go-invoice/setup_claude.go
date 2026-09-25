@@ -417,7 +417,7 @@ func (a *App) setupClaudeDesktop(ctx context.Context, prompter *cli.Prompter, pr
 
 	// Check if we should merge with existing config
 	var finalConfig map[string]interface{}
-	if existingData, err := os.ReadFile(filepath.Clean(mcpServersPath)); err == nil && len(existingData) > 0 {
+	if existingData, err := os.ReadFile(filepath.Clean(mcpServersPath)); err == nil && len(existingData) > 0 { //nolint:gosec // G703: mcpServersPath is derived from a known system config directory
 		// Parse existing config
 		if err := json.Unmarshal(existingData, &finalConfig); err != nil {
 			a.logger.Printf("⚠️  Could not parse existing configuration, will replace it\n")
