@@ -8,7 +8,7 @@ require (
 	github.com/mrz1836/go-selfupdate v0.1.4
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
-	golang.org/x/text v0.42.0
+	golang.org/x/text v0.43.0
 )
 
 require (
