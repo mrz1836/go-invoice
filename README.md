@@ -1832,7 +1832,7 @@ All kinds of contributions are welcome! :raised_hands:
 
 ## 📝 License
 
-[![License](https://img.shields.io/github/license/mrz1836/go-invoice.svg?style=flat&v=1)](LICENSE)
+[![License](https://img.shields.io/github/license/mrz1836/go-invoice.svg?style=flat&v=2)](LICENSE)
 
 <br/>
 <br/>
