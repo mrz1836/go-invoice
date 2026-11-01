@@ -43,6 +43,9 @@ const (
 	WireTypeDomestic WireType = "domestic"
 	// WireTypeInternational selects the international wire transfer instructions
 	WireTypeInternational WireType = "international"
+	// WireTypeBoth shows the domestic and international wire transfer instructions together,
+	// so the payer can choose whichever matches where their bank is located
+	WireTypeBoth WireType = "both"
 )
 
 // ValidWireTypes contains all valid wire type values
@@ -52,6 +55,7 @@ var ValidWireTypes = []string{
 	string(WireTypeNone),
 	string(WireTypeDomestic),
 	string(WireTypeInternational),
+	string(WireTypeBoth),
 }
 
 // NormalizeWireType returns WireTypeNone for an unset wire type and the value unchanged otherwise
@@ -60,6 +64,16 @@ func NormalizeWireType(wireType WireType) WireType {
 		return WireTypeNone
 	}
 	return wireType
+}
+
+// IncludesDomestic reports whether the domestic (US) wire instructions apply to this wire type
+func (w WireType) IncludesDomestic() bool {
+	return w == WireTypeDomestic || w == WireTypeBoth
+}
+
+// IncludesInternational reports whether the international wire instructions apply to this wire type
+func (w WireType) IncludesInternational() bool {
+	return w == WireTypeInternational || w == WireTypeBoth
 }
 
 // ValidInvoiceStatuses contains all valid invoice status values
