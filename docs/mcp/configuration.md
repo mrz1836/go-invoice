@@ -59,9 +59,11 @@ PAYMENT_DISCOUNT_TERMS="2/10 Net 30"  # Early payment discount
 ### Wire Transfer Information
 
 Wire details are grouped into a domestic (US) set and an international set. Each
-client selects which set appears on its invoices. Keep account details out of
-version control; supplying them through the runtime environment is recommended
-(environment values override the config file).
+client's `wire_type` selects what appears on its invoices: `domestic`,
+`international`, `both` (the two sets as separate options, so the payer uses
+whichever matches where their bank is located), or `none`. Keep account details
+out of version control; supplying them through the runtime environment is
+recommended (environment values override the config file).
 
 ```bash
 # Domestic (US) wire
@@ -69,7 +71,7 @@ WIRE_DOMESTIC_ENABLED=true
 WIRE_DOMESTIC_BENEFICIARY="Your Business LLC"
 WIRE_DOMESTIC_BANK_NAME="Example Bank"
 WIRE_DOMESTIC_ACCOUNT="0000001234"
-WIRE_DOMESTIC_ROUTING="123456789"            # ABA routing number
+WIRE_DOMESTIC_ROUTING="123456789"            # ABA routing number (9 digits)
 WIRE_DOMESTIC_ACCOUNT_TYPE="Checking"
 
 # International wire
