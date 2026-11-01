@@ -37,12 +37,13 @@ const (
 	wireTypeNone            = "none"
 	wireTypeDomestic        = "domestic"
 	wireTypeInternational   = "international"
+	wireTypeBoth            = "both"
 	defaultWireFeeAmount    = 20.00
 	maxWireFeeAmount        = 10000.00
-	wireTypeDescriptionHint = "domestic shows the domestic (US) wire instructions, international shows the international wire instructions, and none shows no wire instructions."
+	wireTypeDescriptionHint = "domestic shows the domestic (US) wire instructions, international shows the international wire instructions, both shows the two together so the payer can choose, and none shows no wire instructions."
 )
 
 // wireTypeEnum returns the accepted wire_type values.
 func wireTypeEnum() []interface{} {
-	return []interface{}{wireTypeNone, wireTypeDomestic, wireTypeInternational}
+	return []interface{}{wireTypeNone, wireTypeDomestic, wireTypeInternational, wireTypeBoth}
 }

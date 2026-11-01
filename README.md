@@ -979,6 +979,10 @@ go-invoice client show --client "Acme Corporation" --include-invoices
 # Update client information
 go-invoice client update --client "Acme Corporation" --email "newbilling@acme.com"
 
+# Show both domestic and international wire instructions on this client's invoices
+# (wire types: domestic | international | both | none)
+go-invoice client update "Acme Corporation" --wire-type both
+
 # Deactivate a client (soft delete preserves data)
 go-invoice client delete --client "Acme Corporation" --soft-delete
 ```

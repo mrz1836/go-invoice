@@ -1221,12 +1221,13 @@ func (suite *ClientTestSuite) TestWireTypeValidation() {
 		{name: "None", wireType: WireTypeNone, expected: WireTypeNone},
 		{name: "Domestic", wireType: WireTypeDomestic, expected: WireTypeDomestic},
 		{name: "International", wireType: WireTypeInternational, expected: WireTypeInternational},
+		{name: "Both", wireType: WireTypeBoth, expected: WireTypeBoth},
 		{name: "UnknownValue", wireType: "swift", expectError: true},
 		{name: "WrongCase", wireType: "Domestic", expectError: true},
 		{name: "Whitespace", wireType: " ", expectError: true},
 	}
 
-	const errorMsg = "validation failed for field 'wire_type': must be one of: none, domestic, international"
+	const errorMsg = "validation failed for field 'wire_type': must be one of: none, domestic, international, both"
 
 	for _, tt := range tests {
 		suite.Run("Client/"+tt.name, func() {
@@ -1267,6 +1268,29 @@ func (suite *ClientTestSuite) TestWireTypeValidation() {
 			}
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, request.WireType)
+		})
+	}
+}
+
+func (suite *ClientTestSuite) TestWireTypeIncludesSets() {
+	tests := []struct {
+		name              string
+		wireType          WireType
+		wantDomestic      bool
+		wantInternational bool
+	}{
+		{name: "Unset", wireType: ""},
+		{name: "None", wireType: WireTypeNone},
+		{name: "Domestic", wireType: WireTypeDomestic, wantDomestic: true},
+		{name: "International", wireType: WireTypeInternational, wantInternational: true},
+		{name: "Both", wireType: WireTypeBoth, wantDomestic: true, wantInternational: true},
+		{name: "WrongCaseBoth", wireType: "Both"},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			suite.Equal(tt.wantDomestic, tt.wireType.IncludesDomestic())
+			suite.Equal(tt.wantInternational, tt.wireType.IncludesInternational())
 		})
 	}
 }

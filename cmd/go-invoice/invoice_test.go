@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	stdhtml "html"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -295,6 +297,29 @@ func TestCreateInvoiceData(t *testing.T) {
 	})
 }
 
+// visibleText reduces rendered HTML to its visible text with whitespace collapsed, so assertions
+// read like the printed invoice ("ABA Routing Number 123456789") rather than depending on markup
+func visibleText(page string) string {
+	page = regexp.MustCompile(`(?s)<style.*?</style>`).ReplaceAllString(page, " ")
+	page = regexp.MustCompile(`<[^>]*>`).ReplaceAllString(page, " ")
+	return strings.Join(strings.Fields(stdhtml.UnescapeString(page)), " ")
+}
+
+// paymentMethodText returns the visible text of the rendered payment method card with the given
+// class, or "" when that card is not on the page
+func paymentMethodText(page, class string) string {
+	start := strings.Index(page, `class="payment-method `+class+`"`)
+	if start < 0 {
+		return ""
+	}
+	card := page[start:]
+	card = card[strings.Index(card, ">")+1:]
+	if end := strings.Index(card, "</table>"); end >= 0 {
+		card = card[:end]
+	}
+	return visibleText(card)
+}
+
 func TestRenderDefaultTemplatePaymentSection(t *testing.T) {
 	app := &App{
 		logger: cli.NewLogger(false),
@@ -320,9 +345,9 @@ func TestRenderDefaultTemplatePaymentSection(t *testing.T) {
 		renderer, err := app.createRenderService(ctx, cfg)
 		require.NoError(t, err)
 
-		html, err := app.renderInvoice(ctx, renderer, app.createInvoiceData(invoice, cfg), "default")
+		page, err := app.renderInvoice(ctx, renderer, app.createInvoiceData(invoice, cfg), "default")
 		require.NoError(t, err)
-		return html
+		return visibleText(page)
 	}
 
 	newInvoice := func() *models.Invoice {
@@ -339,7 +364,7 @@ func TestRenderDefaultTemplatePaymentSection(t *testing.T) {
 		html := renderHTML(t, baseConfig(), newInvoice())
 
 		assert.Contains(t, html, "Payment Terms")
-		assert.NotContains(t, html, "Payment Methods:")
+		assert.NotContains(t, html, "Payment Methods")
 		assert.NotContains(t, html, "ACH")
 	})
 
@@ -350,8 +375,8 @@ func TestRenderDefaultTemplatePaymentSection(t *testing.T) {
 
 		html := renderHTML(t, cfg, newInvoice())
 
-		assert.Equal(t, 1, strings.Count(html, "Payment Methods:"))
-		assert.Contains(t, html, "USDC Cryptocurrency:")
+		assert.Equal(t, 1, strings.Count(html, "Payment Methods"))
+		assert.Contains(t, html, "USDC Cryptocurrency")
 	})
 
 	t.Run("EnabledMethodWithoutAddressOmitsHeading", func(t *testing.T) {
@@ -360,7 +385,7 @@ func TestRenderDefaultTemplatePaymentSection(t *testing.T) {
 
 		html := renderHTML(t, cfg, newInvoice())
 
-		assert.NotContains(t, html, "Payment Methods:")
+		assert.NotContains(t, html, "Payment Methods")
 	})
 
 	t.Run("PaymentInstructionsRendered", func(t *testing.T) {
@@ -422,15 +447,20 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 		}
 	}
 
-	renderHTML := func(t *testing.T, cfg *config.Config, invoice *models.Invoice) string {
+	renderPage := func(t *testing.T, cfg *config.Config, invoice *models.Invoice) string {
 		t.Helper()
 		ctx := context.Background()
 		renderer, err := app.createRenderService(ctx, cfg)
 		require.NoError(t, err)
 
-		html, err := app.renderInvoice(ctx, renderer, app.createInvoiceData(invoice, cfg), "default")
+		page, err := app.renderInvoice(ctx, renderer, app.createInvoiceData(invoice, cfg), "default")
 		require.NoError(t, err)
-		return html
+		return page
+	}
+
+	renderHTML := func(t *testing.T, cfg *config.Config, invoice *models.Invoice) string {
+		t.Helper()
+		return visibleText(renderPage(t, cfg, invoice))
 	}
 
 	newInvoice := func(wireType models.WireType) *models.Invoice {
@@ -448,8 +478,9 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 		}
 	}
 
-	domesticOnly := []string{"Domestic Wire Transfer (USD):", "ABA Routing Number: 123456789", "Account Number: 0000123456"}
-	internationalOnly := []string{"International Wire Transfer (USD):", "SWIFT/BIC: TESTUS33", "IBAN: GB00TEST00000000000000"}
+	domesticOnly := []string{"Domestic Wire Transfer (USD)", "ABA Routing Number 123456789", "Account Number 0000123456"}
+	internationalOnly := []string{"International Wire Transfer (USD)", "SWIFT/BIC TESTUS33", "IBAN GB00TEST00000000000000"}
+	choiceIntro := "Pay by whichever wire option matches where your bank is located."
 
 	t.Run("WireFeeRendersTotalsLineAndNotice", func(t *testing.T) {
 		invoice := newInvoice(models.WireTypeInternational)
@@ -490,14 +521,15 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 		for _, want := range domesticOnly {
 			assert.Contains(t, html, want)
 		}
-		assert.Contains(t, html, "Beneficiary: Acme Corp")
-		assert.Contains(t, html, "Bank: Example Bank")
-		assert.Contains(t, html, "Account Type: Checking")
-		assert.Contains(t, html, "Reference: RENDER-WIRE-001", "wire reference is the invoice number")
+		assert.Contains(t, html, "Beneficiary Acme Corp")
+		assert.Contains(t, html, "Bank Example Bank")
+		assert.Contains(t, html, "Account Type Checking")
+		assert.Contains(t, html, "Reference RENDER-WIRE-001", "wire reference is the invoice number")
 		for _, absent := range internationalOnly {
 			assert.NotContains(t, html, absent)
 		}
-		assert.Equal(t, 1, strings.Count(html, "Payment Methods:"))
+		assert.Equal(t, 1, strings.Count(html, "Payment Methods"))
+		assert.NotContains(t, html, choiceIntro, "a single wire set offers no choice")
 		assert.NotContains(t, html, "ACH Bank Transfer")
 	})
 
@@ -507,18 +539,80 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 		for _, want := range internationalOnly {
 			assert.Contains(t, html, want)
 		}
-		assert.Contains(t, html, "Beneficiary: Acme Corp")
-		assert.Contains(t, html, "Beneficiary Address: 1 Example Way, Springfield, US")
-		assert.Contains(t, html, "Beneficiary Bank: Example Bank")
-		assert.Contains(t, html, "Reference: RENDER-WIRE-001", "wire reference is the invoice number")
-		assert.Contains(t, html, "Bank Address: 2 Example Plaza, Springfield, US")
-		assert.Contains(t, html, "Intermediary Bank: Example Correspondent Bank")
-		assert.Contains(t, html, "Intermediary SWIFT/BIC: CORRUS33")
+		assert.Contains(t, html, "Beneficiary Acme Corp")
+		assert.Contains(t, html, "Beneficiary Address 1 Example Way, Springfield, US")
+		assert.Contains(t, html, "Beneficiary Bank Example Bank")
+		assert.Contains(t, html, "Reference RENDER-WIRE-001", "wire reference is the invoice number")
+		assert.Contains(t, html, "Bank Address 2 Example Plaza, Springfield, US")
+		assert.Contains(t, html, "Intermediary Bank Example Correspondent Bank")
+		assert.Contains(t, html, "Intermediary SWIFT/BIC CORRUS33")
 		for _, absent := range domesticOnly {
 			assert.NotContains(t, html, absent)
 		}
-		assert.Equal(t, 1, strings.Count(html, "Payment Methods:"))
+		assert.Equal(t, 1, strings.Count(html, "Payment Methods"))
 		assert.NotContains(t, html, "ACH Bank Transfer")
+	})
+
+	t.Run("BothClientRendersDomesticAndInternationalAsSeparateOptions", func(t *testing.T) {
+		cfg := wireConfig()
+		cfg.Business.InternationalWire.AccountNumber = "5555000011"
+		page := renderPage(t, cfg, newInvoice(models.WireTypeBoth))
+		html := visibleText(page)
+
+		assert.Equal(t, 1, strings.Count(html, "Payment Methods"))
+		assert.Contains(t, html, choiceIntro)
+		assert.Less(t, strings.Index(html, "Domestic Wire Transfer (USD)"), strings.Index(html, "International Wire Transfer (USD)"),
+			"the domestic option is listed first")
+
+		domestic := paymentMethodText(page, "payment-method-domestic-wire")
+		require.NotEmpty(t, domestic, "domestic card should render")
+		for _, want := range []string{
+			"From a bank in the United States",
+			"Beneficiary Acme Corp",
+			"Bank Example Bank",
+			"ABA Routing Number 123456789",
+			"Account Number 0000123456",
+			"Account Type Checking",
+			"Reference RENDER-WIRE-001",
+		} {
+			assert.Contains(t, domestic, want)
+		}
+		for _, absent := range []string{"SWIFT", "IBAN", "Intermediary", "5555000011"} {
+			assert.NotContains(t, domestic, absent, "domestic card lists only domestic fields")
+		}
+
+		international := paymentMethodText(page, "payment-method-international-wire")
+		require.NotEmpty(t, international, "international card should render")
+		for _, want := range []string{
+			"From a bank outside the United States",
+			"Beneficiary Address 1 Example Way, Springfield, US",
+			"SWIFT/BIC TESTUS33",
+			"IBAN GB00TEST00000000000000",
+			"Account Number 5555000011",
+			"Intermediary Bank Example Correspondent Bank",
+			"Intermediary SWIFT/BIC CORRUS33",
+			"Reference RENDER-WIRE-001",
+		} {
+			assert.Contains(t, international, want)
+		}
+		for _, absent := range []string{"Routing", "123456789", "0000123456", "Account Type"} {
+			assert.NotContains(t, international, absent, "international card lists only international fields")
+		}
+	})
+
+	t.Run("BothClientWithOneSetDisabledRendersOnlyTheEnabledSet", func(t *testing.T) {
+		cfg := wireConfig()
+		cfg.Business.InternationalWire.Enabled = false
+
+		html := renderHTML(t, cfg, newInvoice(models.WireTypeBoth))
+
+		for _, want := range domesticOnly {
+			assert.Contains(t, html, want)
+		}
+		for _, absent := range internationalOnly {
+			assert.NotContains(t, html, absent)
+		}
+		assert.NotContains(t, html, choiceIntro, "a single wire set offers no choice")
 	})
 
 	t.Run("InternationalOptionalFieldsOmittedWhenEmpty", func(t *testing.T) {
@@ -530,8 +624,8 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 
 		html := renderHTML(t, cfg, newInvoice(models.WireTypeInternational))
 
-		assert.Contains(t, html, "Account Number: 9876543210")
-		assert.NotContains(t, html, "IBAN:")
+		assert.Contains(t, html, "Account Number 9876543210")
+		assert.NotContains(t, html, "IBAN")
 		assert.NotContains(t, html, "Intermediary")
 	})
 
@@ -542,7 +636,7 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 			for _, absent := range append(append([]string{}, domesticOnly...), internationalOnly...) {
 				assert.NotContains(t, html, absent, "wire type %q", wireType)
 			}
-			assert.NotContains(t, html, "Payment Methods:", "wire type %q", wireType)
+			assert.NotContains(t, html, "Payment Methods", "wire type %q", wireType)
 		}
 	})
 
@@ -555,7 +649,7 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 		for _, absent := range append(append([]string{}, domesticOnly...), internationalOnly...) {
 			assert.NotContains(t, html, absent)
 		}
-		assert.NotContains(t, html, "Payment Methods:")
+		assert.NotContains(t, html, "Payment Methods")
 	})
 
 	t.Run("WireBlockSharesHeadingWithOtherMethods", func(t *testing.T) {
@@ -565,8 +659,8 @@ func TestRenderDefaultTemplateWireTransfer(t *testing.T) {
 
 		html := renderHTML(t, cfg, newInvoice(models.WireTypeInternational))
 
-		assert.Equal(t, 1, strings.Count(html, "Payment Methods:"))
-		assert.Less(t, strings.Index(html, "Payment Methods:"), strings.Index(html, "International Wire Transfer (USD):"))
-		assert.Less(t, strings.Index(html, "International Wire Transfer (USD):"), strings.Index(html, "USDC Cryptocurrency:"))
+		assert.Equal(t, 1, strings.Count(html, "Payment Methods"))
+		assert.Less(t, strings.Index(html, "Payment Methods"), strings.Index(html, "International Wire Transfer (USD)"))
+		assert.Less(t, strings.Index(html, "International Wire Transfer (USD)"), strings.Index(html, "USDC Cryptocurrency"))
 	})
 }

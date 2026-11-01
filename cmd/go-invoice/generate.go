@@ -27,9 +27,14 @@ var (
 	ErrWireTransferDisabled = errors.New("wire transfer instructions are not enabled")
 	// ErrWireTransferIncomplete indicates the client's wire transfer set is missing required fields
 	ErrWireTransferIncomplete = errors.New("wire transfer instructions are incomplete")
+	// ErrWireTransferInvalid indicates the client's wire transfer set has a malformed field
+	ErrWireTransferInvalid = errors.New("wire transfer instructions are invalid")
 	// ErrUnknownWireType indicates the client's wire type is not a recognized value
 	ErrUnknownWireType = errors.New("unknown wire type")
 )
+
+// abaRoutingNumberLength is the number of digits in a US ABA routing number
+const abaRoutingNumberLength = 9
 
 // buildGenerateCommand creates the generate command with subcommands
 func (a *App) buildGenerateCommand() *cobra.Command {
@@ -331,34 +336,82 @@ func missingInternationalWireFields(wire config.InternationalWire) []string {
 	return missing
 }
 
-// resolveWireTransfer reports whether wire transfer instructions apply to a client with the given
-// wire type. It fails when the selected set is disabled or missing required fields so that an
-// invoice is never generated with incomplete wire details.
-func resolveWireTransfer(wireType models.WireType, business config.BusinessConfig) (bool, error) {
-	var enabled bool
-	var missing []string
+// invalidDomesticWireFields lists the domestic wire settings that are present but malformed.
+// Values are never included, only the setting names, so account details are not echoed in errors.
+func invalidDomesticWireFields(wire config.DomesticWire) []string {
+	var invalid []string
+	if routing := strings.TrimSpace(wire.RoutingNumber); routing != "" && !isABARoutingNumber(routing) {
+		invalid = append(invalid, "WIRE_DOMESTIC_ROUTING (must be a 9-digit ABA routing number)")
+	}
+	return invalid
+}
 
-	switch models.NormalizeWireType(wireType) {
+// isABARoutingNumber reports whether value is exactly nine ASCII digits, the format of a US ABA routing number
+func isABARoutingNumber(value string) bool {
+	if len(value) != abaRoutingNumberLength {
+		return false
+	}
+	for _, r := range value {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// resolveWireTransfer reports whether wire transfer instructions apply to a client with the given
+// wire type. It fails when a selected set is disabled, missing required fields, or malformed so that
+// an invoice is never generated with incomplete wire details. The "both" wire type requires the
+// domestic and the international sets to pass.
+func resolveWireTransfer(wireType models.WireType, business config.BusinessConfig) (bool, error) {
+	var sets []models.WireType
+
+	switch normalized := models.NormalizeWireType(wireType); normalized {
 	case models.WireTypeNone:
 		return false, nil
-	case models.WireTypeDomestic:
-		enabled = business.DomesticWire.Enabled
-		missing = missingDomesticWireFields(business.DomesticWire)
-	case models.WireTypeInternational:
-		enabled = business.InternationalWire.Enabled
-		missing = missingInternationalWireFields(business.InternationalWire)
+	case models.WireTypeDomestic, models.WireTypeInternational:
+		sets = []models.WireType{normalized}
+	case models.WireTypeBoth:
+		sets = []models.WireType{models.WireTypeDomestic, models.WireTypeInternational}
 	default:
-		return false, fmt.Errorf("%w: %q (expected domestic, international, or none)", ErrUnknownWireType, wireType)
+		return false, fmt.Errorf("%w: %q (expected domestic, international, both, or none)", ErrUnknownWireType, wireType)
 	}
 
-	if !enabled {
-		return false, fmt.Errorf("%w: client uses %s wire transfer but it is not enabled in the configuration", ErrWireTransferDisabled, wireType)
-	}
-	if len(missing) > 0 {
-		return false, fmt.Errorf("%w: %s wire transfer is missing %s", ErrWireTransferIncomplete, wireType, strings.Join(missing, ", "))
+	for _, set := range sets {
+		if err := checkWireSet(set, business); err != nil {
+			return false, err
+		}
 	}
 
 	return true, nil
+}
+
+// checkWireSet verifies that a single wire transfer set (domestic or international) is enabled,
+// complete, and well formed.
+func checkWireSet(set models.WireType, business config.BusinessConfig) error {
+	var enabled bool
+	var missing, invalid []string
+
+	if set == models.WireTypeDomestic {
+		enabled = business.DomesticWire.Enabled
+		missing = missingDomesticWireFields(business.DomesticWire)
+		invalid = invalidDomesticWireFields(business.DomesticWire)
+	} else {
+		enabled = business.InternationalWire.Enabled
+		missing = missingInternationalWireFields(business.InternationalWire)
+	}
+
+	if !enabled {
+		return fmt.Errorf("%w: client uses %s wire transfer but it is not enabled in the configuration", ErrWireTransferDisabled, set)
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("%w: %s wire transfer is missing %s", ErrWireTransferIncomplete, set, strings.Join(missing, ", "))
+	}
+	if len(invalid) > 0 {
+		return fmt.Errorf("%w: %s wire transfer has an invalid %s", ErrWireTransferInvalid, set, strings.Join(invalid, ", "))
+	}
+
+	return nil
 }
 
 // setupGenerateServices sets up configuration and services for invoice generation

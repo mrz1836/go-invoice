@@ -104,7 +104,7 @@ func TestResolveWireTransfer(t *testing.T) {
 			wireType:    "carrier-pigeon",
 			business:    func() config.BusinessConfig { return config.BusinessConfig{} },
 			wantErr:     ErrUnknownWireType,
-			wantInError: []string{"carrier-pigeon"},
+			wantInError: []string{"carrier-pigeon", "both"},
 		},
 		{
 			name:        "DomesticComplete",
@@ -142,6 +142,112 @@ func TestResolveWireTransfer(t *testing.T) {
 				return config.BusinessConfig{InternationalWire: completeInternationalWire()}
 			},
 			wantErr: ErrWireTransferDisabled,
+		},
+		{
+			name:     "DomesticRoutingNumberWithSurroundingSpacesAccepted",
+			wireType: models.WireTypeDomestic,
+			business: func() config.BusinessConfig {
+				wire := completeDomesticWire()
+				wire.RoutingNumber = " " + testWireRouting + " "
+				return config.BusinessConfig{DomesticWire: wire}
+			},
+			wantEnabled: true,
+		},
+		{
+			name:     "DomesticRoutingNumberTooShort",
+			wireType: models.WireTypeDomestic,
+			business: func() config.BusinessConfig {
+				wire := completeDomesticWire()
+				wire.RoutingNumber = testWireRouting[:8]
+				return config.BusinessConfig{DomesticWire: wire}
+			},
+			wantErr:     ErrWireTransferInvalid,
+			wantInError: []string{"WIRE_DOMESTIC_ROUTING", "9-digit"},
+		},
+		{
+			name:     "DomesticRoutingNumberTooLong",
+			wireType: models.WireTypeDomestic,
+			business: func() config.BusinessConfig {
+				wire := completeDomesticWire()
+				wire.RoutingNumber = testWireRouting + "0"
+				return config.BusinessConfig{DomesticWire: wire}
+			},
+			wantErr:     ErrWireTransferInvalid,
+			wantInError: []string{"WIRE_DOMESTIC_ROUTING"},
+		},
+		{
+			name:     "DomesticRoutingNumberNotNumeric",
+			wireType: models.WireTypeDomestic,
+			business: func() config.BusinessConfig {
+				wire := completeDomesticWire()
+				wire.RoutingNumber = "0123-4567"
+				return config.BusinessConfig{DomesticWire: wire}
+			},
+			wantErr:     ErrWireTransferInvalid,
+			wantInError: []string{"WIRE_DOMESTIC_ROUTING"},
+		},
+		{
+			name:     "BothComplete",
+			wireType: models.WireTypeBoth,
+			business: func() config.BusinessConfig {
+				return config.BusinessConfig{DomesticWire: completeDomesticWire(), InternationalWire: completeInternationalWire()}
+			},
+			wantEnabled: true,
+		},
+		{
+			name:     "BothRequiresDomesticEnabled",
+			wireType: models.WireTypeBoth,
+			business: func() config.BusinessConfig {
+				wire := completeDomesticWire()
+				wire.Enabled = false
+				return config.BusinessConfig{DomesticWire: wire, InternationalWire: completeInternationalWire()}
+			},
+			wantErr:     ErrWireTransferDisabled,
+			wantInError: []string{"domestic"},
+		},
+		{
+			name:     "BothRequiresInternationalEnabled",
+			wireType: models.WireTypeBoth,
+			business: func() config.BusinessConfig {
+				wire := completeInternationalWire()
+				wire.Enabled = false
+				return config.BusinessConfig{DomesticWire: completeDomesticWire(), InternationalWire: wire}
+			},
+			wantErr:     ErrWireTransferDisabled,
+			wantInError: []string{"international"},
+		},
+		{
+			name:     "BothRequiresCompleteDomesticSet",
+			wireType: models.WireTypeBoth,
+			business: func() config.BusinessConfig {
+				wire := completeDomesticWire()
+				wire.RoutingNumber = ""
+				return config.BusinessConfig{DomesticWire: wire, InternationalWire: completeInternationalWire()}
+			},
+			wantErr:     ErrWireTransferIncomplete,
+			wantInError: []string{"WIRE_DOMESTIC_ROUTING"},
+		},
+		{
+			name:     "BothRequiresCompleteInternationalSet",
+			wireType: models.WireTypeBoth,
+			business: func() config.BusinessConfig {
+				wire := completeInternationalWire()
+				wire.SWIFT = ""
+				return config.BusinessConfig{DomesticWire: completeDomesticWire(), InternationalWire: wire}
+			},
+			wantErr:     ErrWireTransferIncomplete,
+			wantInError: []string{"WIRE_INTL_SWIFT"},
+		},
+		{
+			name:     "BothRejectsMalformedRoutingNumber",
+			wireType: models.WireTypeBoth,
+			business: func() config.BusinessConfig {
+				wire := completeDomesticWire()
+				wire.RoutingNumber = testWireRouting[:7]
+				return config.BusinessConfig{DomesticWire: wire, InternationalWire: completeInternationalWire()}
+			},
+			wantErr:     ErrWireTransferInvalid,
+			wantInError: []string{"WIRE_DOMESTIC_ROUTING"},
 		},
 		{
 			name:     "InternationalCompleteWithIBAN",
@@ -245,7 +351,7 @@ func TestResolveWireTransfer(t *testing.T) {
 					assert.Contains(t, err.Error(), want)
 				}
 				// Configured wire values must never be echoed back in errors
-				for _, secret := range []string{testWireAccount, testWireRouting, testWireIBAN} {
+				for _, secret := range []string{testWireAccount, testWireRouting[:7], testWireIBAN} {
 					assert.NotContains(t, err.Error(), secret)
 				}
 				return
@@ -412,6 +518,16 @@ func TestClientWireFlagsRoundTrip(t *testing.T) {
 		assert.Equal(t, models.WireTypeDomestic, findClient(t, "ap@acme.example").WireType)
 	})
 
+	t.Run("UpdateSelectsBothWireSets", func(t *testing.T) {
+		clientID := string(findClient(t, "ap@acme.example").ID)
+
+		err := runClientCommand(t, newWireTestApp().buildClientUpdateCommand(), configPath,
+			clientID, "--wire-type", "both")
+		require.NoError(t, err)
+
+		assert.Equal(t, models.WireTypeBoth, findClient(t, "ap@acme.example").WireType)
+	})
+
 	t.Run("UpdateRejectsOutOfRangeWireFee", func(t *testing.T) {
 		clientID := string(findClient(t, "ap@acme.example").ID)
 
@@ -568,6 +684,51 @@ func TestExecuteGenerateInvoiceWireTransfer(t *testing.T) {
 		assert.InDelta(t, 0.0, stored.WireFee, 0.001)
 		assert.InDelta(t, 1100.0, stored.Total, 0.001)
 		assert.True(t, f.outputExists())
+	})
+
+	t.Run("BothRendersDomesticAndInternationalOptions", func(t *testing.T) {
+		env := domesticWireEnv()
+		for key, value := range internationalWireEnv() {
+			env[key] = value
+		}
+		f := newWireGenerateFixture(t, env, func(c *models.Client) {
+			c.WireType = models.WireTypeBoth
+			c.WireFeeEnabled = true
+		}, nil)
+
+		require.NoError(t, f.generate(t))
+
+		stored := f.stored(t)
+		assert.InDelta(t, models.DefaultWireFeeAmount, stored.WireFee, 0.001, "the wire fee applies once, not per option")
+		assert.Equal(t, models.WireTypeBoth, stored.Client.WireType)
+
+		page, err := os.ReadFile(filepath.Join(f.dataDir, "generated", f.invoice.Number+".html"))
+		require.NoError(t, err)
+		domestic := paymentMethodText(string(page), "payment-method-domestic-wire")
+		international := paymentMethodText(string(page), "payment-method-international-wire")
+		assert.Contains(t, domestic, "ABA Routing Number "+testWireRouting)
+		assert.Contains(t, domestic, "Account Number "+testWireAccount)
+		assert.Contains(t, international, "SWIFT/BIC TESTGB2L")
+		assert.Contains(t, international, "IBAN "+testWireIBAN)
+	})
+
+	t.Run("BothWithIncompleteDomesticSetFailsBeforeSaveOrRender", func(t *testing.T) {
+		env := domesticWireEnv()
+		for key, value := range internationalWireEnv() {
+			env[key] = value
+		}
+		env["WIRE_DOMESTIC_ROUTING"] = testWireRouting[:8]
+		f := newWireGenerateFixture(t, env, func(c *models.Client) {
+			c.WireType = models.WireTypeBoth
+		}, nil)
+
+		err := f.generate(t)
+
+		require.ErrorIs(t, err, ErrWireTransferInvalid)
+		assert.Contains(t, err.Error(), "WIRE_DOMESTIC_ROUTING")
+		assert.NotContains(t, err.Error(), testWireRouting[:8])
+		assert.Equal(t, f.invoice.Version, f.stored(t).Version, "invoice must not be saved")
+		assert.False(t, f.outputExists(), "invoice must not be rendered")
 	})
 
 	t.Run("DisabledSetFailsBeforeSaveOrRender", func(t *testing.T) {

@@ -113,7 +113,7 @@ func (a *App) buildClientCreateCommand() *cobra.Command {
 	cmd.Flags().Float64Var(&cryptoFeeAmount, "crypto-fee-amount", 25.00, "Cryptocurrency service fee amount")
 	cmd.Flags().BoolVar(&wireFeeEnabled, "wire-fee", false, "Enable wire transfer service fee for this client")
 	cmd.Flags().Float64Var(&wireFeeAmount, "wire-fee-amount", models.DefaultWireFeeAmount, "Wire transfer service fee amount")
-	cmd.Flags().StringVar(&wireType, "wire-type", string(models.WireTypeNone), "Wire transfer instructions shown to this client (domestic|international|none)")
+	cmd.Flags().StringVar(&wireType, "wire-type", string(models.WireTypeNone), "Wire transfer instructions shown to this client (domestic|international|both|none)")
 	cmd.Flags().BoolVar(&lateFeeEnabled, "late-fee", true, "Enable late fee policy on invoices (default: true)")
 
 	if err := cmd.MarkFlagRequired("name"); err != nil {
@@ -507,7 +507,7 @@ func (a *App) buildClientUpdateCommand() *cobra.Command {
 	cmd.Flags().Float64Var(&cryptoFeeAmount, "crypto-fee-amount", 25.00, "Cryptocurrency service fee amount")
 	cmd.Flags().BoolVar(&wireFeeEnabled, "wire-fee", false, "Enable wire transfer service fee for this client")
 	cmd.Flags().Float64Var(&wireFeeAmount, "wire-fee-amount", models.DefaultWireFeeAmount, "Wire transfer service fee amount")
-	cmd.Flags().StringVar(&wireType, "wire-type", string(models.WireTypeNone), "Wire transfer instructions shown to this client (domestic|international|none)")
+	cmd.Flags().StringVar(&wireType, "wire-type", string(models.WireTypeNone), "Wire transfer instructions shown to this client (domestic|international|both|none)")
 	cmd.Flags().BoolVar(&lateFeeEnabled, "late-fee", true, "Enable late fee policy on invoices")
 
 	return cmd
